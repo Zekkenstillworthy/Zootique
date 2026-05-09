@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<!-- UNIQUE FLAT HERO -->
+<div style="background: #1a4f32; color: white; padding: 4rem 2rem 2rem 2rem; display: flex; flex-direction: column; align-items: center; position: relative;">
+    <div style="position: absolute; top: 1rem; left: 2rem; color: rgba(255,255,255,0.7); font-size: 0.85rem;">
+        Home > <span style="font-weight: 600; color: white;">Profile</span>
+    </div>
+
+    <div style="position: relative; margin-bottom: 1rem;">
+        <img src="https://ui-avatars.com/api/?name={{ (user.full_name or 'Visitor')|urlencode }}&background=fff&color=1a4f32&size=100" style="width: 100px; height: 100px; border-radius: 50%; border: 4px solid #1a4f32; outline: 4px solid rgba(255,255,255,0.2);">
+        <i class="fa-solid fa-camera" style="position: absolute; bottom: 0; right: 0; background: white; color: #1a4f32; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"></i>
+    </div>
+    
+    <h1 style="font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem 0;">{{ user.full_name or 'Visitor' }}</h1>
+    <div style="font-size: 0.95rem; opacity: 0.9; margin-bottom: 1rem;">{{ user.email }}</div>
+    
+    <div style="background: #0f291e; color: #4ade80; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: bold; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.4rem;">
+        <i class="fa-solid fa-circle-check"></i> Verified Account
+    </div>
+    
+    <div style="display: flex; gap: 2rem; font-size: 0.85rem; color: #cbd5e1; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap;">
+        <span style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-crown" style="color:#fca000;"></i> Zootique Member</span>
+        <span>·</span>
+        <span>Since {% if user.created_at %}{{ user.created_at.strftime('%B %Y') }}{% else %}—{% endif %}</span>
+    </div>
+    
+    <div style="display: flex; gap: 2rem; font-size: 0.85rem; font-weight: 600; flex-wrap: wrap; justify-content:center;">
+        <span style="color: #ef4444;"><i class="fa-solid fa-calendar-check"></i> {{ bookings_count or 0 }} Visits</span>
+        <span style="color: #fca000;"><i class="fa-solid fa-star"></i> {{ reviews_count or 0 }} Reviews</span>
+        <span style="color: #4ade80;"><i class="fa-solid fa-sack-dollar"></i> ₱{{ "{:,.2f}".format(total_spent or 0) }} Spent</span>
+        <span style="color: #fef08a;">👑 {{ points or 0 }} Points</span>
+    </div>
+</div>
+
+<div class="container" style="padding: 2rem 0 4rem 0;">
+    <!-- COMPLETION BAR -->
+    <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 0.9rem; color: #1e293b; margin-bottom: 0.8rem;">
+            <span>Complete Your Profile</span> <span>75% Complete</span>
+        </div>
+        <div style="height: 6px; background: #e2e8f0; border-radius: 3px; margin-bottom: 1rem; overflow: hidden;">
+            <div style="width: 75%; height: 100%; background: #1a4f32;"></div>
+        </div>
+        <div style="display: flex; gap: 2rem; font-size: 0.8rem; color: #64748b;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-phone" style="color:#ef4444;"></i> Add phone number to complete <a href="#" style="color:#0ea5e9; font-weight:bold; text-decoration:none;">Add Now</a></div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-cake-candles" style="color:#ef4444;"></i> Add date of birth for birthday deals <a href="#" style="color:#0ea5e9; font-weight:bold; text-decoration:none;">Add Now</a></div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 250px 1fr; gap: 2rem;">
+        
+        <!-- SIDEBAR -->
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <button style="background: #1a4f32; color: white; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem;"><i class="fa-solid fa-user"></i> Profile</button>
+            <a href="{{ url_for('visitor.my_bookings') }}" style="background: transparent; color: #475569; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;">
+                <i class="fa-solid fa-calendar-check"></i> My Bookings
+            </a>
+            <button style="background: transparent; color: #475569; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer;"><i class="fa-solid fa-lock"></i> Security</button>
+            <button style="background: transparent; color: #475569; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer;"><i class="fa-solid fa-bell"></i> Notifications</button>
+            <button style="background: transparent; color: #475569; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer;"><i class="fa-solid fa-trophy"></i> My Visits & Points</button>
+            <button style="background: transparent; color: #475569; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer;"><i class="fa-solid fa-credit-card"></i> Payment Methods</button>
+            <button style="background: transparent; color: #475569; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer;"><i class="fa-solid fa-link"></i> Linked Accounts</button>
+            <div style="border-top: 1px solid #e2e8f0; margin: 0.5rem 0;"></div>
+            <button style="background: rgba(239,68,68,0.1); color: #ef4444; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer;"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</button>
+        </div>
+
+        <!-- MAIN CONTENT BLOCK -->
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
+            
+            <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap;">
+                    <h3 style="margin: 0; font-size: 1.2rem; color: #1a4f32;">Personal Information</h3>
+                    {% if edit %}
+                    <a href="{{ url_for('visitor.profile') }}" class="btn" style="background: transparent; color: #475569; border: 1px solid #cbd5e1; padding: 0.5rem 1.2rem; border-radius: 6px; font-weight: bold; font-size: 0.85rem; text-decoration:none;"><i class="fa-solid fa-xmark"></i> Cancel</a>
+                    {% else %}
+                    <a href="{{ url_for('visitor.profile', edit=1) }}" class="btn" style="background: transparent; color: #1a4f32; border: 1px solid #1a4f32; padding: 0.5rem 1.2rem; border-radius: 6px; font-weight: bold; font-size: 0.85rem; text-decoration:none;"><i class="fa-solid fa-pen"></i> Edit Profile</a>
+                    {% endif %}
+                </div>
+
+                {% if edit %}
+                <form method="post" action="{{ url_for('visitor.profile') }}" style="display:grid; grid-template-columns: 1fr 1fr; gap: 1.2rem;">
+                    <div>
+                        <label style="display:block; font-size:0.75rem; color:#94a3b8; font-weight: 800; margin-bottom: 0.4rem;">Full Name</label>
+                        <input name="full_name" required value="{{ user.full_name or '' }}" style="width:100%; padding: 0.8rem 1rem; border: 1px solid #cbd5e1; border-radius: 10px; font-family: 'Inter', sans-serif;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.75rem; color:#94a3b8; font-weight: 800; margin-bottom: 0.4rem;">Email Address</label>
+                        <input name="email" type="email" value="{{ user.email }}" style="width:100%; padding: 0.8rem 1rem; border: 1px solid #cbd5e1; border-radius: 10px; font-family: 'Inter', sans-serif;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.75rem; color:#94a3b8; font-weight: 800; margin-bottom: 0.4rem;">Username (optional)</label>
+                        <input name="username" value="{{ user.username or '' }}" placeholder="e.g. mynickname" style="width:100%; padding: 0.8rem 1rem; border: 1px solid #cbd5e1; border-radius: 10px; font-family: 'Inter', sans-serif;">
+                    </div>
+                    <div style="display:flex; align-items:end; justify-content:flex-end;">
+                        <button class="btn" type="submit" style="background:#1a4f32; color:white; border:none; padding: 0.8rem 1.4rem; border-radius: 10px; font-weight: 900; width: fit-content;">
+                            <i class="fa-solid fa-check"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+                <div style="margin-top: 0.8rem; font-size: 0.8rem; color:#94a3b8;">Other profile fields (phone/DOB/etc.) are UI placeholders for now.</div>
+                {% else %}
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem 3rem;">
+                    <div>
+                        <div style="font-size: 0.75rem; color: #94a3b8; font-weight: bold; margin-bottom: 0.3rem;">Full Name</div>
+                        <div style="font-size: 1.05rem; font-weight: bold; color: #1e293b;">{{ user.full_name or '—' }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: #94a3b8; font-weight: bold; margin-bottom: 0.3rem;">Email Address</div>
+                        <div style="font-size: 1.05rem; font-weight: bold; color: #1e293b; display: flex; align-items: center; gap: 0.5rem;">{{ user.email }} <span style="background: #eef2ff; color:#3b82f6; font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 12px;"><i class="fa-solid fa-circle-check"></i> Verified</span></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: #94a3b8; font-weight: bold; margin-bottom: 0.3rem;">Username</div>
+                        <div style="font-size: 1.05rem; font-weight: bold; color: #1e293b;">{{ user.username or '—' }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: #94a3b8; font-weight: bold; margin-bottom: 0.3rem;">Phone Number</div>
+                        <div style="font-size: 1.05rem; font-weight: bold; color: #1e293b;">—</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- More profile blocks omitted for length but scaffolded -->
+
+        </div>
+    </div>
+</div>
+{% endblock %}

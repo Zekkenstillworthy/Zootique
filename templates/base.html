@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zootique | {% block title %}{% endblock %}</title>
+    <meta name="description" content="Zootique — Wildlife Park Management System">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    {% block extra_head %}{% endblock %}
+    <style>
+        .visitor-navbar {
+            background: white;
+            padding: 0 5%;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        @media (max-width: 768px) {
+            .visitor-navbar { padding: 0 1rem; }
+            .visitor-nav-links { display: none; } /* Missing mobile menu logic covered by default bootstrap nav if merged */
+        }
+
+        .visitor-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #1a4f32;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .visitor-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            height: 100%;
+        }
+
+        .visitor-nav-link {
+            text-decoration: none;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 0.95rem;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            position: relative;
+            transition: color 0.2s ease;
+        }
+
+        .visitor-nav-link:hover {
+            color: #1a4f32;
+        }
+
+        .visitor-nav-link.active {
+            color: #1a4f32;
+            font-weight: 700;
+        }
+
+        .visitor-nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: #16a34a;
+            border-radius: 3px 3px 0 0;
+        }
+
+        .visitor-nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .visitor-nav-icon {
+            color: #64748b;
+            font-size: 1.2rem;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.2s ease;
+        }
+
+        .visitor-nav-icon:hover {
+            color: #1a4f32;
+        }
+
+        .visitor-badge {
+            position: absolute;
+            top: -5px;
+            right: -6px;
+            background: #ef4444;
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 800;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .visitor-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .visitor-main {
+            min-height: calc(100vh - 70px);
+            background: #fdfdfc;
+        }
+    </style>
+</head>
+<body class="{% if request.blueprint == 'zootique_admin' %}superadmin{% endif %}">
+
+{% set is_admin = request.blueprint in ['zootique_admin', 'animal_farm_admin', 'animal_farm_staff'] %}
+
+{% if is_admin %}
+<!-- =================== ADMIN/STAFF APP LAYOUT =================== -->
+<div class="app-container">
+
+    <!-- =================== SIDEBAR =================== -->
+    <aside class="sidebar">
+
+        {% if request.blueprint == 'zootique_admin' %}
+        <!-- Super Admin Brand -->
+        <div class="sa-brand">
+            <div class="sa-brand-row">
+                <div class="sa-logo">Zootique</div>
+                <span class="sa-badge">Super Admin</span>
+            </div>
+            <div class="sa-version">v4.2.0</div>
+        </div>
+        {% else %}
+        <!-- Top Nature Photo -->
+        <img src="{{ url_for('static', filename='img/sidebar_jungle.png') }}"
+             alt="Jungle"
+             class="sidebar-photo-top" onerror="this.src='https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=300&q=80';">
+
+        <!-- Brand -->
+        <div class="sidebar-brand">
+            <span class="brand-icon">🐾</span>
+            <span class="brand-name">Zootique</span>
+        </div>
+        {% endif %}
+
+        <!-- Navigation -->
+        <nav class="sidebar-nav">
+            {% if request.blueprint == 'animal_farm_admin' %}
+            <!-- Animal Farm Admin Navigation -->
+            <a href="{{ url_for('animal_farm_admin.subscriptions') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_admin.subscriptions' %}active{% endif %}">
+                <i class="fa-solid fa-id-card"></i> Subscription
+            </a>
+            <a href="{{ url_for('animal_farm_admin.dashboard') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_admin.dashboard' %}active{% endif %}">
+                <i class="fa-solid fa-table-cells-large"></i> Dashboard
+            </a>
+            <a href="{{ url_for('animal_farm_admin.booking_management') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_admin.booking_management' %}active{% endif %}">
+                <i class="fa-solid fa-calendar-check"></i> Bookings
+            </a>
+            <a href="{{ url_for('animal_farm_admin.services_management') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_admin.services_management' %}active{% endif %}">
+                <i class="fa-solid fa-list-check"></i> Services
+            </a>
+            <a href="{{ url_for('animal_farm_admin.animals_management') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_admin.animals_management' %}active{% endif %}">
+                <i class="fa-solid fa-paw"></i> Animals
+            </a>
+            <a href="{{ url_for('animal_farm_admin.events_management') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_admin.events_management' %}active{% endif %}">
+                <i class="fa-solid fa-calendar-days"></i> Events
+            </a>
+            <a href="{{ url_for('animal_farm_admin.promotions_management') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_admin.promotions_management' %}active{% endif %}">
+                <i class="fa-solid fa-tags"></i> Promotions
+            </a>
+            <a href="{{ url_for('animal_farm_admin.visitor_feedback_management') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_admin.visitor_feedback_management' %}active{% endif %}">
+                <i class="fa-solid fa-comments"></i> Visitor Feedback
+            </a>
+            <a href="{{ url_for('animal_farm_admin.visitor_map_zone_management') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_admin.visitor_map_zone_management' %}active{% endif %}">
+                <i class="fa-solid fa-map-location-dot"></i> Map & Zones
+            </a>
+             <a href="{{ url_for('animal_farm_admin.payment_revenue_management') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_admin.payment_revenue_management' %}active{% endif %}">
+                <i class="fa-solid fa-money-bills"></i> Revenue
+            </a>
+             <a href="{{ url_for('animal_farm_admin.analytics_reports') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_admin.analytics_reports' %}active{% endif %}">
+                <i class="fa-solid fa-chart-line"></i> Analytics & Reports
+            </a>
+                         <a href="{{ url_for('animal_farm_admin.system_feedback') }}"
+                             class="nav-item {% if request.endpoint == 'animal_farm_admin.system_feedback' %}active{% endif %}">
+                                <i class="fa-solid fa-headset"></i> Support / Feedback
+                        </a>
+            <a href="{{ url_for('animal_farm_admin.staff_management') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_admin.staff_management' %}active{% endif %}">
+                <i class="fa-solid fa-user-check"></i> Staff Management
+            </a>
+            <a href="{{ url_for('animal_farm_admin.establishment_profile') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_admin.establishment_profile' %}active{% endif %}">
+                <i class="fa-solid fa-building"></i> Establishment Profile
+            </a>
+            <a href="{{ url_for('animal_farm_admin.settings') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_admin.settings' %}active{% endif %}">
+                <i class="fa-solid fa-gear"></i> Settings
+            </a>
+            <a href="{{ url_for('auth.logout') }}" class="nav-item">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </a>
+            {% elif request.blueprint == 'animal_farm_staff' %}
+            <!-- Animal Farm Staff Navigation -->
+            <a href="{{ url_for('animal_farm_staff.dashboard') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_staff.dashboard' %}active{% endif %}">
+                <i class="fa-solid fa-table-cells-large"></i> Dashboard Home
+            </a>
+            <a href="{{ url_for('animal_farm_staff.my_bookings') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_staff.my_bookings' %}active{% endif %}">
+                <i class="fa-solid fa-calendar-check"></i> My Assigned Bookings
+            </a>
+            <a href="{{ url_for('animal_farm_staff.events_management') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_staff.events_management' %}active{% endif %}">
+                <i class="fa-solid fa-calendar-days"></i> Events Management
+            </a>
+            <a href="{{ url_for('animal_farm_staff.map_zones') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_staff.map_zones' %}active{% endif %}">
+                <i class="fa-solid fa-map-location-dot"></i> Map & Zones
+            </a>
+            <a href="{{ url_for('animal_farm_staff.visitor_feedback') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_staff.visitor_feedback' %}active{% endif %}">
+                <i class="fa-solid fa-comments"></i> Visitor Feedback
+            </a>
+            <a href="{{ url_for('animal_farm_staff.daily_tasks') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_staff.daily_tasks' %}active{% endif %}">
+                <i class="fa-solid fa-list-check"></i> My Task Board
+            </a>
+            <a href="{{ url_for('animal_farm_staff.report_incident') }}"
+               class="nav-item {% if request.endpoint in ['animal_farm_staff.report_incident', 'animal_farm_staff.daily_operations_log'] %}active{% endif %}">
+                <i class="fa-solid fa-clipboard-list"></i> Daily Operations Log
+            </a>
+            <a href="{{ url_for('animal_farm_staff.notifications') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_staff.notifications' %}active{% endif %}">
+                <i class="fa-solid fa-bell"></i> Staff Notifications
+            </a>
+            <a href="{{ url_for('animal_farm_staff.profile') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_staff.profile' %}active{% endif %}">
+                <i class="fa-solid fa-user-gear"></i> Staff Profile & Account
+            </a>
+            <a href="{{ url_for('animal_farm_staff.logout_confirm') }}"
+               class="nav-item {% if request.endpoint == 'animal_farm_staff.logout_confirm' %}active{% endif %}">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout Confirmation
+            </a>
+            {% else %}
+            <!-- Zootique Admin Navigation -->
+            <a href="{{ url_for('zootique_admin.dashboard') }}"
+               class="nav-item {% if request.endpoint == 'zootique_admin.dashboard' %}active{% endif %}">
+                <i class="fa-solid fa-table-cells-large"></i> Dashboard
+            </a>
+            <a href="{{ url_for('zootique_admin.manage_subscriptions') }}"
+               class="nav-item {% if request.endpoint == 'zootique_admin.manage_subscriptions' %}active{% endif %}">
+                <i class="fa-solid fa-id-card"></i> Subscription Management
+            </a>
+            <a href="{{ url_for('zootique_admin.view_feedback') }}"
+               class="nav-item {% if request.endpoint == 'zootique_admin.view_feedback' %}active{% endif %}">
+                <i class="fa-solid fa-comments"></i> Zoo Feedback
+            </a>
+            <a href="{{ url_for('zootique_admin.view_reports') }}"
+               class="nav-item {% if request.endpoint == 'zootique_admin.view_reports' %}active{% endif %}">
+                <i class="fa-solid fa-chart-column"></i> Reports &amp; Analytics
+            </a>
+            <a href="{{ url_for('zootique_admin.user_management') }}"
+               class="nav-item {% if request.endpoint == 'zootique_admin.user_management' %}active{% endif %}">
+                <i class="fa-solid fa-users"></i> User Management
+            </a>
+            <a href="{{ url_for('zootique_admin.settings') }}"
+               class="nav-item {% if request.endpoint == 'zootique_admin.settings' %}active{% endif %}">
+                <i class="fa-solid fa-gear"></i> Settings
+            </a>
+            {% endif %}
+        </nav>
+
+        {% if request.blueprint == 'zootique_admin' %}
+        <div class="sa-usercard">
+            <div class="sa-usercard-row">
+                <div class="sa-user-avatar">MT</div>
+                <div class="sa-user-meta">
+                    <div class="sa-user-name">Marcus Thorne</div>
+                    <div class="sa-user-role">Super Administrator</div>
+                </div>
+            </div>
+            <div class="sa-user-actions">
+                <a class="sa-link" href="{{ url_for('zootique_admin.settings') }}">Admin Profile</a>
+                <span class="sa-dot">•</span>
+                <a class="sa-link sa-danger" href="{{ url_for('auth.logout') }}">Sign Out</a>
+            </div>
+        </div>
+        {% else %}
+        <!-- Bottom Nature Photo -->
+        <img src="{{ url_for('static', filename='img/sidebar_sunset.png') }}"
+             alt="Savanna"
+             class="sidebar-photo-bottom" onerror="this.src='https://images.unsplash.com/photo-1502476532454-94c39c8fd9ad?w=300&q=80';">
+        {% endif %}
+
+    </aside>
+
+    <!-- =================== MAIN =================== -->
+    <main class="main-content">
+
+        <!-- Top Header Bar -->
+        <header class="top-header">
+            <span class="page-heading">{% block page_title %}{% endblock %}</span>
+            <div class="header-actions">
+                {% if request.blueprint == 'zootique_admin' %}
+                    <button class="icon-btn" title="Notifications" aria-label="Notifications"><i class="fa-solid fa-bell"></i></button>
+                    <div class="avatar" title="Marcus Thorne">MT</div>
+                {% else %}
+                    <button class="icon-btn" title="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    <button class="icon-btn" title="Notifications"><i class="fa-solid fa-bell"></i></button>
+                    {% if session.get('user_id') %}
+                    <div style="display:flex; align-items:center; gap:12px; margin-left:16px;">
+                        <div class="avatar" title="{{ session.get('full_name', 'User') }}">{{ session.get('full_name', 'U')[0]|upper }}</div>
+                        <a href="{{ url_for('auth.logout') }}" style="color:#ef4444; text-decoration:none; font-size:14px; font-weight:600;"><i class="fa-solid fa-right-from-bracket"></i> Sign out</a>
+                    </div>
+                    {% else %}
+                    <div class="avatar" title="Guest">G</div>
+                    <a href="{{ url_for('auth.portal') }}" style="color:#10b981; text-decoration:none; font-size:14px; font-weight:600; margin-left:12px;"><i class="fa-solid fa-right-to-bracket"></i> Sign in</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="content-body animate">
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div style="margin: 0 0 14px 0; display:flex; flex-direction:column; gap:8px;">
+                {% for category, message in messages %}
+                {% if category == 'success' %}
+                <div class="card-panel" style="margin:0; padding:12px 14px; border-left:4px solid var(--success);">
+                {% else %}
+                <div class="card-panel" style="margin:0; padding:12px 14px; border-left:4px solid #ef4444;">
+                {% endif %}
+                    <div style="font-size:13px; font-weight:600;">{{ message }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+{% else %}
+<!-- =================== VISITOR TOP NAVBAR LAYOUT =================== -->
+<header style="background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000;">
+    <div class="container visitor-navbar" style="padding: 0 2rem; box-shadow: none; position: static;">
+        <a href="{{ url_for('visitor.home') }}" class="visitor-logo">
+            <i class="fa-solid fa-paw"></i> Zootique
+        </a>
+
+        <nav class="visitor-nav-links">
+            <a href="{{ url_for('visitor.home') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.home' %}active{% endif %}">Home</a>
+            <a href="{{ url_for('visitor.my_bookings') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.my_bookings' %}active{% endif %}">Bookings</a>
+            <a href="{{ url_for('visitor.services') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.services' %}active{% endif %}">Services</a>
+            <a href="{{ url_for('visitor.animals') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.animals' %}active{% endif %}">Animals</a>
+            <a href="{{ url_for('visitor.events') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.events' %}active{% endif %}">Events</a>
+            <a href="{{ url_for('visitor.promotions') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.promotions' %}active{% endif %}">Promotions</a>
+            <a href="{{ url_for('visitor.feedback') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.feedback' %}active{% endif %}">Feedback</a>
+            <a href="{{ url_for('visitor.park_info') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.park_info' %}active{% endif %}">Park Info</a>
+        </nav>
+
+        <div class="visitor-nav-actions">
+            <div class="visitor-nav-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+            <div class="visitor-nav-icon">
+                <i class="fa-solid fa-bell"></i>
+                <span class="visitor-badge">3</span>
+            </div>
+            {% if session.get('user_id') and session.get('role') == 'visitor' %}
+                <a href="{{ url_for('visitor.profile') }}" title="Profile">
+                    <img src="https://ui-avatars.com/api/?name={{ session.get('full_name', 'Visitor') }}&background=e2e8f0&color=1a4f32" alt="Avatar" class="visitor-avatar">
+                </a>
+                <a href="{{ url_for('auth.logout') }}" class="visitor-nav-link" style="height:auto; color:#ef4444; font-weight:800;">
+                    <i class="fa-solid fa-right-from-bracket" style="margin-right: 8px;"></i> Logout
+                </a>
+            {% else %}
+                <a href="{{ url_for('auth.login', module_name='visitor') }}" class="visitor-nav-link" style="height:auto; color:#1a4f32; font-weight:800;">
+                    <i class="fa-solid fa-right-to-bracket" style="margin-right: 8px;"></i> Sign in
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</header>
+
+<main class="visitor-main animate">
+{% endif %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="container" style="padding: 14px 2rem 0 2rem; display:flex; flex-direction:column; gap:8px;">
+        {% for category, message in messages %}
+        {% if category == 'success' %}
+        <div style="background: white; border: 1px solid #e2e8f0; border-left: 4px solid #16a34a; border-radius: 10px; padding: 12px 14px; color: #1e293b; font-weight: 600; font-size: 0.9rem;">
+        {% else %}
+        <div style="background: white; border: 1px solid #e2e8f0; border-left: 4px solid #ef4444; border-radius: 10px; padding: 12px 14px; color: #1e293b; font-weight: 600; font-size: 0.9rem;">
+        {% endif %}
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+
+    {% if is_admin and request.blueprint == 'zootique_admin' %}
+    <footer class="sa-footer">
+        ZOOTIQUE ENTERPRISE OPERATIONS © 2024 • VERSION 4.2.0-EDITORIAL
+    </footer>
+    {% endif %}
+
+{% if is_admin %}
+        </div>
+    </main>
+</div>
+{% else %}
+</main>
+{% endif %}
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

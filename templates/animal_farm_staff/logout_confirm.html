@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Logout | Staff{% endblock %}
+{% block page_title %}Logout Confirmation{% endblock %}
+
+{% block content %}
+<div style="min-height:60vh; display:flex; align-items:center; justify-content:center; padding:3rem 1rem;">
+    <div style="background:white; border-radius:16px; box-shadow:0 20px 40px rgba(0,0,0,0.12);
+                width:100%; max-width:460px; overflow:hidden;">
+
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg, #0f291e, #1e3a2b); padding:2.5rem; text-align:center; color:white;">
+            <div style="width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.15);
+                        display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+                <i class="fa-solid fa-right-from-bracket" style="font-size:1.8rem;"></i>
+            </div>
+            <h2 style="margin:0 0 0.4rem; font-size:1.4rem;">Sign Out</h2>
+            <p style="margin:0; opacity:0.8; font-size:0.9rem;">Animal Farm Staff Module</p>
+        </div>
+
+        <!-- Body -->
+        <div style="padding:2.5rem; text-align:center;">
+            <p style="color:#475569; font-size:1rem; line-height:1.7; margin-bottom:2rem;">
+                You're signed in as <strong>{{ user.full_name if user else 'Staff Member' }}</strong>.
+                <br>Are you sure you want to log out?
+            </p>
+
+            <div style="display:flex; gap:1rem; justify-content:center;">
+                <a href="{{ url_for('animal_farm_staff.dashboard') }}"
+                   style="padding:0.8rem 1.8rem; border:1px solid #e2e8f0; border-radius:8px;
+                          color:#475569; text-decoration:none; font-weight:600; font-size:0.95rem;">
+                    <i class="fa-solid fa-arrow-left" style="margin-right:0.4rem;"></i>Stay Logged In
+                </a>
+                <form method="POST" action="{{ url_for('animal_farm_staff.logout_confirm_post') }}" style="margin:0;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit"
+                            style="padding:0.8rem 1.8rem; background:#dc2626; color:white; border:none;
+                                   border-radius:8px; font-weight:700; font-size:0.95rem; cursor:pointer;">
+                        <i class="fa-solid fa-right-from-bracket" style="margin-right:0.4rem;"></i>Yes, Log Out
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Events | Staff{% endblock %}
+{% block page_title %}Events Management{% endblock %}
+
+{% block content %}
+<div style="display:grid; gap:2rem;">
+
+    <div class="card-panel">
+        <div class="card-header-bar">
+            <h2>Add Event — {{ zoo.name }}</h2>
+        </div>
+        <form method="post" action="{{ url_for('animal_farm_staff.events_management') }}" style="padding:1rem 1.5rem; display:grid; grid-template-columns:2fr 1fr 1fr 1fr auto; gap:0.75rem; align-items:end;">
+            <div>
+                <label style="display:block; font-size:0.75rem; color:var(--text-muted); font-weight:700; margin-bottom:0.25rem;">Event Name</label>
+                <input type="text" name="name" required placeholder="Feeding Show">
+            </div>
+            <div>
+                <label style="display:block; font-size:0.75rem; color:var(--text-muted); font-weight:700; margin-bottom:0.25rem;">Type</label>
+                <input type="text" name="type" placeholder="Show">
+            </div>
+            <div>
+                <label style="display:block; font-size:0.75rem; color:var(--text-muted); font-weight:700; margin-bottom:0.25rem;">Time</label>
+                <input type="text" name="time" placeholder="10:00 AM">
+            </div>
+            <div>
+                <label style="display:block; font-size:0.75rem; color:var(--text-muted); font-weight:700; margin-bottom:0.25rem;">Location</label>
+                <input type="text" name="location" placeholder="Main Stage">
+            </div>
+            <button class="btn btn-primary" type="submit">Add</button>
+        </form>
+    </div>
+
+    <div class="card-panel">
+        <div class="card-header-bar">
+            <h2>Scheduled Events — {{ zoo.name }}</h2>
+        </div>
+        <div class="table-container" style="box-shadow:none; margin-bottom:0; border-radius:0 0 var(--border-radius) var(--border-radius);">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Event ID</th><th>Name</th><th>Type</th><th>Time</th><th>Location</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ev in events %}
+                    <tr>
+                        <td style="color:var(--text-muted); font-size:0.8rem;">#EV-{{ ev.id }}</td>
+                        <td>
+                            <form method="post" action="{{ url_for('animal_farm_staff.events_management') }}" style="display:flex; gap:8px; align-items:center;">
+                                <input type="hidden" name="event_id" value="{{ ev.id }}">
+                                <input type="text" name="name" value="{{ ev.name }}" required style="min-width:180px;">
+                        </td>
+                        <td><input type="text" name="type" value="{{ ev.type or '' }}" style="min-width:110px;"></td>
+                        <td><input type="text" name="time" value="{{ ev.time or '' }}" style="min-width:110px;"></td>
+                        <td><input type="text" name="location" value="{{ ev.location or '' }}" style="min-width:130px;"></td>
+                        <td>
+                                <button class="btn btn-outline btn-sm" type="submit">Save</button>
+                            </form>
+                            <form method="post" action="{{ url_for('animal_farm_staff.delete_event', event_id=ev.id) }}" style="margin-top:6px;">
+                                <button class="btn btn-sm" type="submit" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca;">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:3rem;">
+                        No events scheduled.
+                    </td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

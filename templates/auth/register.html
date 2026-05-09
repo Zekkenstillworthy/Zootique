@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Register for Zootique{% endblock %}
+
+{% block content %}
+<div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1e3a2b 0%, #0f291e 100%); padding: 3rem 0;">
+    
+    <div style="background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); width: 100%; max-width: 500px; overflow: hidden; display: flex; flex-direction: column;">
+        
+        <div style="background: #1a4f32; padding: 2rem; text-align: center; color: white;">
+            <a href="/" style="color: white; text-decoration: none; font-size: 2rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <i class="fa-solid fa-paw" style="color: #fca000;"></i> Zootique
+            </a>
+            <div style="font-size: 0.95rem; opacity: 0.8;">Create your account</div>
+        </div>
+
+        <div style="padding: 2.5rem;">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div style="background: {% if category == 'success' %}#dcfce7{% else %}#fee2e2{% endif %}; color: {% if category == 'success' %}#16a34a{% else %}#ef4444{% endif %}; padding: 0.8rem; border-radius: 6px; font-size: 0.85rem; font-weight: bold; margin-bottom: 1.5rem; text-align: center;">
+                    {{ message }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('auth.register') }}" method="POST" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; font-weight: bold; color: #475569; margin-bottom: 0.5rem;">Full Name</label>
+                        <input type="text" name="full_name" required placeholder="John Doe" style="width: 100%; padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.95rem;">
+                    </div>
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: bold; color: #475569; margin-bottom: 0.5rem;">Email Address</label>
+                    <input type="email" name="email" required placeholder="john@example.com" style="width: 100%; padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.95rem;">
+                </div>
+                
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: bold; color: #475569; margin-bottom: 0.5rem;">Password</label>
+                    <input type="password" name="password" required placeholder="Min 8 characters" style="width: 100%; padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.95rem;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: bold; color: #475569; margin-bottom: 0.5rem;">Account Type</label>
+                    <select name="role" required style="width: 100%; padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.95rem; background: white;">
+                        <option value="visitor">Visitor User (Bookings & Exploring)</option>
+                        <option value="zoo_admin">Animal Farm Admin Module</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn" style="background: #1a4f32; color: white; border: none; padding: 1rem; border-radius: 8px; font-weight: 800; font-size: 1rem; cursor: pointer; margin-top: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><i class="fa-solid fa-user-plus"></i> Create Account</button>
+            </form>
+            
+            <div style="text-align: center; margin-top: 2rem; font-size: 0.85rem; color: #64748b;">
+                Already have an account? <a href="{{ url_for('auth.login') }}" style="color: #fca000; font-weight: bold; text-decoration: none;">Sign in instead</a>
+            </div>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}

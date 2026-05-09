@@ -1,0 +1,119 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Promotions Management | Animal Farm Admin{% endblock %}
+{% block page_title %}Promotions Management{% endblock %}
+
+{% block content %}
+<div class="card-panel">
+    <div class="card-header">
+        <h2>Philippine Promotions</h2>
+        <div class="card-header-actions">
+            <a class="btn btn-outline btn-sm" href="{{ url_for('animal_farm_admin.promotions_management') }}">Reset</a>
+        </div>
+    </div>
+
+    <form class="filter-bar" method="get" action="{{ url_for('animal_farm_admin.promotions_management') }}">
+        <select name="promo_type">
+            <option value="" {% if not selected_promo_type %}selected{% endif %}>All types</option>
+            {% for t in promo_types %}
+                <option value="{{ t }}" {% if selected_promo_type==t %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-filter"></i> Filter</button>
+    </form>
+
+    <div class="card-body">
+        <div class="two-col" style="grid-template-columns: 1fr 1fr;">
+            <div class="card-panel" style="margin:0;">
+                <div class="card-header">
+                    <h2>Add / Edit Promotion</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('animal_farm_admin.save_promotion') }}" style="display:flex; flex-direction:column; gap:10px;">
+                        <input type="hidden" name="promo_id" value="">
+
+                        <label style="font-weight:600; color:var(--text-secondary);">Name</label>
+                        <input type="text" name="name" placeholder="e.g., Family Weekend Deal" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                        <label style="font-weight:600; color:var(--text-secondary);">Type</label>
+                        <select name="promo_type" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;">
+                            {% for t in promo_types %}
+                                <option value="{{ t }}">{{ t }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <label style="font-weight:600; color:var(--text-secondary);">Code</label>
+                        <input type="text" name="code" placeholder="e.g., FAMILY10" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; text-transform: uppercase;" />
+
+                        <label style="font-weight:600; color:var(--text-secondary);">Discount (optional)</label>
+                        <input type="text" name="discount" placeholder="e.g., 10%" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                        <label style="font-weight:600; color:var(--text-secondary);">Valid Until (optional)</label>
+                        <input type="text" name="valid_until" placeholder="YYYY-MM-DD" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Promotion</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card-panel" style="margin:0;">
+                <div class="card-header">
+                    <h2>Promotion List</h2>
+                </div>
+                <div class="card-body">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Code</th>
+                                    <th>Discount</th>
+                                    <th>Valid Until</th>
+                                    <th style="width:160px;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in promotions %}
+                                    <tr>
+                                        <td>{{ p.name }}</td>
+                                        <td>{{ p.promo_type or '-' }}</td>
+                                        <td><strong>{{ p.code }}</strong></td>
+                                        <td>{{ p.discount or '-' }}</td>
+                                        <td>{{ p.valid_until or '-' }}</td>
+                                        <td>
+                                            <button class="btn btn-outline btn-sm" type="button"
+                                                            onclick="fillPromoForm({{ p.id }}, {{ p.name|tojson }}, {{ (p.promo_type or '')|tojson }}, {{ p.code|tojson }}, {{ (p.discount or '')|tojson }}, {{ (p.valid_until or '')|tojson }})">
+                                                <i class="fa-solid fa-pen"></i> Edit
+                                            </button>
+                                            <form method="post" action="{{ url_for('animal_farm_admin.delete_promotion', promo_id=p.id) }}" style="display:inline;" onsubmit="return confirm('Delete this promotion?');">
+                                                <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr><td colspan="6" style="color: var(--text-muted);">No promotions yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function fillPromoForm(id, name, promoType, code, discount, validUntil) {
+        const form = document.querySelector('form[action$="/promotions/save"]');
+        if (!form) return;
+        form.querySelector('input[name="promo_id"]').value = id;
+        form.querySelector('input[name="name"]').value = name || '';
+        form.querySelector('select[name="promo_type"]').value = promoType || '';
+        form.querySelector('input[name="code"]').value = code || '';
+        form.querySelector('input[name="discount"]').value = discount || '';
+        form.querySelector('input[name="valid_until"]').value = validUntil || '';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+</script>
+{% endblock %}

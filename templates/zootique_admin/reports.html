@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & Analytics{% endblock %}
+{% block page_title %}Reports{% endblock %}
+
+{% block content %}
+{% set total_subs = (subs_report.active or 0) + (subs_report.expired or 0) %}
+{% set health_pct = (((subs_report.active or 0) / total_subs) * 100) if total_subs else 0 %}
+{% set max_income = (financial_report.month_income | map(attribute='total') | list | max) if financial_report.month_income else 0 %}
+{% set month_names = {
+  '01': 'JAN', '02': 'FEB', '03': 'MAR', '04': 'APR', '05': 'MAY', '06': 'JUN',
+  '07': 'JUL', '08': 'AUG', '09': 'SEP', '10': 'OCT', '11': 'NOV', '12': 'DEC'
+} %}
+
+<div class="page-subheader" style="margin-bottom:16px;">
+  <div class="ps-left">
+    <h2>REPORTS</h2>
+    <p>Live subscription, performance, and revenue analytics.</p>
+  </div>
+</div>
+
+<div class="stats-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:16px;">
+  <div class="stat-card">
+    <div class="stat-icon-box green"><i class="fa-solid fa-peso-sign"></i></div>
+    <div class="stat-value">₱{{ "{:,.2f}".format(financial_report.yearly_income or 0) }}</div>
+    <div class="stat-label">FISCAL YEAR REVENUE</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon-box blue"><i class="fa-solid fa-tree"></i></div>
+    <div class="stat-value">{{ "{:,}".format(subs_report.active or 0) }}</div>
+    <div class="stat-label">ACTIVE PARTNER PRESERVES</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon-box orange" style="background:rgba(22,163,74,0.10); color:var(--primary);"><i class="fa-solid fa-heart-pulse"></i></div>
+    <div class="stat-value">{{ "{:.1f}".format(health_pct) }}%</div>
+    <div class="stat-label">SUBSCRIPTION HEALTH</div>
+  </div>
+</div>
+
+<div class="sa-tabs" style="margin-bottom:16px;">
+  <button class="sa-tab is-active" type="button" data-sa-tab="subscription">Subscription Reports</button>
+  <button class="sa-tab" type="button" data-sa-tab="performance">Zoo Performance</button>
+  <button class="sa-tab" type="button" data-sa-tab="financial">Financial Reports</button>
+</div>
+
+<div data-sa-panel="subscription">
+  <div class="two-col" style="grid-template-columns: 1fr 1fr;">
+    <div class="card-panel">
+      <div class="card-header"><h2>LICENSE STATUS DISTRIBUTION</h2></div>
+      <div class="card-body" style="padding-top:0; display:flex; align-items:center; gap:18px;">
+        <div class="sa-donut" data-sa-donut="license" style="width:180px; height:180px;"></div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:10px;">
+          <div style="font-weight:900;">Subscription Overview</div>
+          <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
+            <div style="display:flex; justify-content:space-between; gap:12px;"><span>Total Subscriptions</span><strong>{{ "{:,}".format(total_subs) }}</strong></div>
+            <div style="display:flex; justify-content:space-between; gap:12px;"><span>Active</span><strong>{{ "{:,}".format(subs_report.active or 0) }}</strong></div>
+            <div style="display:flex; justify-content:space-between; gap:12px;"><span>Expired</span><strong>{{ "{:,}".format(subs_report.expired or 0) }}</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-panel">
+      <div class="card-header"><h2>PLAN ADOPTION BY TIER</h2></div>
+      <div class="card-body" style="padding-top:0;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>TIER</th>
+                <th style="text-align:right;">PARKS</th>
+                <th style="text-align:right;">SHARE</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in subs_report.plan_distribution %}
+                {% set share = ((row.count / total_subs) * 100) if total_subs else 0 %}
+                <tr>
+                  <td class="fw-600">{{ row.plan|upper }}</td>
+                  <td style="text-align:right; font-weight:900; color:var(--primary);">{{ "{:,}".format(row.count) }}</td>
+                  <td style="text-align:right; font-weight:900;">{{ "{:.1f}".format(share) }}%</td>
+                </tr>
+              {% else %}
+                <tr><td colspan="3" style="color:var(--text-muted);">No plan adoption data available.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div data-sa-panel="performance" style="display:none;">
+  <div class="two-col" style="grid-template-columns:1fr 1fr;">
+    <div class="card-panel">
+      <div class="card-header"><h2>MOST ACTIVE ZOOS</h2></div>
+      <div class="card-body" style="padding-top:0;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ZOO</th>
+                <th style="text-align:right;">BOOKINGS</th>
+                <th style="text-align:right;">VISITORS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in perf_report.most_active %}
+                <tr>
+                  <td class="fw-600">{{ row.zoo }}</td>
+                  <td style="text-align:right;">{{ "{:,}".format(row.bookings) }}</td>
+                  <td style="text-align:right; font-weight:900; color:var(--primary);">{{ "{:,}".format(row.visitors) }}</td>
+                </tr>
+              {% else %}
+                <tr><td colspan="3" style="color:var(--text-muted);">No activity data available.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-panel">
+      <div class="card-header"><h2>LEAST ACTIVE ZOOS</h2></div>
+      <div class="card-body" style="padding-top:0;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ZOO</th>
+                <th style="text-align:right;">BOOKINGS</th>
+                <th style="text-align:right;">VISITORS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in perf_report.least_active %}
+                <tr>
+                  <td class="fw-600">{{ row.zoo }}</td>
+                  <td style="text-align:right;">{{ "{:,}".format(row.bookings) }}</td>
+                  <td style="text-align:right; font-weight:900; color:var(--primary);">{{ "{:,}".format(row.visitors) }}</td>
+                </tr>
+              {% else %}
+                <tr><td colspan="3" style="color:var(--text-muted);">No activity data available.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div data-sa-panel="financial" style="display:none;">
+  <div class="two-col" style="grid-template-columns: 1.3fr 0.7fr;">
+    <div class="card-panel">
+      <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+        <h2>FISCAL YEAR REVENUE</h2>
+        <div style="font-size:12px; color:var(--text-muted); font-weight:800;">Past 12 Months</div>
+      </div>
+      <div class="card-body" style="padding-top:0;">
+        <div class="bar-chart-wrap">
+          <div class="bar-chart-title">Revenue (₱)</div>
+          {% if financial_report.month_income %}
+            <div class="bar-chart">
+              {% for row in financial_report.month_income %}
+                {% set month_key = row.month.split('-')[1] if '-' in row.month else row.month %}
+                {% set pct = ((row.total / max_income) * 100) if max_income else 0 %}
+                <div class="bar-item" title="{{ row.month }}: ₱{{ "{:,.2f}".format(row.total) }}">
+                  <div class="bar" style="height:{{ pct|int }}%"></div>
+                  <div class="bar-label">{{ month_names.get(month_key, row.month) }}</div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p style="color:var(--text-muted); margin-top:8px;">No monthly income data available yet.</p>
+          {% endif %}
+        </div>
+
+        <div style="margin-top:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+            <div style="font-weight:900;">Year {{ financial_report.year }} Total</div>
+            <div style="font-weight:900; color:var(--text-muted);">₱{{ "{:,.2f}".format(financial_report.yearly_income or 0) }}</div>
+          </div>
+          <div class="sa-progress" style="margin-top:8px;">
+            <div class="sa-progress-bar" style="width:100%;"></div>
+          </div>
+          <div style="margin-top:8px; font-size:12px; color:var(--text-muted); font-weight:700;">Rolling 12-month income trend</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-panel">
+      <div class="card-header"><h2>Recent Payments</h2></div>
+      <div class="card-body" style="padding-top:0;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>DATE</th>
+                <th>ZOO</th>
+                <th style="text-align:right;">AMOUNT</th>
+                <th style="text-align:right;">STATUS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for payment in financial_report.payments[:8] %}
+                {% set status = (payment.status or '').lower() %}
+                <tr>
+                  <td>{{ payment.paid_at }}</td>
+                  <td class="fw-600">{{ payment.zoo_name }}</td>
+                  <td style="text-align:right; font-weight:900;">₱{{ "{:,.2f}".format(payment.amount) }}</td>
+                  <td style="text-align:right;">
+                    {% if status == 'paid' %}
+                      <span class="badge badge-confirmed">{{ payment.status|upper }}</span>
+                    {% elif status == 'failed' %}
+                      <span class="badge" style="background:var(--danger-bg); color:var(--danger);">{{ payment.status|upper }}</span>
+                    {% elif status == 'refunded' %}
+                      <span class="badge" style="background:var(--warning-bg); color:var(--warning);">{{ payment.status|upper }}</span>
+                    {% else %}
+                      <span class="badge">{{ payment.status|upper }}</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% else %}
+                <tr><td colspan="4" style="color:var(--text-muted);">No payment records available.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.ZootiqueSuperAdmin = window.ZootiqueSuperAdmin || {};
+  window.ZootiqueSuperAdmin.licenseSegments = {{ subs_report.plan_distribution|tojson }};
+</script>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Animal Farm Admin{% endblock %}
+{% block page_title %}Animal Farm Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="hero-box">
+    <div class="hero-text">
+        <h2>Welcome{% if zoo %}, {{ zoo.name }}{% endif %}</h2>
+        <p>Manage bookings, services, animals, promotions, and staff tasks.</p>
+    </div>
+    <div class="hero-image" style="background: linear-gradient(rgba(26, 79, 50, 0.8), rgba(26, 79, 50, 0.6)), url('https://images.unsplash.com/photo-1516253593875-bd7ba052fbc5?auto=format&fit=crop&w=800&q=80'); background-size: cover; background-position: center;"></div>
+</div>
+
+{% if not zoo %}
+    <div class="card-panel" style="margin-top: 18px;">
+        <div class="card-header">
+            <h2>Account Setup Needed</h2>
+        </div>
+        <div class="card-body">
+            <p style="color: var(--text-muted);">Your admin account is not linked to a zoo yet.</p>
+        </div>
+    </div>
+{% else %}
+
+    <div class="stats-grid" style="grid-template-columns: repeat(5, 1fr); margin-top: 18px;">
+        <div class="stat-card">
+            <div class="stat-icon-box green"><i class="fa-solid fa-paw"></i></div>
+            <div class="stat-value">{{ animals_count }}</div>
+            <div class="stat-label">Animals</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon-box blue"><i class="fa-solid fa-list-check"></i></div>
+            <div class="stat-value">{{ services_count }}</div>
+            <div class="stat-label">Services</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon-box purple"><i class="fa-solid fa-calendar-check"></i></div>
+            <div class="stat-value">{{ bookings_count }}</div>
+            <div class="stat-label">Bookings</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon-box yellow"><i class="fa-solid fa-peso-sign"></i></div>
+            <div class="stat-value">₱{{ '%.2f'|format(monthly_revenue or 0) }}</div>
+            <div class="stat-label">Monthly Revenue</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon-box orange"><i class="fa-solid fa-user-check"></i></div>
+            <div class="stat-value">{{ open_tasks }}</div>
+            <div class="stat-label">Open Tasks</div>
+        </div>
+    </div>
+
+    <div class="two-col" style="grid-template-columns: 1fr 1fr;">
+        <div class="card-panel">
+            <div class="card-header">
+                <h2>Subscription Snapshot</h2>
+            </div>
+            <div class="card-body">
+                {% if subscription %}
+                    <p><strong>Plan:</strong> {{ subscription.plan.name }}</p>
+                    <p><strong>Status:</strong> <span class="badge badge-{{ subscription.status }}">{{ subscription.status }}</span></p>
+                    <p><strong>Valid:</strong> {{ subscription.start_date.strftime('%Y-%m-%d') }} → {{ subscription.end_date.strftime('%Y-%m-%d') }}</p>
+                    <a class="btn btn-outline" href="{{ url_for('animal_farm_admin.subscriptions') }}"><i class="fa-solid fa-id-card"></i> View Subscription</a>
+                {% else %}
+                    <p style="color: var(--text-muted);">No subscription found for this zoo.</p>
+                    <a class="btn btn-outline" href="{{ url_for('animal_farm_admin.subscriptions') }}"><i class="fa-solid fa-id-card"></i> Subscription</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card-panel">
+            <div class="card-header">
+                <h2>Quick Actions</h2>
+            </div>
+            <div class="card-body" style="display:flex; gap:10px; flex-wrap:wrap;">
+                <a class="btn btn-primary" href="{{ url_for('animal_farm_admin.booking_management') }}"><i class="fa-solid fa-calendar-check"></i> Bookings</a>
+                <a class="btn btn-primary" href="{{ url_for('animal_farm_admin.services_management') }}"><i class="fa-solid fa-list-check"></i> Services</a>
+                <a class="btn btn-primary" href="{{ url_for('animal_farm_admin.animals_management') }}"><i class="fa-solid fa-paw"></i> Animals</a>
+                <a class="btn btn-primary" href="{{ url_for('animal_farm_admin.staff_management') }}"><i class="fa-solid fa-user-check"></i> Staff Tasks</a>
+                <a class="btn btn-outline" href="{{ url_for('animal_farm_admin.system_feedback') }}">
+                    <i class="fa-solid fa-paper-plane"></i> Message Superadmin
+                </a>
+            </div>
+        </div>
+    </div>
+
+{% endif %}
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Events & Shows{% endblock %}
+{% block page_title %}Event Management{% endblock %}
+
+{% block content %}
+<div class="card-panel">
+    <div class="card-header-bar" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0;">Weekly Schedule</h2>
+        <button class="btn" style="background: white; color: var(--primary-color); font-size: 0.8rem; padding: 0.4rem 0.8rem;"><i class="fa-solid fa-plus"></i> New Event</button>
+    </div>
+    <div class="table-container" style="box-shadow: none; margin-bottom: 0; border-radius: 0 0 var(--border-radius) var(--border-radius);">
+        <table>
+            <thead>
+                <tr>
+                    <th>Event ID</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Time</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in events %}
+                <tr>
+                    <td style="color: var(--text-muted); font-size: 0.8rem;">#EV-{{ event.id }}</td>
+                    <td style="font-weight: 600;">{{ event.name }}</td>
+                    <td><span class="badge" style="background: var(--primary-light); color: white;">{{ event.type }}</span></td>
+                    <td style="font-weight: 500; color: var(--accent-color);">{{ event.time }}</td>
+                    <td>{{ event.location }}</td>
+                    <td>
+                        <button class="btn" style="background-color: var(--light-bg); color: var(--text-color); border: 1px solid #d1d5db; padding: 0.3rem 0.6rem; font-size: 0.75rem;">Modify</button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No scheduled events.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

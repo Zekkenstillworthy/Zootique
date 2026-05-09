@@ -1,0 +1,88 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Events Management | Animal Farm Admin{% endblock %}
+{% block page_title %}Events Management{% endblock %}
+
+{% block content %}
+<div class="two-col" style="grid-template-columns: 1fr 1fr;">
+    <div class="card-panel">
+        <div class="card-header">
+            <h2>Add / Edit Event</h2>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ url_for('animal_farm_admin.save_event') }}" style="display:flex; flex-direction:column; gap:10px;">
+                <input type="hidden" name="event_id" value="">
+
+                <label style="font-weight:600; color:var(--text-secondary);">Name</label>
+                <input type="text" name="name" placeholder="Event name" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                <label style="font-weight:600; color:var(--text-secondary);">Type (optional)</label>
+                <input type="text" name="type" placeholder="e.g., Workshop" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                <label style="font-weight:600; color:var(--text-secondary);">Time (optional)</label>
+                <input type="text" name="time" placeholder="e.g., 2:00 PM" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                <label style="font-weight:600; color:var(--text-secondary);">Location (optional)</label>
+                <input type="text" name="location" placeholder="e.g., Main Pavilion" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Event</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card-panel">
+        <div class="card-header">
+            <h2>Event List</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Time</th>
+                            <th>Location</th>
+                            <th style="width:160px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for e in events %}
+                            <tr>
+                                <td>{{ e.name }}</td>
+                                <td>{{ e.type or '-' }}</td>
+                                <td>{{ e.time or '-' }}</td>
+                                <td>{{ e.location or '-' }}</td>
+                                <td>
+                                    <button class="btn btn-outline btn-sm" type="button"
+                                                    onclick="fillEventForm({{ e.id }}, {{ e.name|tojson }}, {{ (e.type or '')|tojson }}, {{ (e.time or '')|tojson }}, {{ (e.location or '')|tojson }})">
+                                        <i class="fa-solid fa-pen"></i> Edit
+                                    </button>
+                                    <form method="post" action="{{ url_for('animal_farm_admin.delete_event', event_id=e.id) }}" style="display:inline;" onsubmit="return confirm('Delete this event?');">
+                                        <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="5" style="color: var(--text-muted);">No events yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function fillEventForm(id, name, type, time, location) {
+        const form = document.querySelector('form[action$="/events/save"]');
+        if (!form) return;
+        form.querySelector('input[name="event_id"]').value = id;
+        form.querySelector('input[name="name"]').value = name || '';
+        form.querySelector('input[name="type"]').value = type || '';
+        form.querySelector('input[name="time"]').value = time || '';
+        form.querySelector('input[name="location"]').value = location || '';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+</script>
+{% endblock %}

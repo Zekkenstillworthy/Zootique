@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Map & Zones | Staff{% endblock %}
+{% block page_title %}Map & Zones{% endblock %}
+
+{% block content %}
+<div style="display:grid; gap:2rem;">
+
+    <div class="card-panel">
+        <div class="card-header-bar">
+            <h2>Zoo Zone Map — {{ zoo.name }}</h2>
+        </div>
+        <div class="card-body" style="padding:1.5rem;">
+            {% if zones %}
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:1.5rem;">
+                {% for zone in zones %}
+                <div style="border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; background:white;
+                             box-shadow:0 2px 8px rgba(0,0,0,.06);">
+                    {% if zone.map_image_url %}
+                    <img src="{{ zone.map_image_url }}" alt="{{ zone.name }}"
+                         style="width:100%; height:160px; object-fit:cover;">
+                    {% else %}
+                    <div style="width:100%; height:160px; background:linear-gradient(135deg, #1e3a2b, #2d6a4f);
+                                display:flex; align-items:center; justify-content:center;">
+                        <i class="fa-solid fa-map-location-dot" style="font-size:3rem; color:rgba(255,255,255,0.4);"></i>
+                    </div>
+                    {% endif %}
+                    <div style="padding:1.2rem;">
+                        <h3 style="margin:0 0 0.3rem; font-size:1rem; color:var(--primary-color);">{{ zone.name }}</h3>
+                        <p style="margin:0 0 1rem; font-size:0.85rem; color:var(--text-muted); line-height:1.5;">
+                            {{ zone.description or 'No description provided.' }}
+                        </p>
+                        {% if zone.panorama_360_url %}
+                        <a href="{{ zone.panorama_360_url }}" target="_blank" rel="noopener"
+                           class="btn" style="font-size:0.8rem; padding:0.4rem 0.9rem; background:var(--primary-color); color:white; border:none; text-decoration:none; display:inline-block; border-radius:6px;">
+                            <i class="fa-solid fa-vr-cardboard" style="margin-right:0.4rem;"></i>360° View
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align:center; padding:4rem; color:var(--text-muted);">
+                <i class="fa-solid fa-map" style="font-size:3rem; margin-bottom:1rem; color:#94a3b8;"></i>
+                <h3 style="color:#475569;">No Zones Configured</h3>
+                <p style="font-size:0.9rem;">Your Farm Admin has not set up any map zones yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

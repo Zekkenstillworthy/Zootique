@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block title %}Reviews & Feedback{% endblock %}
+
+{% block content %}
+<!-- FULL WIDTH HERO -->
+<div style="background: #718873; color: white; padding: 4rem 4rem 6rem 4rem; position: relative;">
+    <div style="margin-bottom: 1.5rem; color: rgba(255,255,255,0.7); font-size: 0.85rem;">
+        Home > <span style="font-weight: 600; color: white;">Feedback</span>
+    </div>
+
+    <div style="display: flex; justify-content: space-between;">
+        <div style="max-width: 600px;">
+            <div style="color: #fca000; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; width: fit-content; margin-bottom: 1.5rem;"><i class="fa-solid fa-star"></i> Visitor Reviews</div>
+            <h1 style="font-size: 3.5rem; margin-bottom: 1rem; line-height: 1.1;">Reviews & Feedback</h1>
+            <p style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 2.5rem;">Real experiences from real visitors — share yours and inspire others to discover Zootique</p>
+            
+            <div style="display: flex; gap: 1.5rem; align-items: center; font-size: 0.85rem; margin-bottom: 2.5rem; font-weight: 600; flex-wrap: wrap;">
+                <span style="color:#fef08a;">⭐ {{ "%.1f"|format(avg_rating or 0) }} Overall Rating</span>
+                <span style="color:white;"><i class="fa-solid fa-comment"></i> {{ review_count or 0 }} Reviews</span>
+                <span style="color:#4ade80;"><i class="fa-solid fa-check-circle"></i> DB-backed reviews</span>
+            </div>
+            
+            <div style="color:#fef08a; font-size: 0.85rem; font-weight: bold; margin-bottom: 2rem;">🏆 #1 Rated Wildlife Park</div>
+
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <a href="#write-review" class="btn" style="background: #fca000; color: #1e293b; border: none; padding: 0.8rem 1.5rem; border-radius: 6px; font-weight: bold; text-decoration:none;"><i class="fa-solid fa-pen"></i> Write a Review</a>
+                <a href="#recent-reviews" class="btn" style="background: transparent; color: white; border: 1px solid white; padding: 0.8rem 1.5rem; border-radius: 6px; font-weight: bold; text-decoration:none;"><i class="fa-solid fa-book-open"></i> Read Recent Reviews</a>
+            </div>
+        </div>
+        
+        <!-- Floating Rating Card -->
+        <div style="background: white; border-radius: 12px; width: 320px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 10; overflow: hidden; display: flex; flex-direction: column;">
+            <div style="background: #1a4f32; color: white; padding: 0.8rem 1rem; font-size: 0.85rem; font-weight: bold;">Overall Rating (DB)</div>
+            <div style="padding: 1.5rem; text-align: center;">
+                <div style="font-size: 3.5rem; font-weight: 800; color: #1a4f32; margin-bottom: 0.2rem;">{{ "%.1f"|format(avg_rating or 0) }}</div>
+                <div style="color: #fca000; font-size: 1.2rem; margin-bottom: 0.5rem;">
+                    {% set stars = (avg_rating or 0) %}
+                    {% for i in range(1,6) %}
+                        {% if stars >= i %}<i class="fa-solid fa-star"></i>
+                        {% elif stars >= i - 0.5 %}<i class="fa-solid fa-star-half-stroke"></i>
+                        {% else %}<i class="fa-regular fa-star"></i>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 1.5rem;">Based on {{ review_count or 0 }} reviews</div>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.75rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span>5★</span><div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;"><div style="width:68%;height:100%;background:#1a4f32;"></div></div><span style="color:#64748b;">68%</span></div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span>4★</span><div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;"><div style="width:20%;height:100%;background:#1a4f32;"></div></div><span style="color:#64748b;">20%</span></div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span>3★</span><div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;"><div style="width:8%;height:100%;background:#1a4f32;"></div></div><span style="color:#64748b;">8%</span></div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span>2★</span><div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;"><div style="width:3%;height:100%;background:#1a4f32;"></div></div><span style="color:#64748b;">3%</span></div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span>1★</span><div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;"><div style="width:1%;height:100%;background:#1a4f32;"></div></div><span style="color:#64748b;">1%</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container" style="padding: 2rem 0;">
+    <!-- WRITE REVIEW FORM -->
+    <div id="write-review" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap: 1rem; flex-wrap: wrap;">
+            <h2 style="margin: 0; font-size: 1.3rem; color: #1a4f32;">Write a Review</h2>
+            <div style="color:#64748b; font-size: 0.85rem;">Submits to the database</div>
+        </div>
+        <form method="post" action="{{ url_for('visitor.feedback') }}" style="margin-top: 1rem; display: grid; grid-template-columns: 1.5fr 1fr; gap: 1rem;">
+            <div>
+                <label style="display:block; font-size:0.8rem; font-weight:800; color:#475569; margin-bottom:0.4rem;">Zoo (optional)</label>
+                <select name="zoo_id" style="width:100%; padding:0.8rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white; font-family: 'Inter', sans-serif;">
+                    <option value="" selected>All / Not specified</option>
+                    {% for z in zoos %}
+                    <option value="{{ z.id }}">{{ z.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="display:block; font-size:0.8rem; font-weight:800; color:#475569; margin-bottom:0.4rem;">Rating</label>
+                <select name="rating" required style="width:100%; padding:0.8rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white; font-family: 'Inter', sans-serif;">
+                    <option value="" selected disabled>Select…</option>
+                    <option value="5">5 — Excellent</option>
+                    <option value="4">4 — Great</option>
+                    <option value="3">3 — Okay</option>
+                    <option value="2">2 — Poor</option>
+                    <option value="1">1 — Terrible</option>
+                </select>
+            </div>
+            <div style="grid-column: 1 / -1;">
+                <label style="display:block; font-size:0.8rem; font-weight:800; color:#475569; margin-bottom:0.4rem;">Comment</label>
+                <textarea name="comment" required rows="4" placeholder="Share your experience…" style="width:100%; padding:0.9rem 1rem; border: 1px solid #cbd5e1; border-radius: 10px; font-family: 'Inter', sans-serif; resize: vertical;"></textarea>
+            </div>
+            <div style="grid-column: 1 / -1; display:flex; justify-content:flex-end;">
+                <button type="submit" class="btn" style="background:#1a4f32; color:white; border:none; padding: 0.8rem 1.6rem; border-radius: 8px; font-weight: 900;">
+                    <i class="fa-solid fa-paper-plane"></i> Submit Review
+                </button>
+            </div>
+        </form>
+        <div style="margin-top: 0.75rem; color:#94a3b8; font-size: 0.8rem;">Note: you must be signed in as a Visitor to submit.</div>
+    </div>
+
+    <!-- QUICK REVIEW BADGE -->
+    <div style="background: white; border: 1px solid #eab308; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; position: relative;">
+        <div style="position: absolute; top:0; left:0; width:5px; height:100%; background:#eab308;"></div>
+        <div style="margin-left: 10px;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; color: #d97706; font-weight: bold; margin-bottom: 0.5rem;"><i class="fa-solid fa-star"></i> How was your Lion Feeding Show on April 25?</div>
+            <div style="color: #64748b; font-size: 0.85rem; margin-bottom: 1rem;">Share your experience and earn 50 loyalty points!</div>
+            <div style="color: #cbd5e1; font-size: 1.5rem; display: flex; gap: 0.5rem;">
+                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+            </div>
+            <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.3rem;">Click stars to rate</div>
+        </div>
+        <div style="text-align: right;">
+            <div style="color: #94a3b8; font-size: 0.75rem; margin-bottom: 1rem; cursor: pointer;">Dismiss</div>
+            <button style="background: #f59e0b; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: bold;">Write Full Review</button>
+        </div>
+    </div>
+    
+    <!-- COMMUNITY SENTIMENT -->
+    <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 3rem;">
+        <div style="background: #1a4f32; color: white; padding: 1rem 1.5rem; font-weight: bold; font-size: 1.1rem;">Community Sentiment</div>
+        <div style="display: grid; grid-template-columns: 1.5fr 2fr 1.5fr; gap: 2rem; padding: 2rem;">
+            <!-- Left col rating -->
+            <div style="text-align: center; border-right: 1px solid #e2e8f0; padding-right: 2rem;">
+                <div style="font-size: 3rem; font-weight: 800; color: #1a4f32;">4.6</div>
+                <div style="color: #fca000; font-size: 1.2rem; margin-bottom: 0.5rem;"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></div>
+                <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 1rem;">1,847 verified reviews</div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.75rem;">
+                    <!-- bar progress bars placeholder -->
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span>5★</span><div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;"><div style="width:68%;height:100%;background:#1a4f32;"></div></div><span style="color:#64748b;">68%</span></div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span>4★</span><div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;"><div style="width:20%;height:100%;background:#1a4f32;"></div></div><span style="color:#64748b;">20%</span></div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span>3★</span><div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;"><div style="width:8%;height:100%;background:#1a4f32;"></div></div><span style="color:#64748b;">8%</span></div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span>2★</span><div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;"><div style="width:3%;height:100%;background:#1a4f32;"></div></div><span style="color:#64748b;">3%</span></div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span>1★</span><div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;"><div style="width:1%;height:100%;background:#1a4f32;"></div></div><span style="color:#64748b;">1%</span></div>
+                </div>
+            </div>
+            
+            <!-- Mid col sentiments -->
+            <div>
+                <h4 style="margin: 0 0 1rem 0; font-size: 0.95rem;">What Visitors Are Saying</h4>
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 0.8rem; font-weight: bold; color: #1a4f32; margin-bottom: 0.4rem;">👍 Most Praised Topics:</div>
+                    <div style="font-size: 0.8rem; color: #475569;">Friendly Staff — 78% positive</div>
+                    <div style="font-size: 0.8rem; color: #475569;">Animal Encounters — 74% positive</div>
+                    <div style="font-size: 0.8rem; color: #475569;">Park Cleanliness — 71% positive</div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 0.8rem; font-weight: bold; color: #d97706; margin-bottom: 0.4rem;">🤟 Commonly Mentioned:</div>
+                    <div style="font-size: 0.8rem; color: #475569;">Queue Times — 45% neutral</div>
+                    <div style="font-size: 0.8rem; color: #475569;">Food Options — 38% neutral</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.8rem; font-weight: bold; color: #ef4444; margin-bottom: 0.4rem;">👎 Areas for Improvement:</div>
+                    <div style="font-size: 0.8rem; color: #475569;">Parking — 28% negative</div>
+                    <div style="font-size: 0.8rem; color: #475569;">Weekday Crowds — 18% negative</div>
+                </div>
+            </div>
+            
+            <!-- Right col mentions -->
+            <div>
+                <h4 style="margin: 0 0 1rem 0; font-size: 0.95rem;">Frequently Mentioned</h4>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.6rem; color: #1a4f32; font-weight: bold;">
+                    <span style="font-size: 1.2rem;">Clean</span> <span style="font-size: 1.1rem;">Friendly</span> <span style="font-size: 1.2rem;">Amazing Animals</span>
+                    <span style="font-size: 0.9rem; color: #16a34a;">Worth it</span> <span style="font-size: 0.9rem; color: #16a34a;">Magical</span> <span style="font-size: 0.9rem; color: #16a34a;">Educational</span> <span style="font-size: 0.9rem; color: #16a34a;">Great Staff</span>
+                    <span style="font-size: 0.8rem; color: #94a3b8; font-weight: normal;">Crowds</span> <span style="font-size: 0.8rem; color: #94a3b8; font-weight: normal;">Parking</span> <span style="font-size: 0.8rem; color: #94a3b8; font-weight: normal;">Queue</span> <span style="font-size: 0.8rem; color: #f59e0b;">Pricey</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECENT REVIEWS -->
+    <div id="recent-reviews" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.5rem; color: #1a4f32; margin: 0;">Recent Reviews</h2>
+        <form method="get" action="{{ url_for('visitor.feedback') }}" style="display:flex; gap: 0.75rem; align-items:center; flex-wrap: wrap;">
+            <select name="zoo_id" style="padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid #cbd5e1; color: #475569;">
+                <option value="" {% if not selected_zoo_id %}selected{% endif %}>All Zoos</option>
+                {% for z in zoos %}
+                <option value="{{ z.id }}" {% if selected_zoo_id and selected_zoo_id == z.id %}selected{% endif %}>{{ z.name }}</option>
+                {% endfor %}
+            </select>
+            <select name="sort" style="padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid #cbd5e1; color: #475569;">
+                <option value="recent" {% if sort == 'recent' %}selected{% endif %}>Most Recent</option>
+                <option value="highest" {% if sort == 'highest' %}selected{% endif %}>Highest Rated</option>
+            </select>
+            <button type="submit" class="btn" style="background:#1a4f32; color:white; border:none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 900;">Apply</button>
+        </form>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        {% for fb in feedbacks %}
+        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; gap: 1rem;">
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    {% set nm = (fb.visitor_name or 'Visitor') %}
+                    {% set initials = (nm.split(' ')[0][:1] ~ (nm.split(' ')[1][:1] if nm.split(' ')|length > 1 else ''))|upper %}
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: #0f291e; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">{{ initials }}</div>
+                    <div>
+                        <div style="font-weight: bold; color: #1e293b;">{{ fb.visitor_name }}</div>
+                        <div style="font-size: 0.8rem; color: #64748b;">{{ fb.date or '' }}{% if fb.zoo and fb.zoo.name %} · {{ fb.zoo.name }}{% endif %}</div>
+                    </div>
+                </div>
+                <div style="color: #fca000; font-size: 0.9rem; white-space: nowrap;">
+                    {% for i in range(1,6) %}
+                        {% if (fb.rating or 0) >= i %}<i class="fa-solid fa-star"></i>{% else %}<i class="fa-regular fa-star"></i>{% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            <p style="color: #475569; font-size: 0.9rem; line-height: 1.6; margin-bottom: 0;">{{ fb.comment }}</p>
+            {% if (current_user_id and fb.user_id == current_user_id) or (current_user_aliases and fb.visitor_name in current_user_aliases) %}
+            <div style="margin-top: 0.9rem; display:flex; gap: 0.5rem; align-items:center; flex-wrap: wrap;">
+                <details>
+                    <summary class="btn" style="list-style:none; cursor:pointer; background: transparent; color: #1a4f32; border: 1px solid #1a4f32; padding: 0.35rem 0.7rem; border-radius: 8px; font-weight: 800; font-size: 0.8rem;">
+                        Edit My Review
+                    </summary>
+                    <div style="margin-top: 0.6rem; background:#f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.9rem; width: min(100%, 460px);">
+                        <form method="post" action="{{ url_for('visitor.update_feedback', feedback_id=fb.id) }}" style="display:grid; gap: 0.55rem; margin:0;">
+                            <div>
+                                <label style="display:block; font-size:0.75rem; font-weight:800; color:#475569; margin-bottom:0.25rem;">Zoo</label>
+                                <select name="zoo_id" required style="width:100%; padding:0.6rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 10px; font-family: 'Inter', sans-serif;">
+                                    {% for z in zoos %}
+                                    <option value="{{ z.id }}" {% if fb.zoo_id == z.id %}selected{% endif %}>{{ z.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display:block; font-size:0.75rem; font-weight:800; color:#475569; margin-bottom:0.25rem;">Rating</label>
+                                <select name="rating" required style="width:100%; padding:0.6rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 10px; font-family: 'Inter', sans-serif;">
+                                    {% for r in [5,4,3,2,1] %}
+                                    <option value="{{ r }}" {% if (fb.rating or 0) == r %}selected{% endif %}>{{ r }} — {% if r == 5 %}Excellent{% elif r == 4 %}Great{% elif r == 3 %}Okay{% elif r == 2 %}Poor{% else %}Terrible{% endif %}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display:block; font-size:0.75rem; font-weight:800; color:#475569; margin-bottom:0.25rem;">Comment</label>
+                                <textarea name="comment" rows="3" required style="width:100%; padding:0.6rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 10px; font-family: 'Inter', sans-serif; resize: vertical;">{{ fb.comment }}</textarea>
+                            </div>
+                            <div style="display:flex; justify-content:flex-end;">
+                                <button type="submit" class="btn" style="background:#1a4f32; color:white; border:none; padding: 0.45rem 0.9rem; border-radius: 10px; font-weight: 900; font-size: 0.8rem;">Save Review</button>
+                            </div>
+                        </form>
+                    </div>
+                </details>
+                <form method="post" action="{{ url_for('visitor.delete_feedback', feedback_id=fb.id) }}" onsubmit="return confirm('Delete your review?');" style="margin:0;">
+                    <button type="submit" class="btn" style="background: transparent; color: #ef4444; border: 1px solid #fecaca; padding: 0.35rem 0.7rem; border-radius: 8px; font-weight: 800; font-size: 0.8rem;">
+                        Delete
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div style="grid-column: span 2; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 2rem; text-align:center; color:#64748b; font-weight:700;">No feedback yet. Be the first to write a review.</div>
+        {% endfor %}
+
+    </div>
+    
+    {% if pages and pages > 1 %}
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 2rem; gap: 1rem; flex-wrap: wrap;">
+        <div style="color:#64748b; font-weight: 800;">Page {{ page }} of {{ pages }}</div>
+        <div style="display:flex; gap: 0.6rem;">
+            {% if page > 1 %}
+            <a class="btn" href="{{ url_for('visitor.feedback', page=page-1, sort=sort, zoo_id=selected_zoo_id) }}" style="background:white; border: 1px solid #cbd5e1; color:#475569; padding: 0.65rem 1rem; border-radius: 8px; font-weight: 900; text-decoration:none;">Prev</a>
+            {% else %}
+            <span class="btn" style="background:#f1f5f9; border: 1px solid #e2e8f0; color:#94a3b8; padding: 0.65rem 1rem; border-radius: 8px; font-weight: 900;">Prev</span>
+            {% endif %}
+
+            {% if page < pages %}
+            <a class="btn" href="{{ url_for('visitor.feedback', page=page+1, sort=sort, zoo_id=selected_zoo_id) }}" style="background:#1a4f32; border: 1px solid #1a4f32; color:white; padding: 0.65rem 1rem; border-radius: 8px; font-weight: 900; text-decoration:none;">Next</a>
+            {% else %}
+            <span class="btn" style="background:#f1f5f9; border: 1px solid #e2e8f0; color:#94a3b8; padding: 0.65rem 1rem; border-radius: 8px; font-weight: 900;">Next</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

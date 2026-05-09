@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In to Zootique{% endblock %}
+
+{% block content %}
+<div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1e3a2b 0%, #0f291e 100%);">
+    
+    <div style="background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); width: 100%; max-width: 450px; overflow: hidden; display: flex; flex-direction: column;">
+        
+        <div style="background: #1a4f32; padding: 2.5rem; text-align: center; color: white;">
+            <a href="/" style="color: white; text-decoration: none; font-size: 2rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <i class="fa-solid fa-paw" style="color: #fca000;"></i> Zootique
+            </a>
+            <div style="font-size: 0.95rem; opacity: 0.8;">Sign in to your account</div>
+        </div>
+
+        <div style="padding: 2.5rem;">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div style="background: {% if category == 'success' %}#dcfce7{% else %}#fee2e2{% endif %}; color: {% if category == 'success' %}#16a34a{% else %}#ef4444{% endif %}; padding: 0.8rem; border-radius: 6px; font-size: 0.85rem; font-weight: bold; margin-bottom: 1.5rem; text-align: center;">
+                    {{ message }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('auth.login') }}" method="POST" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: bold; color: #475569; margin-bottom: 0.5rem;">Email Address</label>
+                    <input type="email" name="email" required placeholder="Enter your email" style="width: 100%; padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.95rem;">
+                </div>
+                
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
+                        <label style="display: block; font-size: 0.85rem; font-weight: bold; color: #475569;">Password</label>
+                        <a href="#" style="color: #0ea5e9; font-size: 0.75rem; text-decoration: none; font-weight: 600;">Forgot Password?</a>
+                    </div>
+                    <input type="password" name="password" required placeholder="••••••••" style="width: 100%; padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.95rem;">
+                </div>
+                
+                <button type="submit" class="btn" style="background: #fca000; color: #1e293b; border: none; padding: 1rem; border-radius: 8px; font-weight: 800; font-size: 1rem; cursor: pointer; margin-top: 0.5rem;">Sign In</button>
+            </form>
+            
+            <div style="text-align: center; margin-top: 2rem; font-size: 0.85rem; color: #64748b;">
+                Don't have an account? <a href="{{ url_for('auth.register') }}" style="color: #1a4f32; font-weight: bold; text-decoration: none;">Create an account</a>
+            </div>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}

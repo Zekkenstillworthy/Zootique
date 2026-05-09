@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Notifications | Staff{% endblock %}
+{% block page_title %}Staff Notifications{% endblock %}
+
+{% block content %}
+<div style="display:grid; gap:2rem; max-width:800px; margin:0 auto;">
+
+    <div class="card-panel">
+        <div class="card-header-bar" style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="margin:0;"><i class="fa-solid fa-bell" style="margin-right:0.5rem;"></i>Notifications</h2>
+            <span style="font-size:0.8rem; opacity:0.8;">Last 7 days</span>
+        </div>
+        <div class="card-body" style="padding:1.5rem;">
+            {% if recent_tasks %}
+            <div style="display:flex; flex-direction:column; gap:0.8rem;">
+                {% for task in recent_tasks %}
+                <div style="display:flex; gap:1rem; align-items:flex-start; padding:1rem;
+                             border:1px solid #e2e8f0; border-radius:10px; background:{% if task.status == 'done' %}#f0fdf4{% elif task.status == 'in_progress' %}#fefce8{% else %}white{% endif %};">
+                    <div style="flex-shrink:0; width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+                                background:{% if task.status == 'done' %}#dcfce7{% elif task.status == 'in_progress' %}#fef9c3{% else %}#e0e7ff{% endif %};">
+                        {% if task.status == 'done' %}
+                            <i class="fa-solid fa-check" style="color:#16a34a;"></i>
+                        {% elif task.status == 'in_progress' %}
+                            <i class="fa-solid fa-spinner" style="color:#d97706;"></i>
+                        {% else %}
+                            <i class="fa-solid fa-list-check" style="color:#4f46e5;"></i>
+                        {% endif %}
+                    </div>
+                    <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+                            <h4 style="margin:0; font-size:0.95rem;">
+                                {% if task.title.startswith('[') %}
+                                    <span style="color:#dc2626;">[Incident]</span> {{ task.title.split('] ', 1)[1] if '] ' in task.title else task.title }}
+                                {% else %}
+                                    {{ task.title }}
+                                {% endif %}
+                            </h4>
+                            <span style="font-size:0.78rem; color:var(--text-muted); white-space:nowrap; margin-left:1rem;">
+                                {{ task.created_at.strftime('%b %d, %Y') }}
+                            </span>
+                        </div>
+                        {% if task.description %}
+                        <p style="margin:0; font-size:0.84rem; color:var(--text-muted); line-height:1.5;">{{ task.description[:120] }}{% if task.description|length > 120 %}…{% endif %}</p>
+                        {% endif %}
+                        <div style="margin-top:0.5rem;">
+                            {% if task.status == 'done' %}
+                                <span class="badge badge-healthy">Completed</span>
+                            {% elif task.status == 'in_progress' %}
+                                <span class="badge badge-observation">In Progress</span>
+                            {% else %}
+                                <span class="badge" style="background:#e0e7ff; color:#4338ca;">New Task</span>
+                            {% endif %}
+                            {% if task.due_date %}
+                            <span style="font-size:0.78rem; color:var(--text-muted); margin-left:0.6rem;">
+                                Due: {{ task.due_date.strftime('%b %d') }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align:center; padding:4rem; color:var(--text-muted);">
+                <i class="fa-solid fa-bell-slash" style="font-size:3rem; margin-bottom:1rem; color:#94a3b8;"></i>
+                <h3 style="color:#475569;">All Clear</h3>
+                <p style="font-size:0.9rem;">No new notifications in the last 7 days.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="text-align:center;">
+        <a href="{{ url_for('animal_farm_staff.daily_tasks') }}"
+           class="btn btn-primary" style="text-decoration:none; display:inline-block;">
+            <i class="fa-solid fa-list-check" style="margin-right:0.5rem;"></i>Go to My Task Board
+        </a>
+    </div>
+
+</div>
+{% endblock %}

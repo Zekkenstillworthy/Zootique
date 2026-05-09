@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zootique | Landing</title>
+    <meta name="description" content="Zootique — Wildlife Park Management System">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        .lp-nav {
+            background: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .lp-nav-inner {
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5rem;
+            padding: 0 2rem;
+        }
+        .lp-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-weight: 900;
+            text-decoration: none;
+            color: #1a4f32;
+            font-size: 1.3rem;
+        }
+        .lp-links {
+            display: flex;
+            align-items: center;
+            gap: 1.75rem;
+        }
+        .lp-link {
+            text-decoration: none;
+            font-weight: 700;
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+        .lp-link:hover { color: #1a4f32; }
+
+        .lp-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .lp-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            padding: 0.7rem 1.1rem;
+            border-radius: 10px;
+            font-weight: 900;
+            text-decoration: none;
+            border: 1px solid transparent;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        .lp-btn-login {
+            background: #ffffff;
+            border-color: #1a4f32;
+            color: #1a4f32;
+        }
+        .lp-btn-start {
+            background: #1a4f32;
+            border-color: #1a4f32;
+            color: #ffffff;
+        }
+
+        .lp-hero {
+            background: linear-gradient(135deg, #0f291e 0%, #1e3a2b 100%);
+            color: #ffffff;
+        }
+        .lp-hero-inner {
+            padding: 4.25rem 2rem 3.25rem 2rem;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 2rem;
+            align-items: center;
+        }
+        .lp-hero h1 {
+            margin: 0 0 1rem 0;
+            font-size: clamp(2.1rem, 3vw, 3rem);
+            letter-spacing: -1px;
+            font-weight: 900;
+        }
+        .lp-hero p {
+            margin: 0;
+            color: rgba(255,255,255,0.85);
+            line-height: 1.6;
+            max-width: 58ch;
+            font-weight: 500;
+        }
+        .lp-hero-card {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(226,232,240,0.22);
+            border-radius: 16px;
+            padding: 1.4rem;
+        }
+
+        .lp-section {
+            padding: 3rem 2rem;
+            background: #fbfbfb;
+            border-top: 1px solid #e2e8f0;
+        }
+        .lp-section h2 {
+            margin: 0 0 0.75rem 0;
+            color: #1a4f32;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+        }
+        .lp-section p {
+            margin: 0;
+            color: #64748b;
+            line-height: 1.65;
+            max-width: 80ch;
+        }
+
+        @media (max-width: 900px) {
+            .lp-links { display: none; }
+            .lp-hero-inner { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="lp-nav">
+    <div class="container lp-nav-inner" style="max-width: 1100px;">
+        <a class="lp-logo" href="#home">
+            <i class="fa-solid fa-paw"></i> Zootique
+        </a>
+
+        <nav class="lp-links" aria-label="Landing navigation">
+            <a class="lp-link" href="#home">Home</a>
+            <a class="lp-link" href="#about">About Us</a>
+            <a class="lp-link" href="#contact">Contact</a>
+        </nav>
+
+        <div class="lp-actions" aria-label="Side actions">
+            <a class="lp-btn lp-btn-login" href="{{ url_for('auth.portal') }}">
+                <i class="fa-solid fa-right-to-bracket"></i> LOGIN
+            </a>
+            <a class="lp-btn lp-btn-start" href="{{ url_for('auth.portal') }}">
+                <i class="fa-solid fa-rocket"></i> GET STARTED
+            </a>
+        </div>
+    </div>
+</header>
+
+<main id="home">
+    <section class="lp-hero">
+        <div class="container lp-hero-inner" style="max-width: 1100px;">
+            <div>
+                <h1>Curated experiences for zoos and farms.</h1>
+                <p>Zootique helps visitors explore, book, and review experiences, while Zoo Admins manage services, bookings, and operations across Lyger Zoo, Graco Farms, and Hiraya Farms.</p>
+            </div>
+            <div class="lp-hero-card">
+                <div style="font-weight: 900; margin-bottom: 0.5rem;">Start here</div>
+                <div style="color: rgba(255,255,255,0.85); font-size: 0.92rem; line-height: 1.5;">Use the portal to sign in or register as a Visitor or Zoo Admin.</div>
+                <div style="margin-top: 1rem; display:flex; gap: 0.75rem; flex-wrap: wrap;">
+                    <a class="lp-btn lp-btn-start" href="{{ url_for('auth.portal') }}" style="padding: 0.65rem 1rem; border-radius: 12px;">
+                        <i class="fa-solid fa-arrow-right"></i> Open Portal
+                    </a>
+                    <a class="lp-btn lp-btn-login" href="{{ url_for('visitor.home') }}" style="padding: 0.65rem 1rem; border-radius: 12px;">
+                        <i class="fa-solid fa-compass"></i> Visitor Module
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="lp-section">
+        <div class="container" style="max-width: 1100px;">
+            <h2>About Us</h2>
+            <p>Zootique is built to keep bookings, services, and feedback organized across partner establishments. Visitors can discover experiences and manage reservations. Zoo Admins can manage day-to-day operations and send feedback directly to Superadmin support.</p>
+        </div>
+    </section>
+
+    <section id="contact" class="lp-section">
+        <div class="container" style="max-width: 1100px;">
+            <h2>Contact</h2>
+            <p>For access issues or platform concerns, use the authentication portal to reach your module’s support and sign-in flows.</p>
+        </div>
+    </section>
+</main>
+
+</body>
+</html>

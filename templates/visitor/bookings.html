@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}My Bookings{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 3rem 0;">
+    <div style="margin-bottom: 2rem; color: #64748b; font-size: 0.85rem;">
+        Home &gt; <span style="color: #1a4f32; font-weight: 600;">Bookings</span>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap;">
+        <div>
+            <h1 style="margin: 0 0 0.5rem 0; font-size: 2rem; color: #1a4f32;">My Bookings</h1>
+            <p style="margin: 0; color: #64748b;">Manage all your reservations and park tickets</p>
+        </div>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <a href="#new-booking" class="btn" style="background: #1a4f32; color: white; padding: 0.7rem 1.5rem; border-radius: 6px; font-weight: bold; border: none; text-decoration:none;"><i class="fa-solid fa-plus" style="margin-right: 8px;"></i> Book a New Experience</a>
+            <button class="btn" style="background: transparent; color: #1a4f32; padding: 0.7rem 1.5rem; border-radius: 6px; font-weight: bold; border: 1px solid #1a4f32;"><i class="fa-solid fa-ticket" style="margin-right: 8px;"></i> My Ticket Wallet</button>
+        </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+        <div style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; border-top: 3px solid #1a4f32;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; color: #1a4f32; font-weight: bold; font-size: 1.3rem; margin-bottom: 0.5rem;">
+                <i class="fa-regular fa-calendar-check"></i> {{ total_bookings or 0 }}
+            </div>
+            <div style="color: #1e293b; font-weight: 600; font-size: 0.95rem;">Total Bookings</div>
+            <div style="color: #94a3b8; font-size: 0.75rem;">For this account</div>
+        </div>
+
+        <div style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; border-top: 3px solid #0ea5e9;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; color: #0ea5e9; font-weight: bold; font-size: 1.3rem; margin-bottom: 0.5rem;">
+                <i class="fa-regular fa-clock"></i> {{ (status_counts.get('Confirmed', 0) + status_counts.get('Pending', 0)) if status_counts else 0 }}
+            </div>
+            <div style="color: #1e293b; font-weight: 600; font-size: 0.95rem;">Active</div>
+            <div style="color: #94a3b8; font-size: 0.75rem;">Confirmed + pending</div>
+        </div>
+
+        <div style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; border-top: 3px solid #eab308;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; color: #d97706; font-weight: bold; font-size: 1.3rem; margin-bottom: 0.5rem;">
+                ₱ {{ "{:,.2f}".format(total_spent or 0) }}
+            </div>
+            <div style="color: #1e293b; font-weight: 600; font-size: 0.95rem;">Total Spent</div>
+            <div style="color: #94a3b8; font-size: 0.75rem;">Across all bookings</div>
+        </div>
+
+        <div style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; border-top: 3px solid #f59e0b;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; color: #f59e0b; font-weight: bold; font-size: 1.3rem; margin-bottom: 0.5rem;">
+                <i class="fa-solid fa-star"></i> {{ points or 0 }}
+            </div>
+            <div style="color: #1e293b; font-weight: 600; font-size: 0.95rem;">Loyalty Points</div>
+            <div style="color: #94a3b8; font-size: 0.75rem;">Earned from bookings</div>
+        </div>
+    </div>
+
+    <!-- NEW BOOKING FORM -->
+    <div id="new-booking" style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem; margin-bottom: 2rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap: 1rem; flex-wrap: wrap;">
+            <h3 style="margin:0; color:#1a4f32;">Book a New Experience</h3>
+            <div style="color:#94a3b8; font-size: 0.85rem;">Creates a real DB booking row</div>
+        </div>
+        <form method="post" action="{{ url_for('visitor.my_bookings') }}" style="margin-top: 1rem; display:grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 1rem; align-items: end;">
+            <div>
+                <label style="display:block; font-size:0.8rem; font-weight:700; color:#475569; margin-bottom:0.4rem;">Service</label>
+                <select name="service_id" required style="width:100%; padding:0.8rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white; font-family: 'Inter', sans-serif;">
+                    <option value="" selected disabled>Select a service…</option>
+                    {% for service in services %}
+                    <option value="{{ service.id }}">{{ service.name }} — ₱{{ service.price }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="display:block; font-size:0.8rem; font-weight:700; color:#475569; margin-bottom:0.4rem;">Date</label>
+                <input type="date" name="date" required style="width:100%; padding:0.8rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Inter', sans-serif;">
+            </div>
+            <div>
+                <label style="display:block; font-size:0.8rem; font-weight:700; color:#475569; margin-bottom:0.4rem;">Time</label>
+                <input type="time" name="time" required style="width:100%; padding:0.8rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Inter', sans-serif;">
+            </div>
+            <div>
+                <label style="display:block; font-size:0.8rem; font-weight:700; color:#475569; margin-bottom:0.4rem;">Guests</label>
+                <input type="number" name="guests" min="1" value="1" required style="width:100%; padding:0.8rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Inter', sans-serif;">
+            </div>
+            <div style="grid-column: 1 / -1; display:flex; justify-content:flex-end;">
+                <button class="btn" type="submit" style="background: #1a4f32; color: white; padding: 0.8rem 1.6rem; border-radius: 8px; border: none; font-weight: 800;">
+                    <i class="fa-solid fa-check"></i> Confirm Booking
+                </button>
+            </div>
+        </form>
+        {% if services|length == 0 %}
+        <div style="margin-top: 1rem; color:#ef4444; font-weight:600;">No services exist yet. Run the DB seed or add services first.</div>
+        {% endif %}
+    </div>
+
+    <!-- NEXT BOOKING CARD -->
+    <div style="background: white; border-radius: 16px; overflow: hidden; display: flex; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 2rem;">
+        <div style="padding: 2rem; flex: 1; display: flex; flex-direction: column;">
+            <div style="color: #0ea5e9; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 1rem;">Your Next Booking</div>
+            {% if next_booking %}
+            <h2 style="margin: 0 0 1rem 0; font-size: 2rem; color: #1a4f32;">{{ next_booking.service_name }}</h2>
+            <div style="display: flex; flex-direction: column; gap: 0.9rem; margin-bottom: 1.5rem; color: #475569;">
+                <div><i class="fa-regular fa-calendar" style="color:#1a4f32; width: 20px;"></i> Date: {{ next_booking.date }}</div>
+                <div><i class="fa-regular fa-clock" style="color:#1a4f32; width: 20px;"></i> Time: {{ next_booking.time }}</div>
+                <div><i class="fa-solid fa-user-group" style="color:#1a4f32; width: 20px;"></i> Guests: {{ next_booking.guests or 1 }}</div>
+                <div><i class="fa-solid fa-ticket" style="color:#1a4f32; width: 20px;"></i> Booking ID: #{{ next_booking.id }}</div>
+                <div><i class="fa-solid fa-peso-sign" style="color:#1a4f32; width: 20px;"></i> Amount: ₱{{ "{:,.2f}".format(next_booking.amount or 0) }}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap: 0.6rem; margin-top: auto;">
+                {% set st = (next_booking.status or 'Pending')|lower %}
+                <div style="background: {% if st == 'confirmed' %}#dcfce7{% elif st == 'pending' %}#fef3c7{% elif st == 'cancelled' %}#fee2e2{% else %}#f1f5f9{% endif %}; color: {% if st == 'confirmed' %}#16a34a{% elif st == 'pending' %}#d97706{% elif st == 'cancelled' %}#ef4444{% else %}#475569{% endif %}; padding: 0.5rem 1rem; border-radius: 999px; font-weight: 800; font-size: 0.85rem;">
+                    {{ next_booking.status or 'Pending' }}
+                </div>
+            </div>
+            {% else %}
+            <div style="color:#64748b; font-weight:600;">No bookings yet. Create one above.</div>
+            {% endif %}
+        </div>
+
+        <div style="flex: 0.8; position: relative; background: #0f291e; display:flex; align-items:center; justify-content:center;">
+            <div style="text-align:center; color:white; padding: 2rem;">
+                <i class="fa-solid fa-qrcode" style="font-size: 3rem; opacity: 0.7;"></i>
+                <div style="margin-top: 0.75rem; font-weight: 800;">Tickets</div>
+                <div style="opacity: 0.8; font-size: 0.85rem;">(UI placeholder)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ALL BOOKINGS -->
+    <h3 style="color: #1a4f32; margin-bottom: 1rem;">All Bookings</h3>
+    <div style="display:flex; flex-direction:column; gap: 1rem;">
+        {% for b in bookings %}
+        {% set st = (b.status or 'Pending')|lower %}
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.25rem; display:flex; gap: 1.25rem; align-items: stretch;">
+            <div style="width: 56px; height: 56px; border-radius: 12px; background: #f1f5f9; display:flex; align-items:center; justify-content:center; color:#1a4f32; font-size: 1.2rem; flex: none;">
+                <i class="fa-solid fa-ticket"></i>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div style="display:flex; justify-content:space-between; gap: 1rem; align-items:flex-start; flex-wrap: wrap;">
+                    <div>
+                        <div style="display:flex; gap: 0.8rem; font-size: 0.85rem; color:#64748b; margin-bottom: 0.2rem;">
+                            <span>#{{ b.id }}</span>
+                            <span style="color:#0ea5e9; font-weight: 700;">{{ b.service_name }}</span>
+                        </div>
+                        <div style="font-size: 1.05rem; font-weight: 900; color:#1e293b;">{{ b.date }} · {{ b.time }}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size: 1.2rem; font-weight: 900; color:#1a4f32;">₱{{ "{:,.2f}".format(b.amount or 0) }}</div>
+                        <div style="margin-top: 0.4rem; background: {% if st == 'confirmed' %}#dcfce7{% elif st == 'pending' %}#fef3c7{% elif st == 'cancelled' %}#fee2e2{% else %}#f1f5f9{% endif %}; color: {% if st == 'confirmed' %}#16a34a{% elif st == 'pending' %}#d97706{% elif st == 'cancelled' %}#ef4444{% else %}#475569{% endif %}; font-size: 0.75rem; padding: 0.25rem 0.7rem; border-radius: 999px; font-weight: 900; display:inline-block;">
+                            {{ b.status or 'Pending' }}
+                        </div>
+
+                        <div style="margin-top: 0.75rem; display:flex; gap: 0.5rem; justify-content:flex-end; flex-wrap: wrap;">
+                            {% set payment_st = (b.payment_status or 'unpaid')|lower %}
+                            {% if payment_st != 'paid' and st != 'cancelled' %}
+                            <a href="{{ url_for('visitor.checkout_booking', booking_id=b.id) }}" class="btn" style="background: #1a4f32; color: #ffffff; border: 1px solid #1a4f32; padding: 0.45rem 0.8rem; border-radius: 8px; font-weight: 900; text-decoration:none;">
+                                Pay Now
+                            </a>
+                            {% elif payment_st == 'paid' %}
+                            <div style="background:#dcfce7; color:#166534; border:1px solid #86efac; padding:0.4rem 0.65rem; border-radius:8px; font-size:0.75rem; font-weight:900;">
+                                Paid{% if b.payment_reference %} · {{ b.payment_reference }}{% endif %}
+                            </div>
+                            {% endif %}
+
+                            {% if st != 'cancelled' %}
+                            <form method="post" action="{{ url_for('visitor.cancel_booking', booking_id=b.id) }}" style="margin:0;">
+                                <button type="submit" class="btn" style="background: transparent; color: #ef4444; border: 1px solid #fecaca; padding: 0.45rem 0.8rem; border-radius: 8px; font-weight: 900;">
+                                    Cancel
+                                </button>
+                            </form>
+                            <details style="display:inline-block;">
+                                <summary class="btn" style="list-style:none; cursor:pointer; background: transparent; color: #1a4f32; border: 1px solid #1a4f32; padding: 0.45rem 0.8rem; border-radius: 8px; font-weight: 900;">
+                                    Reschedule
+                                </summary>
+                                <div style="margin-top: 0.75rem; background:#f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.9rem; width: 320px;">
+                                    <form method="post" action="{{ url_for('visitor.reschedule_booking', booking_id=b.id) }}" style="display:grid; gap: 0.6rem; margin:0;">
+                                        {% set date_val = b.date if b.date and '-' in b.date and b.date|length >= 10 else '' %}
+                                        {% set time_val = b.time if b.time and ':' in b.time else '' %}
+                                        <div>
+                                            <label style="display:block; font-size:0.75rem; font-weight:800; color:#475569; margin-bottom:0.25rem;">Date</label>
+                                            <input type="date" name="date" required value="{{ date_val }}" style="width:100%; padding:0.65rem 0.8rem; border: 1px solid #cbd5e1; border-radius: 10px; font-family: 'Inter', sans-serif;" />
+                                        </div>
+                                        <div>
+                                            <label style="display:block; font-size:0.75rem; font-weight:800; color:#475569; margin-bottom:0.25rem;">Time</label>
+                                            <input type="time" name="time" required value="{{ time_val }}" style="width:100%; padding:0.65rem 0.8rem; border: 1px solid #cbd5e1; border-radius: 10px; font-family: 'Inter', sans-serif;" />
+                                        </div>
+                                        <div>
+                                            <label style="display:block; font-size:0.75rem; font-weight:800; color:#475569; margin-bottom:0.25rem;">Guests</label>
+                                            <input type="number" name="guests" min="1" required value="{{ b.guests or 1 }}" style="width:100%; padding:0.65rem 0.8rem; border: 1px solid #cbd5e1; border-radius: 10px; font-family: 'Inter', sans-serif;" />
+                                        </div>
+                                        <div style="display:flex; justify-content:flex-end; gap: 0.5rem;">
+                                            <button type="submit" class="btn" style="background:#1a4f32; color:white; border:none; padding: 0.55rem 0.9rem; border-radius: 10px; font-weight: 900;">Update</button>
+                                        </div>
+                                    </form>
+                                    <div style="margin-top: 0.5rem; color:#94a3b8; font-size: 0.75rem;">Rescheduling sets status to Pending.</div>
+                                </div>
+                            </details>
+                            {% else %}
+                            <div style="color:#94a3b8; font-size: 0.8rem; font-weight: 800;">No actions</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.8rem; color:#475569; font-size: 0.9rem;">
+                    <span><i class="fa-solid fa-user-group" style="width: 18px; color:#1a4f32;"></i> {{ b.guests or 1 }} guests</span>
+                    {% if b.zoo and b.zoo.name %}
+                    <span><i class="fa-solid fa-location-dot" style="width: 18px; color:#1a4f32;"></i> {{ b.zoo.name }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div style="background:white; border:1px solid #e2e8f0; border-radius: 12px; padding: 2rem; text-align:center; color:#64748b; font-weight: 700;">
+            No bookings found for this account.
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

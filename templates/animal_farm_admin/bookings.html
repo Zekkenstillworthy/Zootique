@@ -1,0 +1,91 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Booking Management | Animal Farm Admin{% endblock %}
+{% block page_title %}Booking Management{% endblock %}
+
+{% block content %}
+<div class="card-panel">
+    <div class="card-header">
+        <h2>Bookings</h2>
+        <div class="card-header-actions">
+            <a class="btn btn-outline btn-sm" href="{{ url_for('animal_farm_admin.booking_management') }}">Reset</a>
+        </div>
+    </div>
+
+    <form class="filter-bar" method="get" action="{{ url_for('animal_farm_admin.booking_management') }}">
+        <select name="status">
+            <option value="" {% if not selected_status %}selected{% endif %}>All statuses</option>
+            <option value="Pending" {% if selected_status=='Pending' %}selected{% endif %}>Pending</option>
+            <option value="Confirmed" {% if selected_status=='Confirmed' %}selected{% endif %}>Confirmed</option>
+            <option value="Cancelled" {% if selected_status=='Cancelled' %}selected{% endif %}>Cancelled</option>
+        </select>
+        <select name="assigned_to">
+            <option value="" {% if not selected_assigned_to %}selected{% endif %}>All staff</option>
+            {% for s in staff_members %}
+            <option value="{{ s.id }}" {% if selected_assigned_to == (s.id|string) %}selected{% endif %}>{{ s.full_name }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-filter"></i> Filter</button>
+    </form>
+
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Visitor</th>
+                        <th>Service</th>
+                        <th>Date</th>
+                        <th>Guests</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Assigned Staff</th>
+                        <th style="width: 360px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in bookings %}
+                    <tr>
+                        <td>{{ b.id }}</td>
+                        <td>{{ b.visitor_name }}</td>
+                        <td>{{ b.service_name or (b.service.name if b.service else '-') }}</td>
+                        <td>{{ b.date }} {{ b.time or '' }}</td>
+                        <td>{{ b.guests or '-' }}</td>
+                        <td>₱{{ '%.2f'|format(b.amount or 0) }}</td>
+                        <td>
+                            {% set st = (b.status or 'Pending')|lower %}
+                            <span class="badge badge-{{ 'confirmed' if st=='confirmed' else ('cancelled' if st=='cancelled' else 'pending') }}">{{ b.status or 'Pending' }}</span>
+                        </td>
+                        <td>{{ b.assigned_staff_user.full_name if b.assigned_staff_user else 'Unassigned' }}</td>
+                        <td>
+                            <div style="display:grid; gap:8px;">
+                                <form method="post" action="{{ url_for('animal_farm_admin.assign_booking', booking_id=b.id) }}" style="display:flex; gap:8px; align-items:center;">
+                                    <select name="staff_user_id" style="padding:6px 10px; border:1px solid var(--border); border-radius:8px; min-width: 170px;">
+                                        <option value="">Unassigned</option>
+                                        {% for s in staff_members %}
+                                        <option value="{{ s.id }}" {% if b.assigned_staff_user_id == s.id %}selected{% endif %}>{{ s.full_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button class="btn btn-outline btn-sm" type="submit">Assign</button>
+                                </form>
+                                <form method="post" action="{{ url_for('animal_farm_admin.update_booking_status', booking_id=b.id) }}" style="display:flex; gap:8px; align-items:center;">
+                                    <select name="status" style="padding:6px 10px; border:1px solid var(--border); border-radius:8px; min-width: 170px;">
+                                        <option value="Pending" {% if (b.status or 'Pending')=='Pending' %}selected{% endif %}>Pending</option>
+                                        <option value="Confirmed" {% if b.status=='Confirmed' %}selected{% endif %}>Confirmed</option>
+                                        <option value="Cancelled" {% if b.status=='Cancelled' %}selected{% endif %}>Cancelled</option>
+                                    </select>
+                                    <button class="btn btn-primary btn-sm" type="submit">Update Status</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="9" style="color: var(--text-muted);">No bookings found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

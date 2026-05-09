@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Visitor Feedback | Staff{% endblock %}
+{% block page_title %}Visitor Feedback{% endblock %}
+
+{% block content %}
+<div style="display:grid; gap:2rem;">
+
+    <!-- Stats -->
+    <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+        <div class="stat-card">
+            <div class="stat-icon icon-blue"><i class="fa-solid fa-comments"></i></div>
+            <span class="value">{{ total_count }}</span>
+            <h3>Total Reviews</h3>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-green"><i class="fa-solid fa-star"></i></div>
+            <span class="value">{{ avg_rating }}</span>
+            <h3>Avg. Rating</h3>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="card-panel" style="padding:1rem 1.5rem;">
+        <div style="display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center;">
+            <span style="font-size:0.85rem; font-weight:700; color:var(--text-muted);">Filter by Rating:</span>
+            <a href="{{ url_for('animal_farm_staff.visitor_feedback') }}"
+               style="padding:0.4rem 0.9rem; border-radius:6px; font-size:0.85rem; font-weight:600; text-decoration:none;
+                      {% if not selected_rating %}background:var(--primary-color); color:white;
+                      {% else %}background:#f1f5f9; color:var(--text-muted); border:1px solid #e2e8f0;{% endif %}">All</a>
+            {% for r in [5, 4, 3, 2, 1] %}
+            <a href="{{ url_for('animal_farm_staff.visitor_feedback') }}?rating={{ r }}"
+               style="padding:0.4rem 0.9rem; border-radius:6px; font-size:0.85rem; font-weight:600; text-decoration:none;
+                      {% if selected_rating == r|string %}background:var(--primary-color); color:white;
+                      {% else %}background:#f1f5f9; color:var(--text-muted); border:1px solid #e2e8f0;{% endif %}">
+                {{ '★' * r }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Feedback cards -->
+    <div class="card-panel">
+        <div class="card-header-bar"><h2>Reviews — {{ zoo.name }}</h2></div>
+        <div class="card-body" style="padding:1.5rem;">
+            {% if feedbacks %}
+            <div style="display:grid; gap:1rem;">
+                {% for f in feedbacks %}
+                <div style="border:1px solid #e2e8f0; border-radius:10px; padding:1.2rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.6rem;">
+                        <div>
+                            <h4 style="margin:0; font-size:0.95rem;">{{ f.visitor_name }}</h4>
+                            <span style="font-size:0.8rem; color:var(--text-muted);">{{ f.date or '—' }}</span>
+                        </div>
+                        <div style="color:#fbbf24; font-size:1rem; letter-spacing:2px;">
+                            {{ '★' * (f.rating or 0) }}{{ '☆' * (5 - (f.rating or 0)) }}
+                        </div>
+                    </div>
+                    <p style="margin:0; font-size:0.9rem; color:#334155; line-height:1.6;">{{ f.comment or '—' }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align:center; padding:3rem; color:var(--text-muted);">
+                <i class="fa-solid fa-comment-slash" style="font-size:3rem; margin-bottom:1rem;"></i>
+                <p>No feedback yet{% if selected_rating %} with {{ selected_rating }} star(s){% endif %}.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

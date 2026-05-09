@@ -1,0 +1,153 @@
+﻿{% extends "base.html" %}
+
+{% block title %}System Settings{% endblock %}
+{% block page_title %}Zootique Platform Settings{% endblock %}
+
+{% block content %}
+
+<div class="page-subheader" style="margin-bottom:16px;">
+    <div class="ps-left">
+        <h2>SETTINGS</h2>
+        <p>Manage profile identity and security preferences.</p>
+    </div>
+</div>
+
+<div data-sa-settings>
+    <div class="sa-tabs" style="margin-bottom:16px;">
+        <button class="sa-tab is-active" type="button" data-sa-settings-tab="profile">Profile</button>
+        <button class="sa-tab" type="button" data-sa-settings-tab="security">Account Security</button>
+    </div>
+
+    <div data-sa-settings-panel="profile">
+        <div class="two-col" style="grid-template-columns: 1.2fr 0.8fr;">
+            <div class="card-panel">
+                <div class="card-header"><h2>PROFILE</h2></div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('zootique_admin.update_profile') }}" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            {% if user.profile_image %}
+                                <img src="{{ url_for('uploaded_file', filename=user.profile_image) }}" alt="Profile" style="width:54px; height:54px; border-radius:50%; object-fit:cover; border:2px solid var(--border-light);">
+                            {% else %}
+                                <div class="avatar" style="width:54px; height:54px; font-size:20px;">{{ (user.full_name or 'U')[0]|upper }}</div>
+                            {% endif %}
+                            <div style="flex:1;">
+                                <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Profile Picture</label>
+                                <input type="file" name="profile_picture" accept="image/*" style="width:100%;">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Full Name</label>
+                            <input type="text" name="full_name" value="{{ user.full_name or '' }}" style="width:100%;">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Username</label>
+                            <input type="text" name="username" value="{{ user.username or '' }}" style="width:100%;">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Email Address</label>
+                            <input type="email" name="email" value="{{ user.email }}" style="width:100%;">
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Profile</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card-panel">
+                <div class="card-header"><h2>PLATFORM INFO</h2></div>
+                <div class="card-body" style="padding-top:0;">
+                    <div style="margin-top:16px; font-size:12px; color:var(--text-muted); font-weight:900;">INFRASTRUCTURE VERSIONS</div>
+                    <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                        <span class="badge" style="background:var(--border-light); color:var(--text-muted); font-weight:900;">v4.2.0</span>
+                        <span class="badge" style="background:var(--border-light); color:var(--text-muted); font-weight:900;">v2.4.0-stable</span>
+                    </div>
+                    <div style="margin-top:14px; font-size:12px; color:var(--text-secondary);">
+                        Platform settings changes take effect immediately.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div data-sa-settings-panel="security" style="display:none;">
+        <div class="card-panel">
+            <div class="card-header"><h2>ACCOUNT SECURITY</h2></div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('zootique_admin.update_security') }}" style="display:flex; flex-direction:column; gap:12px; max-width:720px;">
+                    <div>
+                        <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Change Username</label>
+                        <input type="text" name="new_username" placeholder="New username" value="" style="width:100%;">
+                    </div>
+
+                    <div style="border-top:1px solid var(--border-light);"></div>
+
+                    <div>
+                        <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Current Password (for verification)</label>
+                        <input id="current_password" type="password" name="current_password" placeholder="••••••••" required style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">New Password</label>
+                        <input id="new_password" type="password" name="new_password" placeholder="Enter new password" style="width:100%;">
+                        <div id="pw_strength" style="margin-top:6px; font-size:12px; color:var(--text-muted);">Strength: —</div>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Confirm Password</label>
+                        <input id="confirm_password" type="password" name="confirm_password" placeholder="Confirm new password" style="width:100%;">
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:1px solid var(--border-light); border-bottom:1px solid var(--border-light);">
+                        <div>
+                            <div style="font-weight:900; font-size:13px;">Show/Hide Password</div>
+                            <div style="font-size:12px; color:var(--text-muted);">Toggle password visibility</div>
+                        </div>
+                        <div>
+                            <input id="toggle_password" type="checkbox" style="width:20px; height:20px;">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width:100%; max-width:360px;"><i class="fa-solid fa-shield-halved"></i> Save Security Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const toggle = document.getElementById('toggle_password');
+    const ids = ['current_password', 'new_password', 'confirm_password'];
+    if (toggle) {
+      toggle.addEventListener('change', function () {
+        ids.forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.type = toggle.checked ? 'text' : 'password';
+        });
+      });
+    }
+
+    const newPw = document.getElementById('new_password');
+    const strength = document.getElementById('pw_strength');
+    function computeStrength(pw) {
+      let score = 0;
+      if (!pw) return { label: '—', score: 0 };
+      if (pw.length >= 8) score++;
+      if (/[A-Z]/.test(pw)) score++;
+      if (/[a-z]/.test(pw)) score++;
+      if (/[0-9]/.test(pw)) score++;
+      if (/[^A-Za-z0-9]/.test(pw)) score++;
+      if (score <= 2) return { label: 'Weak', score };
+      if (score === 3) return { label: 'Medium', score };
+      return { label: 'Strong', score };
+    }
+    if (newPw && strength) {
+      newPw.addEventListener('input', function () {
+        const res = computeStrength(newPw.value);
+        strength.textContent = 'Strength: ' + res.label;
+      });
+    }
+  })();
+</script>
+{% endblock %}

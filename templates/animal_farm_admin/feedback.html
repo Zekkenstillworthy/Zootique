@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Visitor Feedback Management | Animal Farm Admin{% endblock %}
+{% block page_title %}Visitor Feedback Management{% endblock %}
+
+{% block content %}
+<div class="card-panel">
+    <div class="card-header">
+        <h2>Visitor Feedback</h2>
+        <div class="card-header-actions">
+            <a class="btn btn-outline btn-sm" href="{{ url_for('animal_farm_admin.visitor_feedback_management') }}">Reset</a>
+        </div>
+    </div>
+
+    <form class="filter-bar" method="get" action="{{ url_for('animal_farm_admin.visitor_feedback_management') }}">
+        <select name="rating">
+            <option value="" {% if not selected_rating %}selected{% endif %}>All ratings</option>
+            {% for r in [5,4,3,2,1] %}
+              <option value="{{ r }}" {% if selected_rating|int == r %}selected{% endif %}>{{ r }} stars</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-filter"></i> Filter</button>
+    </form>
+
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Visitor</th>
+                        <th>Date</th>
+                        <th>Rating</th>
+                        <th>Comment</th>
+                        <th style="width:120px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in feedbacks %}
+                    <tr>
+                        <td>{{ f.visitor_name }}</td>
+                        <td>{{ f.date or '-' }}</td>
+                        <td>
+                            {% set rating = f.rating or 0 %}
+                            <span style="color:#f59e0b; letter-spacing: 2px;">{{ '★' * rating }}{{ '☆' * (5-rating) }}</span>
+                        </td>
+                        <td>{{ f.comment }}</td>
+                        <td>
+                            <form method="post" action="{{ url_for('animal_farm_admin.delete_visitor_feedback', feedback_id=f.id) }}" onsubmit="return confirm('Delete this feedback entry?');" style="margin:0;">
+                                <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" style="color: var(--text-muted);">No feedback found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

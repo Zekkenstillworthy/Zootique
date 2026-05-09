@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Payment & Revenue Management | Animal Farm Admin{% endblock %}
+{% block page_title %}Payment & Revenue Management{% endblock %}
+
+{% block content %}
+<div class="card-panel">
+    <div class="card-header">
+        <h2>Revenue</h2>
+    </div>
+
+    <div class="card-body">
+        <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 12px;">
+            <div class="stat-card">
+                <div class="stat-icon-box green"><i class="fa-solid fa-money-bills"></i></div>
+                <div class="stat-value">₱{{ '%.2f'|format(total_revenue or 0) }}</div>
+                <div class="stat-label">Total Booking Revenue</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon-box blue"><i class="fa-solid fa-chart-column"></i></div>
+                <div class="stat-value">{{ months|length }}</div>
+                <div class="stat-label">Months Tracked</div>
+            </div>
+        </div>
+
+        {% set max_income = (income_by_month.values()|max) if income_by_month else 0 %}
+        <div class="card-panel" style="margin: 0;">
+            <div class="card-header">
+                <h2>Last 6 Months Income</h2>
+            </div>
+            <div class="bar-chart-wrap">
+                <div class="bar-chart">
+                    {% for m in months %}
+                        {% set v = income_by_month.get(m, 0) %}
+                        {% set pct = (v / max_income * 100) if max_income else 0 %}
+                        <div class="bar-item">
+                            <div class="bar" style="height: {{ pct }}%; background: #4a90d9;"></div>
+                            <div class="bar-label">{{ m[5:] }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="chart-legend">
+                    <div>Max month: <span>₱{{ '%.2f'|format(max_income or 0) }}</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-panel" style="margin-top: 18px;">
+            <div class="card-header">
+                <h2>Recent Bookings</h2>
+            </div>
+            <div class="card-body">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Visitor</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for b in recent_bookings %}
+                                <tr>
+                                    <td>{{ b.id }}</td>
+                                    <td>{{ b.visitor_name }}</td>
+                                    <td>{{ b.date }} {{ b.time or '' }}</td>
+                                    <td>₱{{ '%.2f'|format(b.amount or 0) }}</td>
+                                    <td>
+                                        {% set st = (b.status or 'Pending')|lower %}
+                                        <span class="badge badge-{{ 'confirmed' if st=='confirmed' else ('cancelled' if st=='cancelled' else 'pending') }}">{{ b.status or 'Pending' }}</span>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="5" style="color: var(--text-muted);">No bookings yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

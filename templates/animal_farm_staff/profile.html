@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}My Profile | Staff{% endblock %}
+{% block page_title %}Staff Profile & Account{% endblock %}
+
+{% block content %}
+<div style="display:grid; gap:2rem; max-width:900px; margin:0 auto;">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for category, message in messages %}
+        <div style="background:{% if category=='success'%}#dcfce7{% else %}#fee2e2{% endif %};
+                    color:{% if category=='success'%}#16a34a{% else %}#dc2626{% endif %};
+                    padding:0.9rem 1.2rem; border-radius:8px; font-weight:600; font-size:0.9rem;">
+            {{ message }}
+        </div>
+      {% endfor %}{% endif %}
+    {% endwith %}
+
+    <!-- Profile hero -->
+    <div class="card-panel" style="padding:0; overflow:hidden;">
+        <div style="background:linear-gradient(135deg, var(--primary-color), var(--primary-light));
+                    padding:2.5rem; display:flex; align-items:center; gap:2rem; color:white;">
+            {% if user.profile_image %}
+                <img src="{{ url_for('uploaded_file', filename=user.profile_image) }}"
+                     alt="{{ user.full_name }}"
+                     style="width:90px; height:90px; border-radius:50%; object-fit:cover;
+                            border:4px solid rgba(255,255,255,0.4); flex-shrink:0;">
+            {% else %}
+                <div style="width:90px; height:90px; border-radius:50%; background:rgba(255,255,255,0.2);
+                            display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:2.5rem; font-weight:800;">
+                    {{ (user.full_name or 'S')[0].upper() }}
+                </div>
+            {% endif %}
+            <div>
+                <h2 style="margin:0 0 0.2rem; font-size:1.6rem;">{{ user.full_name or 'Staff Member' }}</h2>
+                <div style="opacity:0.85; font-size:0.9rem; margin-bottom:0.5rem;">{{ user.email }}</div>
+                <div style="display:flex; gap:1.5rem; font-size:0.85rem;">
+                    <span><i class="fa-solid fa-circle-check" style="margin-right:0.3rem;"></i>{{ tasks_done }} tasks done</span>
+                    <span><i class="fa-solid fa-clock" style="margin-right:0.3rem;"></i>{{ tasks_pending }} pending</span>
+                    {% if zoo %}<span><i class="fa-solid fa-tree" style="margin-right:0.3rem;"></i>{{ zoo.name }}</span>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile update form -->
+    <div class="card-panel">
+        <div class="card-header-bar"><h2>Edit Profile</h2></div>
+        <div class="card-body" style="padding:2rem;">
+            <form method="POST" action="{{ url_for('animal_farm_staff.profile') }}"
+                  enctype="multipart/form-data" style="display:grid; gap:1.5rem;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="profile">
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+                    <div>
+                        <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--text-muted);
+                                      text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.4rem;">
+                            Full Name <span style="color:var(--danger);">*</span>
+                        </label>
+                        <input type="text" name="full_name" required value="{{ user.full_name or '' }}"
+                               style="width:100%; padding:0.75rem; border:1px solid #e2e8f0; border-radius:8px; font-size:0.95rem; font-family:inherit;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--text-muted);
+                                      text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.4rem;">
+                            Username
+                        </label>
+                        <input type="text" name="username" value="{{ user.username or '' }}" placeholder="Optional display name"
+                               style="width:100%; padding:0.75rem; border:1px solid #e2e8f0; border-radius:8px; font-size:0.95rem; font-family:inherit;">
+                    </div>
+                </div>
+
+                <div>
+                    <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--text-muted);
+                                  text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.4rem;">
+                        Email Address
+                    </label>
+                    <input type="email" name="email" value="{{ user.email }}"
+                           style="width:100%; padding:0.75rem; border:1px solid #e2e8f0; border-radius:8px; font-size:0.95rem; font-family:inherit;">
+                </div>
+
+                <div>
+                    <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--text-muted);
+                                  text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.4rem;">
+                        Profile Picture
+                    </label>
+                    <input type="file" name="profile_picture" accept="image/*"
+                           style="width:100%; padding:0.75rem; border:1px solid #e2e8f0; border-radius:8px; font-size:0.9rem; font-family:inherit;">
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; border-top:1px solid #f1f5f9; padding-top:1rem;">
+                    <button type="submit" class="btn btn-primary" style="padding:0.75rem 2rem; font-weight:700;">
+                        <i class="fa-solid fa-floppy-disk" style="margin-right:0.5rem;"></i>Save Profile
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Change password form -->
+    <div class="card-panel">
+        <div class="card-header-bar"><h2>Change Password</h2></div>
+        <div class="card-body" style="padding:2rem;">
+            <form method="POST" action="{{ url_for('animal_farm_staff.profile') }}" style="display:grid; gap:1.5rem;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="password">
+
+                <div>
+                    <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--text-muted);
+                                  text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.4rem;">
+                        Current Password
+                    </label>
+                    <input type="password" name="current_password" required placeholder="Enter current password"
+                           style="width:100%; padding:0.75rem; border:1px solid #e2e8f0; border-radius:8px; font-size:0.95rem; font-family:inherit;">
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+                    <div>
+                        <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--text-muted);
+                                      text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.4rem;">
+                            New Password
+                        </label>
+                        <input type="password" name="new_password" required placeholder="Min. 8 characters"
+                               style="width:100%; padding:0.75rem; border:1px solid #e2e8f0; border-radius:8px; font-size:0.95rem; font-family:inherit;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--text-muted);
+                                      text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.4rem;">
+                            Confirm New Password
+                        </label>
+                        <input type="password" name="confirm_password" required placeholder="Repeat new password"
+                               style="width:100%; padding:0.75rem; border:1px solid #e2e8f0; border-radius:8px; font-size:0.95rem; font-family:inherit;">
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; border-top:1px solid #f1f5f9; padding-top:1rem;">
+                    <button type="submit" class="btn"
+                            style="background:#1e40af; color:white; border:none; padding:0.75rem 2rem; font-weight:700; border-radius:8px; cursor:pointer;">
+                        <i class="fa-solid fa-lock" style="margin-right:0.5rem;"></i>Update Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

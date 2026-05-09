@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Authentication Portal | Zootique{% endblock %}
+
+{% block content %}
+<div style="min-height: 80vh; padding: 4rem; background: #fbfbfb;">
+    <div class="container" style="max-width: 900px;">
+        
+        <div style="text-align: center; margin-bottom: 4rem;">
+            <div style="background: #fef3c7; color: #d97706; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: bold; width: fit-content; margin: 0 auto 1.5rem auto;">
+                <i class="fa-solid fa-lock"></i> Central Authentication Hub
+            </div>
+            <h1 style="font-size: 2.8rem; color: #1e3a2b; margin-bottom: 1rem; font-family: 'Times New Roman', serif;">Select Authentication Portal</h1>
+            <p style="color: #64748b; font-size: 1.1rem; max-width: 600px; margin: 0 auto;">Please choose the specific architectural module you belong to in order to access its dedicated registration and login endpoints.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem;">
+            
+            <!-- Visitor Module -->
+            <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2.5rem; display: flex; flex-direction: column; align-items: center; text-align: center; transition: all 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.02);" class="portal-card">
+                <div style="background: #1a4f32; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: white; margin-bottom: 1.5rem; box-shadow: 0 10px 15px rgba(26,79,50,0.3);">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem; color: #1e293b;">Visitors Module</h3>
+                <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 2rem;">Access bookings, view events, explore animal categories, and check the Zoo map exclusively for guests.</p>
+                <div style="display: flex; gap: 1rem; width: 100%;">
+                    <a href="{{ url_for('auth.login', module_name='visitor') }}" class="btn" style="flex:1; background: white; border: 1px solid #1a4f32; color: #1a4f32; padding: 0.8rem; border-radius: 6px; font-weight: bold; font-size: 0.9rem; text-decoration: none;">Sign In</a>
+                    <a href="{{ url_for('auth.register', module_name='visitor') }}" class="btn" style="flex:1; background: #1a4f32; color: white; padding: 0.8rem; border-radius: 6px; font-weight: bold; font-size: 0.9rem; text-decoration: none; border: 1px solid #1a4f32;">Sign Up</a>
+                </div>
+            </div>
+
+            <!-- Zoo Admin -->
+            <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2.5rem; display: flex; flex-direction: column; align-items: center; text-align: center; transition: all 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.02);" class="portal-card">
+                <div style="background: #fca000; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: white; margin-bottom: 1.5rem; box-shadow: 0 10px 15px rgba(252,160,0,0.3);">
+                    <i class="fa-solid fa-building-user"></i>
+                </div>
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem; color: #1e293b;">Animal Farm Admin Module</h3>
+                <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 2rem;">Overview of total pending and canceled bookings strictly for the designated Animal Farm administrative tier.</p>
+                <div style="display: flex; gap: 1rem; width: 100%;">
+                    <a href="{{ url_for('auth.login', module_name='zoo_admin') }}" class="btn" style="flex:1; background: white; border: 1px solid #fca000; color: #fca000; padding: 0.8rem; border-radius: 6px; font-weight: bold; font-size: 0.9rem; text-decoration: none;">Sign In</a>
+                        <a href="{{ url_for('auth.register_admin_step1') }}" class="btn" style="flex:1; background: #fca000; color: white; padding: 0.8rem; border-radius: 6px; font-weight: bold; font-size: 0.9rem; text-decoration: none; border: 1px solid #fca000;">Sign Up</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<style>
+.portal-card:hover {  transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;}
+</style>
+{% endblock %}

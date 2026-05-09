@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}System Feedback | Animal Farm Admin{% endblock %}
+{% block page_title %}System Feedback / Contact Super Admin{% endblock %}
+
+{% block content %}
+<div style="display: grid; gap: 2rem; max-width: 900px; margin: 0 auto;">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div style="background: {% if category == 'success' %}#dcfce7{% else %}#fee2e2{% endif %};
+                      color: {% if category == 'success' %}#16a34a{% else %}#dc2626{% endif %};
+                      padding: 0.9rem 1.2rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem;">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="card" style="padding: 2rem;">
+        <h2 style="margin-bottom: 1.5rem; color: var(--text-primary);">Submit Feedback to Support</h2>
+        <form method="post" action="{{ url_for('animal_farm_admin.system_feedback') }}" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <label style="font-weight: 600; color: var(--text-secondary);">Category</label>
+                <select name="category" required style="padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit;">
+                    <option value="">Select a category...</option>
+                    {% for category in categories %}
+                    <option value="{{ category }}">{{ category }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <label style="font-weight: 600; color: var(--text-secondary);">Rating (1-5)</label>
+                <input type="number" name="rating" min="1" max="5" value="5" required style="padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit;">
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <label style="font-weight: 600; color: var(--text-secondary);">Your Comment / Message</label>
+                <textarea name="comment" rows="4" required style="padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; resize: vertical;" placeholder="Describe your issue or suggestion..."></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="align-self: flex-start; padding: 0.75rem 1.5rem; font-weight: 600; font-size: 1rem; margin-top: 1rem;">
+                <i class="fa-solid fa-paper-plane" style="margin-right: 8px;"></i> Submit Feedback
+            </button>
+        </form>
+    </div>
+
+    <!-- Previous Feedback -->
+    <div class="card" style="padding: 2rem;">
+        <h2 style="margin-bottom: 1.5rem; color: var(--text-primary);">Your Previous Feedback</h2>
+        {% if feedbacks %}
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+            {% for fb in feedbacks %}
+                <div style="border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; align-items: flex-start;">
+                        <div>
+                            <span style="font-weight: 600; color: var(--text-primary); font-size: 1.1rem;">{{ fb.category }}</span>
+                            <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">
+                                Submitted on {{ fb.created_at.strftime('%b %d, %Y') }} • Rating: {{ fb.rating }}/5
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            {% if not fb.replies %}
+                            <details>
+                                <summary class="btn btn-outline btn-sm" style="list-style:none; cursor:pointer;">Edit</summary>
+                                <div style="margin-top:10px; min-width:340px; background:#f8fafc; border:1px solid var(--border); border-radius:10px; padding:12px;">
+                                    <form method="post" action="{{ url_for('animal_farm_admin.update_system_feedback', feedback_id=fb.id) }}" style="display:grid; gap:8px;">
+                                        <label style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Category</label>
+                                        <select name="category" required style="padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;">
+                                            {% for category in categories %}
+                                            <option value="{{ category }}" {% if fb.category == category %}selected{% endif %}>{{ category }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <label style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Rating</label>
+                                        <input type="number" name="rating" min="1" max="5" value="{{ fb.rating }}" required style="padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;">
+                                        <label style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Comment</label>
+                                        <textarea name="comment" rows="3" required style="padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; resize: vertical;">{{ fb.comment }}</textarea>
+                                        <div style="display:flex; justify-content:flex-end;">
+                                            <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </details>
+                            {% endif %}
+                            <form method="post" action="{{ url_for('animal_farm_admin.delete_system_feedback', feedback_id=fb.id) }}" onsubmit="return confirm('Delete this system feedback?');" style="margin:0;">
+                                <button type="submit" class="btn btn-ghost btn-sm"><i class="fa-solid fa-trash"></i> Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div style="color: var(--text-secondary); line-height: 1.5;">
+                        {{ fb.comment }}
+                    </div>
+
+                    {% if fb.replies %}
+                        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 1rem;">
+                            <h4 style="font-size: 0.95rem; color: var(--text-primary); margin: 0;">Support Replies</h4>
+                            {% for reply in fb.replies %}
+                                <div style="background: var(--bg-body); padding: 1rem; border-radius: 8px; border-left: 3px solid var(--primary-color);">
+                                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                                        Replied on {{ reply.created_at.strftime('%b %d, %Y %I:%M %p') }}
+                                    </div>
+                                    <div style="color: var(--text-secondary); line-height: 1.4; font-size: 0.95rem;">
+                                        {{ reply.reply_text }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            </div>
+        {% else %}
+            <p style="color: var(--text-muted);">You haven't submitted any feedback yet.</p>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Report Incident{% endblock %}
+{% block page_title %}Logging & Escalations{% endblock %}
+
+{% block content %}
+<div style="display: grid; gap: 2rem; max-width: 800px; margin: 0 auto;">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for category, message in messages %}
+        <div style="background:{% if category=='success'%}#dcfce7{% else %}#fee2e2{% endif %};
+                    color:{% if category=='success'%}#16a34a{% else %}#dc2626{% endif %};
+                    padding:0.9rem 1.2rem; border-radius:8px; font-weight:600; font-size:0.9rem;">
+            {{ message }}
+        </div>
+      {% endfor %}{% endif %}
+    {% endwith %}
+
+    <!-- Submission form -->
+    <div class="card-panel">
+        <div class="card-header-bar" style="background: linear-gradient(135deg, #7f1d1d, #b91c1c);">
+            <h2 style="margin:0; color:white;">
+                <i class="fa-solid fa-triangle-exclamation" style="margin-right:0.5rem;"></i>
+                Report New Incident
+            </h2>
+        </div>
+        <div class="card-body" style="padding:2rem;">
+            <p style="color:var(--text-muted); margin-bottom:1.5rem; font-size:0.9rem;">
+                File a report for any emergency, infrastructure damage, or veterinary crisis. Your Farm Admin will be notified immediately.
+            </p>
+            <form method="POST" action="{{ url_for('animal_farm_staff.report_incident') }}"
+                  style="display:grid; gap:1.5rem;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div>
+                    <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--text-muted);
+                                  text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.4rem;">
+                        Severity Level <span style="color:#dc2626;">*</span>
+                    </label>
+                    <select name="severity"
+                            style="width:100%; padding:0.75rem; border:1px solid #e2e8f0; border-radius:8px;
+                                   font-size:0.95rem; font-family:inherit; background:white;">
+                        <option value="General">General — Minor Issue</option>
+                        <option value="Warning">Warning — Needs Attention Soon</option>
+                        <option value="Urgent">Urgent — Immediate Action Required</option>
+                        <option value="Emergency">Emergency — Critical / Life-Threatening</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--text-muted);
+                                  text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.4rem;">
+                        Incident Title <span style="color:#dc2626;">*</span>
+                    </label>
+                    <input type="text" name="title" required
+                           placeholder="e.g. Enclosure fence broken near Lion pen"
+                           style="width:100%; padding:0.75rem; border:1px solid #e2e8f0; border-radius:8px;
+                                  font-size:0.95rem; font-family:inherit;">
+                </div>
+
+                <div>
+                    <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--text-muted);
+                                  text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.4rem;">
+                        Details / Description
+                    </label>
+                    <textarea name="description" rows="5"
+                              placeholder="Describe the incident in detail — location, animals involved, actions taken so far…"
+                              style="width:100%; padding:0.75rem; border:1px solid #e2e8f0; border-radius:8px;
+                                     font-size:0.95rem; font-family:inherit; resize:vertical;"></textarea>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end;">
+                    <button type="submit" class="btn"
+                            style="background:#dc2626; color:white; border:none; padding:0.8rem 2rem;
+                                   font-weight:700; font-size:0.95rem; border-radius:8px; cursor:pointer;">
+                        <i class="fa-solid fa-circle-exclamation" style="margin-right:0.5rem;"></i>
+                        Submit Incident Report
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Recent incidents log -->
+    <div class="card-panel">
+        <div class="card-header-bar">
+            <h2>Recent Incident Reports</h2>
+        </div>
+        {% if incidents %}
+        <div class="table-container" style="box-shadow:none; margin-bottom:0; border-radius:0 0 var(--border-radius) var(--border-radius);">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date Filed</th>
+                        <th>Severity / Title</th>
+                        <th>Details</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inc in incidents %}
+                    <tr>
+                        <td style="color:var(--text-muted); font-size:0.85rem; white-space:nowrap;">
+                            {{ inc.created_at.strftime('%Y-%m-%d') }}
+                        </td>
+                        <td style="font-weight:600;">
+                            {% set severity = inc.title.split(']')[0].replace('[','') if inc.title.startswith('[') else 'General' %}
+                            {% if severity == 'Emergency' %}
+                                <span class="badge" style="background:#991b1b; color:white; margin-right:0.5rem;">{{ severity }}</span>
+                            {% elif severity == 'Urgent' %}
+                                <span class="badge" style="background:#c2410c; color:white; margin-right:0.5rem;">{{ severity }}</span>
+                            {% elif severity == 'Warning' %}
+                                <span class="badge" style="background:#d97706; color:white; margin-right:0.5rem;">{{ severity }}</span>
+                            {% else %}
+                                <span class="badge" style="background:#475569; color:white; margin-right:0.5rem;">{{ severity }}</span>
+                            {% endif %}
+                            {{ inc.title.split('] ', 1)[1] if '] ' in inc.title else inc.title }}
+                        </td>
+                        <td style="color:var(--text-muted); font-size:0.85rem; max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            {{ inc.description or '—' }}
+                        </td>
+                        <td>
+                            {% if inc.status == 'done' %}
+                                <span class="badge badge-healthy">Resolved</span>
+                            {% elif inc.status == 'in_progress' %}
+                                <span class="badge badge-observation">In Progress</span>
+                            {% else %}
+                                <span class="badge badge-pending">Pending</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="card-body" style="padding:3rem; text-align:center; color:var(--text-muted);">
+            <i class="fa-solid fa-check-circle" style="font-size:3rem; margin-bottom:1rem; color:#86efac;"></i>
+            <h3 style="color:#475569;">All Clear</h3>
+            <p style="font-size:0.9rem;">System functioning nominally — no incidents on record.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

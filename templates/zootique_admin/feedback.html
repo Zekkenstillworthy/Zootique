@@ -1,0 +1,119 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Zoo Feedback{% endblock %}
+{% block page_title %}Zoo Feedback{% endblock %}
+
+{% block content %}
+
+<div class="page-subheader" style="margin-bottom:16px;">
+  <div class="ps-left">
+    <h2>TOTAL FEEDBACK</h2>
+    <p>Regional Performance Hub</p>
+  </div>
+</div>
+
+<!-- Stats (Figma values) -->
+<div class="stats-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:16px;">
+  <div class="stat-card">
+    <div class="stat-icon-box blue"><i class="fa-solid fa-message"></i></div>
+    <div class="stat-value">1,284</div>
+    <div class="stat-label">TOTAL FEEDBACK</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon-box green"><i class="fa-solid fa-star"></i></div>
+    <div class="stat-value">4.7</div>
+    <div class="stat-label">AVG RATING</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon-box orange" style="background:var(--warning-bg); color:var(--warning);"><i class="fa-solid fa-clock"></i></div>
+    <div class="stat-value">42</div>
+    <div class="stat-label">PENDING REPLIES</div>
+  </div>
+</div>
+
+<div class="two-col" style="grid-template-columns: 1.1fr 0.9fr; align-items:start;">
+
+  <!-- Feedback list -->
+  <div class="card-panel" style="margin-bottom:0;">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+      <h2>RECENT FEEDBACK</h2>
+      <input type="text" placeholder="Search sentiment..." style="max-width:220px;">
+    </div>
+    <div class="card-body" style="padding-top:0; display:flex; flex-direction:column; gap:10px;">
+      {% for f in feedbacks %}
+        {% set status = 'REPLIED' if f.latest_reply else 'PENDING' %}
+        <button
+          type="button"
+          class="sa-feedback-card"
+          data-feedback-id="{{ f.id }}"
+          data-zoo-name="{{ f.zoo_name|e }}"
+          data-rating="{{ f.rating }}"
+          data-comment="{{ f.comment|e }}"
+          data-created-at="{{ f.created_at|e }}"
+          data-status="{{ status }}"
+          data-latest-reply="{{ (f.latest_reply or '')|e }}"
+          data-latest-reply-date="{{ (f.latest_reply_date or '')|e }}"
+          style="text-align:left; border:1px solid var(--border-light); background:#fff; border-radius:12px; padding:12px 12px; cursor:pointer;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+            <div>
+              <div style="font-weight:900;">{{ f.zoo_name }}</div>
+              <div style="font-size:12px; color:var(--text-muted); font-weight:700;">{{ f.created_at }}</div>
+            </div>
+            <span class="badge" style="{% if status == 'REPLIED' %}background:var(--success-bg); color:var(--success);{% else %}background:var(--warning-bg); color:var(--warning);{% endif %} font-weight:900;">{{ status }}</span>
+          </div>
+          <div style="margin-top:8px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+            <div style="font-size:12px; color:var(--text-muted); font-weight:800;">Rating: {{ f.rating }}/5</div>
+            <div style="font-size:12px; color:var(--text-muted); font-weight:800;">View Full Details</div>
+          </div>
+          <div style="margin-top:8px; color:var(--text-secondary); font-size:13px; line-height:1.5;">
+            {{ f.comment[:120] }}{% if f.comment|length > 120 %}...{% endif %}
+          </div>
+        </button>
+      {% else %}
+        <div class="empty-state">No zoo admin feedback found.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Detail + reply panel -->
+  <div class="card-panel" style="margin-bottom:0; position:sticky; top:76px;">
+    <div class="card-header">
+      <h2>Feedback Detail</h2>
+    </div>
+    <div class="card-body" style="padding-top:0;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+        <div>
+          <div id="sa_feedback_zoo" style="font-weight:900;">—</div>
+          <div id="sa_feedback_time" style="font-size:12px; color:var(--text-muted); font-weight:700;">—</div>
+        </div>
+        <span id="sa_feedback_status" class="badge" style="background:var(--border-light); color:var(--text-muted); font-weight:900;">—</span>
+      </div>
+
+      <div style="margin-top:10px; font-size:12px; font-weight:900; letter-spacing:0.02em; color:var(--text-muted);">REVIEW CONTENT</div>
+      <div id="sa_feedback_comment" style="margin-top:6px; color:var(--text-secondary); line-height:1.6;">Select a feedback card to view details.</div>
+
+      <div style="margin-top:14px; font-size:12px; font-weight:900; letter-spacing:0.02em; color:var(--text-muted);">INTERNAL REPLY</div>
+      <form id="sa_reply_form" method="post" action="" style="margin-top:8px; display:flex; flex-direction:column; gap:10px;">
+        <textarea name="reply_text" rows="5" placeholder="Type your response to the park administrator here..." required></textarea>
+        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-paper-plane"></i> SEND REPLY</button>
+        <div style="font-size:12px; color:var(--text-muted);">
+          Replies sent through this portal are emailed directly to the Zoo's primary account owner and stored in their "Communications" tab.
+        </div>
+      </form>
+      <form id="sa_delete_form" method="post" action="" style="margin-top:10px;">
+        <button class="btn btn-ghost" type="submit" onclick="return confirm('Delete this feedback and its replies?');"><i class="fa-solid fa-trash"></i> Delete Feedback</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.ZootiqueSuperAdmin = window.ZootiqueSuperAdmin || {};
+  window.ZootiqueSuperAdmin.replyUrlTemplate = "{{ url_for('zootique_admin.reply_feedback', feedback_id=0) }}";
+  window.ZootiqueSuperAdmin.deleteUrlTemplate = "{{ url_for('zootique_admin.delete_feedback', feedback_id=0) }}";
+</script>
+{% endblock %}

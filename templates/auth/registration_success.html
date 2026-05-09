@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Registration Successful | Zootique{% endblock %}
+
+{% block content %}
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #fbfbfb; padding: 2rem;">
+  <div style="background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); width: 100%; max-width: 500px; text-align: center; overflow: hidden; border: 1px solid #e2e8f0;">
+    
+    <div style="background: linear-gradient(135deg, {% if role == 'zoo_admin' %}#fca000, #d97706{% elif role == 'zoo_staff' %}#0ea5e9, #0284c7{% else %}#1a4f32, #132a1c{% endif %});
+                padding: 40px 20px; color: white;">
+      <div style="width: 72px; height: 72px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 32px;">
+        <i class="fa-solid fa-check"></i>
+      </div>
+      <h1 style="font-size: 28px; margin: 0; font-weight: 800; letter-spacing: -0.5px;">Registration Complete!</h1>
+    </div>
+
+    <div style="padding: 40px;">
+      <p style="font-size: 16px; color: #475569; line-height: 1.6; margin-bottom: 30px;">
+        {% if role == 'zoo_admin' %}
+          Your administrator account and establishment profiles have been successfully created. Welcome to the Zootique management network!
+        {% elif role == 'zoo_staff' %}
+          Your staff account has been securely provisioned and linked to your selected establishment.
+        {% else %}
+          Your account is ready. Get ready to explore the world's most breathtaking wildlife experiences.
+        {% endif %}
+      </p>
+
+      <a href="{{ url_for('auth.login', module_name=role) }}" 
+         style="display: block; width: 100%; padding: 16px; background: {% if role == 'zoo_admin' %}#d97706{% elif role == 'zoo_staff' %}#0284c7{% else %}#1a4f32{% endif %};
+                color: white; border-radius: 8px; font-size: 16px; font-weight: 700; text-decoration: none; transition: transform 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        Proceed to Login <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i>
+      </a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

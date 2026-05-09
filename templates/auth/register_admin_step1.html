@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Register | Step 1{% endblock %}
+
+{% block content %}
+<div style="display: flex; min-height: 100vh; overflow:hidden;">
+  <!-- LEFT PANEL -->
+  <div style="flex: 0 0 45%; background: #132a1c; position: relative; display: flex; flex-direction: column; color: white; padding: 3rem; overflow: hidden;">
+    <!-- Background layer -->
+    <div style="position: absolute; inset: 0; background-image: url('https://images.unsplash.com/photo-1534567153574-2b12153a87f0?auto=format&fit=crop&q=80'); background-size: cover; background-position: center; opacity: 0.2; mix-blend-mode: screen; z-index: 0;"></div>
+    <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(19,42,28,0.2) 0%, #132a1c 100%); z-index: 1;"></div>
+    
+    <div style="position: relative; z-index: 2;">
+      <a href="/" style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 24px; color: white; text-decoration: none;">
+        <i class="fa-solid fa-tree"></i> Zootique
+      </a>
+    </div>
+
+    <div style="position: relative; z-index: 2; margin-top: auto; margin-bottom: auto;">
+      <h1 style="font-size: clamp(32px, 4vw, 44px); font-weight: 800; line-height: 1.15; margin-bottom: 24px; letter-spacing: -1px;">
+        Elevate your wildlife management to a curated art form.
+      </h1>
+      <div style="display: flex; gap: 12px; font-size: 15px; color: rgba(255,255,255,0.8); line-height: 1.6; max-width: 400px;">
+        <i class="fa-solid fa-circle-check" style="color: #3dc4b0; margin-top:3px;"></i>
+        Join 400+ world-class conservation parks and sanctuaries globally.
+      </div>
+    </div>
+
+    <div style="position: relative; z-index: 2; font-size: 12px; color: rgba(255,255,255,0.5); margin-top: auto;">
+      © 2026 ZOOTIQUE WILDLIFE MANAGEMENT
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div style="flex: 1; display: flex; flex-direction: column; padding: 40px 60px; background: #fbfbfb; overflow-y: auto;">
+    <div style="max-width: 600px; width: 100%; margin: 20px auto;">
+
+      <div style="margin-bottom: 40px;">
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #166453; margin-bottom: 8px;">REGISTRATION</div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; position: relative;">
+          <h2 style="font-size: 28px; margin:0; font-weight: 800; color: #1e293b; letter-spacing: -0.5px;">Establishment Info</h2>
+          <div style="font-size: 13px; color: #64748b; font-weight: 600;">Step 1 of 2</div>
+          <div style="position: absolute; bottom: -2px; left: 0; width: 50%; height: 2px; background: #166453;"></div>
+        </div>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div style="background: #fee2e2; color: #ef4444; border-radius: 6px; padding: 12px; font-size: 13px; font-weight: 600; margin-bottom: 20px;">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form action="{{ url_for('auth.register_admin_step1') }}" method="POST" style="display: grid; gap: 1.5rem;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div style="background: #e2e8f0; color: #334155; padding: 12px 16px; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 10px; border-radius: 6px; margin-bottom: 0.5rem;">
+          <i class="fa-solid fa-building-columns"></i> YOUR ESTABLISHMENT DETAILS
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Establishment Name</label>
+          <input type="text" name="zoo_name" value="{{ session.get('reg_zoo_name', '') }}" placeholder="e.g. Serengeti Heritage Park" required style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px 16px; font-family: inherit; font-size: 14px; transition: all 0.2s;">
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Establishment Type</label>
+          <div style="display: flex; gap: 16px;">
+            <label style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; cursor: pointer; text-align: center; position: relative;">
+              <input type="radio" name="zoo_type" value="Zoo Park" checked style="display: none;">
+              <i class="fa-solid fa-mountain-sun" style="font-size: 20px; color: #1e3a2b; margin-bottom: 8px; display:block;"></i>
+              <span style="font-size: 13px; font-weight: 800; color: #1e3a2b; display:block;">Zoo Park</span>
+            </label>
+            <label style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; cursor: pointer; text-align: center; position: relative;">
+              <input type="radio" name="zoo_type" value="Wildlife Park" style="display: none;">
+              <i class="fa-solid fa-tree" style="font-size: 20px; color: #1e3a2b; margin-bottom: 8px; display:block;"></i>
+              <span style="font-size: 13px; font-weight: 800; color: #1e3a2b; display:block;">Wildlife Park</span>
+            </label>
+            <label style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; cursor: pointer; text-align: center; position: relative;">
+              <input type="radio" name="zoo_type" value="Farm Attraction" style="display: none;">
+              <i class="fa-solid fa-tractor" style="font-size: 20px; color: #1e3a2b; margin-bottom: 8px; display:block;"></i>
+              <span style="font-size: 13px; font-weight: 800; color: #1e3a2b; display:block;">Farm Attraction</span>
+            </label>
+          </div>
+          <style>
+            input[type="radio"]:checked + i + span { color: #166453; }
+            input[type="radio"]:checked ~ * { color: #166453 !important; }
+            input[type="radio"]:checked { content: ""; }
+            label:has(input[type="radio"]:checked) { border-color: #166453; box-shadow: 0 0 0 1px #166453; background: #f0fdf4; }
+          </style>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Location</label>
+          <input type="text" name="zoo_location" value="{{ session.get('reg_zoo_location', '') }}" placeholder="Full Address or Region" required style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px 16px; font-family: inherit; font-size: 14px;">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
+          <a href="{{ url_for('auth.portal') }}" style="color: #64748b; font-size: 14px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-arrow-left"></i> Back to Portal</a>
+          <button type="submit" style="background: #1a4f32; color: white; border: none; border-radius: 6px; padding: 14px 28px; font-size: 15px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(26,79,50,0.25);">Continue <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+      </form>
+      
+    </div>
+  </div>
+</div>
+{% endblock %}

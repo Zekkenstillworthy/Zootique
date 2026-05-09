@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Placeholder{% endblock %}
+{% block page_title %}Feature Coming Soon{% endblock %}
+
+{% block content %}
+<div class="animate" style="padding: 4rem 2rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh;">
+    <h2 style="color: var(--accent-color); margin-bottom: 1rem; font-size: 1.8rem; font-weight: 700;">Work in Progress</h2>
+    <p style="color: #666; margin-bottom: 2rem; font-size: 0.95rem;">This module is being developed as part of the Zootique Admin & Visitor expansion.</p>
+    <a href="{% if request.blueprint == 'zootique_admin' %}{{ url_for('zootique_admin.dashboard') }}{% elif request.blueprint == 'animal_farm_admin' %}{{ url_for('animal_farm_admin.dashboard') }}{% elif request.blueprint == 'animal_farm_staff' %}{{ url_for('animal_farm_staff.dashboard') }}{% else %}{{ url_for('visitor.home') }}{% endif %}" class="btn btn-primary" style="padding: 0.6rem 1.5rem;">Return to Dashboard</a>
+</div>
+{% endblock %}

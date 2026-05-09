@@ -1,0 +1,259 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Subscriptions Management{% endblock %}
+{% block page_title %}Subscriptions{% endblock %}
+
+{% block content %}
+
+<div class="page-subheader" style="margin-bottom:16px;">
+  <div class="ps-left">
+    <h2>ZOO SUBSCRIPTIONS</h2>
+    <p>Configure subscription features and access levels for partners.</p>
+  </div>
+</div>
+
+<!-- Stats (Figma values) -->
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:16px;">
+  <div class="stat-card">
+    <div class="stat-icon-box green"><i class="fa-solid fa-circle-check"></i></div>
+    <div class="stat-value">142</div>
+    <div class="stat-label">ACTIVE SUBSCRIPTIONS</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon-box blue"><i class="fa-solid fa-money-bills"></i></div>
+    <div class="stat-value">$42.8k</div>
+    <div class="stat-label">TOTAL REVENUE (MRR)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon-box orange" style="background:var(--warning-bg); color:var(--warning);"><i class="fa-solid fa-rotate"></i></div>
+    <div class="stat-value">18</div>
+    <div class="stat-label">PENDING RENEWALS</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon-box purple"><i class="fa-solid fa-arrow-trend-down"></i></div>
+    <div class="stat-value">1.2%</div>
+    <div class="stat-label">CHURN RATE</div>
+  </div>
+</div>
+
+<!-- Alert banner -->
+<div class="card-panel" style="margin-bottom:16px; border-left:4px solid var(--warning); background:var(--warning-bg);">
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+    <div style="display:flex; align-items:flex-start; gap:10px;">
+      <i class="fa-solid fa-triangle-exclamation" style="color:var(--warning); margin-top:2px;"></i>
+      <div>
+        <div style="font-weight:900; letter-spacing:0.02em;">CRITICAL SUBSCRIPTION UPDATES - CENTRAL LUZON REGION</div>
+        <div style="font-size:12px; color:#92400e; font-weight:700;">Immediate attention required</div>
+      </div>
+    </div>
+    <div style="font-size:12px; font-weight:800; color:#92400e;">Requires Attention</div>
+  </div>
+</div>
+
+<div class="two-col" style="grid-template-columns: 1.25fr 0.75fr; margin-bottom:16px;">
+  <!-- Directory table -->
+  <div class="card-panel" style="margin-bottom:0;">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+      <h2>ZOO MEMBERSHIP DIRECTORY</h2>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="text" placeholder="Search Zoo Name..." style="max-width:220px;">
+        <button class="btn btn-ghost btn-sm" type="button">Filters</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ZOO NAME</th>
+            <th>STATUS</th>
+            <th>PLAN TIER</th>
+            <th>LAST PAYMENT</th>
+            <th>RENEWAL DATE</th>
+            <th style="text-align:right;">AMOUNT</th>
+            <th>ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sub in subscriptions %}
+          <tr>
+            <td class="fw-600">{{ sub.zoo_name }}</td>
+            <td>
+              {% if sub.status == 'Active' %}
+              <span class="badge badge-confirmed">Active</span>
+              {% else %}
+              <span class="badge" style="background:var(--danger-bg); color:var(--danger);">Expired</span>
+              {% endif %}
+            </td>
+            <td>{{ sub.plan_name }}</td>
+            <td style="color:var(--text-muted); font-size:12px;">{{ sub.latest_payment_date }}</td>
+            <td style="color:var(--text-muted); font-size:12px;">{{ sub.end_date }}</td>
+            <td style="text-align:right; font-weight:800; color:var(--primary);">₱{{ "{:,.2f}".format(sub.latest_payment_amount or 0) }}</td>
+            <td>
+              <div style="display:grid; gap:6px; min-width:190px;">
+                <form method="post" action="{{ url_for('zootique_admin.renew_subscription', subscription_id=sub.subscription_id) }}" style="display:flex; gap:6px; align-items:center;">
+                  <input type="number" name="months" min="1" value="1" style="max-width:64px; padding:4px 6px;">
+                  <button class="btn btn-outline btn-sm" type="submit">Renew</button>
+                </form>
+
+                <form method="post" action="{{ url_for('zootique_admin.change_subscription_plan', subscription_id=sub.subscription_id) }}" style="display:flex; gap:6px; align-items:center;">
+                  <select name="plan_id" style="padding:4px 6px; min-width:108px;">
+                    {% for p in plans %}
+                    <option value="{{ p.id }}" {% if p.id == sub.plan_id %}selected{% endif %}>{{ p.name }}</option>
+                    {% endfor %}
+                  </select>
+                  <button class="btn btn-ghost btn-sm" type="submit">Change</button>
+                </form>
+
+                <form method="post" action="{{ url_for('zootique_admin.cancel_subscription', subscription_id=sub.subscription_id) }}">
+                  <button class="btn btn-sm" type="submit" style="background:var(--danger-bg); color:var(--danger); border:1px solid rgba(239,68,68,0.35); width:100%;">Cancel</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="empty-state">No subscriptions found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div style="padding:12px 16px; border-top:1px solid var(--border-light); font-size:12px; color:var(--text-muted);">
+      Showing {{ subscriptions|length }} entries
+    </div>
+  </div>
+
+  <!-- Pricing tiers -->
+  <div class="card-panel" style="margin-bottom:0;">
+    <div class="card-header">
+      <h2>Global Pricing Tiers</h2>
+    </div>
+    <div class="card-body" style="display:flex; flex-direction:column; gap:12px;">
+      <div class="card-panel" style="margin:0; border:1px solid var(--border-light);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+          <div>
+            <div style="font-weight:900;">Basic Field</div>
+            <div style="font-size:12px; color:var(--text-muted); font-weight:700;">Secure Field Access</div>
+          </div>
+          <div style="font-weight:900; color:var(--text);">$199<span style="font-size:12px; color:var(--text-muted); font-weight:800;">/mo</span></div>
+        </div>
+      </div>
+
+      <div class="card-panel" style="margin:0; border:1px solid rgba(22,163,74,0.35); background:rgba(22,163,74,0.06);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+          <div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <div style="font-weight:900;">Habitat Pro</div>
+              <span class="badge" style="background:rgba(22,163,74,0.16); color:var(--primary); font-weight:900;">POPULAR CHOICE</span>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted); font-weight:700;">Recommended for high-level admin accounts</div>
+          </div>
+          <div style="font-weight:900; color:var(--text);">$499<span style="font-size:12px; color:var(--text-muted); font-weight:800;">/mo</span></div>
+        </div>
+      </div>
+
+      <div class="card-panel" style="margin:0; border:1px solid var(--border-light);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+          <div>
+            <div style="font-weight:900;">Sanctuary Global</div>
+            <div style="font-size:12px; color:var(--text-muted); font-weight:700;">API Access & Integrations</div>
+          </div>
+          <div style="font-weight:900; color:var(--text);">$999<span style="font-size:12px; color:var(--text-muted); font-weight:800;">/mo</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <a class="btn btn-primary" href="#plan-manager"><i class="fa-solid fa-plus"></i> Add New Plan</a>
+        <a class="btn btn-ghost" href="#plan-manager"><i class="fa-regular fa-pen-to-square"></i> Edit Features</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Plan Manager (existing functionality) -->
+<div id="plan-manager" class="two-col" style="grid-template-columns: 1fr 1.1fr;">
+
+  <!-- Add / Edit Plan -->
+  <div class="card-panel" style="margin-bottom:0;">
+    <div class="card-header">
+      <h2>PLAN MANAGER — {% if edit_plan %}Edit{% else %}Add{% endif %}</h2>
+    </div>
+    <div class="card-body">
+      <form method="post" action="{{ url_for('zootique_admin.save_subscription_plan') }}" style="display:flex; flex-direction:column; gap:12px;">
+        {% if edit_plan %}
+          <input type="hidden" name="plan_id" value="{{ edit_plan.id }}">
+        {% endif %}
+
+        <div>
+          <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Plan Name</label>
+          <input type="text" name="name" value="{{ edit_plan.name if edit_plan else '' }}" placeholder="Basic Field, Habitat Pro, ..." required>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Price</label>
+            <input type="number" name="price" step="0.01" value="{{ edit_plan.price if edit_plan else '' }}" placeholder="0.00" required>
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Duration</label>
+            <select name="duration" required>
+              <option value="monthly" {% if edit_plan and edit_plan.duration == 'monthly' %}selected{% endif %}>Monthly</option>
+              <option value="yearly" {% if edit_plan and edit_plan.duration == 'yearly' %}selected{% endif %}>Yearly</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Features (one per line)</label>
+          <textarea name="features" rows="6" placeholder="Up to 500 Animals\n3 Admin Users\nBasic Reporting">{{ edit_plan.features if edit_plan and edit_plan.features else '' }}</textarea>
+        </div>
+
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Plan</button>
+          {% if edit_plan %}
+            <a class="btn btn-ghost" href="{{ url_for('zootique_admin.manage_subscriptions') }}">Discard</a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Plans Table -->
+  <div class="card-panel" style="margin-bottom:0;">
+    <div class="card-header">
+      <h2>PREMIUM TIER • Global Pricing Tiers</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>PLAN</th>
+            <th style="text-align:right;">PRICE</th>
+            <th>DURATION</th>
+            <th>FEATURES</th>
+            <th>ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in plans %}
+          <tr>
+            <td class="fw-600">{{ p.name }}</td>
+            <td style="text-align:right;">₱{{ "{:,.2f}".format(p.price) }}</td>
+            <td style="text-transform:capitalize;">{{ p.duration }}</td>
+            <td style="color:var(--text-muted); font-size:12px;">{{ (p.features or '—')|replace('\n', ', ') }}</td>
+            <td>
+              <a class="btn btn-ghost btn-sm" href="{{ url_for('zootique_admin.manage_subscriptions', edit_plan=p.id) }}"><i class="fa-regular fa-pen-to-square"></i> Modify Subscription</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="empty-state">No plans available.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

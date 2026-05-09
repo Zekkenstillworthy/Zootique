@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Subscription | Zoo Admin{% endblock %}
+{% block page_title %}Subscription{% endblock %}
+
+{% block content %}
+<div class="card-panel">
+  <div class="card-header">
+    <h2>Your Subscription</h2>
+  </div>
+  <div class="card-body">
+    {% if not zoo %}
+      <p style="color: var(--text-muted);">No zoo is linked to this account.</p>
+    {% else %}
+      <p style="color: var(--text-muted); margin-bottom: 12px;">Zoo: <strong>{{ zoo.name }}</strong></p>
+
+      {% if subscription %}
+        <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 16px;">
+          <div class="stat-card">
+            <div class="stat-icon-box green"><i class="fa-solid fa-crown"></i></div>
+            <div class="stat-value">{{ subscription.plan.name }}</div>
+            <div class="stat-label">Plan</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-box blue"><i class="fa-solid fa-circle-info"></i></div>
+            <div class="stat-value"><span class="badge badge-{{ subscription.status }}">{{ subscription.status }}</span></div>
+            <div class="stat-label">Status</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-box purple"><i class="fa-solid fa-calendar"></i></div>
+            <div class="stat-value">{{ subscription.start_date.strftime('%Y-%m-%d') }}</div>
+            <div class="stat-label">Start</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-box orange"><i class="fa-solid fa-calendar-xmark"></i></div>
+            <div class="stat-value">{{ subscription.end_date.strftime('%Y-%m-%d') }}</div>
+            <div class="stat-label">End</div>
+          </div>
+        </div>
+      {% else %}
+        <div style="padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: #fafafa;">
+          <strong>No active subscription found.</strong>
+          <p style="margin-top: 6px; color: var(--text-muted);">Contact Zootique Admin to activate a plan for your zoo.</p>
+        </div>
+      {% endif %}
+
+      <div class="two-col" style="grid-template-columns: 1fr 1fr;">
+        <div class="card-panel" style="margin: 0;">
+          <div class="card-header">
+            <h2>Available Plans</h2>
+          </div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Duration</th>
+                    <th>Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for plan in plans %}
+                    <tr>
+                      <td>{{ plan.name }}</td>
+                      <td>{{ plan.duration }}</td>
+                      <td>₱{{ '%.2f'|format(plan.price) }}</td>
+                    </tr>
+                  {% else %}
+                    <tr><td colspan="3" style="color: var(--text-muted);">No plans available.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <p style="margin-top: 10px; color: var(--text-muted); font-size: 12px;">Plan changes are handled by Zootique Admin.</p>
+          </div>
+        </div>
+
+        <div class="card-panel" style="margin: 0;">
+          <div class="card-header">
+            <h2>Payment History</h2>
+          </div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Reference</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in payments %}
+                    <tr>
+                      <td>{{ p.paid_at.strftime('%Y-%m-%d') }}</td>
+                      <td>₱{{ '%.2f'|format(p.amount) }}</td>
+                      <td>{{ p.reference or '-' }}</td>
+                      <td><span class="badge badge-{{ p.status }}">{{ p.status }}</span></td>
+                    </tr>
+                  {% else %}
+                    <tr><td colspan="4" style="color: var(--text-muted);">No payments yet.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

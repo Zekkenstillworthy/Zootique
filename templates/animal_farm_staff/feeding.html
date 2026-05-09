@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Feeding Schedule{% endblock %}
+{% block page_title %}Animal Nutrient Timetables{% endblock %}
+
+{% block content %}
+<div style="display: grid; gap: 2rem;">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for category, message in messages %}
+        <div style="background:{% if category=='success'%}#dcfce7{% else %}#fee2e2{% endif %};
+                    color:{% if category=='success'%}#16a34a{% else %}#dc2626{% endif %};
+                    padding:0.9rem 1.2rem; border-radius:8px; font-weight:600; font-size:0.9rem;">
+            {{ message }}
+        </div>
+      {% endfor %}{% endif %}
+    {% endwith %}
+
+    <!-- Header card -->
+    <div class="card-panel">
+        <div class="card-header-bar" style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="margin:0;">Today's Rounds — {{ zoo.name if zoo else 'Your Farm' }}</h2>
+            <span style="font-size:0.85rem; opacity:0.8;">
+                <i class="fa-solid fa-calendar-day" style="margin-right:0.3rem;"></i>
+                {% set today = namespace(val='') %}
+                {{ self.today_date() if self.today_date is defined else '' }}
+            </span>
+        </div>
+    </div>
+
+    {% if animals %}
+    <!-- Animal roster -->
+    <div class="card-panel">
+        <div class="card-header-bar">
+            <h2>Animal Roster ({{ animals|length }} animals)</h2>
+        </div>
+        <div class="table-container" style="box-shadow:none; margin-bottom:0; border-radius:0 0 var(--border-radius) var(--border-radius);">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Animal</th>
+                        <th>Species</th>
+                        <th>Habitat / Pen</th>
+                        <th>Health Status</th>
+                        <th>Schedule Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for animal in animals %}
+                    <tr>
+                        <td style="display:flex; align-items:center; gap:0.8rem; font-weight:600;">
+                            {% if animal.image_url %}
+                                <img src="{{ animal.image_url }}" alt="{{ animal.name }}"
+                                     style="width:36px; height:36px; border-radius:50%; object-fit:cover;">
+                            {% else %}
+                                <div style="width:36px; height:36px; border-radius:50%; background:var(--primary-light);
+                                            display:flex; align-items:center; justify-content:center;">
+                                    <i class="fa-solid fa-paw" style="color:white; font-size:0.9rem;"></i>
+                                </div>
+                            {% endif %}
+                            {{ animal.name }}
+                        </td>
+                        <td>{{ animal.species or '—' }}</td>
+                        <td>{{ animal.habitat or '—' }}</td>
+                        <td>
+                            {% if (animal.status or '')|lower == 'healthy' %}
+                                <span class="badge badge-healthy">Healthy</span>
+                            {% elif animal.status %}
+                                <span class="badge badge-observation">{{ animal.status }}</span>
+                            {% else %}
+                                <span style="color:var(--text-muted);">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="color:var(--text-muted); font-size:0.85rem;">Standard schedule</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="card-panel">
+        <div class="card-body" style="padding:3rem; text-align:center; color:var(--text-muted);">
+            <i class="fa-solid fa-bowl-food" style="font-size:3rem; margin-bottom:1rem; color:#94a3b8;"></i>
+            <h3 style="color:#475569;">No Animals on Record</h3>
+            <p style="font-size:0.9rem;">No animals are registered for your farm yet. Ask your Farm Admin to add animals first.</p>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

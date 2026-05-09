@@ -1,0 +1,130 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Visitor Map & Zone Management | Animal Farm Admin{% endblock %}
+{% block page_title %}Visitor Map & Zone Management{% endblock %}
+
+{% block content %}
+<div class="card-panel" style="margin-bottom: 16px;">
+    <div class="card-header">
+        <h2>Landing Page Map</h2>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{{ url_for('animal_farm_admin.save_landing_map') }}" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <label style="font-weight:600; color:var(--text-secondary);">Map Title</label>
+                <input type="text" name="landing_map_title" value="{{ landing_map.title }}" placeholder="e.g., Lyger Zoo Visitor Map" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                <label style="font-weight:600; color:var(--text-secondary);">Map Description</label>
+                <textarea name="landing_map_description" rows="3" placeholder="Help visitors plan their route" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;">{{ landing_map.description }}</textarea>
+
+                <label style="font-weight:600; color:var(--text-secondary);">Map Image URL</label>
+                <input type="text" name="landing_map_image_url" value="{{ landing_map.image_url }}" placeholder="https://..." style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                    <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Landing Map</button>
+                    {% if landing_map.updated_at %}
+                        <span style="color: var(--text-muted); font-size: 12px;">Updated {{ landing_map.updated_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="background: var(--surface-2); border:1px dashed var(--border); border-radius:10px; padding:10px; min-height: 220px;">
+                {% if landing_map.image_url %}
+                    <img src="{{ landing_map.image_url }}" alt="{{ landing_map.title or 'Landing map preview' }}" style="width:100%; max-height: 260px; object-fit: cover; border-radius: 8px; border:1px solid var(--border);" />
+                {% else %}
+                    <div style="height:100%; min-height: 180px; display:flex; align-items:center; justify-content:center; color: var(--text-muted);">
+                        No landing page map is set yet.
+                    </div>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="two-col" style="grid-template-columns: 1fr 1fr;">
+    <div class="card-panel">
+        <div class="card-header">
+            <h2>Add / Edit Zone</h2>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ url_for('animal_farm_admin.save_zone') }}" style="display:flex; flex-direction:column; gap:10px;">
+                <input type="hidden" name="zone_id" value="">
+
+                <label style="font-weight:600; color:var(--text-secondary);">Zone Name</label>
+                <input type="text" name="name" placeholder="e.g., Safari Walk" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                <label style="font-weight:600; color:var(--text-secondary);">Description (optional)</label>
+                <textarea name="description" rows="3" placeholder="Short description" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
+
+                <label style="font-weight:600; color:var(--text-secondary);">Map Image URL (optional)</label>
+                <input type="text" name="map_image_url" placeholder="https://..." style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                <label style="font-weight:600; color:var(--text-secondary);">360° Panorama URL (optional)</label>
+                <input type="text" name="panorama_360_url" placeholder="https://..." style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Zone</button>
+            </form>
+            <p style="margin-top: 10px; color: var(--text-muted); font-size: 12px;">You can insert a link to a hosted 360° view (e.g., a virtual tour page).</p>
+        </div>
+    </div>
+
+    <div class="card-panel">
+        <div class="card-header">
+            <h2>Zones</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>360°</th>
+                            <th style="width:160px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for z in zones %}
+                            <tr>
+                                <td>{{ z.name }}</td>
+                                <td>{{ (z.description or '-')|truncate(80) }}</td>
+                                <td>
+                                    {% if z.panorama_360_url %}
+                                        <a href="{{ z.panorama_360_url }}" target="_blank" class="btn btn-outline btn-sm">Open</a>
+                                    {% else %}
+                                        <span style="color: var(--text-muted);">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-outline btn-sm" type="button"
+                                                    onclick="fillZoneForm({{ z.id }}, {{ z.name|tojson }}, {{ (z.description or '')|tojson }}, {{ (z.map_image_url or '')|tojson }}, {{ (z.panorama_360_url or '')|tojson }})">
+                                        <i class="fa-solid fa-pen"></i> Edit
+                                    </button>
+                                    <form method="post" action="{{ url_for('animal_farm_admin.delete_zone', zone_id=z.id) }}" style="display:inline;" onsubmit="return confirm('Delete this zone?');">
+                                        <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="4" style="color: var(--text-muted);">No zones yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function fillZoneForm(id, name, description, mapImageUrl, panoUrl) {
+        const form = document.querySelector('form[action$="/map-zones/save"]');
+        if (!form) return;
+        form.querySelector('input[name="zone_id"]').value = id;
+        form.querySelector('input[name="name"]').value = name || '';
+        form.querySelector('textarea[name="description"]').value = description || '';
+        form.querySelector('input[name="map_image_url"]').value = mapImageUrl || '';
+        form.querySelector('input[name="panorama_360_url"]').value = panoUrl || '';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+</script>
+{% endblock %}

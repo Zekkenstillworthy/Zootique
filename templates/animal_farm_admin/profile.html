@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Establishment Profile | Animal Farm Admin{% endblock %}
+{% block page_title %}Establishment Profile{% endblock %}
+
+{% block content %}
+<div style="display: grid; gap: 2rem; max-width: 900px; margin: 0 auto;">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div style="background: {% if category == 'success' %}#dcfce7{% else %}#fee2e2{% endif %};
+                      color: {% if category == 'success' %}#16a34a{% else %}#dc2626{% endif %};
+                      padding: 0.9rem 1.2rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem;">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Hero card -->
+    <div class="card-panel" style="padding: 0; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+                    padding: 2.5rem; color: white; display: flex; align-items: center; gap: 2rem;">
+            {% if zoo and zoo.image_url %}
+                <img src="{{ zoo.image_url }}" alt="{{ zoo.name }}"
+                     style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover;
+                            border: 4px solid rgba(255,255,255,0.4); flex-shrink: 0;">
+            {% else %}
+                <div style="width: 90px; height: 90px; border-radius: 50%;
+                            background: rgba(255,255,255,0.2); display: flex;
+                            align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fa-solid fa-tree" style="font-size: 2.5rem; opacity: 0.8;"></i>
+                </div>
+            {% endif %}
+            <div>
+                <h2 style="margin: 0 0 0.3rem; font-size: 1.6rem;">{{ zoo.name if zoo else 'No Zoo Assigned' }}</h2>
+                <div style="opacity: 0.85; font-size: 0.95rem;">
+                    {% if zoo %}<i class="fa-solid fa-location-dot" style="margin-right: 0.4rem;"></i>{{ zoo.location or 'Location not set' }}{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit form -->
+    {% if zoo %}
+    <div class="card-panel">
+        <div class="card-header-bar">
+            <h2>Edit Profile Details</h2>
+        </div>
+        <div class="card-body" style="padding: 2rem;">
+            <form method="POST" action="{{ url_for('animal_farm_admin.save_establishment_profile') }}"
+                  style="display: grid; gap: 1.5rem;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; font-weight: 700;
+                                      color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                            Establishment Name <span style="color: var(--danger);">*</span>
+                        </label>
+                        <input type="text" name="name" required value="{{ zoo.name }}"
+                               style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0;
+                                      border-radius: 8px; font-size: 0.95rem; font-family: inherit;">
+                    </div>
+
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; font-weight: 700;
+                                      color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                            Type / Category
+                        </label>
+                        <input type="text" name="type" value="{{ zoo.type or '' }}"
+                               placeholder="e.g. Wildlife Park, Aquarium…"
+                               style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0;
+                                      border-radius: 8px; font-size: 0.95rem; font-family: inherit;">
+                    </div>
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: 700;
+                                  color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                        Location / Address
+                    </label>
+                    <input type="text" name="location" value="{{ zoo.location or '' }}"
+                           placeholder="Full address or region"
+                           style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0;
+                                  border-radius: 8px; font-size: 0.95rem; font-family: inherit;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: 700;
+                                  color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                        Description
+                    </label>
+                    <textarea name="description" rows="5"
+                              placeholder="Describe your establishment — visible to visitors on the public site."
+                              style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0;
+                                     border-radius: 8px; font-size: 0.95rem; font-family: inherit;
+                                     resize: vertical;">{{ zoo.description or '' }}</textarea>
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: 700;
+                                  color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                        Cover Image URL
+                    </label>
+                    <input type="url" name="image_url" value="{{ zoo.image_url or '' }}"
+                           placeholder="https://example.com/image.jpg"
+                           style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0;
+                                  border-radius: 8px; font-size: 0.95rem; font-family: inherit;">
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.4rem;">
+                        Paste a publicly accessible image URL to use as the establishment cover photo.
+                    </p>
+                </div>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 0.5rem;
+                             border-top: 1px solid #f1f5f9;">
+                    <a href="{{ url_for('animal_farm_admin.dashboard') }}"
+                       style="padding: 0.75rem 1.5rem; border: 1px solid #e2e8f0; border-radius: 8px;
+                              color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 0.9rem;">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary"
+                            style="padding: 0.75rem 2rem; font-weight: 700;">
+                        <i class="fa-solid fa-floppy-disk" style="margin-right: 0.5rem;"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div class="card-panel">
+        <div class="card-body" style="padding: 3rem; text-align: center; color: var(--text-muted);">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 3rem; margin-bottom: 1rem; color: #fbbf24;"></i>
+            <h3>No Zoo Assigned</h3>
+            <p>Your account is not linked to any establishment. Contact a Zootique Administrator to get assigned.</p>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

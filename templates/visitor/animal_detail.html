@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}{{ animal.name }} - {{ animal.species }}{% endblock %}
+{% block page_title %}{{ animal.name }}'s Profile{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: row;">
+    <img src="{{ animal.image_url }}" alt="{{ animal.name }}" style="width: 40%; object-fit: cover;">
+    <div class="card-content" style="width: 60%;">
+        <h2 style="margin-bottom: 0.5rem;">{{ animal.name }}</h2>
+        <p style="color: var(--accent-color); font-weight: bold; margin-bottom: 1rem;">{{ animal.species }}</p>
+        <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+            <p><strong>Habitat:</strong> {{ animal.habitat }}</p>
+            <p><strong>Status:</strong> <span class="badge" style="background: {% if animal.status == 'Healthy' %}#d4edda{% else %}#fff3cd{% endif %}; color: {% if animal.status == 'Healthy' %}#155724{% else %}#856404{% endif %};">{{ animal.status }}</span></p>
+        </div>
+        <p style="color: #555; line-height: 1.8;">{{ animal.description }}</p>
+        <div style="margin-top: 2rem;">
+            <a href="{{ url_for('visitor.animals') }}" class="btn btn-primary" style="background-color: var(--secondary-color);">Back to Gallery</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

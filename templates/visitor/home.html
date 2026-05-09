@@ -1,0 +1,847 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block extra_head %}
+<style>
+    :root {
+      --green-dark:   #132a1c;
+      --green-mid:    #1a3d2b;
+      --green-accent: #1a4f32;
+      --teal:         #0d9b82;
+      --amber:        #c07000;
+      --amber-bg:     #c47a00;
+      --cream:        #f4f0e6;
+      --cream-alt:    #eceadf;
+      --white:        #ffffff;
+      --text:         #1a2e1e;
+      --muted:        #718096;
+      --border:       #e2ddd4;
+    }
+
+    /* ═══════════════════════════
+       HERO
+    ═══════════════════════════ */
+    .hero {
+      background: linear-gradient(165deg, #2e5a3e 0%, #1a3d2b 45%, var(--green-dark) 100%);
+      color: white;
+      padding: 56px 48px;
+      min-height: 300px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url('https://images.unsplash.com/photo-1547721064-da6cfb341d50?auto=format&fit=crop&q=40&w=1400') center/cover no-repeat;
+      opacity: 0.06;
+      pointer-events: none;
+    }
+    .hero-content { position: relative; z-index: 2; max-width: 600px; }
+    .hero-title {
+      font-size: clamp(32px, 4vw, 48px);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      margin-bottom: 16px;
+    }
+    .hero-subtitle {
+      font-size: 15px;
+      color: rgba(255,255,255,0.78);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    .hero-meta {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 32px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.75);
+    }
+    .hero-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.1);
+      padding: 5px 12px;
+      border-radius: 999px;
+    }
+    .hero-meta-item i { font-size: 12px; }
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .btn-hero-primary {
+      background: var(--green-accent);
+      color: white;
+      border: none;
+      padding: 13px 28px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .btn-hero-primary:hover { background: #13391e; }
+    .btn-hero-outline {
+      background: transparent;
+      color: white;
+      border: 1.5px solid rgba(255,255,255,0.5);
+      padding: 13px 28px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .btn-hero-outline:hover { border-color: white; background: rgba(255,255,255,0.08); }
+
+    /* ═══════════════════════════
+       STATS STRIP
+    ═══════════════════════════ */
+    .stats-strip {
+      background: var(--cream-alt);
+      border-bottom: 1px solid var(--border);
+      padding: 28px 48px;
+      display: flex;
+      justify-content: center;
+      gap: 0;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 0 56px;
+      border-right: 1px solid var(--border);
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-item i {
+      font-size: 22px;
+      color: var(--green-accent);
+      margin-bottom: 6px;
+    }
+    .stat-val {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--green-dark);
+      letter-spacing: -1px;
+    }
+    .stat-lbl {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    /* ═══════════════════════════
+       SECTIONS
+    ═══════════════════════════ */
+    .page-section {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 48px 32px;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .section-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--green-dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title i { color: var(--teal); font-size: 18px; }
+    .section-link {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--teal);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: gap 0.2s;
+    }
+    .section-link:hover { gap: 8px; }
+
+    /* ═══════════════════════════
+       VISITOR MAP
+    ═══════════════════════════ */
+    .landing-map-wrap {
+      max-width: 1080px;
+      margin: 28px auto 0;
+      padding: 0 32px;
+    }
+    .landing-map-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 3px 16px rgba(19,42,28,0.08);
+    }
+    .landing-map-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #f8f6f0 0%, #f1ede3 100%);
+    }
+    .landing-map-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--green-dark);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .landing-map-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .landing-map-date {
+      font-size: 11px;
+      color: var(--muted);
+      background: rgba(13,155,130,0.08);
+      border: 1px solid rgba(13,155,130,0.18);
+      border-radius: 999px;
+      padding: 4px 10px;
+      white-space: nowrap;
+    }
+    .landing-map-image {
+      width: 100%;
+      max-height: 420px;
+      object-fit: cover;
+      display: block;
+    }
+    .landing-map-placeholder {
+      padding: 44px 18px;
+      text-align: center;
+      color: var(--muted);
+      background: #faf8f2;
+    }
+    .landing-map-placeholder i {
+      color: var(--teal);
+      font-size: 26px;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    /* ═══════════════════════════
+       PROMOTIONS
+    ═══════════════════════════ */
+    .promo-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+    .promo-card {
+      border-radius: 12px;
+      padding: 28px 24px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+    .promo-card.dark-green { background: #1a3d2b; }
+    .promo-card.amber      { background: #c07000; }
+
+    .promo-card::before {
+      content: '';
+      position: absolute;
+      top: -20px; right: -20px;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .promo-title {
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      margin-bottom: 4px;
+    }
+    .promo-name {
+      font-size: 13px;
+      color: rgba(255,255,255,0.75);
+      margin-bottom: 16px;
+    }
+    .promo-code-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .promo-code {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .promo-code i { font-size: 10px; cursor: pointer; }
+    .promo-end {
+      font-size: 11px;
+      color: rgba(255,255,255,0.55);
+      margin-bottom: 20px;
+    }
+    .btn-promo {
+      background: transparent;
+      border: 1.5px solid rgba(255,255,255,0.5);
+      color: white;
+      padding: 9px 20px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: background 0.2s;
+    }
+    .btn-promo:hover { background: rgba(255,255,255,0.1); }
+
+    /* ═══════════════════════════
+       UPCOMING VISITS
+    ═══════════════════════════ */
+    .upcoming-section {
+      background: var(--cream-alt);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .bookings-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    .booking-card {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      transition: box-shadow 0.2s;
+    }
+    .booking-card:hover { box-shadow: 0 4px 16px rgba(19,42,28,0.10); }
+    .booking-img {
+      width: 64px;
+      height: 64px;
+      border-radius: 10px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .booking-body { flex: 1; min-width: 0; }
+    .booking-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--green-dark);
+      margin-bottom: 4px;
+    }
+    .booking-meta {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 3px;
+    }
+    .booking-meta i { font-size: 11px; }
+    .booking-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .status-confirmed { background: #dcfce7; color: #15803d; }
+    .status-pending   { background: #fef3c7; color: #b45309; }
+    .status-cancelled { background: #fee2e2; color: #dc2626; }
+
+    .ticket-link {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--teal);
+      text-decoration: none;
+    }
+    .ticket-link:hover { text-decoration: underline; }
+
+    /* ═══════════════════════════
+       EXPERIENCES
+    ═══════════════════════════ */
+    .exp-subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: -16px;
+      margin-bottom: 24px;
+    }
+    .exp-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+    .exp-card {
+      background: var(--white);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      transition: box-shadow 0.25s, transform 0.25s;
+    }
+    .exp-card:hover {
+      box-shadow: 0 8px 24px rgba(19,42,28,0.12);
+      transform: translateY(-3px);
+    }
+    .exp-img-wrap {
+      position: relative;
+      height: 160px;
+      overflow: hidden;
+    }
+    .exp-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s;
+    }
+    .exp-card:hover .exp-img { transform: scale(1.05); }
+    .exp-category {
+      position: absolute;
+      top: 10px; left: 10px;
+      background: rgba(19,42,28,0.75);
+      color: rgba(255,255,255,0.9);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      backdrop-filter: blur(4px);
+    }
+    .exp-heart {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: rgba(255,255,255,0.85);
+      border: none;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 12px;
+      color: #9ca3af;
+      transition: color 0.2s;
+    }
+    .exp-heart:hover { color: #ef4444; }
+    .exp-body { padding: 14px; }
+    .exp-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--green-dark);
+      margin-bottom: 5px;
+    }
+    .exp-desc {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.55;
+      margin-bottom: 8px;
+    }
+    .exp-stats {
+      display: flex;
+      gap: 10px;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .exp-rating { display: flex; align-items: center; gap: 3px; }
+    .exp-rating i { color: #f59e0b; font-size: 10px; }
+    .exp-meta-row {
+      display: flex;
+      gap: 10px;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .exp-meta-row span { display: flex; align-items: center; gap: 3px; }
+    .exp-price {
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--green-dark);
+      margin-bottom: 10px;
+    }
+    .btn-exp-book {
+      width: 100%;
+      background: var(--green-accent);
+      color: white;
+      border: none;
+      padding: 9px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: background 0.2s;
+    }
+    .btn-exp-book:hover { background: var(--green-dark); }
+
+    /* ═══════════════════════════
+       NEWSLETTER FOOTER
+    ═══════════════════════════ */
+    .newsletter-footer {
+      background: var(--green-accent);
+      color: white;
+      padding: 48px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 48px;
+      flex-wrap: wrap;
+    }
+    .newsletter-text-area {}
+    .newsletter-icon { font-size: 22px; margin-bottom: 8px; }
+    .newsletter-headline {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+    .newsletter-sub {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+    }
+    .newsletter-form-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .newsletter-row {
+      display: flex;
+      gap: 0;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .newsletter-input {
+      width: 280px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      padding: 13px 16px;
+      color: white;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      outline: none;
+    }
+    .newsletter-input::placeholder { color: rgba(255,255,255,0.4); }
+    .newsletter-submit {
+      background: #c07000;
+      border: none;
+      padding: 13px 22px;
+      color: white;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: background 0.2s;
+    }
+    .newsletter-submit:hover { background: #a06000; }
+    .newsletter-note {
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+    }
+
+    /* ═══════════════════════════
+       RESPONSIVE
+    ═══════════════════════════ */
+    @media (max-width: 1024px) {
+      .exp-grid { grid-template-columns: repeat(2, 1fr); }
+      .nav-links { gap: 16px; }
+    }
+    @media (max-width: 768px) {
+      .hero { padding: 40px 24px; }
+      .stats-strip { padding: 20px 16px; gap: 0; overflow-x: auto; }
+      .stat-item { padding: 0 24px; }
+      .page-section { padding: 36px 20px; }
+      .landing-map-wrap { padding: 0 20px; }
+      .landing-map-head { flex-direction: column; align-items: flex-start; }
+      .promo-grid { grid-template-columns: 1fr; }
+      .bookings-grid { grid-template-columns: 1fr; }
+      .exp-grid { grid-template-columns: repeat(2, 1fr); }
+      .newsletter-footer { flex-direction: column; align-items: flex-start; padding: 36px 24px; }
+      .nav-links { display: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ══════════════════════
+     HERO
+══════════════════════ -->
+<section class="hero">
+  <div class="hero-content">
+    <h1 class="hero-title">Where Wildlife Meets<br>Wonder</h1>
+    <p class="hero-subtitle">
+      Explore {{ zoo.animal_count }} incredible animals across {{ zoo.exhibit_count }} breathtaking exhibits
+    </p>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <i class="fa-regular fa-circle-check" style="color:#86efac;"></i>
+        Open Today &nbsp;{{ zoo.hours }}
+      </div>
+      <div class="hero-meta-item">
+        <i class="fa-solid fa-sun" style="color:#fde68a;"></i>
+        28°C
+      </div>
+      <div class="hero-meta-item">
+        <i class="fa-solid fa-person-walking" style="color:#6ee7b7;"></i>
+        {{ zoo.visitors_today }} visitors today
+      </div>
+    </div>
+    <div class="hero-actions">
+      <a href="{{ url_for('visitor.services') }}" class="btn-hero-primary">
+        Book a Tour
+      </a>
+      <a href="{{ url_for('visitor.list_zoos') }}" class="btn-hero-outline">
+        Explore the Park
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════
+     STATS STRIP
+══════════════════════ -->
+<div class="stats-strip">
+  <div class="stat-item">
+    <i class="fa-solid fa-paw"></i>
+    <div class="stat-val">{{ zoo.animal_count }}</div>
+    <div class="stat-lbl">Animals</div>
+  </div>
+  <div class="stat-item">
+    <i class="fa-solid fa-building"></i>
+    <div class="stat-val">{{ zoo.exhibit_count }}</div>
+    <div class="stat-lbl">Exhibits</div>
+  </div>
+  <div class="stat-item">
+    <i class="fa-solid fa-star"></i>
+    <div class="stat-val">{{ zoo.rating }}</div>
+    <div class="stat-lbl">Visitor Rating</div>
+  </div>
+  <div class="stat-item">
+    <i class="fa-regular fa-calendar"></i>
+    <div class="stat-val">{{ events|length }}</div>
+    <div class="stat-lbl">Events This Week</div>
+  </div>
+</div>
+
+<div class="landing-map-wrap">
+  <div class="landing-map-card">
+    <div class="landing-map-head">
+      <div>
+        <div class="landing-map-title"><i class="fa-solid fa-map-location-dot"></i> {{ (landing_map.title if landing_map else (zoo.name ~ ' Visitor Map')) }}</div>
+        <div class="landing-map-sub">{{ (landing_map.description if landing_map else 'A map will be published here soon to help you plan your visit.') }}</div>
+      </div>
+      {% if landing_map and landing_map.updated_at %}
+        <div class="landing-map-date">Updated {{ landing_map.updated_at.strftime('%Y-%m-%d') }}</div>
+      {% endif %}
+    </div>
+
+    {% if landing_map and landing_map.image_url %}
+      <img class="landing-map-image" src="{{ landing_map.image_url }}" alt="{{ landing_map.title or 'Zoo visitor map' }}">
+    {% else %}
+      <div class="landing-map-placeholder">
+        <i class="fa-regular fa-map"></i>
+        Zoo map is not available yet for this landing page.
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ══════════════════════
+     DEALS & PROMOTIONS
+══════════════════════ -->
+<div class="page-section">
+  <div class="section-header">
+    <div class="section-title">
+      <i class="fa-solid fa-tag"></i> Deals &amp; Promotions
+    </div>
+    <a href="{{ url_for('visitor.promotions') }}" class="section-link">
+      View All Deals <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
+    </a>
+  </div>
+
+  <div class="promo-grid">
+    {% for promo in promotions %}
+    <div class="promo-card {{ promo.color }}">
+      <div class="promo-title">{{ promo.title }}</div>
+      <div class="promo-name">{{ promo.name }}</div>
+      <div class="promo-code-row">
+        <div class="promo-code">
+          {{ promo.code }} <i class="fa-regular fa-copy" title="Copy code" onclick="navigator.clipboard.writeText('{{ promo.code }}')"></i>
+        </div>
+      </div>
+      <div class="promo-end">Ends {{ promo.valid_until_display }}</div>
+      <button class="btn-promo">Book Now</button>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ══════════════════════
+     UPCOMING VISITS
+══════════════════════ -->
+<div class="upcoming-section">
+  <div class="page-section">
+    <div class="section-header">
+      <div class="section-title">
+        <i class="fa-regular fa-calendar-check"></i> Your Upcoming Visits
+      </div>
+      <a href="{{ url_for('visitor.my_bookings') }}" class="section-link">
+        View All Bookings <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
+      </a>
+    </div>
+
+    <div class="bookings-grid">
+      {% for booking in bookings[:2] %}
+      <div class="booking-card">
+        <img class="booking-img"
+             src="{{ booking.image_url }}"
+             alt="{{ booking.service_name }}">
+        <div class="booking-body">
+          <div class="booking-name">{{ booking.service_name }}</div>
+          <div class="booking-meta">
+            <i class="fa-regular fa-calendar"></i>
+            {{ booking.date }} · {{ booking.time }}
+          </div>
+          <div class="booking-meta">
+            <i class="fa-solid fa-people-group"></i>
+            {{ booking.guests }} guest{{ 's' if booking.guests != 1 else '' }}
+          </div>
+          <div class="booking-footer">
+            <span class="status-badge status-{{ booking.status_color }}">
+              {% if booking.status_color == 'confirmed' %}<i class="fa-solid fa-circle-check"></i>{% endif %}
+              {% if booking.status_color == 'pending' %}<i class="fa-regular fa-clock"></i>{% endif %}
+              {% if booking.status_color == 'cancelled' %}<i class="fa-solid fa-xmark"></i>{% endif %}
+              {{ booking.status }}
+            </span>
+            <a href="{{ url_for('visitor.my_bookings') }}" class="ticket-link">View Ticket</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════
+     OUR EXPERIENCES
+══════════════════════ -->
+<div class="page-section">
+  <div class="section-header">
+    <div class="section-title">
+      <i class="fa-solid fa-circle-dot"></i> Our Experiences
+    </div>
+    <a href="{{ url_for('visitor.services') }}" class="section-link">
+      View All Services <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
+    </a>
+  </div>
+  <p class="exp-subtitle">Handpicked adventures for an unforgettable day</p>
+
+  <div class="exp-grid">
+    {% for svc in services[:4] %}
+    <div class="exp-card">
+      <div class="exp-img-wrap">
+        <img class="exp-img" src="{{ svc.image_url }}" alt="{{ svc.name }}" loading="lazy">
+        <div class="exp-category">{{ svc.category }}</div>
+        <button class="exp-heart" title="Wishlist">
+          <i class="fa-regular fa-heart"></i>
+        </button>
+      </div>
+      <div class="exp-body">
+        <div class="exp-name">{{ svc.name }}</div>
+        <div class="exp-desc">{{ svc.description }}</div>
+        <div class="exp-stats">
+          <div class="exp-rating">
+            <i class="fa-solid fa-star"></i> {{ svc.rating }} · {{ svc.review_count }} reviews
+          </div>
+        </div>
+        <div class="exp-meta-row">
+          <span><i class="fa-regular fa-clock"></i> {{ svc.duration }}</span>
+          <span><i class="fa-solid fa-people-group"></i> Max {{ svc.max_guests }} guests</span>
+        </div>
+        <div class="exp-price">₱{{ svc.price }} <span style="font-size:11px;font-weight:500;color:var(--muted);">per person</span></div>
+        <button class="btn-exp-book">Book Now</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ══════════════════════
+     NEWSLETTER FOOTER
+══════════════════════ -->
+<section class="newsletter-footer">
+  <div class="newsletter-text-area">
+    <div class="newsletter-icon"><i class="fa-solid fa-bell"></i></div>
+    <div class="newsletter-headline">Never Miss a Moment at Zootique</div>
+    <p class="newsletter-sub">Get exclusive deals, new animal updates, and event alerts</p>
+  </div>
+  <div class="newsletter-form-wrap">
+    <div class="newsletter-row">
+      <input class="newsletter-input" type="email" placeholder="your@email.com">
+      <button class="newsletter-submit">Subscribe</button>
+    </div>
+    <div class="newsletter-note">No spam, unsubscribe anytime</div>
+  </div>
+</section>
+
+<script>
+  // Wishlist heart toggle
+  document.querySelectorAll('.exp-heart').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const icon = btn.querySelector('i');
+      if (icon.classList.contains('fa-regular')) {
+        icon.classList.replace('fa-regular', 'fa-solid');
+        btn.style.color = '#ef4444';
+      } else {
+        icon.classList.replace('fa-solid', 'fa-regular');
+        btn.style.color = '';
+      }
+    });
+  });
+
+  // Copy promo code toast
+  document.querySelectorAll('.fa-copy').forEach(icon => {
+    icon.addEventListener('click', () => {
+      const original = icon.className;
+      icon.classList.replace('fa-copy', 'fa-check');
+      setTimeout(() => icon.classList.replace('fa-check', 'fa-copy'), 1500);
+    });
+  });
+</script>
+
+{% endblock %}

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zootique | Select Your Establishment</title>
+  <meta name="description" content="Browse and book your next wildlife adventure at Zootique — discover Lyger Zoo, Graco Farms, and Hiraya Farms.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green-dark:   #132a1c;
+      --green-mid:    #1a3d2b;
+      --green-accent: #166453;
+      --teal:         #0d9b82;
+      --amber:        #c07000;
+      --cream:        #f4f0e6;
+      --cream-card:   #ede9de;
+      --white:        #ffffff;
+      --text:         #1a2e1e;
+      --muted:        #718096;
+      --border:       #e2ddd4;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── NAVBAR ── */
+    .navbar {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 40px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .nav-brand {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--green-dark);
+      letter-spacing: -0.5px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+    }
+    .nav-links a {
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      transition: color 0.2s;
+      padding-bottom: 4px;
+    }
+    .nav-links a:hover { color: var(--green-dark); }
+    .nav-links a.active {
+      color: var(--green-dark);
+      font-weight: 700;
+      border-bottom: 2px solid var(--green-accent);
+    }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .nav-icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 18px;
+      transition: color 0.2s;
+      padding: 4px;
+    }
+    .nav-icon-btn:hover { color: var(--green-dark); }
+    .nav-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--green-mid);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    /* ── MAIN ── */
+    .main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* ── PAGE HEADER ── */
+    .page-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--teal);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .page-title {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--green-dark);
+      letter-spacing: -1px;
+      margin-bottom: 28px;
+      line-height: 1.1;
+    }
+
+    /* ── FILTER TABS ── */
+    .filter-tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 36px;
+    }
+    .filter-pill {
+      padding: 8px 20px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .filter-pill:hover { border-color: var(--green-accent); color: var(--green-accent); }
+    .filter-pill.active {
+      background: var(--green-dark);
+      border-color: var(--green-dark);
+      color: white;
+    }
+
+    /* ── ZOO CARDS ── */
+    .zoo-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .zoo-card {
+      background: var(--white);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transition: box-shadow 0.25s, transform 0.25s;
+    }
+    .zoo-card:hover {
+      box-shadow: 0 8px 28px rgba(19,42,28,0.12);
+      transform: translateY(-2px);
+    }
+    .zoo-card.hidden { display: none; }
+
+    .zoo-card-img {
+      width: 300px;
+      min-width: 300px;
+      height: 220px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .zoo-card-body {
+      flex: 1;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .zoo-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .type-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      border: 1px solid currentColor;
+    }
+    .badge-zoo      { color: #0d9b82; background: #e6faf6; border-color: #0d9b82; }
+    .badge-wildlife { color: #2563eb; background: #eff6ff; border-color: #2563eb; }
+    .badge-farm     { color: #d97706; background: #fffbeb; border-color: #d97706; }
+
+    .zoo-rating {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .zoo-rating i { color: #f59e0b; font-size: 12px; }
+
+    .zoo-name {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--green-dark);
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+    .zoo-location {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .zoo-location i { font-size: 11px; color: var(--teal); }
+
+    .zoo-desc {
+      font-size: 13px;
+      color: #4a5568;
+      line-height: 1.65;
+      margin-bottom: auto;
+      padding-bottom: 18px;
+    }
+
+    .zoo-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .price-group {}
+    .price-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .price-value {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--green-dark);
+      letter-spacing: -0.5px;
+    }
+    .btn-book {
+      background: #7c2d00;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 28px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      font-family: 'Inter', sans-serif;
+      transition: background 0.2s, box-shadow 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(124,45,0,0.25);
+    }
+    .btn-book:hover { background: #5e2200; }
+
+    /* ── FOOTER ── */
+    .footer {
+      background: #1a3d2b;
+      color: rgba(255,255,255,0.75);
+      padding: 64px 40px 40px;
+    }
+    .footer-inner {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr 2fr;
+      gap: 48px;
+    }
+    .footer-brand-name {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: white;
+      margin-bottom: 14px;
+    }
+    .footer-brand-desc {
+      font-size: 13px;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.55);
+      max-width: 280px;
+    }
+    .footer-col-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 16px;
+    }
+    .footer-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .footer-links a {
+      text-decoration: none;
+      font-size: 14px;
+      color: rgba(255,255,255,0.65);
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: white; }
+
+    .footer-newsletter-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 16px;
+    }
+    .newsletter-form {
+      display: flex;
+      gap: 0;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .newsletter-input {
+      flex: 1;
+      background: rgba(255,255,255,0.08);
+      border: none;
+      padding: 12px 16px;
+      color: white;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      outline: none;
+    }
+    .newsletter-input::placeholder { color: rgba(255,255,255,0.35); }
+    .newsletter-btn {
+      background: var(--teal);
+      border: none;
+      padding: 12px 16px;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    .newsletter-btn:hover { background: #0b8570; }
+
+    .footer-bottom {
+      max-width: 980px;
+      margin: 40px auto 0;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    @media (max-width: 768px) {
+      .zoo-card { flex-direction: column; }
+      .zoo-card-img { width: 100%; min-width: unset; height: 200px; }
+      .footer-inner { grid-template-columns: 1fr; gap: 32px; }
+      .navbar { padding: 0 16px; }
+      .nav-links { gap: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<nav class="navbar">
+  <div class="nav-brand">Zootique</div>
+  <div class="nav-links">
+    <a href="{{ url_for('visitor.home') }}">Home</a>
+    <a href="{{ url_for('visitor.my_bookings') }}">Bookings</a>
+    <a href="{{ url_for('visitor.list_zoos') }}" class="active">Account</a>
+  </div>
+  <div class="nav-actions">
+    <button class="nav-icon-btn" title="Notifications"><i class="fa-regular fa-bell"></i></button>
+    <button class="nav-icon-btn" title="Wishlist"><i class="fa-regular fa-heart"></i></button>
+    <div class="nav-avatar" title="Profile">
+      {% if session.get('full_name') %}
+        {{ session.get('full_name', 'V')[0]|upper }}
+      {% else %}
+        <i class="fa-solid fa-user" style="font-size:14px;"></i>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<!-- ── MAIN CONTENT ── -->
+<main class="main" id="main-content">
+
+  <div class="page-eyebrow">WELCOME BACK</div>
+  <h1 class="page-title">Where would you like to go today?</h1>
+
+  <!-- Filter Pills -->
+  <div class="filter-tabs">
+    <button class="filter-pill active" data-filter="all" id="filter-all">All</button>
+    <button class="filter-pill" data-filter="zoo" id="filter-zoo">Zoo Parks</button>
+    <button class="filter-pill" data-filter="wildlife" id="filter-wildlife">Wildlife Parks</button>
+    <button class="filter-pill" data-filter="farm" id="filter-farm">Farm Attractions</button>
+  </div>
+
+  <!-- Zoo Cards -->
+  <div class="zoo-list" id="zoo-list">
+    {% for zoo in zoos %}
+    <div class="zoo-card" data-type="{{ zoo.type_slug }}" id="zoo-card-{{ zoo.id }}">
+      <img class="zoo-card-img"
+           src="{{ zoo.image_url }}"
+           alt="{{ zoo.name }}"
+           loading="lazy">
+      <div class="zoo-card-body">
+        <div class="zoo-card-top">
+          <span class="type-badge badge-{{ zoo.type_slug }}">
+            {% if zoo.type_slug == 'zoo' %}<i class="fa-solid fa-mountain-sun"></i>{% endif %}
+            {% if zoo.type_slug == 'wildlife' %}<i class="fa-solid fa-tree"></i>{% endif %}
+            {% if zoo.type_slug == 'farm' %}<i class="fa-solid fa-tractor"></i>{% endif %}
+            {{ zoo.type }}
+          </span>
+          <div class="zoo-rating">
+            <i class="fa-solid fa-star"></i> {{ zoo.rating }}
+          </div>
+        </div>
+
+        <div class="zoo-name">{{ zoo.name }}</div>
+        <div class="zoo-location">
+          <i class="fa-solid fa-location-dot"></i> {{ zoo.location }}
+        </div>
+        <p class="zoo-desc">{{ zoo.description }}</p>
+
+        <div class="zoo-card-footer">
+          <div class="price-group">
+            <div class="price-label">Starting from</div>
+            <div class="price-value">₱{{ "%.2f"|format(zoo.price) }}</div>
+          </div>
+          <a href="{{ url_for('visitor.home') }}" class="btn-book">
+            Book Now
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+</main>
+
+<!-- ── FOOTER ── -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand-name">The Wildlife Curator</div>
+      <div class="footer-brand-desc">Connecting explorers with the planet's most ajestic creatures through responsible and curated wildlife experiences.</div>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Discover</div>
+      <ul class="footer-links">
+        <li><a href="#">Park Map</a></li>
+        <li><a href="#">Sustainability Report</a></li>
+        <li><a href="#">Contact Us</a></li>
+        <li><a href="#">Privacy Policy</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="footer-newsletter-title">Newsletter</div>
+      <div class="newsletter-form">
+        <input class="newsletter-input" type="email" placeholder="Your email address">
+        <button class="newsletter-btn"><i class="fa-solid fa-arrow-right"></i></button>
+      </div>
+      <div style="margin-top:12px; font-size:11px; color:rgba(255,255,255,0.3);">
+        © 2024 The Wildlife Curator. All rights reserved. Crafted for the conservationist.
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>Zootique &copy; 2024 Zootique Wildlife Management. All rights reserved.</span>
+    <span>Privacy Policy &nbsp;&nbsp; Terms of Service &nbsp;&nbsp; Help Center</span>
+  </div>
+</footer>
+
+<script>
+  // Filter pill logic
+  const pills = document.querySelectorAll('.filter-pill');
+  const cards = document.querySelectorAll('.zoo-card');
+
+  pills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      pills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      const filter = pill.dataset.filter;
+      cards.forEach(card => {
+        if (filter === 'all' || card.dataset.type === filter) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    });
+  });
+</script>
+</body>
+</html>

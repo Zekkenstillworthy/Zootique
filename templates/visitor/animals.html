@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}Animals & Exhibits | Zootique{% endblock %}
+
+{% block content %}
+<!-- FULL WIDTH HERO -->
+<div style="background: linear-gradient(135deg, #6c805a 0%, #4a5c3e 100%); color: white; padding: 4rem 4rem 6rem 4rem; position: relative; overflow: hidden;">
+    <div style="margin-bottom: 2rem; color: rgba(255,255,255,0.7); font-size: 0.85rem;">
+        Home > <span style="font-weight: 600; color: white;">Animals & Exhibits</span>
+    </div>
+
+    <div style="display: flex; justify-content: space-between;">
+        <div style="max-width: 600px;">
+            <h1 style="font-size: 3.5rem; margin-bottom: 1rem; line-height: 1.1; font-weight: 800; font-family: 'Playfair Display', serif;">Animals & Exhibits</h1>
+            <p style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 2.5rem; max-width: 500px;">Meet our 183 incredible wildlife residents across 12 breathtaking exhibit zones</p>
+            
+            <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 2.5rem; font-size: 0.9rem;">
+                <span style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 20px; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-paw"></i> 183 Animals</span>
+                <span style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 20px; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-landmark"></i> 12 Exhibits</span>
+                <span style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 20px; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-leaf"></i> 6 Wildlife Zones</span>
+                <span style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 20px; display: flex; align-items: center; gap: 0.5rem;"><span style="width: 8px; height: 8px; background: #3b82f6; border-radius: 50%;"></span> 3 New Arrivals</span>
+            </div>
+            
+            <div style="display: flex; gap: 1rem;">
+                <button style="background: #0f291e; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-map"></i> Explore Park Map</button>
+                <button style="background: white; color: #0f291e; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-paw"></i> Browse All Animals</button>
+            </div>
+        </div>
+        
+        <!-- Floating Cards Decoration -->
+        <div style="position: relative; width: 450px; display: none; @media (min-width: 1000px) { display: flex; gap: 1rem; }">
+            <div style="background: white; border-radius: 12px; padding: 1.5rem; width: 150px; height: 180px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: flex-end; align-self: flex-end;">
+                <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem;">Savanna Zone</div>
+                <div style="color: #64748b; font-size: 0.8rem; margin-bottom: 1rem;">14 Animals</div>
+                <div><span style="background: #ecfdf5; color: #16a34a; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: bold;"><span style="display: inline-block; width: 6px; height: 6px; background: #16a34a; border-radius: 50%; margin-right: 4px;"></span> Open</span></div>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 1.5rem; width: 170px; height: 210px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: flex-end; align-self: center;">
+                <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem;">Aquatic Zone</div>
+                <div style="color: #64748b; font-size: 0.8rem; margin-bottom: 1rem;">22 Animals</div>
+                <div><span style="background: #ecfdf5; color: #16a34a; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: bold;"><span style="display: inline-block; width: 6px; height: 6px; background: #16a34a; border-radius: 50%; margin-right: 4px;"></span> Open</span></div>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 1.5rem; width: 170px; height: 210px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: flex-end; align-self: flex-start;">
+                <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem;">Rainforest Zone</div>
+                <div style="color: #64748b; font-size: 0.8rem; margin-bottom: 1rem;">31 Animals</div>
+                <div><span style="background: #ecfdf5; color: #16a34a; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: bold;"><span style="display: inline-block; width: 6px; height: 6px; background: #16a34a; border-radius: 50%; margin-right: 4px;"></span> Open</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SUB NAVIGATION -->
+<div style="background: white; border-bottom: 1px solid #e2e8f0; padding: 1rem 0;">
+    <div class="container" style="display: flex; justify-content: space-between; align-items: center; padding: 0 2rem;">
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <span style="color: #64748b; font-size: 0.9rem;">Explore by:</span>
+            <button style="background: #1a4f32; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 20px; font-weight: 600; white-space: nowrap;"><i class="fa-solid fa-map" style="margin-right:0.5rem;"></i> Park Map</button>
+            <button style="background: white; color: #475569; border: 1px solid #cbd5e1; padding: 0.6rem 1.2rem; border-radius: 20px; font-weight: 600; white-space: nowrap;"><i class="fa-solid fa-paw" style="margin-right:0.5rem;"></i> Browse Animals</button>
+            <button style="background: white; color: #475569; border: 1px solid #cbd5e1; padding: 0.6rem 1.2rem; border-radius: 20px; font-weight: 600; white-space: nowrap;"><i class="fa-solid fa-landmark" style="margin-right:0.5rem;"></i> Exhibit Zones</button>
+        </div>
+        
+        <div style="position: relative; width: 300px;">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+            <input type="text" placeholder="Search animals or exhibits..." style="width: 100%; padding: 0.6rem 1rem 0.6rem 2.8rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Inter', sans-serif;">
+        </div>
+    </div>
+</div>
+
+<div class="container" style="padding: 2rem 0;">
+    <!-- PARK MAP SECTION -->
+    <div style="background: white; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 3rem; position: relative;">
+        <!-- Placeholder for actual map -->
+        <div style="width: 100%; height: 500px; background: #fdf6e3; position: relative; overflow: hidden;">
+            <!-- Map Decorative Elements -->
+            <div style="position: absolute; width: 100%; height: 100%; background-image: radial-gradient(#d4c5b0 1px, transparent 1px); background-size: 20px 20px; opacity: 0.5;"></div>
+            
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 60%; background: #3b82f6; border-radius: 50% 50% 0 0 / 20% 20% 0 0; transform: scaleX(1.5);"></div>
+            <div style="position: absolute; top: 10%; right: 10%; width: 400px; height: 300px; background: #facc15; border-radius: 40%; transform: rotate(15deg);"></div>
+            <div style="position: absolute; top: 20%; left: 20%; width: 200px; height: 150px; background: #4ade80; border-radius: 50%;"></div>
+            
+            <!-- Map Filters Menu -->
+            <div style="position: absolute; top: 20px; left: 20px; background: white; border-radius: 12px; padding: 1.5rem; width: 280px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 1rem 0; font-size: 1rem; color: #1a4f32;">Map Filters</h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    <span style="background: #1a4f32; color: white; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.8rem; cursor: pointer;"><i class="fa-solid fa-paw"></i> Animals</span>
+                    <span style="background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.8rem; cursor: pointer;"><i class="fa-solid fa-utensils"></i> Dining</span>
+                    <span style="background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.8rem; cursor: pointer;"><i class="fa-solid fa-restroom"></i> Restrooms</span>
+                    <span style="background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.8rem; cursor: pointer;"><i class="fa-solid fa-camera"></i> Photo Spots</span>
+                    <span style="background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.8rem; cursor: pointer;"><i class="fa-solid fa-notes-medical"></i> First Aid</span>
+                    <span style="background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.8rem; cursor: pointer;"><i class="fa-solid fa-bag-shopping"></i> Shops</span>
+                </div>
+                
+                <h3 style="margin: 1.5rem 0 1rem 0; font-size: 1rem; color: #1a4f32;">Zone Legend</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; font-size: 0.8rem; color: #475569;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #facc15;"></span> Savanna Zone</div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #60a5fa;"></span> Aquatic Zone</div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #86efac;"></span> Rainforest Zone</div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #e0f2fe;"></span> Arctic Zone</div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #f8fafc; border: 1px solid #e2e8f0;"></span> Aviary</div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #fef08a;"></span> Reptile House</div>
+                </div>
+                
+                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 1rem 0;">
+                
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.8rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #16a34a;"></span> Open</div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #f59e0b;"></span> Maintenance</div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #ef4444;"></span> Closed</div>
+                </div>
+            </div>
+            
+            <!-- Map Controls -->
+            <div style="position: absolute; right: 20px; top: 20px; display: flex; flex-direction: column; gap: 0.5rem;">
+                <button style="width: 40px; height: 40px; border-radius: 50%; background: white; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #1e293b;">+</button>
+                <button style="width: 40px; height: 40px; border-radius: 50%; background: white; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #1e293b;">-</button>
+                <button style="width: 40px; height: 40px; border-radius: 50%; background: white; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: #1e293b; margin-top: 0.5rem;"><i class="fa-solid fa-crosshairs"></i></button>
+                <button style="width: 40px; height: 40px; border-radius: 50%; background: white; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: #1e293b;"><i class="fa-solid fa-expand"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ZONES GRID -->
+    <h2 style="font-size: 1.5rem; color: #1a4f32; margin-bottom: 1.5rem;">Explore Our Wildlife Zones</h2>
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;">
+        
+        <!-- Zone Card 1 -->
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column;">
+            <div style="height: 180px; background: #e2e8f0; width: 100%;">
+                <img src="https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&q=80&w=400&h=250" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <div style="padding: 1.5rem; flex: 1; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                    <h3 style="margin: 0; font-size: 1.2rem; color: #1a4f32;">Savanna Zone</h3>
+                    <span style="color: #ea580c; font-size: 0.75rem; font-weight: 600;">Savanna</span>
+                </div>
+                
+                <div style="display: flex; gap: 0.8rem; font-size: 0.75rem; color: #64748b; margin-bottom: 1.5rem;">
+                    <span><i class="fa-solid fa-paw"></i> 14 Animals</span>
+                    <span><i class="fa-solid fa-ruler-combined"></i> 2,400 sqm</span>
+                    <span><i class="fa-solid fa-user-group"></i> Max 80</span>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #64748b; margin-bottom: 0.4rem;">
+                        <span>Currently 68% capacity</span>
+                        <span>54/80</span>
+                    </div>
+                    <div style="width: 100%; height: 4px; background: #e2e8f0; border-radius: 2px;">
+                        <div style="width: 68%; height: 100%; background: #1a4f32; border-radius: 2px;"></div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; color: #16a34a; margin-bottom: 1.5rem;">
+                    <span style="width: 6px; height: 6px; background: #16a34a; border-radius: 50%;"></span> Open
+                </div>
+                
+                <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+                    <div style="display: flex; margin-right: 0.5rem;">
+                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #cbd5e1; border: 2px solid white; margin-left: -8px; z-index: 3;"></div>
+                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #94a3b8; border: 2px solid white; margin-left: -8px; z-index: 2;"></div>
+                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #64748b; border: 2px solid white; margin-left: -8px; z-index: 1;"></div>
+                    </div>
+                    <span style="font-size: 0.75rem; color: #64748b;">+ 11 more</span>
+                </div>
+                
+                <button style="margin-top: auto; width: 100%; background: #1a4f32; color: white; border: none; padding: 0.8rem; border-radius: 8px; font-weight: bold; cursor: pointer;">Explore Zone</button>
+            </div>
+        </div>
+
+        <!-- Zone Card 2 -->
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column;">
+            <div style="height: 180px; background: #e2e8f0; width: 100%;">
+                <img src="https://images.unsplash.com/photo-1582967788606-a171c1080cb0?auto=format&fit=crop&q=80&w=400&h=250" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <div style="padding: 1.5rem; flex: 1; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                    <h3 style="margin: 0; font-size: 1.2rem; color: #1a4f32;">Aquatic Zone</h3>
+                    <span style="color: #0284c7; font-size: 0.75rem; font-weight: 600;">Aquatic</span>
+                </div>
+                <div style="display: flex; gap: 0.8rem; font-size: 0.75rem; color: #64748b; margin-bottom: 1.5rem;">
+                    <span><i class="fa-solid fa-paw"></i> 22 Animals</span>
+                    <span><i class="fa-solid fa-ruler-combined"></i> 1,800 sqm</span>
+                    <span><i class="fa-solid fa-user-group"></i> Max 60</span>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #64748b; margin-bottom: 0.4rem;">
+                        <span>Currently 85% capacity</span>
+                        <span>51/60</span>
+                    </div>
+                    <div style="width: 100%; height: 4px; background: #e2e8f0; border-radius: 2px;">
+                        <div style="width: 85%; height: 100%; background: #f59e0b; border-radius: 2px;"></div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; color: #16a34a; margin-bottom: 1.5rem;">
+                    <span style="width: 6px; height: 6px; background: #16a34a; border-radius: 50%;"></span> Open
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+                    <div style="display: flex; margin-right: 0.5rem;">
+                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #cbd5e1; border: 2px solid white; margin-left: -8px; z-index: 3;"></div>
+                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #94a3b8; border: 2px solid white; margin-left: -8px; z-index: 2;"></div>
+                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #64748b; border: 2px solid white; margin-left: -8px; z-index: 1;"></div>
+                    </div>
+                    <span style="font-size: 0.75rem; color: #64748b;">+ 19 more</span>
+                </div>
+                <button style="margin-top: auto; width: 100%; background: #1a4f32; color: white; border: none; padding: 0.8rem; border-radius: 8px; font-weight: bold; cursor: pointer;">Explore Zone</button>
+            </div>
+        </div>
+
+        <!-- Zone Card 3 -->
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column;">
+            <div style="height: 180px; background: #e2e8f0; width: 100%;">
+                <img src="https://images.unsplash.com/photo-1540573133985-87b6da6d54a9?auto=format&fit=crop&q=80&w=400&h=250" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <div style="padding: 1.5rem; flex: 1; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                    <h3 style="margin: 0; font-size: 1.2rem; color: #1a4f32;">Rainforest Zone</h3>
+                    <span style="color: #16a34a; font-size: 0.75rem; font-weight: 600;">Rainforest</span>
+                </div>
+                <div style="display: flex; gap: 0.8rem; font-size: 0.75rem; color: #64748b; margin-bottom: 1.5rem;">
+                    <span><i class="fa-solid fa-paw"></i> 31 Animals</span>
+                    <span><i class="fa-solid fa-ruler-combined"></i> 3,200 sqm</span>
+                    <span><i class="fa-solid fa-user-group"></i> Max 100</span>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #64748b; margin-bottom: 0.4rem;">
+                        <span>Currently 60% capacity</span>
+                        <span>60/100</span>
+                    </div>
+                    <div style="width: 100%; height: 4px; background: #e2e8f0; border-radius: 2px;">
+                        <div style="width: 60%; height: 100%; background: #1a4f32; border-radius: 2px;"></div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; color: #16a34a; margin-bottom: 1.5rem;">
+                    <span style="width: 6px; height: 6px; background: #16a34a; border-radius: 50%;"></span> Open
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+                    <div style="display: flex; margin-right: 0.5rem;">
+                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #cbd5e1; border: 2px solid white; margin-left: -8px; z-index: 3;"></div>
+                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #94a3b8; border: 2px solid white; margin-left: -8px; z-index: 2;"></div>
+                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #64748b; border: 2px solid white; margin-left: -8px; z-index: 1;"></div>
+                    </div>
+                    <span style="font-size: 0.75rem; color: #64748b;">+ 28 more</span>
+                </div>
+                <button style="margin-top: auto; width: 100%; background: #1a4f32; color: white; border: none; padding: 0.8rem; border-radius: 8px; font-weight: bold; cursor: pointer;">Explore Zone</button>
+            </div>
+        </div>
+
+        <!-- Zone Card 4 -->
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column;">
+            <div style="height: 180px; background: #e2e8f0; width: 100%;">
+                <img src="https://images.unsplash.com/photo-1520842232819-0bbda014f3c7?auto=format&fit=crop&q=80&w=400&h=250" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <div style="padding: 1.5rem; flex: 1; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                    <h3 style="margin: 0; font-size: 1.2rem; color: #1a4f32;">Arctic Zone</h3>
+                    <span style="color: #0ea5e9; font-size: 0.75rem; font-weight: 600;">Arctic</span>
+                </div>
+                <div style="display: flex; gap: 0.8rem; font-size: 0.75rem; color: #64748b; margin-bottom: 1.5rem;">
+                    <span><i class="fa-solid fa-paw"></i> 8 Animals</span>
+                    <span><i class="fa-solid fa-ruler-combined"></i> 1,200 sqm</span>
+                    <span><i class="fa-solid fa-user-group"></i> Max 50</span>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #64748b; margin-bottom: 0.4rem;">
+                        <span>Currently 20% capacity</span>
+                        <span>10/50</span>
+                    </div>
+                    <div style="width: 100%; height: 4px; background: #e2e8f0; border-radius: 2px;">
+                        <div style="width: 20%; height: 100%; background: #1a4f32; border-radius: 2px;"></div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; color: #16a34a; margin-bottom: 1.5rem;">
+                    <span style="width: 6px; height: 6px; background: #16a34a; border-radius: 50%;"></span> Open
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+                    <div style="display: flex; margin-right: 0.5rem;">
+                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #cbd5e1; border: 2px solid white; margin-left: -8px; z-index: 1;"></div>
+                    </div>
+                    <span style="font-size: 0.75rem; color: #64748b;">+ 9 more</span>
+                </div>
+                <button style="margin-top: auto; width: 100%; background: #1a4f32; color: white; border: none; padding: 0.8rem; border-radius: 8px; font-weight: bold; cursor: pointer;">Explore Zone</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

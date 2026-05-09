@@ -1,0 +1,61 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Settings | Animal Farm Admin{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div class="two-col" style="grid-template-columns: 1fr 1fr;">
+    <div class="card-panel">
+        <div class="card-header">
+            <h2>Profile</h2>
+        </div>
+        <div class="card-body">
+            {% if user %}
+            <form method="post" action="{{ url_for('animal_farm_admin.update_profile') }}" style="display:flex; flex-direction:column; gap:10px;">
+                <label style="font-weight:600; color:var(--text-secondary);">Full Name</label>
+                <input type="text" name="full_name" value="{{ user.full_name or '' }}" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                <label style="font-weight:600; color:var(--text-secondary);">Username (optional)</label>
+                <input type="text" name="username" value="{{ user.username or '' }}" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                <label style="font-weight:600; color:var(--text-secondary);">Email</label>
+                <input type="email" name="email" value="{{ user.email }}" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Profile</button>
+            </form>
+
+            {% if zoo %}
+                <div style="margin-top:14px; padding:12px; border:1px solid var(--border); border-radius:10px; background:#fafafa;">
+                    <strong>Zoo</strong>
+                    <p style="margin-top:6px; color: var(--text-muted);">{{ zoo.name }}{% if zoo.location %} — {{ zoo.location }}{% endif %}</p>
+                </div>
+            {% endif %}
+
+            {% else %}
+                <p style="color: var(--text-muted);">Not logged in.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card-panel">
+        <div class="card-header">
+            <h2>Account Security</h2>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ url_for('animal_farm_admin.update_security') }}" style="display:flex; flex-direction:column; gap:10px;">
+                <label style="font-weight:600; color:var(--text-secondary);">Current Password</label>
+                <input type="password" name="current_password" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                <label style="font-weight:600; color:var(--text-secondary);">New Password</label>
+                <input type="password" name="new_password" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                <label style="font-weight:600; color:var(--text-secondary);">Confirm New Password</label>
+                <input type="password" name="confirm_password" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                <button class="btn btn-primary" type="submit"><i class="fa-solid fa-lock"></i> Update Password</button>
+                <p style="color: var(--text-muted); font-size: 12px;">Minimum 8 characters.</p>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

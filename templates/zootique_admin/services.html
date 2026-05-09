@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Service Management{% endblock %}
+{% block page_title %}Service Management{% endblock %}
+
+{% block content %}
+<div class="card-panel" style="background: transparent; box-shadow: none;">
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 1.5rem;">
+        <button class="btn btn-primary"><i class="fa-solid fa-plus" style="margin-right: 0.5rem;"></i>Add New Service</button>
+    </div>
+    
+    <div class="grid-layout">
+        {% for service in services %}
+        <div class="card">
+            <img src="{{ service.image_url }}" alt="{{ service.name }}" class="card-img">
+            <div class="card-content">
+                <span class="badge badge-paid" style="margin-bottom: 0.8rem; display: inline-block;">Ticket Service</span>
+                <h3 class="card-title" style="margin-bottom: 0.2rem;">{{ service.name }}</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">{{ service.description[:70] }}...</p>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="card-price" style="margin-bottom: 0;">₱{{ service.price }}</div>
+                    <button class="btn" style="background-color: var(--light-bg); color: var(--primary-color); border: 1px solid #d1d5db; padding: 0.4rem 0.8rem; font-size: 0.8rem;">Edit</button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <p style="text-align: center; color: var(--text-muted); grid-column: 1 / -1;">No services configured.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

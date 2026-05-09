@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics & Reports | Animal Farm Admin{% endblock %}
+{% block page_title %}Analytics & Reports{% endblock %}
+
+{% block content %}
+<div class="card-panel">
+    <div class="card-header">
+        <h2>Analytics & Reports</h2>
+    </div>
+    <div class="card-body">
+        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 16px;">
+            <div class="stat-card">
+                <div class="stat-icon-box blue"><i class="fa-solid fa-calendar-check"></i></div>
+                <div class="stat-value">{{ total_bookings }}</div>
+                <div class="stat-label">Total Bookings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon-box green"><i class="fa-solid fa-users"></i></div>
+                <div class="stat-value">{{ total_visitors }}</div>
+                <div class="stat-label">Total Visitors</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon-box yellow"><i class="fa-solid fa-peso-sign"></i></div>
+                <div class="stat-value">₱{{ '%.2f'|format(total_income or 0) }}</div>
+                <div class="stat-label">Total Income</div>
+            </div>
+        </div>
+
+        <div class="two-col" style="grid-template-columns: 1fr 1fr;">
+            <div class="card-panel" style="margin:0;">
+                <div class="card-header">
+                    <h2>Top Services</h2>
+                </div>
+                <div class="card-body">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Service</th>
+                                    <th>Bookings</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for name, count in top_services %}
+                                    <tr>
+                                        <td>{{ name }}</td>
+                                        <td>{{ count }}</td>
+                                    </tr>
+                                {% else %}
+                                    <tr><td colspan="2" style="color: var(--text-muted);">No booking data yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-panel" style="margin:0;">
+                <div class="card-header">
+                    <h2>Notes</h2>
+                </div>
+                <div class="card-body">
+                    <p style="color: var(--text-muted);">This page summarizes booking and visitor trends for your zoo. Use the Revenue page for monthly income breakdown.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

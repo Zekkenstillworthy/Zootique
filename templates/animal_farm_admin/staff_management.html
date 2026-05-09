@@ -1,0 +1,123 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Staff Management | Zoo Admin{% endblock %}
+{% block page_title %}Staff Management{% endblock %}
+
+{% block content %}
+<div class="two-col" style="grid-template-columns: 1fr 1fr;">
+  <div class="card-panel">
+    <div class="card-header">
+      <h2>Assign Task</h2>
+    </div>
+    <div class="card-body">
+      <form method="post" action="{{ url_for('animal_farm_admin.save_staff_task') }}" style="display:flex; flex-direction:column; gap:10px;">
+        <input type="hidden" name="task_id" value="">
+
+        <label style="font-weight:600; color:var(--text-secondary);">Title</label>
+        <input type="text" name="title" placeholder="e.g., Prepare group tour route" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+        <label style="font-weight:600; color:var(--text-secondary);">Description (optional)</label>
+        <textarea name="description" rows="4" placeholder="Details" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
+
+        <label style="font-weight:600; color:var(--text-secondary);">Assign To</label>
+        <select name="assigned_to_user_id" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;">
+          <option value="">Unassigned</option>
+          {% for s in staff %}
+            <option value="{{ s.id }}">{{ s.full_name }} ({{ s.email }})</option>
+          {% endfor %}
+        </select>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <div>
+            <label style="font-weight:600; color:var(--text-secondary);">Due Date</label>
+            <input type="date" name="due_date" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+          </div>
+          <div>
+            <label style="font-weight:600; color:var(--text-secondary);">Status</label>
+            <select name="status" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;">
+              <option value="pending">Pending</option>
+              <option value="in_progress">In progress</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Task</button>
+        <p style="color: var(--text-muted); font-size: 12px;">Staff can update task status from the Staff module.</p>
+      </form>
+
+      <div style="margin-top:14px; padding:12px; border:1px solid var(--border); border-radius:10px; background:#fafafa;">
+        <strong>Staff Accounts</strong>
+        <p style="margin-top:6px; color: var(--text-muted);">Seeded demo login: <code>ZooStaff123!</code></p>
+        <ul style="margin-top:8px; padding-left: 18px; color: var(--text-secondary);">
+          {% for s in staff %}
+            <li>{{ s.full_name }} — {{ s.email }}</li>
+          {% else %}
+            <li style="color: var(--text-muted);">No staff users for this zoo.</li>
+          {% endfor %}
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card-panel">
+    <div class="card-header">
+      <h2>Task List</h2>
+    </div>
+    <div class="card-body">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Assigned</th>
+              <th>Due</th>
+              <th>Status</th>
+              <th style="width:160px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in tasks %}
+              <tr>
+                <td>
+                  <div style="font-weight:700; color: var(--text);">{{ t.title }}</div>
+                  {% if t.description %}<div style="color: var(--text-muted); font-size:12px;">{{ t.description }}</div>{% endif %}
+                </td>
+                <td>{{ t.assigned_to_user.full_name if t.assigned_to_user else '-' }}</td>
+                <td>{{ t.due_date.strftime('%Y-%m-%d') if t.due_date else '-' }}</td>
+                <td><span class="badge badge-{{ 'active' if t.status != 'done' else 'inactive' }}">{{ t.status }}</span></td>
+                <td>
+                  <button class="btn btn-outline btn-sm" type="button"
+                          onclick="fillTaskForm({{ t.id }}, {{ t.title|tojson }}, {{ (t.description or '')|tojson }}, {{ (t.assigned_to_user_id or '')|tojson }}, {{ (t.due_date.strftime('%Y-%m-%d') if t.due_date else '')|tojson }}, {{ t.status|tojson }})">
+                    <i class="fa-solid fa-pen"></i> Edit
+                  </button>
+                  <form method="post" action="{{ url_for('animal_farm_admin.delete_staff_task', task_id=t.id) }}" style="display:inline;" onsubmit="return confirm('Delete this task?');">
+                    <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
+                  </form>
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="5" style="color: var(--text-muted);">No tasks yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function fillTaskForm(id, title, description, assignedTo, dueDate, status) {
+    const form = document.querySelector('form[action$="/staff-management/tasks/save"]');
+    if (!form) return;
+    form.querySelector('input[name="task_id"]').value = id;
+    form.querySelector('input[name="title"]').value = title || '';
+    form.querySelector('textarea[name="description"]').value = description || '';
+    form.querySelector('select[name="assigned_to_user_id"]').value = assignedTo || '';
+    form.querySelector('input[name="due_date"]').value = dueDate || '';
+    form.querySelector('select[name="status"]').value = status || 'pending';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+{% endblock %}

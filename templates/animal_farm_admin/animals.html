@@ -1,0 +1,97 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Animals | Zoo Admin{% endblock %}
+{% block page_title %}Animals{% endblock %}
+
+{% block content %}
+<div class="two-col" style="grid-template-columns: 1fr 1fr;">
+  <div class="card-panel">
+    <div class="card-header">
+      <h2>Add / Edit Animal</h2>
+    </div>
+    <div class="card-body">
+      <form method="post" action="{{ url_for('animal_farm_admin.save_animal') }}" style="display:flex; flex-direction:column; gap:10px;">
+        <input type="hidden" name="animal_id" value="">
+
+        <label style="font-weight:600; color:var(--text-secondary);">Name</label>
+        <input type="text" name="name" placeholder="Animal name" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+        <label style="font-weight:600; color:var(--text-secondary);">Species</label>
+        <input type="text" name="species" placeholder="e.g., Bengal Tiger" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+        <label style="font-weight:600; color:var(--text-secondary);">Habitat</label>
+        <input type="text" name="habitat" placeholder="e.g., Forest" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+        <label style="font-weight:600; color:var(--text-secondary);">Status</label>
+        <input type="text" name="status" placeholder="e.g., Healthy" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+        <label style="font-weight:600; color:var(--text-secondary);">Image URL (optional)</label>
+        <input type="text" name="image_url" placeholder="https://..." style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+        <label style="font-weight:600; color:var(--text-secondary);">Description (optional)</label>
+        <textarea name="description" rows="4" placeholder="Short description" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
+
+        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Animal</button>
+        <p style="color: var(--text-muted); font-size: 12px;">To edit an animal, use the Edit button in the table.</p>
+      </form>
+    </div>
+  </div>
+
+  <div class="card-panel">
+    <div class="card-header">
+      <h2>Animal List</h2>
+    </div>
+    <div class="card-body">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Species</th>
+              <th>Habitat</th>
+              <th>Status</th>
+              <th style="width:160px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in animals %}
+              <tr>
+                <td>{{ a.name }}</td>
+                <td>{{ a.species or '-' }}</td>
+                <td>{{ a.habitat or '-' }}</td>
+                <td>{{ a.status or '-' }}</td>
+                <td>
+                  <button class="btn btn-outline btn-sm" type="button"
+                          onclick="fillAnimalForm({{ a.id }}, {{ a.name|tojson }}, {{ (a.species or '')|tojson }}, {{ (a.habitat or '')|tojson }}, {{ (a.status or '')|tojson }}, {{ (a.image_url or '')|tojson }}, {{ (a.description or '')|tojson }})">
+                    <i class="fa-solid fa-pen"></i> Edit
+                  </button>
+                  <form method="post" action="{{ url_for('animal_farm_admin.delete_animal', animal_id=a.id) }}" style="display:inline;" onsubmit="return confirm('Delete this animal?');">
+                    <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
+                  </form>
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="5" style="color: var(--text-muted);">No animals yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function fillAnimalForm(id, name, species, habitat, status, imageUrl, description) {
+    const form = document.querySelector('form[action$="/animals/save"]');
+    if (!form) return;
+    form.querySelector('input[name="animal_id"]').value = id;
+    form.querySelector('input[name="name"]').value = name || '';
+    form.querySelector('input[name="species"]').value = species || '';
+    form.querySelector('input[name="habitat"]').value = habitat || '';
+    form.querySelector('input[name="status"]').value = status || '';
+    form.querySelector('input[name="image_url"]').value = imageUrl || '';
+    form.querySelector('textarea[name="description"]').value = description || '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+{% endblock %}

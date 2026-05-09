@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Events & Shows{% endblock %}
+
+{% block content %}
+<!-- FULL WIDTH HERO -->
+<div style="background: linear-gradient(135deg, rgba(47,75,58,0.95) 0%, rgba(26,63,43,0.95) 100%), url('https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&q=80') center/cover; color: white; padding: 4rem 4rem 6rem 4rem; position: relative;">
+    <div style="margin-bottom: 1.5rem; color: rgba(255,255,255,0.7); font-size: 0.85rem;">
+        Home > <span style="font-weight: 600; color: white;">Events</span>
+    </div>
+
+    <div style="display: flex; justify-content: space-between;">
+        <div style="max-width: 600px;">
+            <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); padding: 0.3rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; width: fit-content; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                🔥 Live Experiences
+            </div>
+            <h1 style="font-size: 3.5rem; margin-bottom: 1rem; line-height: 1.1; font-weight: 800; font-family: 'Times New Roman', serif;">Events & Shows</h1>
+            <p style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 2.5rem;">Unforgettable wildlife moments happening right now and coming up soon at Zootique</p>
+            
+            <div style="display: flex; gap: 1rem; align-items: center; font-size: 0.85rem; margin-bottom: 2.5rem;">
+                <span style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-calendar" style="color:#f59e0b;"></i> 38 Total Events</span>
+                <span style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-circle" style="color:#22c55e; font-size:0.5rem;"></i> 3 Happening Today</span>
+                <span style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-calendar-plus" style="color:#cbd5e1;"></i> 12 Upcoming</span>
+                <span style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-fire" style="color:#f97316;"></i> 2 Almost Full</span>
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn" style="background: #1a4f32; color: white; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-calendar-days"></i> View Full Calendar</button>
+                <button class="btn" style="background: transparent; color: white; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: bold; border: 1px solid white; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-bell"></i> Get Event Alerts</button>
+            </div>
+        </div>
+        
+        <!-- Floating Happening Today Card -->
+        <div style="background: white; border-radius: 12px; width: 320px; padding: 1.5rem; color: #1a4f32; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; z-index: 10;">
+            <div style="background: #1a4f32; color: white; border-radius: 8px; padding: 0.5rem; text-align: center; font-weight: bold; font-size: 0.85rem; margin-bottom: 1.5rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem;">
+                <span style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%;"></span> Happening Today
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                    <div style="width: 8px; height: 8px; background: #3b82f6; border-radius: 50%; margin-top: 5px;"></div>
+                    <div>
+                        <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.2rem;">Elephant Bath Time</div>
+                        <div style="color: #64748b; font-size: 0.75rem;">10:00 AM • Savanna Zone</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                    <div style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%; margin-top: 5px;"></div>
+                    <div>
+                        <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.2rem;">Bird Show Spectacular</div>
+                        <div style="color: #64748b; font-size: 0.75rem;">3:00 PM • Aviary Stage</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                    <div style="width: 8px; height: 8px; background: #f59e0b; border-radius: 50%; margin-top: 5px;"></div>
+                    <div>
+                        <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.2rem;">Keeper Talk: Lions</div>
+                        <div style="color: #64748b; font-size: 0.75rem;">11:30 AM • Predator Zone</div>
+                    </div>
+                </div>
+            </div>
+            
+            <button style="width: 100%; background: transparent; color: #1a4f32; border: none; font-weight: 600; font-size: 0.85rem; margin-top: 1.5rem; cursor: pointer;">View All Today's Events</button>
+        </div>
+    </div>
+</div>
+
+<!-- STATS STRIP -->
+<div style="background: white; border-bottom: 1px solid #e2e8f0; padding: 2rem 0;">
+    <div class="container" style="display: flex; justify-content: space-around;">
+        <div style="text-align: center;">
+            <i class="fa-solid fa-calendar-check" style="font-size: 1.5rem; color: #ef4444; margin-bottom: 0.5rem;"></i>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #1a4f32;">38</div>
+            <div style="font-size: 0.8rem; color: #64748b;">Events This Month</div>
+        </div>
+        <div style="width: 1px; background: #e2e8f0;"></div>
+        <div style="text-align: center;">
+            <i class="fa-solid fa-ticket" style="font-size: 1.5rem; color: #f43f5e; margin-bottom: 0.5rem;"></i>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #1a4f32;">1,284</div>
+            <div style="font-size: 0.8rem; color: #64748b;">Registrations This Month</div>
+        </div>
+        <div style="width: 1px; background: #e2e8f0;"></div>
+        <div style="text-align: center;">
+            <i class="fa-solid fa-star" style="font-size: 1.5rem; color: #eab308; margin-bottom: 0.5rem;"></i>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #1a4f32;">4.8</div>
+            <div style="font-size: 0.8rem; color: #64748b;">Avg Event Rating</div>
+        </div>
+        <div style="width: 1px; background: #e2e8f0;"></div>
+        <div style="text-align: center;">
+            <i class="fa-solid fa-fire" style="font-size: 1.5rem; color: #f97316; margin-bottom: 0.5rem;"></i>
+            <div style="font-size: 1.2rem; font-weight: 800; color: #1a4f32; line-height: 1.5rem;">Night Safari</div>
+            <div style="font-size: 0.8rem; color: #64748b;">Most Popular</div>
+        </div>
+    </div>
+</div>
+
+<!-- TOP FILTER BAR -->
+<div style="background: white; border-bottom: 1px solid #e2e8f0; padding: 1rem 0;">
+    <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; background: white; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden;">
+            <button style="background: #1a4f32; color: white; border: none; padding: 0.5rem 1rem; cursor: pointer; display: flex; gap: 0.5rem; align-items: center; font-size: 0.85rem;"><i class="fa-solid fa-grid-2"></i> Card View</button>
+            <button style="background: transparent; color: #64748b; border: 1px solid #cbd5e1; border-top: none; border-bottom: none; padding: 0.5rem 1rem; cursor: pointer; display: flex; gap: 0.5rem; align-items: center; font-size: 0.85rem;"><i class="fa-solid fa-list"></i> List View</button>
+            <button style="background: transparent; color: #64748b; border: none; padding: 0.5rem 1rem; cursor: pointer; display: flex; gap: 0.5rem; align-items: center; font-size: 0.85rem;"><i class="fa-solid fa-calendar"></i> Calendar View</button>
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <div style="position: relative;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.8rem;"></i>
+                <input type="text" placeholder="Search events..." style="padding: 0.5rem 1rem 0.5rem 2.5rem; border: 1px solid #cbd5e1; border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 0.85rem; width: 250px;">
+            </div>
+            <select style="padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem; color: #475569; font-family: 'Inter', sans-serif;"><option>Event Type: All</option></select>
+            <select style="padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem; color: #475569; font-family: 'Inter', sans-serif;"><option>Date: All</option></select>
+            <button style="background: transparent; border: none; color: #0ea5e9; font-size: 0.85rem; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-rotate-right"></i> Clear All</button>
+        </div>
+    </div>
+</div>
+
+<!-- SUB FILTER BAR -->
+<div style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 0.8rem 0;">
+    <div class="container" style="display: flex; gap: 0.5rem;">
+        <button style="background: #1a4f32; color: white; border: none; padding: 0.4rem 1.2rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">All Events (38)</button>
+        <button style="background: white; color: #64748b; border: 1px solid #cbd5e1; padding: 0.4rem 1.2rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">Today (3)</button>
+        <button style="background: white; color: #64748b; border: 1px solid #cbd5e1; padding: 0.4rem 1.2rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">This Week (8)</button>
+        <button style="background: white; color: #64748b; border: 1px solid #cbd5e1; padding: 0.4rem 1.2rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">Upcoming (12)</button>
+        <button style="background: white; color: #64748b; border: 1px solid #cbd5e1; padding: 0.4rem 1.2rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">Free Entry (6)</button>
+        <button style="background: white; color: #64748b; border: 1px solid #cbd5e1; padding: 0.4rem 1.2rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">My Registered (2)</button>
+    </div>
+</div>
+
+<div class="container" style="padding: 3rem 0;">
+
+    <!-- BIG PROMO BANNER -->
+    <div style="background: #0f291e; border-radius: 16px; overflow: hidden; margin-bottom: 4rem; display: flex; position: relative;">
+        <!-- Left details -->
+        <div style="flex: 1; padding: 3rem; color: white;">
+            <div style="color: #fca000; font-weight: bold; font-size: 0.85rem; margin-bottom: 0.5rem; text-transform: uppercase;"><i class="fa-solid fa-fire"></i> Next Big Event</div>
+            <h2 style="font-size: 2.2rem; margin: 0 0 1rem 0;">Night Safari & Fire Show</h2>
+            <p style="opacity: 0.8; line-height: 1.6; margin-bottom: 2rem;">Experience the thrill of the wild under the stars, followed by a spectacular fire dancing performance at the main plaza.</p>
+            <div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem;">
+                <div>
+                    <div style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.3rem;">Date & Time</div>
+                    <div style="font-weight: bold;">Tomorrow, 7:00 PM</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.3rem;">Location</div>
+                    <div style="font-weight: bold;">Main Plaza</div>
+                </div>
+            </div>
+            <button class="btn" style="background: #fca000; color: #0f291e; border: none; padding: 0.8rem 2rem; border-radius: 6px; font-weight: bold;">Register Now — ₱200</button>
+        </div>
+        <!-- Right Image -->
+        <div style="flex: 1.5; position: relative;">
+            <img src="https://images.unsplash.com/photo-1544717685-611df98db51f?auto=format&fit=crop&q=80&w=1000&h=400" style="width: 100%; height: 100%; object-fit: cover;">
+            <!-- Countdown Box -->
+            <div style="position: absolute; bottom: 20px; right: 20px; background: white; padding: 1.5rem; border-radius: 12px; color: #1e293b; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+                <div style="font-size: 0.8rem; color: #64748b; font-weight: 600; margin-bottom: 0.8rem; text-transform: uppercase;">Event starts in:</div>
+                <div style="display: flex; gap: 1rem; font-size: 1.8rem; font-weight: 800;">
+                    <div>08<div style="font-size: 0.65rem; color: #94a3b8; font-weight: normal; margin-top: 2px;">days</div></div> <span style="color: #cbd5e1;">:</span>
+                    <div>14<div style="font-size: 0.65rem; color: #94a3b8; font-weight: normal; margin-top: 2px;">hrs</div></div> <span style="color: #cbd5e1;">:</span>
+                    <div>32<div style="font-size: 0.65rem; color: #94a3b8; font-weight: normal; margin-top: 2px;">mins</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- HAPPENING TODAY STRIP -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem;">
+        <h3 style="margin: 0; font-size: 1.4rem; color: #1a4f32;">Happening Today — April 16</h3>
+        <a href="#" style="color: #0ea5e9; font-weight: 600; font-size: 0.9rem; text-decoration: none;">View All Today &rarr;</a>
+    </div>
+
+    <!-- Replace dynamically from db, visually scaffolded based on figma 5 -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 4rem;">
+        <!-- Card 1 -->
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.2rem; display: flex; align-items: center; gap: 1rem;">
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"><i class="fa-solid fa-hippo"></i></div>
+            <div style="flex: 1;">
+                <h4 style="margin: 0 0 0.2rem 0; font-size: 0.95rem;">Elephant Bath Time</h4>
+                <div style="color: #0ea5e9; font-size: 0.8rem; font-weight: bold; margin-bottom: 0.2rem;">Starts at 10:00 AM</div>
+                <div style="color: #64748b; font-size: 0.75rem; display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <span><i class="fa-regular fa-clock"></i> 1 hour</span>
+                    <span><i class="fa-solid fa-location-dot"></i> Savanna Zone</span>
+                </div>
+                <div style="color: #f59e0b; font-size: 0.75rem; font-weight: bold;">5 spots left!</div>
+            </div>
+            <button class="btn" style="background: #1a4f32; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: bold; font-size: 0.8rem;">Register</button>
+        </div>
+
+        <!-- Card 2 -->
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.2rem; display: flex; align-items: center; gap: 1rem;">
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"><i class="fa-solid fa-microphone"></i></div>
+            <div style="flex: 1;">
+                <h4 style="margin: 0 0 0.2rem 0; font-size: 0.95rem;">Keeper Talk: Lions</h4>
+                <div style="color: #0ea5e9; font-size: 0.8rem; font-weight: bold; margin-bottom: 0.2rem;">Starts at 11:30 AM</div>
+                <div style="color: #64748b; font-size: 0.75rem; display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <span><i class="fa-regular fa-clock"></i> 1.5 hours</span>
+                    <span><i class="fa-solid fa-location-dot"></i> Savanna Zone</span>
+                </div>
+                <div style="color: #16a34a; font-size: 0.75rem; font-weight: bold;">18 spots left</div>
+            </div>
+            <button class="btn" style="background: #1a4f32; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: bold; font-size: 0.8rem;">Register</button>
+        </div>
+
+        <!-- Card 3 -->
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.2rem; display: flex; align-items: center; gap: 1rem;">
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: #f3e8ff; color: #9333ea; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"><i class="fa-solid fa-masks-theater"></i></div>
+            <div style="flex: 1;">
+                <h4 style="margin: 0 0 0.2rem 0; font-size: 0.95rem;">Bird Show Spectacular</h4>
+                <div style="color: #0ea5e9; font-size: 0.8rem; font-weight: bold; margin-bottom: 0.2rem;">Starts at 3:00 PM</div>
+                <div style="color: #64748b; font-size: 0.75rem; display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <span><i class="fa-regular fa-clock"></i> 1 hour</span>
+                    <span><i class="fa-solid fa-location-dot"></i> Aviary Stage</span>
+                </div>
+                <div style="color: #16a34a; font-size: 0.75rem; font-weight: bold;">40 spots left</div>
+            </div>
+            <button class="btn" style="background: #1a4f32; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: bold; font-size: 0.8rem;">Register</button>
+        </div>
+    </div>
+    
+    <!-- DYNAMIC LIST FROM DATABASE -->
+    <!-- ... Rest of the page following the figma structure with standard vertical cards -->
+    <!-- For DB iteration: -->
+    <h3 style="margin: 0 0 1.5rem 0; font-size: 1.4rem; color: #1a4f32;">Upcoming Events</h3>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;">
+        {% for event in events %}
+        <div style="background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; display: flex; flex-direction: column;">
+            <div style="position: relative;">
+                <img src="{{ event.banner_url|default('https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&q=80') }}" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+            </div>
+            <div style="padding: 1.5rem; flex: 1; display: flex; flex-direction: column;">
+                <div style="color: #f59e0b; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; margin-bottom: 0.5rem;">{{ event.type|default('Event') }}</div>
+                <h4 style="margin: 0 0 0.5rem 0; font-size: 1.2rem;">{{ event.name }}</h4>
+                <p style="color: #64748b; font-size: 0.85rem; line-height: 1.4; margin-bottom: 1.5rem; flex: 1;">{{ event.description|truncate(80) }}</p>
+                <div style="display: flex; gap: 1rem; font-size: 0.8rem; color: #475569; margin-bottom: 1rem;">
+                    <span><i class="fa-regular fa-calendar"></i> {{ event.date|default('TBA') }}</span>
+                    <span><i class="fa-solid fa-users"></i> Limit: {{ event.capacity }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+                    <span style="font-weight: 800; color: #1a4f32; font-size: 1.1rem;">₱{{ event.price|default(0) }}</span>
+                    <button class="btn" style="background: #1a4f32; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: bold; font-size: 0.85rem;">Register Now</button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div style="grid-column: span 3; color: #64748b; text-align: center; padding: 3rem;">No upcoming events found.</div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

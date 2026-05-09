@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}My Assigned Bookings | Staff{% endblock %}
+{% block page_title %}My Assigned Bookings{% endblock %}
+
+{% block content %}
+<div style="display:grid; gap:2rem;">
+
+    <!-- Stats row -->
+    <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="stat-card">
+            <div class="stat-icon icon-blue"><i class="fa-solid fa-calendar-check"></i></div>
+            <span class="value">{{ total }}</span><h3>Total</h3>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-green"><i class="fa-solid fa-circle-check"></i></div>
+            <span class="value">{{ confirmed }}</span><h3>Confirmed</h3>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#fef9c3; color:#d97706;"><i class="fa-solid fa-clock"></i></div>
+            <span class="value">{{ pending }}</span><h3>Pending</h3>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#fee2e2; color:#dc2626;"><i class="fa-solid fa-ban"></i></div>
+            <span class="value">{{ cancelled }}</span><h3>Cancelled</h3>
+        </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="card-panel" style="padding:1rem 1.5rem;">
+        <form method="GET" style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;">
+            <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted);">Filter by Status:</label>
+            {% for s in ['', 'Confirmed', 'Pending', 'Cancelled'] %}
+            <a href="{{ url_for('animal_farm_staff.my_bookings') }}{% if s %}?status={{ s }}{% endif %}"
+               style="padding:0.4rem 0.9rem; border-radius:6px; font-size:0.85rem; font-weight:600; text-decoration:none;
+                      {% if selected_status == s %}background:var(--primary-color); color:white;
+                      {% else %}background:#f1f5f9; color:var(--text-muted); border:1px solid #e2e8f0;{% endif %}">
+                {{ s or 'All' }}
+            </a>
+            {% endfor %}
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="card-panel">
+        <div class="card-header-bar">
+            <h2>Bookings — {{ zoo.name }}</h2>
+        </div>
+        <div class="table-container" style="box-shadow:none; margin-bottom:0; border-radius:0 0 var(--border-radius) var(--border-radius);">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Booking ID</th><th>Visitor</th><th>Service</th>
+                        <th>Date</th><th>Time</th><th>Guests</th><th>Amount</th><th>Status</th><th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in bookings %}
+                    <tr>
+                        <td style="color:var(--text-muted); font-size:0.8rem;">{{ b.id }}</td>
+                        <td style="font-weight:600;">{{ b.visitor_name }}</td>
+                        <td>{{ b.service_name or '—' }}</td>
+                        <td>{{ b.date or '—' }}</td>
+                        <td>{{ b.time or '—' }}</td>
+                        <td>{{ b.guests or 1 }}</td>
+                        <td>₱{{ '%.2f'|format(b.amount or 0) }}</td>
+                        <td>
+                            {% set s = (b.status or '')|lower %}
+                            {% if s == 'confirmed' %}<span class="badge badge-healthy">Confirmed</span>
+                            {% elif s == 'pending' %}<span class="badge badge-pending">Pending</span>
+                            {% elif s == 'cancelled' %}<span class="badge badge-cancelled">Cancelled</span>
+                            {% else %}<span class="badge">{{ b.status }}</span>{% endif %}
+                        </td>
+                        <td>
+                            <form method="post" action="{{ url_for('animal_farm_staff.update_assigned_booking_status', booking_id=b.id) }}" style="display:flex; gap:8px; align-items:center;">
+                                <select name="status" style="padding:6px 10px; border:1px solid var(--border); border-radius:8px; min-width: 130px;">
+                                    <option value="Pending" {% if (b.status or 'Pending') == 'Pending' %}selected{% endif %}>Pending</option>
+                                    <option value="Confirmed" {% if b.status == 'Confirmed' %}selected{% endif %}>Confirmed</option>
+                                    <option value="Cancelled" {% if b.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                                </select>
+                                <button class="btn btn-outline btn-sm" type="submit">Update</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:3rem;">
+                        No bookings found{% if selected_status %} with status "{{ selected_status }}"{% endif %}.
+                    </td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

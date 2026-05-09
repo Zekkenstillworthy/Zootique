@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Establishment Selection | Staff Registration{% endblock %}
+
+{% block content %}
+<div style="display: flex; min-height: 100vh; overflow:hidden;">
+  <!-- LEFT PANEL -->
+  <div style="flex: 0 0 45%; background: #132a1c; position: relative; display: flex; flex-direction: column; color: white; padding: 3rem; overflow: hidden;">
+    <!-- Background layer -->
+    <div style="position: absolute; inset: 0; background-image: url('https://images.unsplash.com/photo-1549479373-cf67b2d56a8d?auto=format&fit=crop&q=80'); background-size: cover; background-position: center; opacity: 0.2; mix-blend-mode: screen; z-index: 0;"></div>
+    <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(19,42,28,0.2) 0%, #132a1c 100%); z-index: 1;"></div>
+    
+    <div style="position: relative; z-index: 2;">
+      <a href="/" style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 24px; color: white; text-decoration: none;">
+        <i class="fa-solid fa-tree"></i> Zootique
+      </a>
+    </div>
+
+    <div style="position: relative; z-index: 2; margin-top: auto; margin-bottom: auto;">
+      <h1 style="font-size: clamp(32px, 4vw, 44px); font-weight: 800; line-height: 1.15; margin-bottom: 24px; letter-spacing: -1px;">
+        Join the team. Shape the habitat.
+      </h1>
+      <div style="display: flex; gap: 12px; font-size: 15px; color: rgba(255,255,255,0.8); line-height: 1.6; max-width: 400px;">
+        <i class="fa-solid fa-users-viewfinder" style="color: #3dc4b0; margin-top:3px;"></i>
+        Select the specific park or sanctuary you are employed by to streamline your daily tasks and feeding operations.
+      </div>
+    </div>
+
+    <div style="position: relative; z-index: 2; font-size: 12px; color: rgba(255,255,255,0.5); margin-top: auto;">
+      © 2026 ZOOTIQUE WILDLIFE MANAGEMENT
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div style="flex: 1; display: flex; flex-direction: column; padding: 40px 60px; background: #fbfbfb; overflow-y: auto;">
+    <div style="max-width: 600px; width: 100%; margin: 20px auto;">
+
+      <div style="margin-bottom: 40px;">
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #0ea5e9; margin-bottom: 8px;">STAFF REGISTRATION</div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; position: relative;">
+          <h2 style="font-size: 28px; margin:0; font-weight: 800; color: #1e293b; letter-spacing: -0.5px;">Establishment Selection</h2>
+          <div style="font-size: 13px; color: #64748b; font-weight: 600;">Step 1 of 2</div>
+          <div style="position: absolute; bottom: -2px; left: 0; width: 50%; height: 2px; background: #0ea5e9;"></div>
+        </div>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div style="background: #fee2e2; color: #ef4444; border-radius: 6px; padding: 12px; font-size: 13px; font-weight: 600; margin-bottom: 20px;">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <p style="color:#475569; font-size:14px; line-height:1.6; margin-bottom:24px;">
+        Please select the establishment you are currently employed at. Your account will automatically be tied to its staff board.
+      </p>
+
+      <form action="{{ url_for('auth.register_staff_select_zoo') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div style="display: grid; gap: 12px; max-height: 400px; overflow-y: auto; padding-right: 8px;">
+          {% for zoo in zoos %}
+          <label style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s; background: white;" class="zoo-radio-card">
+            <input type="radio" name="zoo_id" value="{{ zoo.id }}" required style="width: 18px; height: 18px; accent-color: #0ea5e9;">
+            <div style="flex: 1;">
+              <h4 style="margin: 0 0 4px; font-size: 15px; color: #1e293b; font-weight: 700;">{{ zoo.name }}</h4>
+              <p style="margin: 0; font-size: 13px; color: #64748b;">
+                <i class="fa-solid fa-location-dot" style="margin-right: 4px;"></i>{{ zoo.location or 'Global' }}
+                <span style="margin: 0 6px;">•</span>
+                <span style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;">{{ zoo.type or 'Park' }}</span>
+              </p>
+            </div>
+          </label>
+          {% else %}
+          <div style="text-align:center; padding: 40px; color: #94a3b8; border: 2px dashed #cbd5e1; border-radius: 8px;">
+            <i class="fa-solid fa-tents" style="font-size: 32px; margin-bottom: 12px;"></i>
+            <p style="margin:0; font-weight: 600; color: #475569;">No establishments found.</p>
+            <p style="margin:4px 0 0; font-size: 13px;">Tell your Admin to register their Zoo first.</p>
+          </div>
+          {% endfor %}
+        </div>
+        <style>
+          .zoo-radio-card:has(input[type="radio"]:checked) { border-color: #0ea5e9; box-shadow: 0 0 0 1px #0ea5e9; background: #f0f9ff; }
+        </style>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
+          <a href="{{ url_for('auth.portal') }}" style="color: #64748b; font-size: 14px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-arrow-left"></i> Back to Portal</a>
+          <button type="submit" style="background: #0ea5e9; color: white; border: none; border-radius: 6px; padding: 14px 28px; font-size: 15px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(14,165,233,0.25);">Continue <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

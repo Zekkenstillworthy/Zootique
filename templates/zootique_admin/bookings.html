@@ -1,0 +1,38 @@
+
+{% extends "base.html" %}
+
+{% block title %}Manage Bookings{% endblock %}
+{% block page_title %}Booking Management{% endblock %}
+
+{% block content %}
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Booking ID</th>
+                <th>Visitor</th>
+                <th>Service</th>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for booking in bookings %}
+            <tr>
+                <td>{{ booking.id }}</td>
+                <td>{{ booking.visitor_name }}</td>
+                <td>{{ booking.service_name }}</td>
+                <td>{{ booking.date }}</td>
+                <td>₱{{ booking.amount }}</td>
+                <td><span class="badge badge-{{ booking.status.lower() }}">{{ booking.status }}</span></td>
+                <td>
+                    <button class="btn btn-primary" style="font-size: 0.75rem;">View Details</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
