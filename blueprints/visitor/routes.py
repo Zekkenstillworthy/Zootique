@@ -4,6 +4,7 @@ from datetime import datetime
 from functools import wraps
 import math
 import re
+from urllib.parse import urlparse
 
 from flask import Blueprint, current_app, render_template, abort, request, redirect, url_for, flash, session
 from sqlalchemy import func, or_, inspect
@@ -61,9 +62,69 @@ def visitor_login_required(view_func):
         maybe_redirect = _require_visitor_login()
         if maybe_redirect is not None:
             return maybe_redirect
+
+        # MVP: require Zoo selection before accessing protected visitor pages.
+        if session.get("role") == "visitor":
+            if request.endpoint != "visitor.choose_zoo" and not session.get("selected_zoo_id"):
+                next_url = request.full_path
+                if next_url.endswith("?"):
+                    next_url = next_url[:-1]
+                return redirect(url_for("visitor.choose_zoo", next=next_url))
         return view_func(*args, **kwargs)
 
     return _wrapped
+
+
+def _safe_relative_redirect(target: str | None):
+    if not target:
+        return None
+    parsed = urlparse(target)
+    if parsed.scheme == "" and parsed.netloc == "" and parsed.path.startswith("/"):
+        return redirect(target)
+    return None
+
+
+@visitor_bp.route("/choose-zoo", methods=["GET", "POST"])
+@visitor_login_required
+def choose_zoo():
+    zoos = Zoo.query.order_by(Zoo.id.asc()).all()
+    if not zoos:
+        zoos = current_app.config.get("ZOOS", [])
+
+    if request.method == "POST":
+        zoo_id_raw = (request.form.get("zoo_id") or "").strip()
+        next_raw = (request.form.get("next") or "").strip() or None
+
+        if zoo_id_raw.isdigit():
+            zoo_id = int(zoo_id_raw)
+            # Validate selection exists in DB if DB has zoos; otherwise allow mock IDs.
+            if Zoo.query.count() > 0:
+                zoo = db.session.get(Zoo, zoo_id)
+                if not zoo:
+                    flash("Selected zoo was not found.", "error")
+                    return redirect(url_for("visitor.choose_zoo"))
+
+            session["selected_zoo_id"] = zoo_id
+            # If login stored a post-login destination, prefer it.
+            stored_next = (session.pop("post_login_next", None) or "").strip() or None
+            maybe_next = _safe_relative_redirect(stored_next) or _safe_relative_redirect(next_raw)
+            if maybe_next:
+                return maybe_next
+            return redirect(url_for("visitor.home"))
+
+        flash("Please select a zoo.", "error")
+        return redirect(url_for("visitor.choose_zoo"))
+
+    selected_zoo = None
+    selected_id = session.get("selected_zoo_id")
+    if selected_id:
+        if isinstance(zoos, list) and zoos and isinstance(zoos[0], dict):
+            selected_zoo = next((z for z in zoos if z.get("id") == selected_id), None)
+        else:
+            selected_zoo = db.session.get(Zoo, int(selected_id))
+
+    next_url = (request.args.get("next") or "").strip() or None
+    return render_template("visitor/choose_zoo.html", zoos=zoos, selected_zoo=selected_zoo, next_url=next_url)
 
 
 def _generate_booking_id() -> str:
@@ -125,6 +186,9 @@ def _feedback_owned_by_user(feedback: Feedback, user: User) -> bool:
 
 @visitor_bp.get("/")
 def home():
+    if session.get("user_id") and session.get("role") == "visitor" and not session.get("selected_zoo_id"):
+        return redirect(url_for("visitor.choose_zoo"))
+
     zoos = Zoo.query.order_by(Zoo.id.asc()).all()
     services = Service.query.order_by(Service.id.asc()).all()
     promotions = Promotion.query.order_by(Promotion.id.asc()).all()
@@ -154,7 +218,16 @@ def home():
     if not bookings:
         bookings = current_app.config.get("BOOKINGS", [])
 
-    selected_zoo = zoos[0] if zoos else None
+    selected_zoo = None
+    selected_zoo_id = session.get("selected_zoo_id")
+    if selected_zoo_id:
+        if zoos and isinstance(zoos[0], dict):
+            selected_zoo = next((z for z in zoos if z.get("id") == selected_zoo_id), None)
+        else:
+            selected_zoo = db.session.get(Zoo, int(selected_zoo_id))
+
+    if not selected_zoo:
+        selected_zoo = zoos[0] if zoos else None
     landing_map = None
 
     if selected_zoo:

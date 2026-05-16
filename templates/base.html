@@ -216,7 +216,7 @@
             </a>
                          <a href="{{ url_for('animal_farm_admin.system_feedback') }}"
                              class="nav-item {% if request.endpoint == 'animal_farm_admin.system_feedback' %}active{% endif %}">
-                                <i class="fa-solid fa-headset"></i> Support / Feedback
+                                <i class="fa-solid fa-headset"></i> Feedback to Super Admin
                         </a>
             <a href="{{ url_for('animal_farm_admin.staff_management') }}"
                class="nav-item {% if request.endpoint == 'animal_farm_admin.staff_management' %}active{% endif %}">
@@ -383,6 +383,9 @@
 
         <nav class="visitor-nav-links">
             <a href="{{ url_for('visitor.home') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.home' %}active{% endif %}">Home</a>
+            {% if session.get('user_id') and session.get('role') == 'visitor' %}
+            <a href="{{ url_for('visitor.choose_zoo') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.choose_zoo' %}active{% endif %}">Change Zoo</a>
+            {% endif %}
             <a href="{{ url_for('visitor.my_bookings') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.my_bookings' %}active{% endif %}">Bookings</a>
             <a href="{{ url_for('visitor.services') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.services' %}active{% endif %}">Services</a>
             <a href="{{ url_for('visitor.animals') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.animals' %}active{% endif %}">Animals</a>

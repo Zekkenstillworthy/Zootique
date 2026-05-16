@@ -58,6 +58,18 @@ def portal():
     """Role-selection hub for authentication modules."""
     return render_template('auth/portal.html', roles=ROLES)
 
+
+@auth_bp.get('/register-selection')
+def register_selection():
+    """MVP: registration selection (Visitor vs Zoo Admin only)."""
+    return render_template('auth/register_selection.html')
+
+
+@auth_bp.get('/login-selection')
+def login_selection():
+    """MVP: login selection (Visitor, Zoo Admin, Staff, Super Admin)."""
+    return render_template('auth/login_selection.html')
+
 @auth_bp.route('/admin-login', defaults={'module_name': None}, methods=['GET', 'POST'])
 @auth_bp.route('/login', defaults={'module_name': None}, methods=['GET', 'POST'])
 @auth_bp.route('/login/<module_name>', methods=['GET', 'POST'])
@@ -84,7 +96,7 @@ def login(module_name):
     if module_name not in ROLES:
         return redirect(url_for('auth.portal'))
 
-    next_url = request.args.get('next')
+    next_url = request.args.get('next') or request.form.get('next')
 
     if request.method == 'POST':
         email = (request.form.get('email') or '').strip().lower()
@@ -98,6 +110,14 @@ def login(module_name):
                 return render_template('auth/login_module.html', module_name=module_name, module_title=ROLES[module_name])
 
             _set_auth_session(user)
+
+            # MVP: Visitors must pick a Zoo after login.
+            if module_name == 'visitor':
+                if next_url:
+                    parsed = urlparse(next_url)
+                    if parsed.scheme == '' and parsed.netloc == '' and parsed.path.startswith('/'):
+                        session['post_login_next'] = next_url
+                return redirect(url_for('visitor.choose_zoo'))
 
             maybe_next = _safe_next_redirect(next_url)
             if maybe_next:
@@ -261,12 +281,21 @@ def register_admin_step2():
 
 @auth_bp.get('/establishment-selection')
 def establishment_selection():
+    # MVP: Staff should not self-register. Keep this page non-public.
+    if session.get('role') != 'zoo_admin':
+        flash('Staff accounts are created by Zoo Admins.', 'error')
+        return redirect(url_for('auth.login_selection'))
+
     zoos = Zoo.query.order_by(Zoo.name.asc()).all()
     return render_template('auth/establishment_selection.html', zoos=zoos)
 
 
 @auth_bp.post('/register-staff-select-zoo')
 def register_staff_select_zoo():
+    if session.get('role') != 'zoo_admin':
+        flash('Staff accounts are created by Zoo Admins.', 'error')
+        return redirect(url_for('auth.login_selection'))
+
     zoo_id = request.form.get('zoo_id')
     if not zoo_id or not str(zoo_id).isdigit():
         flash('Please select an establishment.', 'error')
