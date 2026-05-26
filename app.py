@@ -1,4 +1,6 @@
-from flask import Flask, jsonify, render_template, request, send_from_directory, session
+from datetime import timedelta
+
+from flask import Flask, jsonify, redirect, render_template, request, send_from_directory, session, url_for
 from blueprints.visitor.routes import visitor_bp
 import data
 import os
@@ -173,6 +175,14 @@ def create_app() -> Flask:
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.config["SESSION_COOKIE_SECURE"] = env_name not in {"development", "dev", "testing", "test"}
+
+    # Keep users signed in even if they are idle.
+    # Flask sessions are cookie-based; making them permanent avoids browsers
+    # dropping the session cookie after inactivity.
+    # Can be overridden via env var if desired.
+    session_days = int(os.environ.get("SESSION_LIFETIME_DAYS", "3650"))
+    app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=max(session_days, 1))
+    app.config["SESSION_REFRESH_EACH_REQUEST"] = True
     app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024
     app.config["JSON_SORT_KEYS"] = False
 
@@ -229,6 +239,25 @@ def create_app() -> Flask:
     app.register_blueprint(animal_farm_admin_bp, url_prefix="/animal-farm-admin")
     app.register_blueprint(zoo_staff_bp, url_prefix="/animal-farm-staff")
     app.register_blueprint(api_bp, url_prefix="/api")
+
+    # --- Friendly URL aliases (MVP flow expects these paths) ---
+    @app.get("/zoo_admin")
+    @app.get("/zoo_admin/")
+    @app.get("/zoo_admin/dashboard")
+    def zoo_admin_alias():
+        return redirect(url_for("animal_farm_admin.dashboard"))
+
+    @app.get("/zoo_staff")
+    @app.get("/zoo_staff/")
+    @app.get("/zoo_staff/dashboard")
+    def zoo_staff_alias():
+        return redirect(url_for("animal_farm_staff.dashboard"))
+
+    @app.get("/super_admin")
+    @app.get("/super_admin/")
+    @app.get("/super_admin/dashboard")
+    def super_admin_alias():
+        return redirect(url_for("zootique_admin.dashboard"))
 
     def wants_json() -> bool:
         best = request.accept_mimetypes.best

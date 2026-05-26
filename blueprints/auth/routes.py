@@ -29,6 +29,7 @@ def _validate_password_policy(password: str) -> str | None:
 
 
 def _set_auth_session(user: User):
+    session.permanent = True
     session['user_id'] = user.id
     session['role'] = user.role
     session['full_name'] = user.full_name

@@ -185,6 +185,7 @@ def _feedback_owned_by_user(feedback: Feedback, user: User) -> bool:
     return is_feedback_owned_by_user(feedback, user)
 
 @visitor_bp.get("/")
+@visitor_login_required
 def home():
     if session.get("user_id") and session.get("role") == "visitor" and not session.get("selected_zoo_id"):
         return redirect(url_for("visitor.choose_zoo"))
