@@ -719,6 +719,9 @@ def view_reports():
 def user_management():
     edit_user_id = request.args.get('edit_user')
     edit_user = db.session.get(User, int(edit_user_id)) if (edit_user_id and edit_user_id.isdigit()) else None
+    if edit_user and edit_user.role != 'zoo_admin':
+        flash('Only Zoo Admin users can be edited here.', 'error')
+        edit_user = None
 
     users = (
         User.query
@@ -756,9 +759,14 @@ def save_user():
     status = (request.form.get('status') or 'active').strip().lower()
     password = request.form.get('password')
 
+    def _back_to_form(edit_id: int | None = None):
+        if edit_id is not None:
+            return redirect(url_for('zootique_admin.user_management', edit_user=edit_id) + '#sa_user_form')
+        return redirect(url_for('zootique_admin.user_management') + '#sa_user_form')
+
     if not email:
         flash('Email is required.', 'error')
-        return redirect(url_for('zootique_admin.user_management'))
+        return _back_to_form(int(user_id) if (user_id and user_id.isdigit()) else None)
     if status not in ('active', 'suspended'):
         status = 'active'
 
@@ -766,7 +774,7 @@ def save_user():
 
     if user_id and user_id.isdigit():
         user = db.session.get(User, int(user_id))
-        if not user:
+        if not user or user.role != 'zoo_admin':
             flash('User not found.', 'error')
             return redirect(url_for('zootique_admin.user_management'))
     else:
@@ -777,11 +785,11 @@ def save_user():
     existing = User.query.filter(User.email == email, User.id != getattr(user, 'id', None)).first()
     if existing:
         flash('Email already exists.', 'error')
-        return redirect(url_for('zootique_admin.user_management'))
+        return _back_to_form(user.id if getattr(user, 'id', None) else None)
 
     if not full_name:
         flash('Full name is required.', 'error')
-        return redirect(url_for('zootique_admin.user_management'))
+        return _back_to_form(user.id if getattr(user, 'id', None) else None)
 
     generated_password = None
     if is_new_user and not password:
@@ -790,7 +798,7 @@ def save_user():
 
     if password and len(password) < 8:
         flash('Password must be at least 8 characters.', 'error')
-        return redirect(url_for('zootique_admin.user_management'))
+        return _back_to_form(user.id if getattr(user, 'id', None) else None)
 
     user.full_name = full_name
     user.email = email

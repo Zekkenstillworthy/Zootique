@@ -74,7 +74,7 @@
             </td>
             <td>
               <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                <a class="btn btn-ghost btn-sm" href="{{ url_for('zootique_admin.user_management', edit_user=u.id) }}"><i class="fa-regular fa-pen-to-square"></i> Edit</a>
+                <a class="btn btn-ghost btn-sm" href="{{ url_for('zootique_admin.user_management', edit_user=u.id) }}#sa_user_form"><i class="fa-regular fa-pen-to-square"></i> Edit</a>
 
                 <form method="post" action="{{ url_for('zootique_admin.reset_user_password', user_id=u.id) }}">
                   <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-key"></i> Reset</button>
@@ -135,8 +135,8 @@
           <div>
             <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Status</label>
             <select name="status">
-              <option value="active" {% if not edit_user or edit_user.status == 'active' %}selected{% endif %}>Active</option>
-              <option value="suspended" {% if edit_user and edit_user.status == 'suspended' %}selected{% endif %}>Suspended</option>
+              <option value="active" {% if not edit_user or (edit_user.status or '')|lower == 'active' %}selected{% endif %}>Active</option>
+              <option value="suspended" {% if edit_user and (edit_user.status or '')|lower == 'suspended' %}selected{% endif %}>Suspended</option>
             </select>
           </div>
           <div>
