@@ -1,4 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
+  initAdminSidebarScrollPersistence();
+
   const isSuperAdmin = document.body.classList.contains("superadmin");
   if (!isSuperAdmin) return;
 
@@ -9,6 +11,70 @@ document.addEventListener("DOMContentLoaded", () => {
   initSuperAdminTabs();
   initSuperAdminSettingsTabs();
 });
+
+function initAdminSidebarScrollPersistence() {
+  const sidebarNav = document.querySelector(".sidebar-nav");
+  if (!sidebarNav) return;
+
+  const isAdminLayout = document.querySelector(".app-container") && document.querySelector(".sidebar");
+  if (!isAdminLayout) return;
+
+  const blueprint = document.body.classList.contains("superadmin")
+    ? "zootique_admin"
+    : (document.body.getAttribute("data-blueprint") || "admin");
+
+  const storageKey = `zootique:sidebarScroll:${blueprint}`;
+
+  function save() {
+    try {
+      localStorage.setItem(storageKey, String(sidebarNav.scrollTop || 0));
+    } catch {
+      // ignore
+    }
+  }
+
+  function restore() {
+    let restored = false;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw != null) {
+        const value = Number(raw);
+        if (Number.isFinite(value)) {
+          sidebarNav.scrollTop = value;
+          restored = true;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    if (!restored) {
+      const active = sidebarNav.querySelector(".nav-item.active");
+      if (active && typeof active.scrollIntoView === "function") {
+        active.scrollIntoView({ block: "nearest" });
+      }
+    }
+  }
+
+  restore();
+
+  // Persist on nav clicks (covers normal navigation)
+  sidebarNav.addEventListener(
+    "click",
+    (e) => {
+      const anchor = e.target && e.target.closest ? e.target.closest("a") : null;
+      if (!anchor) return;
+
+      // Respect new-tab and modifier clicks
+      if (e.button === 1 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      save();
+    },
+    { capture: true }
+  );
+
+  // Persist on unload as a fallback
+  window.addEventListener("beforeunload", save);
+}
 
 function getSuperAdminStore() {
   window.ZootiqueSuperAdmin = window.ZootiqueSuperAdmin || {};

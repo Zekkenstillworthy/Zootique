@@ -23,23 +23,16 @@ from models import (
     db,
 )
 from services import BookingValidationError, assign_booking_to_staff
+from services.auth_guard import require_role_guard
 
 animal_farm_admin_bp = Blueprint('animal_farm_admin', __name__)
 
 
 @animal_farm_admin_bp.before_request
 def require_zoo_admin():
-    if session.get('role') != 'zoo_admin':
-        return redirect(url_for('auth.login', module_name='zoo_admin'))
-    user_id = session.get('user_id')
-    if not user_id:
-        session.clear()
-        return redirect(url_for('auth.login', module_name='zoo_admin'))
-    user = db.session.get(User, int(user_id))
-    if not user or (getattr(user, 'status', 'active') or 'active') != 'active':
-        session.clear()
-        flash('Your account is not active. Please sign in again.', 'error')
-        return redirect(url_for('auth.login', module_name='zoo_admin'))
+    result = require_role_guard(expected_role='zoo_admin', login_module='zoo_admin')
+    if result is not None:
+        return result
 
 
 def _current_user() -> User | None:

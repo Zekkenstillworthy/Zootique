@@ -12,26 +12,26 @@
   </div>
 </div>
 
-<!-- Stats (Figma values) -->
-<div class="stats-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:16px;">
+<!-- Stats -->
+<div class="stats-grid" style="--stats-cols: 3; margin-bottom:16px;">
   <div class="stat-card">
     <div class="stat-icon-box blue"><i class="fa-solid fa-message"></i></div>
-    <div class="stat-value">1,284</div>
+    <div class="stat-value">{{ "{:,}".format(feedback_stats.total or 0) }}</div>
     <div class="stat-label">TOTAL FEEDBACK</div>
   </div>
   <div class="stat-card">
     <div class="stat-icon-box green"><i class="fa-solid fa-star"></i></div>
-    <div class="stat-value">4.7</div>
+    <div class="stat-value">{{ "{:.1f}".format(feedback_stats.avg_rating or 0) }}</div>
     <div class="stat-label">AVG RATING</div>
   </div>
   <div class="stat-card">
     <div class="stat-icon-box orange" style="background:var(--warning-bg); color:var(--warning);"><i class="fa-solid fa-clock"></i></div>
-    <div class="stat-value">42</div>
+    <div class="stat-value">{{ "{:,}".format(feedback_stats.pending_replies or 0) }}</div>
     <div class="stat-label">PENDING REPLIES</div>
   </div>
 </div>
 
-<div class="two-col" style="grid-template-columns: 1.1fr 0.9fr; align-items:start;">
+<div class="two-col" style="--two-col-template: 1.1fr 0.9fr; align-items:start;">
 
   <!-- Feedback list -->
   <div class="card-panel" style="margin-bottom:0;">

@@ -23,7 +23,7 @@
     </div>
 {% else %}
 
-    <div class="stats-grid" style="grid-template-columns: repeat(5, 1fr); margin-top: 18px;">
+    <div class="stats-grid" style="--stats-cols: 5; margin-top: 18px;">
         <div class="stat-card">
             <div class="stat-icon-box green"><i class="fa-solid fa-paw"></i></div>
             <div class="stat-value">{{ animals_count }}</div>
@@ -51,7 +51,7 @@
         </div>
     </div>
 
-    <div class="two-col" style="grid-template-columns: 1fr 1fr;">
+    <div class="two-col" style="--two-col-template: 1fr 1fr;">
         <div class="card-panel">
             <div class="card-header">
                 <h2>Subscription Snapshot</h2>
@@ -66,21 +66,6 @@
                     <p style="color: var(--text-muted);">No subscription found for this zoo.</p>
                     <a class="btn btn-outline" href="{{ url_for('animal_farm_admin.subscriptions') }}"><i class="fa-solid fa-id-card"></i> Subscription</a>
                 {% endif %}
-            </div>
-        </div>
-
-        <div class="card-panel">
-            <div class="card-header">
-                <h2>Quick Actions</h2>
-            </div>
-            <div class="card-body" style="display:flex; gap:10px; flex-wrap:wrap;">
-                <a class="btn btn-primary" href="{{ url_for('animal_farm_admin.booking_management') }}"><i class="fa-solid fa-calendar-check"></i> Bookings</a>
-                <a class="btn btn-primary" href="{{ url_for('animal_farm_admin.services_management') }}"><i class="fa-solid fa-list-check"></i> Services</a>
-                <a class="btn btn-primary" href="{{ url_for('animal_farm_admin.animals_management') }}"><i class="fa-solid fa-paw"></i> Animals</a>
-                <a class="btn btn-primary" href="{{ url_for('animal_farm_admin.staff_management') }}"><i class="fa-solid fa-user-check"></i> Staff Tasks</a>
-                <a class="btn btn-outline" href="{{ url_for('animal_farm_admin.system_feedback') }}">
-                    <i class="fa-solid fa-paper-plane"></i> Message Superadmin
-                </a>
             </div>
         </div>
     </div>

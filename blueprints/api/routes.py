@@ -51,14 +51,55 @@ def _error(message: str, status: int = 400, code: str = "bad_request"):
 
 
 def _current_user() -> User | None:
-    user_id = session.get("user_id")
+    auth_by_role = session.get("auth_by_role")
+    if not isinstance(auth_by_role, dict):
+        auth_by_role = {}
+
+    expected_role = None
+    path = request.path or ""
+    if path.startswith("/api/super-admin/"):
+        expected_role = "zootique_admin"
+    elif path.startswith("/api/admin/"):
+        expected_role = "zoo_admin"
+    elif path.startswith("/api/staff/"):
+        expected_role = "zoo_staff"
+    elif path.startswith("/api/visitor/"):
+        expected_role = "visitor"
+
+    user_id = None
+    if expected_role:
+        role_state = auth_by_role.get(expected_role)
+        if isinstance(role_state, dict):
+            user_id = role_state.get("user_id")
+            if user_id:
+                # Activate role for this request so downstream checks are consistent.
+                session["user_id"] = user_id
+                session["role"] = expected_role
+                if role_state.get("full_name"):
+                    session["full_name"] = role_state.get("full_name")
+
+    if not user_id:
+        user_id = session.get("user_id")
     if not user_id:
         return None
-    return db.session.get(User, int(user_id))
+
+    try:
+        user_id_int = int(user_id)
+    except (TypeError, ValueError):
+        return None
+    return db.session.get(User, user_id_int)
 
 
 def _set_auth_session(user: User):
     session.permanent = True
+    auth_by_role = session.get("auth_by_role")
+    if not isinstance(auth_by_role, dict):
+        auth_by_role = {}
+    auth_by_role[str(user.role)] = {
+        "user_id": int(user.id),
+        "full_name": user.full_name,
+    }
+    session["auth_by_role"] = auth_by_role
     session["user_id"] = user.id
     session["role"] = user.role
     session["full_name"] = user.full_name

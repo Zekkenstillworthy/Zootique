@@ -19,7 +19,7 @@
   </div>
 </div>
 
-<div class="stats-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:16px;">
+<div class="stats-grid" style="--stats-cols: 3; margin-bottom:16px;">
   <div class="stat-card">
     <div class="stat-icon-box green"><i class="fa-solid fa-peso-sign"></i></div>
     <div class="stat-value">₱{{ "{:,.2f}".format(financial_report.yearly_income or 0) }}</div>
@@ -44,7 +44,7 @@
 </div>
 
 <div data-sa-panel="subscription">
-  <div class="two-col" style="grid-template-columns: 1fr 1fr;">
+  <div class="two-col" style="--two-col-template: 1fr 1fr;">
     <div class="card-panel">
       <div class="card-header"><h2>LICENSE STATUS DISTRIBUTION</h2></div>
       <div class="card-body" style="padding-top:0; display:flex; align-items:center; gap:18px;">
@@ -92,7 +92,7 @@
 </div>
 
 <div data-sa-panel="performance" style="display:none;">
-  <div class="two-col" style="grid-template-columns:1fr 1fr;">
+  <div class="two-col" style="--two-col-template: 1fr 1fr;">
     <div class="card-panel">
       <div class="card-header"><h2>MOST ACTIVE ZOOS</h2></div>
       <div class="card-body" style="padding-top:0;">
@@ -152,7 +152,7 @@
 </div>
 
 <div data-sa-panel="financial" style="display:none;">
-  <div class="two-col" style="grid-template-columns: 1.3fr 0.7fr;">
+  <div class="two-col" style="--two-col-template: 1.3fr 0.7fr;">
     <div class="card-panel">
       <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
         <h2>FISCAL YEAR REVENUE</h2>

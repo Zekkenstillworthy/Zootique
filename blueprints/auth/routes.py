@@ -30,6 +30,18 @@ def _validate_password_policy(password: str) -> str | None:
 
 def _set_auth_session(user: User):
     session.permanent = True
+    # Store a role-specific login state so users can be logged into multiple
+    # modules (roles) at the same time without clobbering each other.
+    auth_by_role = session.get("auth_by_role")
+    if not isinstance(auth_by_role, dict):
+        auth_by_role = {}
+    auth_by_role[str(user.role)] = {
+        "user_id": int(user.id),
+        "full_name": user.full_name,
+    }
+    session["auth_by_role"] = auth_by_role
+
+    # Maintain legacy top-level keys for existing code paths/templates.
     session['user_id'] = user.id
     session['role'] = user.role
     session['full_name'] = user.full_name

@@ -12,6 +12,8 @@ ENV/
 instance/*.db
 instance/*.sqlite
 instance/*.sqlite3
+.env
+.env.*
 
 # Editors/OS
 .vscode/

@@ -133,7 +133,7 @@
         }
     </style>
 </head>
-<body class="{% if request.blueprint == 'zootique_admin' %}superadmin{% endif %}">
+<body class="{% if request.blueprint == 'zootique_admin' %}superadmin{% endif %}" data-blueprint="{{ request.blueprint or '' }}">
 
 {% set is_admin = request.blueprint in ['zootique_admin', 'animal_farm_admin', 'animal_farm_staff'] %}
 
@@ -147,18 +147,9 @@
         {% if request.blueprint == 'zootique_admin' %}
         <!-- Super Admin Brand -->
         <div class="sa-brand">
-            <div class="sa-brand-row">
-                <div class="sa-logo">Zootique</div>
-                <span class="sa-badge">Super Admin</span>
-            </div>
-            <div class="sa-version">v4.2.0</div>
+            <div class="sa-logo">Zootique</div>
         </div>
         {% else %}
-        <!-- Top Nature Photo -->
-        <img src="{{ url_for('static', filename='img/sidebar_jungle.png') }}"
-             alt="Jungle"
-             class="sidebar-photo-top" onerror="this.src='https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=300&q=80';">
-
         <!-- Brand -->
         <div class="sidebar-brand">
             <span class="brand-icon">🐾</span>
@@ -279,19 +270,19 @@
             <!-- Zootique Admin Navigation -->
             <a href="{{ url_for('zootique_admin.dashboard') }}"
                class="nav-item {% if request.endpoint == 'zootique_admin.dashboard' %}active{% endif %}">
-                <i class="fa-solid fa-table-cells-large"></i> Dashboard
+                <i class="fa-solid fa-border-all"></i> Dashboard
             </a>
             <a href="{{ url_for('zootique_admin.manage_subscriptions') }}"
                class="nav-item {% if request.endpoint == 'zootique_admin.manage_subscriptions' %}active{% endif %}">
-                <i class="fa-solid fa-id-card"></i> Subscription Management
+                <i class="fa-regular fa-credit-card"></i> Subscriptions
             </a>
             <a href="{{ url_for('zootique_admin.view_feedback') }}"
                class="nav-item {% if request.endpoint == 'zootique_admin.view_feedback' %}active{% endif %}">
-                <i class="fa-solid fa-comments"></i> Zoo Feedback
+                <i class="fa-regular fa-message"></i> Zoo Feedback
             </a>
             <a href="{{ url_for('zootique_admin.view_reports') }}"
                class="nav-item {% if request.endpoint == 'zootique_admin.view_reports' %}active{% endif %}">
-                <i class="fa-solid fa-chart-column"></i> Reports &amp; Analytics
+                <i class="fa-solid fa-chart-line"></i> Reports
             </a>
             <a href="{{ url_for('zootique_admin.user_management') }}"
                class="nav-item {% if request.endpoint == 'zootique_admin.user_management' %}active{% endif %}">
@@ -305,25 +296,7 @@
         </nav>
 
         {% if request.blueprint == 'zootique_admin' %}
-        <div class="sa-usercard">
-            <div class="sa-usercard-row">
-                <div class="sa-user-avatar">MT</div>
-                <div class="sa-user-meta">
-                    <div class="sa-user-name">Marcus Thorne</div>
-                    <div class="sa-user-role">Super Administrator</div>
-                </div>
-            </div>
-            <div class="sa-user-actions">
-                <a class="sa-link" href="{{ url_for('zootique_admin.settings') }}">Admin Profile</a>
-                <span class="sa-dot">•</span>
-                <a class="sa-link sa-danger" href="{{ url_for('auth.logout') }}">Sign Out</a>
-            </div>
-        </div>
         {% else %}
-        <!-- Bottom Nature Photo -->
-        <img src="{{ url_for('static', filename='img/sidebar_sunset.png') }}"
-             alt="Savanna"
-             class="sidebar-photo-bottom" onerror="this.src='https://images.unsplash.com/photo-1502476532454-94c39c8fd9ad?w=300&q=80';">
         {% endif %}
 
     </aside>
@@ -333,11 +306,21 @@
 
         <!-- Top Header Bar -->
         <header class="top-header">
-            <span class="page-heading">{% block page_title %}{% endblock %}</span>
+            {% set _app_label = 'Zootique Admin' if request.blueprint == 'zootique_admin' else ('Animal Farm Admin' if request.blueprint == 'animal_farm_admin' else ('Animal Farm Staff' if request.blueprint == 'animal_farm_staff' else 'Admin')) %}
+            {% set _home_url = url_for('zootique_admin.dashboard') if request.blueprint == 'zootique_admin' else (url_for('animal_farm_admin.dashboard') if request.blueprint == 'animal_farm_admin' else (url_for('animal_farm_staff.dashboard') if request.blueprint == 'animal_farm_staff' else '#')) %}
+            <div class="header-title">
+                <div class="breadcrumbs" aria-label="Breadcrumb">
+                    <a href="{{ _home_url }}">{{ _app_label }}</a>
+                    <span class="crumb-sep">/</span>
+                    <span class="crumb-current" aria-current="page">{{ self.page_title() }}</span>
+                </div>
+                <span class="page-heading">{% block page_title %}{% endblock %}</span>
+            </div>
             <div class="header-actions">
                 {% if request.blueprint == 'zootique_admin' %}
+                    {% set _sa_name = (session.get('full_name') or 'Super Admin') %}
                     <button class="icon-btn" title="Notifications" aria-label="Notifications"><i class="fa-solid fa-bell"></i></button>
-                    <div class="avatar" title="Marcus Thorne">MT</div>
+                    <div class="avatar" title="{{ _sa_name }}">{{ _sa_name[0]|upper }}</div>
                 {% else %}
                     <button class="icon-btn" title="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
                     <button class="icon-btn" title="Notifications"><i class="fa-solid fa-bell"></i></button>
@@ -440,7 +423,7 @@
 
     {% if is_admin and request.blueprint == 'zootique_admin' %}
     <footer class="sa-footer">
-        ZOOTIQUE ENTERPRISE OPERATIONS © 2024 • VERSION 4.2.0-EDITORIAL
+        ZOOTIQUE ENTERPRISE OPERATIONS
     </footer>
     {% endif %}
 
@@ -452,6 +435,7 @@
 </main>
 {% endif %}
 
+<script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>

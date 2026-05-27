@@ -12,45 +12,50 @@
   </div>
 </div>
 
-<!-- Stats (Figma values) -->
-<div class="stats-grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:16px;">
+<!-- Stats -->
+<div class="stats-grid" style="--stats-cols: 4; margin-bottom:16px;">
   <div class="stat-card">
     <div class="stat-icon-box green"><i class="fa-solid fa-circle-check"></i></div>
-    <div class="stat-value">142</div>
+    <div class="stat-value">{{ "{:,}".format(sub_stats.active or 0) }}</div>
     <div class="stat-label">ACTIVE SUBSCRIPTIONS</div>
   </div>
   <div class="stat-card">
     <div class="stat-icon-box blue"><i class="fa-solid fa-money-bills"></i></div>
-    <div class="stat-value">$42.8k</div>
+    <div class="stat-value">₱{{ "{:,.2f}".format(sub_stats.mrr or 0) }}</div>
     <div class="stat-label">TOTAL REVENUE (MRR)</div>
   </div>
   <div class="stat-card">
     <div class="stat-icon-box orange" style="background:var(--warning-bg); color:var(--warning);"><i class="fa-solid fa-rotate"></i></div>
-    <div class="stat-value">18</div>
+    <div class="stat-value">{{ "{:,}".format(sub_stats.pending_renewals or 0) }}</div>
     <div class="stat-label">PENDING RENEWALS</div>
   </div>
   <div class="stat-card">
     <div class="stat-icon-box purple"><i class="fa-solid fa-arrow-trend-down"></i></div>
-    <div class="stat-value">1.2%</div>
+    <div class="stat-value">{{ "{:.1f}".format(sub_stats.churn_rate or 0) }}%</div>
     <div class="stat-label">CHURN RATE</div>
   </div>
 </div>
 
+{% set _needs_attention = (sub_stats.pending_renewals or 0) > 0 or (sub_stats.expired or 0) > 0 %}
+{% if _needs_attention %}
 <!-- Alert banner -->
 <div class="card-panel" style="margin-bottom:16px; border-left:4px solid var(--warning); background:var(--warning-bg);">
   <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
     <div style="display:flex; align-items:flex-start; gap:10px;">
       <i class="fa-solid fa-triangle-exclamation" style="color:var(--warning); margin-top:2px;"></i>
       <div>
-        <div style="font-weight:900; letter-spacing:0.02em;">CRITICAL SUBSCRIPTION UPDATES - CENTRAL LUZON REGION</div>
-        <div style="font-size:12px; color:#92400e; font-weight:700;">Immediate attention required</div>
+        <div style="font-weight:900; letter-spacing:0.02em;">SUBSCRIPTION ATTENTION REQUIRED</div>
+        <div style="font-size:12px; color:#92400e; font-weight:700;">
+          {{ sub_stats.pending_renewals or 0 }} pending renewals • {{ sub_stats.expired or 0 }} expired
+        </div>
       </div>
     </div>
-    <div style="font-size:12px; font-weight:800; color:#92400e;">Requires Attention</div>
+    <div style="font-size:12px; font-weight:800; color:#92400e;">Review</div>
   </div>
 </div>
+{% endif %}
 
-<div class="two-col" style="grid-template-columns: 1.25fr 0.75fr; margin-bottom:16px;">
+<div class="two-col" style="--two-col-template: 1.25fr 0.75fr; margin-bottom:16px;">
   <!-- Directory table -->
   <div class="card-panel" style="margin-bottom:0;">
     <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
@@ -130,38 +135,30 @@
       <h2>Global Pricing Tiers</h2>
     </div>
     <div class="card-body" style="display:flex; flex-direction:column; gap:12px;">
-      <div class="card-panel" style="margin:0; border:1px solid var(--border-light);">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-          <div>
-            <div style="font-weight:900;">Basic Field</div>
-            <div style="font-size:12px; color:var(--text-muted); font-weight:700;">Secure Field Access</div>
-          </div>
-          <div style="font-weight:900; color:var(--text);">$199<span style="font-size:12px; color:var(--text-muted); font-weight:800;">/mo</span></div>
-        </div>
-      </div>
-
-      <div class="card-panel" style="margin:0; border:1px solid rgba(22,163,74,0.35); background:rgba(22,163,74,0.06);">
+      {% for plan in plan_tiers[:3] %}
+      <div class="card-panel" style="margin:0; {% if plan.is_popular %}border:1px solid rgba(22,163,74,0.35); background:rgba(22,163,74,0.06);{% else %}border:1px solid var(--border-light);{% endif %}">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
           <div>
             <div style="display:flex; gap:8px; align-items:center;">
-              <div style="font-weight:900;">Habitat Pro</div>
+              <div style="font-weight:900;">{{ plan.name }}</div>
+              {% if plan.is_popular %}
               <span class="badge" style="background:rgba(22,163,74,0.16); color:var(--primary); font-weight:900;">POPULAR CHOICE</span>
+              {% endif %}
             </div>
-            <div style="font-size:12px; color:var(--text-muted); font-weight:700;">Recommended for high-level admin accounts</div>
+            <div style="font-size:12px; color:var(--text-muted); font-weight:700;">{{ plan.description }}</div>
           </div>
-          <div style="font-weight:900; color:var(--text);">$499<span style="font-size:12px; color:var(--text-muted); font-weight:800;">/mo</span></div>
+          <div style="font-weight:900; color:var(--text);">₱{{ "{:,.2f}".format(plan.price or 0) }}<span style="font-size:12px; color:var(--text-muted); font-weight:800;">{{ plan.duration_label }}</span></div>
         </div>
       </div>
+      {% else %}
+      <div class="empty-state">No pricing tiers configured yet.</div>
+      {% endfor %}
 
-      <div class="card-panel" style="margin:0; border:1px solid var(--border-light);">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-          <div>
-            <div style="font-weight:900;">Sanctuary Global</div>
-            <div style="font-size:12px; color:var(--text-muted); font-weight:700;">API Access & Integrations</div>
-          </div>
-          <div style="font-weight:900; color:var(--text);">$999<span style="font-size:12px; color:var(--text-muted); font-weight:800;">/mo</span></div>
-        </div>
+      {% if plan_tiers|length > 3 %}
+      <div style="font-size:12px; color:var(--text-muted); font-weight:700;">
+        Showing 3 of {{ plan_tiers|length }} plans.
       </div>
+      {% endif %}
 
       <div style="display:flex; gap:8px;">
         <a class="btn btn-primary" href="#plan-manager"><i class="fa-solid fa-plus"></i> Add New Plan</a>
@@ -172,7 +169,7 @@
 </div>
 
 <!-- Plan Manager (existing functionality) -->
-<div id="plan-manager" class="two-col" style="grid-template-columns: 1fr 1.1fr;">
+<div id="plan-manager" class="two-col" style="--two-col-template: 1fr 1.1fr;">
 
   <!-- Add / Edit Plan -->
   <div class="card-panel" style="margin-bottom:0;">

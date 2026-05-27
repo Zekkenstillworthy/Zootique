@@ -8,23 +8,16 @@ from flask import Blueprint, current_app, flash, redirect, render_template, requ
 from werkzeug.utils import secure_filename
 
 from models import Animal, Booking, Event, Feedback, StaffTask, User, Zoo, ZooZone, db
+from services.auth_guard import require_role_guard
 
 zoo_staff_bp = Blueprint('animal_farm_staff', __name__)
 
 
 @zoo_staff_bp.before_request
 def require_zoo_staff():
-    if session.get('role') != 'zoo_staff':
-        return redirect(url_for('auth.login', module_name='zoo_staff'))
-    user_id = session.get('user_id')
-    if not user_id:
-        session.clear()
-        return redirect(url_for('auth.login', module_name='zoo_staff'))
-    user = db.session.get(User, int(user_id))
-    if not user or (getattr(user, 'status', 'active') or 'active') != 'active':
-        session.clear()
-        flash('Your account is not active. Please sign in again.', 'error')
-        return redirect(url_for('auth.login', module_name='zoo_staff'))
+    result = require_role_guard(expected_role='zoo_staff', login_module='zoo_staff')
+    if result is not None:
+        return result
 
 
 def _current_user() -> User | None:

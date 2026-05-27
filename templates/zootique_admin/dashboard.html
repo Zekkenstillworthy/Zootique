@@ -7,83 +7,186 @@
 
 <div class="page-subheader" style="margin-bottom:16px;">
     <div class="ps-left">
-        <h2>SUPER ADMIN</h2>
+        <h2>SUPER ADMIN DASHBOARD</h2>
         <p>Live operational intelligence across partner wildlife preserves.</p>
-    </div>
-    <div style="display:flex; gap:10px; align-items:center;">
-        <button class="btn btn-ghost" type="button" data-export="pdf"><i class="fa-regular fa-file-pdf"></i> Export PDF</button>
-        <button class="btn btn-primary" type="button" data-export="csv"><i class="fa-solid fa-file-csv"></i> Download CSV</button>
     </div>
 </div>
 
 <!-- KPI Cards -->
-<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+<div class="stats-grid" style="--stats-cols: 4;">
     <div class="stat-card">
-        <div class="stat-icon-box blue"><i class="fa-solid fa-building"></i></div>
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
+            <div class="stat-icon-box blue"><i class="fa-solid fa-building"></i></div>
+            {% if stats.zoos_new_this_month %}
+                <span class="badge badge-active">+{{ stats.zoos_new_this_month }} this mo.</span>
+            {% else %}
+                <span class="badge">No new this mo.</span>
+            {% endif %}
+        </div>
         <div class="stat-value">{{ "{:,}".format(stats.total_zoos) }}</div>
         <div class="stat-label">TOTAL REGISTERED ZOOS</div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon-box green"><i class="fa-solid fa-circle-check"></i></div>
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
+            <div class="stat-icon-box green"><i class="fa-solid fa-circle-check"></i></div>
+            <span class="badge badge-active">{{ stats.subs_health_pct }}% health</span>
+        </div>
         <div class="stat-value">{{ "{:,}".format(stats.active_subscriptions) }}</div>
         <div class="stat-label">ACTIVE SUBSCRIPTIONS</div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon-box orange" style="background:#fee2e2;color:#dc2626;"><i class="fa-solid fa-circle-xmark"></i></div>
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
+            <div class="stat-icon-box orange"><i class="fa-solid fa-circle-xmark"></i></div>
+            {% if stats.expired_subscriptions %}
+                <span class="badge badge-pending">Requires attention</span>
+            {% else %}
+                <span class="badge badge-active">All good</span>
+            {% endif %}
+        </div>
         <div class="stat-value">{{ "{:,}".format(stats.expired_subscriptions) }}</div>
         <div class="stat-label">EXPIRED SUBSCRIPTIONS</div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon-box yellow"><i class="fa-solid fa-peso-sign"></i></div>
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
+            <div class="stat-icon-box yellow"><i class="fa-solid fa-peso-sign"></i></div>
+            {% if stats.revenue_change_pct is not none %}
+                {% if stats.revenue_change_pct >= 0 %}
+                    <span class="badge badge-active">+{{ "{:.1f}".format(stats.revenue_change_pct) }}%</span>
+                {% else %}
+                    <span class="badge badge-pending">{{ "{:.1f}".format(stats.revenue_change_pct) }}%</span>
+                {% endif %}
+            {% else %}
+                <span class="badge">—</span>
+            {% endif %}
+        </div>
         <div class="stat-value">₱{{ "{:,.2f}".format(stats.monthly_revenue) }}</div>
         <div class="stat-label">MONTHLY REVENUE</div>
     </div>
 </div>
 
-<div class="two-col" style="margin-top:16px; grid-template-columns: 1.2fr 1fr;">
+
+<div class="two-col" style="margin-top:16px; --two-col-template: 1.35fr 1fr;">
     <!-- Line Chart -->
     <div class="card-panel">
         <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
             <h2>NEW ZOO REGISTRATIONS TREND</h2>
-            <div style="font-size:12px; color:var(--text-muted); font-weight:700;">Last 6 Months</div>
+            <div style="font-size:12px; color:rgba(255,255,255,0.9); font-weight:800;">Last 6 months</div>
         </div>
         <div class="card-body" style="padding-top:0;">
-            <div class="sa-chart-card" data-sa-line="registrations" style="height:220px; border:1px solid var(--border-light); border-radius:12px; background:#fff; overflow:hidden;"></div>
+            <div class="sa-chart-card" data-sa-line="registrations" style="height:240px; border:1px solid var(--border-light); border-radius:12px; background:#fff; overflow:hidden;"></div>
         </div>
     </div>
 
-    <!-- Most Active Zoos -->
+    <!-- Revenue Growth -->
     <div class="card-panel">
-        <div class="card-header">
-            <h2>MOST ACTIVE ZOOS (GLOBAL OPERATIONS)</h2>
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <h2>REVENUE GROWTH</h2>
+            <span class="badge">Monthly</span>
         </div>
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ZOO NAME</th>
-                        <th style="text-align:right;">BOOKINGS</th>
-                        <th style="text-align:right;">VISITORS</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in most_active %}
-                        <tr>
-                            <td class="fw-600">{{ row.zoo_name }}</td>
-                            <td style="text-align:right; font-weight:800;">{{ "{:,}".format(row.booking_count) }}</td>
-                            <td style="text-align:right; font-weight:800; color:var(--primary);">{{ "{:,}".format(row.visitor_count) }}</td>
-                        </tr>
+        <div class="card-body">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+                <div>
+                    <div style="font-size:34px; font-weight:900; color:var(--text); line-height:1;">
+                        {{ stats.revenue_goal_pct }}%
+                    </div>
+                    <div style="margin-top:6px; font-size:12px; color:var(--text-muted); font-weight:700;">
+                        Target reached
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:12px; color:var(--text-muted); font-weight:800;">Goal</div>
+                    <div style="font-size:16px; font-weight:900; color:var(--text);">₱{{ "{:,.2f}".format(stats.revenue_goal) }}</div>
+                </div>
+            </div>
+
+            <div style="margin-top:14px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px; color:var(--text-muted); font-weight:800; margin-bottom:8px;">
+                    <span>This month revenue</span>
+                    <span>₱{{ "{:,.2f}".format(stats.monthly_revenue) }}</span>
+                </div>
+                <div class="sa-progress" aria-label="Revenue progress">
+                    <div class="sa-progress-bar" style="width: {{ stats.revenue_goal_pct }}%;"></div>
+                </div>
+                <div style="margin-top:10px; font-size:12px; color:var(--text-light);">
+                    {% if stats.revenue_change_pct is not none %}
+                        {% if stats.revenue_change_pct >= 0 %}
+                            <span class="badge badge-active">+{{ "{:.1f}".format(stats.revenue_change_pct) }}%</span>
+                        {% else %}
+                            <span class="badge badge-pending">{{ "{:.1f}".format(stats.revenue_change_pct) }}%</span>
+                        {% endif %}
+                        <span style="margin-left:8px;">vs previous month</span>
                     {% else %}
-                        <tr>
-                            <td colspan="3" style="color:var(--text-muted);">No booking activity yet.</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                        <span class="badge">No prior-month baseline</span>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-        <div style="padding:12px 16px; border-top:1px solid var(--border-light); font-size:12px; color:var(--text-muted);">
-            Based on booking volume and total visitors served.
+    </div>
+</div>
+
+<!-- Zoo Performance Table -->
+<div class="card-panel" style="margin-top:16px;">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+        <h2>ZOO PERFORMANCE</h2>
+        <div class="card-header-actions">
+            <a class="btn btn-ghost" href="{{ url_for('zootique_admin.view_reports') }}">View All</a>
+            <a class="btn btn-primary" href="{{ url_for('auth.register_admin_step1') }}">Onboard New Zoo</a>
         </div>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ZOO NAME</th>
+                    <th>TIER</th>
+                    <th style="text-align:right;">RATING</th>
+                    <th style="text-align:right;">REVENUE CONTRIBUTION</th>
+                    <th style="text-align:right;">ACTION</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in zoo_performance %}
+                    <tr>
+                        <td class="fw-600">{{ row.zoo_name }}</td>
+                        <td>
+                            {% if row.tier != '—' %}
+                                <span class="badge badge-active">{{ row.tier }}</span>
+                            {% else %}
+                                <span class="badge">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:right; font-weight:800;">
+                            {% if row.avg_rating is not none %}
+                                <span style="color:var(--warning);"><i class="fa-solid fa-star"></i></span>
+                                {{ "{:.1f}".format(row.avg_rating) }}
+                                <span style="font-size:12px; color:var(--text-muted); font-weight:700;">({{ row.rating_count }})</span>
+                            {% else %}
+                                <span style="color:var(--text-muted);">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:right; font-weight:900;">
+                            ₱{{ "{:,.2f}".format(row.revenue) }}
+                            {% if row.revenue_delta_pct is not none %}
+                                {% if row.revenue_delta_pct >= 0 %}
+                                    <span class="badge badge-active" style="margin-left:8px;">+{{ "{:.0f}".format(row.revenue_delta_pct) }}%</span>
+                                {% else %}
+                                    <span class="badge badge-pending" style="margin-left:8px;">{{ "{:.0f}".format(row.revenue_delta_pct) }}%</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge" style="margin-left:8px;">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:right;">
+                            <a class="btn btn-ghost" href="{{ url_for('zootique_admin.view_reports') }}">View</a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" style="color:var(--text-muted);">No zoo performance data yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -93,6 +196,6 @@
 <script>
   window.ZootiqueSuperAdmin = window.ZootiqueSuperAdmin || {};
   window.ZootiqueSuperAdmin.registrations = {{ reg_bars|tojson }};
-  window.ZootiqueSuperAdmin.dashboardMostActive = {{ most_active|tojson }};
+    window.ZootiqueSuperAdmin.zooPerformance = {{ zoo_performance|tojson }};
 </script>
 {% endblock %}

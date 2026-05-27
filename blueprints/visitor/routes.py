@@ -43,12 +43,34 @@ def _current_user() -> User | None:
 
 
 def _require_visitor_login():
+    auth_by_role = session.get("auth_by_role")
+    if not isinstance(auth_by_role, dict):
+        auth_by_role = {}
+
+    role_state = auth_by_role.get("visitor") if isinstance(auth_by_role, dict) else None
+    role_user_id = role_state.get("user_id") if isinstance(role_state, dict) else None
+
+    # If we have a visitor role session saved, activate it for this request.
+    if role_user_id:
+        session["user_id"] = role_user_id
+        session["role"] = "visitor"
+        if role_state.get("full_name"):
+            session["full_name"] = role_state.get("full_name")
+
     if session.get("user_id") and session.get("role") == "visitor":
         user = _current_user()
         if user and (getattr(user, "status", "active") or "active") == "active":
+            # Keep role-specific state in sync.
+            auth_by_role["visitor"] = {"user_id": int(user.id), "full_name": user.full_name}
+            session["auth_by_role"] = auth_by_role
+            session.permanent = True
+            session.modified = True
             return None
-        # Session is stale (user deleted/suspended). Force sign-in.
-        session.clear()
+        # Session is stale (user deleted/suspended). Force sign-in for visitor role only.
+        auth_by_role.pop("visitor", None)
+        session["auth_by_role"] = auth_by_role
+        session.pop("user_id", None)
+        session.pop("role", None)
     flash("Please sign in as a Visitor to continue.", "error")
     next_url = request.full_path
     if next_url.endswith("?"):

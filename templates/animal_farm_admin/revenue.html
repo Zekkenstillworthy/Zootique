@@ -10,7 +10,7 @@
     </div>
 
     <div class="card-body">
-        <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 12px;">
+        <div class="stats-grid" style="--stats-cols: 2; margin-bottom: 12px;">
             <div class="stat-card">
                 <div class="stat-icon-box green"><i class="fa-solid fa-money-bills"></i></div>
                 <div class="stat-value">₱{{ '%.2f'|format(total_revenue or 0) }}</div>

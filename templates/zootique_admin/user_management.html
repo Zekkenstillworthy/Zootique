@@ -20,7 +20,7 @@
   {% if u.status == 'Active' %}{% set ns.active = ns.active + 1 %}{% else %}{% set ns.suspended = ns.suspended + 1 %}{% endif %}
 {% endfor %}
 
-<div class="stats-grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:16px;">
+<div class="stats-grid" style="--stats-cols: 4; margin-bottom:16px;">
   <div class="stat-card">
     <div class="stat-icon-box blue"><i class="fa-solid fa-users"></i></div>
     <div class="stat-value">{{ users|length }}</div>
@@ -43,7 +43,7 @@
   </div>
 </div>
 
-<div class="two-col" style="grid-template-columns: 1.35fr 0.95fr;">
+<div class="two-col" style="--two-col-template: 1.35fr 0.95fr;">
   <div class="card-panel">
     <div class="card-header"><h2>PERSONNEL DIRECTORY</h2></div>
     <div class="table-wrap">

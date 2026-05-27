@@ -12,6 +12,7 @@ from models import (
     Zoo,
     User,
     Booking,
+    Feedback,
     SubscriptionPlan,
     ZooSubscription,
     SubscriptionPayment,
@@ -24,23 +25,16 @@ from services import (
     change_zoo_subscription_plan,
     renew_zoo_subscription,
 )
+from services.auth_guard import require_role_guard
 
 admin_bp = Blueprint("zootique_admin", __name__)
 
 
 @admin_bp.before_request
 def require_zootique_admin():
-    if session.get('role') != 'zootique_admin':
-        return redirect(url_for('auth.login', module_name='zootique_admin'))
-    user_id = session.get('user_id')
-    if not user_id:
-        session.clear()
-        return redirect(url_for('auth.login', module_name='zootique_admin'))
-    user = db.session.get(User, int(user_id))
-    if not user or (getattr(user, 'status', 'active') or 'active') != 'active':
-        session.clear()
-        flash('Your account is not active. Please sign in again.', 'error')
-        return redirect(url_for('auth.login', module_name='zootique_admin'))
+    result = require_role_guard(expected_role='zootique_admin', login_module='zootique_admin')
+    if result is not None:
+        return result
 
 
 def _month_start(dt: datetime) -> datetime:
@@ -66,19 +60,37 @@ def _current_user() -> User | None:
     user_id = session.get('user_id')
     if not user_id:
         return None
-    return db.session.get(User, user_id)
+    try:
+        user_id_int = int(user_id)
+    except (TypeError, ValueError):
+        return None
+    return db.session.get(User, user_id_int)
 
 @admin_bp.get("/")
 def dashboard():
     now = datetime.utcnow()
 
+    month_start = _month_start(now)
+    month_end = _next_month_start(now)
+    prev_month_end = month_start
+    prev_month_start = _month_start(prev_month_end - timedelta(days=1))
+
     total_zoos = db.session.query(db.func.count(Zoo.id)).scalar() or 0
+
+    zoos_new_this_month = (
+        db.session.query(db.func.count(Zoo.id))
+        .filter(Zoo.created_at >= month_start)
+        .filter(Zoo.created_at < month_end)
+        .scalar()
+        or 0
+    )
 
     active_subs = db.session.query(db.func.count(ZooSubscription.id)).filter(ZooSubscription.end_date >= now).scalar() or 0
     expired_subs = db.session.query(db.func.count(ZooSubscription.id)).filter(ZooSubscription.end_date < now).scalar() or 0
 
-    month_start = _month_start(now)
-    month_end = _next_month_start(now)
+    total_subs = db.session.query(db.func.count(ZooSubscription.id)).scalar() or 0
+    subs_health_pct = int(round((active_subs / total_subs) * 100)) if total_subs else 0
+
     monthly_revenue = (
         db.session.query(db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0))
         .filter(SubscriptionPayment.paid_at >= month_start)
@@ -86,6 +98,35 @@ def dashboard():
         .scalar()
         or 0.0
     )
+
+    prev_month_revenue = (
+        db.session.query(db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0))
+        .filter(SubscriptionPayment.paid_at >= prev_month_start)
+        .filter(SubscriptionPayment.paid_at < prev_month_end)
+        .scalar()
+        or 0.0
+    )
+
+    revenue_change_pct = None
+    if prev_month_revenue and prev_month_revenue > 0:
+        revenue_change_pct = ((monthly_revenue - prev_month_revenue) / prev_month_revenue) * 100.0
+    elif monthly_revenue > 0:
+        revenue_change_pct = 100.0
+
+    # Revenue goal + progress (derived from recent performance)
+    # Goal = 10% above the higher of: current month revenue vs 6-month average.
+    last_6_months_start = _month_start(month_start - timedelta(days=30 * 5))
+    rev_last_6 = (
+        db.session.query(db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0))
+        .filter(SubscriptionPayment.paid_at >= last_6_months_start)
+        .filter(SubscriptionPayment.paid_at < month_end)
+        .scalar()
+        or 0.0
+    )
+    avg_6 = (rev_last_6 / 6.0) if rev_last_6 else 0.0
+    revenue_goal = max(float(monthly_revenue), float(avg_6)) * 1.10 if (monthly_revenue or avg_6) else 0.0
+    revenue_goal_pct = int(round((monthly_revenue / revenue_goal) * 100)) if revenue_goal else 0
+    revenue_goal_pct = max(0, min(revenue_goal_pct, 100))
 
     # New Zoo Registrations (last 6 months)
     reg_bars = []
@@ -111,43 +152,113 @@ def dashboard():
     for b in reg_bars:
         b['pct'] = int((b['count'] / max_reg) * 100)
 
-    # Most Active Zoos (based on bookings & visitors)
-    activity_rows = (
+    # Zoo Performance (tier, rating, revenue contribution)
+    zoo_rows = db.session.query(Zoo.id, Zoo.name).order_by(Zoo.name.asc()).all()
+    zoo_ids = [zid for zid, _ in zoo_rows]
+
+    # Active subscription tier per zoo (pick the active subscription with the latest end_date)
+    active_sub_rows = (
+        db.session.query(ZooSubscription)
+        .filter(ZooSubscription.zoo_id.in_(zoo_ids) if zoo_ids else db.text('FALSE'))
+        .filter(ZooSubscription.end_date >= now)
+        .order_by(ZooSubscription.zoo_id.asc(), ZooSubscription.end_date.desc())
+        .all()
+    )
+    tier_by_zoo: dict[int, str] = {}
+    for s in active_sub_rows:
+        if s.zoo_id not in tier_by_zoo:
+            tier_by_zoo[s.zoo_id] = s.plan.name if s.plan else '—'
+
+    rating_rows = (
         db.session.query(
-            Zoo.id,
-            Zoo.name,
-            db.func.count(Booking.id).label('booking_count'),
-            db.func.coalesce(db.func.sum(Booking.guests), 0).label('visitor_count'),
+            Feedback.zoo_id,
+            db.func.avg(Feedback.rating).label('avg_rating'),
+            db.func.count(Feedback.id).label('rating_count'),
         )
-        .join(Booking, Booking.zoo_id == Zoo.id)
-        .group_by(Zoo.id, Zoo.name)
-        .order_by(db.desc('booking_count'))
-        .limit(5)
+        .filter(Feedback.zoo_id.isnot(None))
+        .group_by(Feedback.zoo_id)
+        .all()
+    )
+    rating_by_zoo: dict[int, dict] = {
+        int(r.zoo_id): {
+            'avg': float(r.avg_rating) if r.avg_rating is not None else None,
+            'count': int(r.rating_count or 0),
+        }
+        for r in rating_rows
+        if r.zoo_id is not None
+    }
+
+    cur_rev_rows = (
+        db.session.query(
+            ZooSubscription.zoo_id,
+            db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0).label('total'),
+        )
+        .join(SubscriptionPayment, SubscriptionPayment.subscription_id == ZooSubscription.id)
+        .filter(SubscriptionPayment.paid_at >= month_start)
+        .filter(SubscriptionPayment.paid_at < month_end)
+        .group_by(ZooSubscription.zoo_id)
+        .all()
+    )
+    prev_rev_rows = (
+        db.session.query(
+            ZooSubscription.zoo_id,
+            db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0).label('total'),
+        )
+        .join(SubscriptionPayment, SubscriptionPayment.subscription_id == ZooSubscription.id)
+        .filter(SubscriptionPayment.paid_at >= prev_month_start)
+        .filter(SubscriptionPayment.paid_at < prev_month_end)
+        .group_by(ZooSubscription.zoo_id)
         .all()
     )
 
-    most_active = [
-        {
-            'zoo_id': r.id,
-            'zoo_name': r.name,
-            'booking_count': int(r.booking_count or 0),
-            'visitor_count': int(r.visitor_count or 0),
-        }
-        for r in activity_rows
-    ]
+    cur_rev_by_zoo = {int(zid): float(total or 0.0) for zid, total in cur_rev_rows}
+    prev_rev_by_zoo = {int(zid): float(total or 0.0) for zid, total in prev_rev_rows}
+
+    zoo_performance = []
+    for zoo_id, zoo_name in zoo_rows:
+        cur_rev = float(cur_rev_by_zoo.get(int(zoo_id), 0.0))
+        prev_rev = float(prev_rev_by_zoo.get(int(zoo_id), 0.0))
+
+        rev_delta_pct = None
+        if prev_rev > 0:
+            rev_delta_pct = ((cur_rev - prev_rev) / prev_rev) * 100.0
+        elif cur_rev > 0:
+            rev_delta_pct = 100.0
+
+        rating_info = rating_by_zoo.get(int(zoo_id), {'avg': None, 'count': 0})
+
+        zoo_performance.append(
+            {
+                'zoo_id': int(zoo_id),
+                'zoo_name': zoo_name,
+                'tier': tier_by_zoo.get(int(zoo_id), '—'),
+                'avg_rating': rating_info.get('avg'),
+                'rating_count': rating_info.get('count', 0),
+                'revenue': cur_rev,
+                'revenue_delta_pct': rev_delta_pct,
+            }
+        )
+
+    zoo_performance.sort(key=lambda r: (r['revenue'], (r['avg_rating'] or 0.0)), reverse=True)
+    zoo_performance = zoo_performance[:5]
 
     stats = {
         'total_zoos': int(total_zoos),
+        'zoos_new_this_month': int(zoos_new_this_month),
         'active_subscriptions': int(active_subs),
         'expired_subscriptions': int(expired_subs),
+        'subs_health_pct': int(subs_health_pct),
         'monthly_revenue': float(monthly_revenue),
+        'revenue_change_pct': float(revenue_change_pct) if revenue_change_pct is not None else None,
+        'revenue_goal': float(revenue_goal),
+        'revenue_goal_pct': int(revenue_goal_pct),
     }
 
     return render_template(
         "zootique_admin/dashboard.html",
         stats=stats,
         reg_bars=reg_bars,
-        most_active=most_active,
+        zoo_performance=zoo_performance,
     )
 
 @admin_bp.get("/subscriptions")
@@ -165,8 +276,37 @@ def manage_subscriptions():
     )
 
     sub_rows = []
+    active_count = 0
+    expired_count = 0
+    pending_renewals = 0
+    mrr_total = 0.0
+    active_by_plan: dict[int, int] = {}
     for s in subscriptions:
         is_active = s.end_date >= now
+        if is_active:
+            active_count += 1
+        else:
+            expired_count += 1
+
+        # Pending renewals: active subscriptions ending within the next 30 days.
+        if is_active and s.end_date < (now + timedelta(days=30)):
+            pending_renewals += 1
+
+        # Monthly recurring revenue: normalize by duration months.
+        try:
+            duration_months = int(getattr(s.plan, "duration_months", 1) or 1)
+        except Exception:
+            duration_months = 1
+        duration_months = max(duration_months, 1)
+        try:
+            plan_price = float(getattr(s.plan, "price", 0) or 0)
+        except Exception:
+            plan_price = 0.0
+        if is_active:
+            mrr_total += plan_price / duration_months
+            if s.plan_id:
+                active_by_plan[int(s.plan_id)] = active_by_plan.get(int(s.plan_id), 0) + 1
+
         latest_payment = (
             SubscriptionPayment.query
             .filter_by(subscription_id=s.id)
@@ -188,10 +328,47 @@ def manage_subscriptions():
 
     plans = SubscriptionPlan.query.order_by(SubscriptionPlan.price.asc()).all()
 
+    total_subs = len(subscriptions)
+    churn_rate = (expired_count / total_subs) * 100 if total_subs else 0.0
+
+    popular_plan_id = None
+    if active_by_plan:
+        popular_plan_id = max(active_by_plan.items(), key=lambda item: item[1])[0]
+
+    plan_tiers = []
+    for plan in plans:
+        features = (plan.features or "").strip()
+        short_desc = ""
+        if features:
+            short_desc = (features.splitlines()[0] or "").strip()
+        if not short_desc:
+            short_desc = "Subscription features"
+
+        duration = (getattr(plan, "duration", "monthly") or "monthly").strip().lower()
+        duration_label = "/mo" if duration == "monthly" else "/yr"
+
+        plan_tiers.append({
+            "id": plan.id,
+            "name": plan.name,
+            "description": short_desc,
+            "price": float(plan.price or 0),
+            "duration_label": duration_label,
+            "is_popular": bool(popular_plan_id and plan.id == popular_plan_id),
+        })
+
     return render_template(
         "zootique_admin/subscriptions.html",
         subscriptions=sub_rows,
         plans=plans,
+        sub_stats={
+            "active": int(active_count),
+            "mrr": float(mrr_total),
+            "pending_renewals": int(pending_renewals),
+            "churn_rate": float(churn_rate),
+            "expired": int(expired_count),
+            "total": int(total_subs),
+        },
+        plan_tiers=plan_tiers,
         edit_plan=edit_plan,
     )
 
@@ -358,10 +535,18 @@ def view_feedback():
 
     # Preload the latest reply (if any)
     rows = []
+    pending_replies = 0
+    rating_sum = 0
     for f in feedbacks:
         latest_reply = None
         if f.replies:
             latest_reply = sorted(f.replies, key=lambda r: r.created_at)[-1]
+        if latest_reply is None:
+            pending_replies += 1
+        try:
+            rating_sum += int(f.rating or 0)
+        except Exception:
+            rating_sum += 0
         rows.append({
             'id': f.id,
             'zoo_name': f.zoo.name,
@@ -373,10 +558,18 @@ def view_feedback():
             'latest_reply_date': latest_reply.created_at.strftime('%Y-%m-%d') if latest_reply else None,
         })
 
+    total_feedback = len(rows)
+    avg_rating = (rating_sum / total_feedback) if total_feedback else 0.0
+
     return render_template(
         "zootique_admin/feedback.html",
         feedbacks=rows,
         zoos=zoos,
+        feedback_stats={
+            'total': int(total_feedback),
+            'avg_rating': float(avg_rating),
+            'pending_replies': int(pending_replies),
+        },
         filters={
             'zoo_id': zoo_id or '',
             'rating': rating or '',
@@ -464,7 +657,7 @@ def view_reports():
     # Financial (monthly income + recent payments)
     month_income = (
         db.session.query(
-            db.func.strftime('%Y-%m', SubscriptionPayment.paid_at).label('month'),
+            db.func.to_char(SubscriptionPayment.paid_at, 'YYYY-MM').label('month'),
             db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0).label('total'),
         )
         .group_by('month')

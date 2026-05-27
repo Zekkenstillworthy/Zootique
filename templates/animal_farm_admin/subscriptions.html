@@ -15,7 +15,7 @@
       <p style="color: var(--text-muted); margin-bottom: 12px;">Zoo: <strong>{{ zoo.name }}</strong></p>
 
       {% if subscription %}
-        <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 16px;">
+        <div class="stats-grid" style="--stats-cols: 4; margin-bottom: 16px;">
           <div class="stat-card">
             <div class="stat-icon-box green"><i class="fa-solid fa-crown"></i></div>
             <div class="stat-value">{{ subscription.plan.name }}</div>
@@ -44,7 +44,7 @@
         </div>
       {% endif %}
 
-      <div class="two-col" style="grid-template-columns: 1fr 1fr;">
+      <div class="two-col" style="--two-col-template: 1fr 1fr;">
         <div class="card-panel" style="margin: 0;">
           <div class="card-header">
             <h2>Available Plans</h2>

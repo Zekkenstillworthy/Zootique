@@ -3,163 +3,28 @@ from datetime import timedelta
 from flask import Flask, jsonify, redirect, render_template, request, send_from_directory, session, url_for
 from blueprints.visitor.routes import visitor_bp
 import data
+import importlib
 import os
 import secrets
+
+from flask_migrate import Migrate
 
 from models import db
 
 
-def _column_exists_sqlite(table_name: str, column_name: str) -> bool:
-    rows = db.session.execute(db.text(f"PRAGMA table_info({table_name});")).mappings().all()
-    return any(r.get("name") == column_name for r in rows)
-
-
-def _table_exists_sqlite(table_name: str) -> bool:
-    row = db.session.execute(
-        db.text("SELECT name FROM sqlite_master WHERE type='table' AND name=:name"),
-        {"name": table_name},
-    ).first()
-    return row is not None
-
-
-def _ensure_runtime_schema_compatibility(app: Flask):
-    """Best-effort schema sync for environments without migration tooling.
-
-    This keeps existing SQLite installations running after additive model changes.
-    """
-    with app.app_context():
-        backend = db.engine.url.get_backend_name().lower()
-        if backend != "sqlite":
-            return
-
-        db.create_all()
-
-        if _table_exists_sqlite("bookings"):
-            if not _column_exists_sqlite("bookings", "user_id"):
-                db.session.execute(
-                    db.text("ALTER TABLE bookings ADD COLUMN user_id INTEGER REFERENCES users(id);")
-                )
-            if not _column_exists_sqlite("bookings", "assigned_staff_user_id"):
-                db.session.execute(
-                    db.text("ALTER TABLE bookings ADD COLUMN assigned_staff_user_id INTEGER REFERENCES users(id);")
-                )
-            if not _column_exists_sqlite("bookings", "payment_status"):
-                db.session.execute(
-                    db.text("ALTER TABLE bookings ADD COLUMN payment_status VARCHAR(20) NOT NULL DEFAULT 'unpaid';")
-                )
-            if not _column_exists_sqlite("bookings", "payment_reference"):
-                db.session.execute(
-                    db.text("ALTER TABLE bookings ADD COLUMN payment_reference VARCHAR(100);")
-                )
-            if not _column_exists_sqlite("bookings", "paid_at"):
-                db.session.execute(
-                    db.text("ALTER TABLE bookings ADD COLUMN paid_at DATETIME;")
-                )
-
-        if _table_exists_sqlite("feedbacks"):
-            if not _column_exists_sqlite("feedbacks", "user_id"):
-                db.session.execute(
-                    db.text("ALTER TABLE feedbacks ADD COLUMN user_id INTEGER REFERENCES users(id);")
-                )
-            if not _column_exists_sqlite("feedbacks", "created_at"):
-                db.session.execute(
-                    db.text("ALTER TABLE feedbacks ADD COLUMN created_at DATETIME;")
-                )
-
-            db.session.execute(
-                db.text(
-                    """
-                    UPDATE feedbacks
-                    SET created_at = CURRENT_TIMESTAMP
-                    WHERE created_at IS NULL
-                    """
-                )
-            )
-
-            db.session.execute(
-                db.text(
-                    """
-                    UPDATE feedbacks
-                    SET user_id = (
-                        SELECT u.id
-                        FROM users u
-                        WHERE lower(trim(u.email)) = lower(trim(feedbacks.visitor_name))
-                        LIMIT 1
-                    )
-                    WHERE user_id IS NULL
-                      AND visitor_name IS NOT NULL
-                    """
-                )
-            )
-
-        if _table_exists_sqlite("zoos"):
-            if not _column_exists_sqlite("zoos", "landing_map_title"):
-                db.session.execute(
-                    db.text("ALTER TABLE zoos ADD COLUMN landing_map_title VARCHAR(160);")
-                )
-            if not _column_exists_sqlite("zoos", "landing_map_description"):
-                db.session.execute(
-                    db.text("ALTER TABLE zoos ADD COLUMN landing_map_description TEXT;")
-                )
-            if not _column_exists_sqlite("zoos", "landing_map_image_url"):
-                db.session.execute(
-                    db.text("ALTER TABLE zoos ADD COLUMN landing_map_image_url VARCHAR(500);")
-                )
-            if not _column_exists_sqlite("zoos", "landing_map_updated_at"):
-                db.session.execute(
-                    db.text("ALTER TABLE zoos ADD COLUMN landing_map_updated_at DATETIME;")
-                )
-
-            db.session.execute(
-                db.text(
-                    """
-                    UPDATE feedbacks
-                    SET user_id = (
-                        SELECT u.id
-                        FROM users u
-                        WHERE lower(trim(u.full_name)) = lower(trim(feedbacks.visitor_name))
-                        LIMIT 1
-                    )
-                    WHERE user_id IS NULL
-                      AND visitor_name IS NOT NULL
-                    """
-                )
-            )
-
-        if not _table_exists_sqlite("booking_payments"):
-            db.session.execute(
-                db.text(
-                    """
-                    CREATE TABLE booking_payments (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        booking_id VARCHAR(20) NOT NULL,
-                        payer_user_id INTEGER,
-                        amount FLOAT NOT NULL,
-                        method VARCHAR(30) NOT NULL,
-                        status VARCHAR(20) NOT NULL DEFAULT 'paid',
-                        reference VARCHAR(100) NOT NULL UNIQUE,
-                        provider VARCHAR(50) NOT NULL DEFAULT 'simulated_gateway',
-                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                        paid_at DATETIME,
-                        FOREIGN KEY (booking_id) REFERENCES bookings(id),
-                        FOREIGN KEY (payer_user_id) REFERENCES users(id)
-                    );
-                    """
-                )
-            )
-
-        db.session.execute(
-            db.text(
-                """
-                UPDATE bookings
-                SET payment_status = 'unpaid'
-                WHERE payment_status IS NULL OR payment_status = ''
-                """
-            )
-        )
-        db.session.commit()
+migrate = Migrate()
 
 def create_app() -> Flask:
+    # Load environment variables from .env if present.
+    # This keeps secrets out of source control and avoids needing to set env vars manually.
+    try:
+        dotenv = importlib.import_module("dotenv")
+        env_name_for_dotenv = os.environ.get("FLASK_ENV", "development").strip().lower()
+        override_dotenv = env_name_for_dotenv in {"development", "dev", "testing", "test"}
+        dotenv.load_dotenv(override=override_dotenv)
+    except Exception:
+        pass
+
     app = Flask(__name__)
     # Default to development so local runs work out-of-the-box.
     # Production deployments should explicitly set FLASK_ENV=production and SECRET_KEY.
@@ -186,6 +51,20 @@ def create_app() -> Flask:
     app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024
     app.config["JSON_SORT_KEYS"] = False
 
+    # UI version label (used in templates). Can be overridden via env var.
+    app.config["APP_VERSION"] = (os.environ.get("APP_VERSION") or "2.4.0").strip()
+
+    @app.before_request
+    def refresh_permanent_session():
+        # Ensure logged-in sessions stay alive while the user is active.
+        # This avoids browsers treating the cookie as a session-only cookie
+        # after long idle times or across reverse proxy deployments.
+        auth_by_role = session.get("auth_by_role")
+        has_any_role = isinstance(auth_by_role, dict) and len(auth_by_role) > 0
+        if session.get("user_id") is not None or has_any_role:
+            session.permanent = True
+            session.modified = True
+
     @app.context_processor
     def inject_csrf_token():
         """Provide a template helper used by forms across the app."""
@@ -198,19 +77,52 @@ def create_app() -> Flask:
 
         return {"csrf_token": csrf_token}
 
-    # --- Database configuration (default: SQLite in instance/) ---
-    os.makedirs(app.instance_path, exist_ok=True)
-    default_sqlite_path = os.path.join(app.instance_path, "zootique.db")
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-        "DATABASE_URL",
-        f"sqlite:///{default_sqlite_path}",
-    )
+    # --- Database configuration (Postgres-only) ---
+    database_url = (os.environ.get("DATABASE_URL") or "").strip()
+    if not database_url:
+        raise RuntimeError(
+            "DATABASE_URL is required and must point to Postgres (example: postgresql+psycopg://user:pass@host:5432/dbname)."
+        )
+
+    # Normalize to psycopg (v3) driver when users provide a generic URL.
+    if database_url.startswith("postgresql://"):
+        database_url = "postgresql+psycopg://" + database_url[len("postgresql://") :]
+    elif database_url.startswith("postgres://"):
+        database_url = "postgresql+psycopg://" + database_url[len("postgres://") :]
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
     app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "uploads")
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
     db.init_app(app)
-    _ensure_runtime_schema_compatibility(app)
+    migrate.init_app(app, db)
+
+    with app.app_context():
+        backend = db.engine.url.get_backend_name().lower()
+        if backend != "postgresql":
+            raise RuntimeError(f"Unsupported database backend '{backend}'. Zootique is configured for Postgres only.")
+
+        # Fail fast if Postgres is unreachable or credentials are invalid.
+        try:
+            with db.engine.connect() as conn:
+                conn.execute(db.text("SELECT 1"))
+        except Exception as ex:
+            safe_url = db.engine.url.render_as_string(hide_password=True)
+            lower_msg = str(ex).lower()
+            missing_db_hint = ""
+            if "does not exist" in lower_msg and "database" in lower_msg:
+                missing_db_hint = (
+                    " The target database does not exist yet. "
+                    "Create it first (example: in psql: CREATE DATABASE zootique;)."
+                )
+            raise RuntimeError(
+                "Unable to connect to Postgres using DATABASE_URL. "
+                f"Resolved URL: {safe_url}. "
+                "Verify the server is running and the username/password/database are correct."
+                + missing_db_hint
+            ) from ex
 
     # Inject mock data into application config
     app.config["ANIMALS"]    = data.ANIMALS
