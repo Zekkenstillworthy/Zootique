@@ -188,7 +188,7 @@ def require_role(*roles: str):
             user = _current_user()
             if not user:
                 return _error("Authentication required.", 401, "unauthorized")
-            if (user.status or "active") != "active":
+            if ((user.status or "active").strip().lower()) != "active":
                 return _error("Account is suspended.", 403, "forbidden")
             if user.role not in roles:
                 return _error("Insufficient role for this endpoint.", 403, "forbidden")
@@ -306,7 +306,7 @@ def api_login():
 
         if not user or not user.check_password(password or ""):
             return _error("Invalid credentials.", 401, "unauthorized")
-        if (user.status or "active") != "active":
+        if ((user.status or "active").strip().lower()) != "active":
             return _error("Account is suspended.", 403, "forbidden")
 
         _set_auth_session(user)
@@ -1882,13 +1882,14 @@ def super_admin_users_create():
         if len(password) < 8:
             return _error("Password must be at least 8 characters.", 400, "validation_error")
 
+        normalized_status = (_str_field(payload, "status") or "active").strip().lower()
         user = User(
             email=email,
             username=username,
             role=role,
             full_name=_str_field(payload, "full_name"),
             zoo_id=zoo_id,
-            status=_str_field(payload, "status") or "active",
+            status=normalized_status,
         )
         if user.status not in {"active", "suspended"}:
             return _error("Invalid status.", 400, "validation_error")
@@ -1937,7 +1938,7 @@ def super_admin_users_patch(user_id: int):
             user.role = role
 
         if "status" in payload:
-            status = _str_field(payload, "status", required=True)
+            status = _str_field(payload, "status", required=True).strip().lower()
             if status not in {"active", "suspended"}:
                 return _error("Invalid status.", 400, "validation_error")
             user.status = status

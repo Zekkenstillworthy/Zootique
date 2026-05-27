@@ -95,7 +95,7 @@ def login(module_name):
 
             user = User.query.filter_by(email=email, role='zootique_admin').first()
             if user and user.check_password(password):
-                if getattr(user, 'status', 'active') != 'active':
+                if (getattr(user, 'status', 'active') or 'active').strip().lower() != 'active':
                     flash('Your account is suspended. Please contact support.', 'error')
                     return render_template('auth/login.html')
 
@@ -118,7 +118,7 @@ def login(module_name):
         # We explicitly enforce that you are logging into your specific module
         user = User.query.filter_by(email=email, role=module_name).first()
         if user and user.check_password(password):
-            if getattr(user, 'status', 'active') != 'active':
+            if (getattr(user, 'status', 'active') or 'active').strip().lower() != 'active':
                 flash('Your account is suspended. Please contact an administrator.', 'error')
                 return render_template('auth/login_module.html', module_name=module_name, module_title=ROLES[module_name])
 

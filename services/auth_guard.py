@@ -39,7 +39,12 @@ def require_role_guard(*, expected_role: str, login_module: str):
         return redirect(url_for("auth.login", module_name=login_module, next=request.full_path))
 
     user = db.session.get(User, user_id_int)
-    if not user or (getattr(user, "status", "active") or "active") != "active":
+    normalized_status = (
+        (getattr(user, "status", "active") or "active").strip().lower()
+        if user is not None
+        else "active"
+    )
+    if not user or normalized_status != "active":
         auth_by_role.pop(str(expected_role), None)
         session["auth_by_role"] = auth_by_role
         flash("Your account is not active. Please sign in again.", "error")

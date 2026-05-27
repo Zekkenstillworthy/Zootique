@@ -823,7 +823,8 @@ def toggle_user_status(user_id: int):
         flash('User not found.', 'error')
         return redirect(url_for('zootique_admin.user_management'))
 
-    user.status = 'suspended' if (user.status == 'active') else 'active'
+    current_status = (user.status or 'active').strip().lower()
+    user.status = 'suspended' if current_status == 'active' else 'active'
     db.session.commit()
     flash('User status updated.', 'success')
     return redirect(url_for('zootique_admin.user_management'))
