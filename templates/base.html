@@ -365,10 +365,17 @@
         </a>
 
         <nav class="visitor-nav-links">
+            {% set _has_selected_zoo = session.get('role') == 'visitor' and session.get('selected_zoo_id') %}
+
             <a href="{{ url_for('visitor.home') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.home' %}active{% endif %}">Home</a>
+
             {% if session.get('user_id') and session.get('role') == 'visitor' %}
-            <a href="{{ url_for('visitor.choose_zoo') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.choose_zoo' %}active{% endif %}">Change Zoo</a>
+            <a href="{{ url_for('visitor.choose_zoo') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.choose_zoo' %}active{% endif %}">
+                {% if _has_selected_zoo %}Change Zoo{% else %}Choose Zoo{% endif %}
+            </a>
             {% endif %}
+
+            {% if _has_selected_zoo %}
             <a href="{{ url_for('visitor.my_bookings') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.my_bookings' %}active{% endif %}">Bookings</a>
             <a href="{{ url_for('visitor.services') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.services' %}active{% endif %}">Services</a>
             <a href="{{ url_for('visitor.animals') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.animals' %}active{% endif %}">Animals</a>
@@ -376,6 +383,7 @@
             <a href="{{ url_for('visitor.promotions') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.promotions' %}active{% endif %}">Promotions</a>
             <a href="{{ url_for('visitor.feedback') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.feedback' %}active{% endif %}">Feedback</a>
             <a href="{{ url_for('visitor.park_info') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.park_info' %}active{% endif %}">Park Info</a>
+            {% endif %}
         </nav>
 
         <div class="visitor-nav-actions">
