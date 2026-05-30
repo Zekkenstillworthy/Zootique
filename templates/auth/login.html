@@ -28,6 +28,7 @@
 
             <form action="{{ url_for('auth.login') }}" method="POST" style="display: flex; flex-direction: column; gap: 1.5rem;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ request.args.get('next') }}">
                 <div>
                     <label style="display: block; font-size: 0.85rem; font-weight: bold; color: #475569; margin-bottom: 0.5rem;">Email Address</label>
                     <input type="email" name="email" required placeholder="Enter your email" style="width: 100%; padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.95rem;">

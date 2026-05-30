@@ -7,9 +7,7 @@
     <div class="container" style="max-width: 900px;">
         
         <div style="text-align: center; margin-bottom: 4rem;">
-            <div style="background: #fef3c7; color: #d97706; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: bold; width: fit-content; margin: 0 auto 1.5rem auto;">
-                <i class="fa-solid fa-lock"></i> Central Authentication Hub
-            </div>
+            
             <h1 style="font-size: 2.8rem; color: #1e3a2b; margin-bottom: 1rem; font-family: 'Times New Roman', serif;">Select Authentication Portal</h1>
             <p style="color: #64748b; font-size: 1.1rem; max-width: 600px; margin: 0 auto;">Please choose the specific architectural module you belong to in order to access its dedicated registration and login endpoints.</p>
         </div>
@@ -62,7 +60,7 @@
                 <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem; color: #1e293b;">Zootique Admin Module</h3>
                 <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 2rem;">Enterprise administration for system-wide oversight, reporting, and configuration.</p>
                 <div style="display: flex; gap: 1rem; width: 100%;">
-                    <a href="{{ url_for('auth.login') }}" class="btn" style="flex:1; background: #0f172a; color: white; padding: 0.8rem; border-radius: 6px; font-weight: 900; font-size: 0.9rem; text-decoration: none; border: 1px solid #0f172a;">Sign In</a>
+                    <a href="{{ url_for('auth.login', module_name='zootique_admin', next=url_for('zootique_admin.dashboard')) }}" class="btn" style="flex:1; background: #0f172a; color: white; padding: 0.8rem; border-radius: 6px; font-weight: 900; font-size: 0.9rem; text-decoration: none; border: 1px solid #0f172a;">Sign In</a>
                 </div>
             </div>
 

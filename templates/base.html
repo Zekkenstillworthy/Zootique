@@ -292,6 +292,9 @@
                class="nav-item {% if request.endpoint == 'zootique_admin.settings' %}active{% endif %}">
                 <i class="fa-solid fa-gear"></i> Settings
             </a>
+            <a href="{{ url_for('auth.logout') }}" class="nav-item">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </a>
             {% endif %}
         </nav>
 
@@ -320,6 +323,7 @@
                 {% if request.blueprint == 'zootique_admin' %}
                     {% set _sa_name = (session.get('full_name') or 'Super Admin') %}
                     <button class="icon-btn" title="Notifications" aria-label="Notifications"><i class="fa-solid fa-bell"></i></button>
+                    <a href="{{ url_for('auth.logout') }}" style="color:#ef4444; text-decoration:none; font-size:14px; font-weight:600; display:inline-flex; align-items:center; gap:8px; margin-left:16px;"><i class="fa-solid fa-right-from-bracket"></i> Sign out</a>
                     <div class="avatar" title="{{ _sa_name }}">{{ _sa_name[0]|upper }}</div>
                 {% else %}
                     <button class="icon-btn" title="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
@@ -367,7 +371,7 @@
         <nav class="visitor-nav-links">
             {% set _has_selected_zoo = session.get('role') == 'visitor' and session.get('selected_zoo_id') %}
 
-            <a href="{{ url_for('visitor.home') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.home' %}active{% endif %}">Home</a>
+            <a href="/" class="visitor-nav-link">Back to Landing</a>
 
             {% if session.get('user_id') and session.get('role') == 'visitor' %}
             <a href="{{ url_for('visitor.choose_zoo') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.choose_zoo' %}active{% endif %}">
@@ -430,9 +434,7 @@
     {% block content %}{% endblock %}
 
     {% if is_admin and request.blueprint == 'zootique_admin' %}
-    <footer class="sa-footer">
-        ZOOTIQUE ENTERPRISE OPERATIONS
-    </footer>
+    
     {% endif %}
 
 {% if is_admin %}

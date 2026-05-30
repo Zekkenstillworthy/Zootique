@@ -29,14 +29,20 @@ def require_role_guard(*, expected_role: str, login_module: str):
         user_id = session.get("user_id")
 
     if not user_id:
-        return redirect(url_for("auth.login", module_name=login_module, next=request.full_path))
+        next_url = request.full_path
+        if next_url.endswith("?"):
+            next_url = next_url[:-1]
+        return redirect(url_for("auth.login", module_name=login_module, next=next_url))
 
     try:
         user_id_int = int(user_id)
     except (TypeError, ValueError):
         auth_by_role.pop(str(expected_role), None)
         session["auth_by_role"] = auth_by_role
-        return redirect(url_for("auth.login", module_name=login_module, next=request.full_path))
+        next_url = request.full_path
+        if next_url.endswith("?"):
+            next_url = next_url[:-1]
+        return redirect(url_for("auth.login", module_name=login_module, next=next_url))
 
     user = db.session.get(User, user_id_int)
     normalized_status = (
@@ -48,13 +54,19 @@ def require_role_guard(*, expected_role: str, login_module: str):
         auth_by_role.pop(str(expected_role), None)
         session["auth_by_role"] = auth_by_role
         flash("Your account is not active. Please sign in again.", "error")
-        return redirect(url_for("auth.login", module_name=login_module, next=request.full_path))
+        next_url = request.full_path
+        if next_url.endswith("?"):
+            next_url = next_url[:-1]
+        return redirect(url_for("auth.login", module_name=login_module, next=next_url))
 
     if user.role != expected_role:
         # Role mismatch: treat as not authenticated for this module.
         auth_by_role.pop(str(expected_role), None)
         session["auth_by_role"] = auth_by_role
-        return redirect(url_for("auth.login", module_name=login_module, next=request.full_path))
+        next_url = request.full_path
+        if next_url.endswith("?"):
+            next_url = next_url[:-1]
+        return redirect(url_for("auth.login", module_name=login_module, next=next_url))
 
     # Sync role-specific session state and refresh legacy top-level keys.
     auth_by_role[str(expected_role)] = {

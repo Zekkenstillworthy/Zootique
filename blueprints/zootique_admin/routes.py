@@ -778,11 +778,16 @@ def save_user():
             flash('User not found.', 'error')
             return redirect(url_for('zootique_admin.user_management'))
     else:
+        # Do not add the new user to the session yet.
+        # Adding first can trigger an autoflush during subsequent queries
+        # (e.g., uniqueness checks), inserting an incomplete row.
         user = User(role='zoo_admin')
-        db.session.add(user)
 
     # uniqueness check when changing/creating email
-    existing = User.query.filter(User.email == email, User.id != getattr(user, 'id', None)).first()
+    existing_q = User.query.filter(User.email == email)
+    if getattr(user, 'id', None) is not None:
+        existing_q = existing_q.filter(User.id != user.id)
+    existing = existing_q.first()
     if existing:
         flash('Email already exists.', 'error')
         return _back_to_form(user.id if getattr(user, 'id', None) else None)
@@ -807,6 +812,9 @@ def save_user():
     user.zoo_id = int(zoo_id) if (zoo_id and zoo_id.isdigit()) else None
     if password:
         user.set_password(password)
+
+    if is_new_user:
+        db.session.add(user)
 
     db.session.commit()
     if generated_password:

@@ -45,3 +45,13 @@ Optional environment variables:
 
 - `SECRET_KEY` (recommended)
 - `SESSION_LIFETIME_DAYS` (defaults to 3650)
+
+## Zootique Admin login (Super Admin)
+
+There is no public registration flow for the `zootique_admin` role.
+
+To create (or ensure) a Super Admin account on your Postgres database:
+
+- `python scripts/ensure_zootique_admin.py --email admin@example.com --password "change-me" --full-name "Super Admin"`
+
+If you omit `--password`, the script will generate a secure temporary password and print it.

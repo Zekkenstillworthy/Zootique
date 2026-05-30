@@ -89,6 +89,7 @@ def login_selection():
 def login(module_name):
     # Generic admin login page used by auth/login.html
     if module_name is None:
+        next_url = request.args.get('next') or request.form.get('next')
         if request.method == 'POST':
             email = (request.form.get('email') or '').strip().lower()
             password = request.form.get('password') or ''
@@ -100,6 +101,11 @@ def login(module_name):
                     return render_template('auth/login.html')
 
                 _set_auth_session(user)
+
+                maybe_next = _safe_next_redirect(next_url)
+                if maybe_next:
+                    return maybe_next
+
                 return redirect(url_for('zootique_admin.dashboard'))
 
             flash('Invalid administrator credentials.', 'error')
@@ -334,4 +340,4 @@ def registration_success():
 @auth_bp.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('visitor.home'))
+    return redirect(url_for('landing'))
