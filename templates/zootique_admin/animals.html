@@ -15,7 +15,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th style="width:70px;">Image</th>
                         <th>Name</th>
                         <th>Species</th>
                         <th>Habitat / Exhibit</th>
@@ -26,11 +26,14 @@
                 <tbody>
                     {% for animal in animals %}
                     <tr>
-                        <td style="color: var(--text-muted); font-size: 0.8rem;">#A-{{ animal.id }}</td>
-                        <td style="font-weight: 600; display: flex; align-items: center; gap: 0.8rem;">
-                            <img src="{{ animal.image_url }}" alt="{{ animal.name }}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
-                            {{ animal.name }}
+                        <td>
+                            {% if animal.image_url %}
+                                <img src="{{ animal.image_url }}" alt="{{ animal.name }}" style="width:54px; height:38px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
+                            {% else %}
+                                <span style="color: var(--text-muted);">-</span>
+                            {% endif %}
                         </td>
+                        <td style="font-weight: 600;">{{ animal.name }}</td>
                         <td>{{ animal.species }}</td>
                         <td>{{ animal.habitat }}</td>
                         <td>

@@ -9,7 +9,7 @@
     <table>
         <thead>
             <tr>
-                <th>Booking ID</th>
+                <th style="width:70px;">Image</th>
                 <th>Visitor</th>
                 <th>Service</th>
                 <th>Date</th>
@@ -21,7 +21,14 @@
         <tbody>
             {% for booking in bookings %}
             <tr>
-                <td>{{ booking.id }}</td>
+                <td>
+                    {% set booking_img = (booking.image_url or (booking.service.image_url if booking.service else None)) %}
+                    {% if booking_img %}
+                        <img src="{{ booking_img }}" alt="" style="width:54px; height:38px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
+                    {% else %}
+                        <span style="color: var(--text-muted);">-</span>
+                    {% endif %}
+                </td>
                 <td>{{ booking.visitor_name }}</td>
                 <td>{{ booking.service_name }}</td>
                 <td>{{ booking.date }}</td>

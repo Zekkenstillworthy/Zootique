@@ -3,159 +3,51 @@
 {% block title %}Our Experiences{% endblock %}
 
 {% block content %}
-<!-- FULL WIDTH HERO -->
-<div style="background: linear-gradient(135deg, #6c805a 0%, #4a5c3e 100%); color: white; padding: 4rem 4rem 6rem 4rem; position: relative; overflow: hidden;">
-    <div style="margin-bottom: 2rem; color: rgba(255,255,255,0.7); font-size: 0.85rem;">
-        Home > <span style="font-weight: 600; color: white;">Services</span>
-    </div>
-
-    <div style="display: flex; justify-content: space-between;">
-        <div style="max-width: 600px;">
-            <h1 style="font-size: 3.5rem; margin-bottom: 1rem; line-height: 1.1; font-weight: 800;">Our Experiences</h1>
-            <p style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 2.5rem;">Choose from 18 unforgettable wildlife adventures</p>
-            
-            <div style="display: flex; gap: 2rem; align-items: center; font-size: 0.95rem; opacity: 0.9;">
-                <span style="display: flex; gap: 0.5rem; align-items: center;"><i class="fa-solid fa-cube"></i> 18 Active Experiences</span>
-                <span style="display: flex; gap: 0.5rem; align-items: center;"><i class="fa-solid fa-star"></i> 4.7 Avg Rating</span>
-                <span style="display: flex; gap: 0.5rem; align-items: center;"><i class="fa-solid fa-users"></i> 500+ Happy Visitors/Month</span>
-            </div>
+<section style="background: var(--primary-light);">
+    <div class="container" style="padding: 3rem 0;">
+        <div style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.85rem;">
+            <span style="color: var(--primary); font-weight: 700;">Services</span>
         </div>
-        
-        <!-- Floating Cards Decoration -->
-        <div style="position: relative; width: 400px; height: 150px; display: none; @media (min-width: 1000px) { display: block; }">
-            <div style="position: absolute; right: 80px; top: 0; background: white; border-radius: 12px; padding: 0.8rem; width: 220px; color: #1a4f32; box-shadow: 0 10px 25px rgba(0,0,0,0.2); transform: rotate(-5deg); z-index: 2;">
-                <img src="https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&q=80&w=200&h=120" style="width: 100%; height: 100px; border-radius: 6px; object-fit: cover; margin-bottom: 0.5rem;">
-                <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem;">Lion Feeding</div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600;">
-                    <span>₱500</span> <span style="color: #fca000;"><i class="fa-solid fa-star"></i> 4.8</span>
+
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+            <div>
+                <h1 style="margin: 0; font-size: 2rem; color: var(--primary);">Experiences & Services</h1>
+                <p style="margin: 0.25rem 0 0; color: var(--text-muted);">Showing {{ services|length }} experience{% if services|length != 1 %}s{% endif %}</p>
+            </div>
+            <a href="{{ url_for('visitor.my_bookings') }}#new-booking" class="btn" style="background: var(--primary); color: white; padding: 0.7rem 1.2rem; border-radius: 8px; font-weight: 900; border: none; text-decoration:none;">
+                Book an Experience
+            </a>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem;">
+            {% for service in services %}
+            <div style="background: white; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; display:flex; flex-direction:column;">
+                <div style="height: 200px; background: var(--border-light);">
+                    {% if service.image_url %}
+                        <img src="{{ service.image_url }}" alt="" style="width: 100%; height: 100%; object-fit: cover; display:block;" />
+                    {% else %}
+                        <div style="height: 100%; display:flex; align-items:center; justify-content:center; color: var(--text-muted); font-weight: 800;">
+                            No image
+                        </div>
+                    {% endif %}
                 </div>
-            </div>
-            
-            <div style="position: absolute; right: 0; top: 30px; background: white; border-radius: 12px; padding: 0.8rem; width: 220px; color: #1a4f32; box-shadow: 0 10px 25px rgba(0,0,0,0.1); transform: rotate(5deg); z-index: 1;">
-                <img src="https://images.unsplash.com/photo-1502476532454-94c39c8fd9ad?auto=format&fit=crop&q=80&w=200&h=120" style="width: 100%; height: 100px; border-radius: 6px; object-fit: cover; margin-bottom: 0.5rem; filter: brightness(0.7);">
-                <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem;">Night Safari</div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600;">
-                    <span>₱600</span> <span style="color: #fca000;"><i class="fa-solid fa-star"></i> 4.7</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- FILTER PILLS -->
-<div style="background: white; border-bottom: 1px solid #e2e8f0; padding: 1rem 0;">
-    <div class="container" style="display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 0.5rem;">
-        <button style="background: #1a4f32; color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 20px; font-weight: 600; white-space: nowrap;"><i class="fa-solid fa-earth-americas" style="margin-right:0.5rem;"></i> All (18)</button>
-        <button style="background: white; color: #475569; border: 1px solid #cbd5e1; padding: 0.6rem 1.5rem; border-radius: 20px; font-weight: 600; white-space: nowrap;"><i class="fa-solid fa-truck-pickup" style="margin-right:0.5rem; color:#0ea5e9;"></i> Guided Tours (4)</button>
-        <button style="background: white; color: #475569; border: 1px solid #cbd5e1; padding: 0.6rem 1.5rem; border-radius: 20px; font-weight: 600; white-space: nowrap;"><i class="fa-solid fa-paw" style="margin-right:0.5rem; color:#f59e0b;"></i> Animal Encounters (3)</button>
-        <button style="background: white; color: #475569; border: 1px solid #cbd5e1; padding: 0.6rem 1.5rem; border-radius: 20px; font-weight: 600; white-space: nowrap;"><i class="fa-solid fa-moon" style="margin-right:0.5rem; color:#64748b;"></i> Night Safari (2)</button>
-        <button style="background: white; color: #475569; border: 1px solid #cbd5e1; padding: 0.6rem 1.5rem; border-radius: 20px; font-weight: 600; white-space: nowrap;"><i class="fa-solid fa-calendar" style="margin-right:0.5rem; color:#ef4444;"></i> Show Schedules (3)</button>
-        <button style="background: white; color: #475569; border: 1px solid #cbd5e1; padding: 0.6rem 1.5rem; border-radius: 20px; font-weight: 600; white-space: nowrap;"><i class="fa-solid fa-star" style="margin-right:0.5rem; color:#fca000;"></i> Special Packages (4)</button>
-    </div>
-</div>
-
-<div class="container" style="padding: 2rem 0;">
-    
-    <!-- SEARCH BAR ROW -->
-    <div style="display: flex; gap: 1rem; margin-bottom: 1rem; align-items: center; background: white; padding: 1rem; border-radius: 12px; border: 1px solid #e2e8f0;">
-        <div style="flex: 1; position: relative;">
-            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
-            <input type="text" placeholder="Search experiences..." style="width: 100%; padding: 0.8rem 1rem 0.8rem 2.8rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Inter', sans-serif;">
-        </div>
-        <select style="padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white; font-family: 'Inter', sans-serif; color: #475569;"><option>₱0 - ₱2,000</option></select>
-        <select style="padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white; font-family: 'Inter', sans-serif; color: #475569;"><option>Any Duration</option></select>
-        <select style="padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white; font-family: 'Inter', sans-serif; color: #475569;"><option>Any Rating</option></select>
-        <select style="padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white; font-family: 'Inter', sans-serif; color: #475569;"><option>Any Day</option></select>
-        <select style="padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white; font-family: 'Inter', sans-serif; color: #475569; font-weight: bold;"><option>Most Popular</option></select>
-        <button style="background: transparent; border: none; color: #0ea5e9; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-rotate-right"></i> Clear</button>
-    </div>
-
-    <div style="color: #64748b; font-size: 0.9rem; margin-bottom: 2rem;">Showing {{ services|length }} experiences</div>
-
-    <!-- FEATURED CARD -->
-    <div style="display: flex; background: #0f291e; border-radius: 16px; overflow: hidden; margin-bottom: 4rem; position: relative;">
-        <!-- Left Banner Content -->
-        <div style="flex: 1; padding: 4rem 3rem; color: white;">
-            <div style="background: #fca000; color: #0f291e; display: inline-block; padding: 0.3rem 0.8rem; border-radius: 4px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; margin-bottom: 1.5rem; letter-spacing: 1px;">Top Pick</div>
-            <h2 style="font-size: 2.2rem; margin: 0 0 1rem 0;">Night Safari Adventure</h2>
-            <p style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 2rem; font-style: italic;">Experience the wild after dark &mdash; truly unforgettable</p>
-            
-            <div style="display: flex; gap: 2rem; align-items: center; margin-bottom: 1.5rem; font-size: 0.95rem; opacity: 0.9;">
-                <span style="display: flex; gap: 0.5rem; align-items: center;"><i class="fa-regular fa-clock"></i> 3 hours</span>
-                <span style="display: flex; gap: 0.5rem; align-items: center;"><i class="fa-solid fa-user-group"></i> Max 20</span>
-                <span style="display: flex; gap: 0.5rem; align-items: center;"><i class="fa-solid fa-peso-sign"></i> 600/person</span>
-            </div>
-            
-            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem; margin-bottom: 2.5rem; color: #fca000; font-weight: bold;">
-                <i class="fa-solid fa-star"></i> 4.7 <span style="color: white; font-weight: normal; opacity: 0.8;">· 245 reviews</span>
-            </div>
-            
-            <div style="display: flex; gap: 1rem;">
-                <button class="btn" style="background: #fca000; color: #0f291e; padding: 0.8rem 2rem; border-radius: 8px; font-weight: bold; border: none;">Book Now</button>
-                <button class="btn" style="background: transparent; color: white; padding: 0.8rem 2rem; border-radius: 8px; font-weight: bold; border: 1px solid white;">Learn More</button>
-            </div>
-        </div>
-        <!-- Right Image -->
-        <div style="flex: 1.2;">
-            <img src="https://images.unsplash.com/photo-1502476532454-94c39c8fd9ad?auto=format&fit=crop&q=80&w=1000&h=600" style="width: 100%; height: 100%; object-fit: cover;">
-        </div>
-    </div>
-
-    <!-- ALL EXPERIENCES GRID -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 style="margin: 0; font-size: 1.5rem; color: #1a4f32;">All Experiences</h2>
-        <div style="display: flex; background: white; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden;">
-            <button style="background: #1a4f32; color: white; border: none; padding: 0.5rem 1rem; cursor: pointer;"><i class="fa-solid fa-grid-2"></i> Grid</button>
-            <button style="background: transparent; color: #64748b; border: none; padding: 0.5rem 1rem; cursor: pointer;"><i class="fa-solid fa-list"></i> List</button>
-        </div>
-    </div>
-
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;">
-        <!-- Dynamic Cards using DB Services -->
-        {% for service in services %}
-        <div style="background: white; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; display: flex; flex-direction: column;">
-            <div style="position: relative;">
-                <img src="{{ service.image_url }}" style="width: 100%; height: 220px; object-fit: cover; display: block;">
-                <!-- Like Button -->
-                <div style="position: absolute; top: 15px; right: 15px; background: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #94a3b8; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"><i class="fa-solid fa-heart"></i></div>
-                <!-- Category Pill -->
-                <div style="position: absolute; bottom: 15px; left: 15px; background: rgba(0,0,0,0.6); color: white; font-size: 0.75rem; padding: 0.3rem 0.8rem; border-radius: 20px; font-weight: 600;">Tour Package</div>
-            </div>
-            
-            <div style="padding: 1.8rem; display: flex; flex-direction: column; flex: 1;">
-                <h3 style="margin: 0 0 0.8rem 0; font-size: 1.3rem; color: #1a4f32;">{{ service.name }}</h3>
-                <p style="color: #64748b; font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.2rem; flex: 1;">{{ service.description }}</p>
-                
-                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; margin-bottom: 1rem; color: #475569;">
-                    <i class="fa-solid fa-star" style="color: #fca000;"></i> 4.9 <span style="color: #94a3b8;">· 112 reviews</span>
-                </div>
-                
-                <div style="display: flex; gap: 1rem; font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem;">
-                    <span><i class="fa-regular fa-clock"></i> 2 hours</span>
-                    <span><i class="fa-solid fa-user-group"></i> Max 20</span>
-                    <span><i class="fa-solid fa-location-dot"></i> Savanna Zone</span>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <span style="font-size: 0.85rem; color: #64748b;">From</span>
-                        <div style="font-weight: 800; font-size: 1.4rem; color: #1e293b;">₱{{ service.price }} <span style="font-size: 0.8rem; font-weight: normal; color: #64748b;">per person</span></div>
+                <div style="padding: 1.25rem; display:flex; flex-direction:column; gap: 0.6rem; flex: 1;">
+                    <div style="font-weight: 900; color: var(--text); font-size: 1.1rem;">{{ service.name }}</div>
+                    <div style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.4; flex: 1;">{{ service.description or '—' }}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap: 1rem; margin-top: 0.5rem;">
+                        <div style="font-weight: 900; color: var(--primary); font-size: 1.15rem;">₱{{ '%.2f'|format(service.price or 0) }}</div>
+                        <a href="{{ url_for('visitor.my_bookings') }}#new-booking" class="btn" style="background: transparent; color: var(--primary); border: 1px solid var(--primary); padding: 0.45rem 0.9rem; border-radius: 10px; font-weight: 900; text-decoration:none;">
+                            Book
+                        </a>
                     </div>
                 </div>
-
-                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 1.2rem 0;">
-
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 0.4rem; color: #16a34a; font-size: 0.85rem; font-weight: 600;">
-                        <span style="width: 8px; height: 8px; background: #16a34a; border-radius: 50%;"></span> Available Today
-                    </div>
-                    <button class="btn" style="background: #1a4f32; color: white; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: bold; border: none;">Book Now</button>
-                </div>
             </div>
+            {% else %}
+            <div style="grid-column: 1 / -1; background: white; border: 1px solid var(--border); border-radius: 14px; padding: 2rem; text-align:center; color: var(--text-muted); font-weight: 800;">
+                No services found.
+            </div>
+            {% endfor %}
         </div>
-        {% else %}
-        <div style="grid-column: span 3; padding: 4rem; text-align: center; color: #94a3b8;">No services exist yet.</div>
-        {% endfor %}
     </div>
-</div>
+</section>
 {% endblock %}

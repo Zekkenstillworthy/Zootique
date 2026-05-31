@@ -9,7 +9,7 @@
         <h2>Landing Page Map</h2>
     </div>
     <div class="card-body">
-        <form method="post" action="{{ url_for('animal_farm_admin.save_landing_map') }}" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+        <form method="post" action="{{ url_for('animal_farm_admin.save_landing_map') }}" enctype="multipart/form-data" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
             <div style="display:flex; flex-direction:column; gap:8px;">
                 <label style="font-weight:600; color:var(--text-secondary);">Map Title</label>
                 <input type="text" name="landing_map_title" value="{{ landing_map.title }}" placeholder="e.g., Lyger Zoo Visitor Map" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
@@ -17,8 +17,9 @@
                 <label style="font-weight:600; color:var(--text-secondary);">Map Description</label>
                 <textarea name="landing_map_description" rows="3" placeholder="Help visitors plan their route" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;">{{ landing_map.description }}</textarea>
 
-                <label style="font-weight:600; color:var(--text-secondary);">Map Image URL</label>
-                <input type="text" name="landing_map_image_url" value="{{ landing_map.image_url }}" placeholder="https://..." style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <label style="font-weight:600; color:var(--text-secondary);">Upload Map Image (optional)</label>
+                <input type="file" name="landing_map_image_file" accept="image/*" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <p style="margin:0; color: var(--text-muted); font-size: 12px;">Leave blank to keep the current map image.</p>
 
                 <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                     <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Landing Map</button>
@@ -47,7 +48,7 @@
             <h2>Add / Edit Zone</h2>
         </div>
         <div class="card-body">
-            <form method="post" action="{{ url_for('animal_farm_admin.save_zone') }}" style="display:flex; flex-direction:column; gap:10px;">
+            <form method="post" action="{{ url_for('animal_farm_admin.save_zone') }}" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:10px;">
                 <input type="hidden" name="zone_id" value="">
 
                 <label style="font-weight:600; color:var(--text-secondary);">Zone Name</label>
@@ -56,8 +57,9 @@
                 <label style="font-weight:600; color:var(--text-secondary);">Description (optional)</label>
                 <textarea name="description" rows="3" placeholder="Short description" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
 
-                <label style="font-weight:600; color:var(--text-secondary);">Map Image URL (optional)</label>
-                <input type="text" name="map_image_url" placeholder="https://..." style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <label style="font-weight:600; color:var(--text-secondary);">Upload Zone Map Image (optional)</label>
+                <input type="file" name="map_image_file" accept="image/*" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <p style="margin:0; color: var(--text-muted); font-size: 12px;">Leave blank to keep the existing picture when editing.</p>
 
                 <label style="font-weight:600; color:var(--text-secondary);">360° Panorama URL (optional)</label>
                 <input type="text" name="panorama_360_url" placeholder="https://..." style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
@@ -77,6 +79,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th style="width:70px;">Image</th>
                             <th>Name</th>
                             <th>Description</th>
                             <th>360°</th>
@@ -86,6 +89,13 @@
                     <tbody>
                         {% for z in zones %}
                             <tr>
+                                <td>
+                                    {% if z.map_image_url %}
+                                        <img src="{{ z.map_image_url }}" alt="" style="width:54px; height:38px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
+                                    {% else %}
+                                        <span style="color: var(--text-muted);">-</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ z.name }}</td>
                                 <td>{{ (z.description or '-')|truncate(80) }}</td>
                                 <td>
@@ -97,7 +107,7 @@
                                 </td>
                                 <td>
                                     <button class="btn btn-outline btn-sm" type="button"
-                                                    onclick="fillZoneForm({{ z.id }}, {{ z.name|tojson }}, {{ (z.description or '')|tojson }}, {{ (z.map_image_url or '')|tojson }}, {{ (z.panorama_360_url or '')|tojson }})">
+                                                    onclick='fillZoneForm({{ z.id|tojson }}, {{ z.name|tojson }}, {{ (z.description or "")|tojson }}, {{ (z.panorama_360_url or "")|tojson }})'>
                                         <i class="fa-solid fa-pen"></i> Edit
                                     </button>
                                     <form method="post" action="{{ url_for('animal_farm_admin.delete_zone', zone_id=z.id) }}" style="display:inline;" onsubmit="return confirm('Delete this zone?');">
@@ -106,7 +116,7 @@
                                 </td>
                             </tr>
                         {% else %}
-                            <tr><td colspan="4" style="color: var(--text-muted);">No zones yet.</td></tr>
+                            <tr><td colspan="5" style="color: var(--text-muted);">No zones yet.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -116,13 +126,12 @@
 </div>
 
 <script>
-    function fillZoneForm(id, name, description, mapImageUrl, panoUrl) {
+    function fillZoneForm(id, name, description, panoUrl) {
         const form = document.querySelector('form[action$="/map-zones/save"]');
         if (!form) return;
         form.querySelector('input[name="zone_id"]').value = id;
         form.querySelector('input[name="name"]').value = name || '';
         form.querySelector('textarea[name="description"]').value = description || '';
-        form.querySelector('input[name="map_image_url"]').value = mapImageUrl || '';
         form.querySelector('input[name="panorama_360_url"]').value = panoUrl || '';
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }

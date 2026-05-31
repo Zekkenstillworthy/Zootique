@@ -5,29 +5,41 @@
 
 {% block content %}
 
-<div class="page-subheader" style="margin-bottom:16px;">
-  <div class="ps-left">
-    <h2>TOTAL FEEDBACK</h2>
-    <p>Regional Performance Hub</p>
-  </div>
-</div>
-
 <!-- Stats -->
-<div class="stats-grid" style="--stats-cols: 3; margin-bottom:16px;">
-  <div class="stat-card">
-    <div class="stat-icon-box blue"><i class="fa-solid fa-message"></i></div>
-    <div class="stat-value">{{ "{:,}".format(feedback_stats.total or 0) }}</div>
+<div class="stats-grid" style="--stats-cols: 4; margin-bottom:18px;">
+  <div class="stat-card sa-kpi" style="--kpi-accent: #14b8a6;">
     <div class="stat-label">TOTAL FEEDBACK</div>
+    <div class="sa-kpi-row">
+      <div class="stat-value">{{ "{:,}".format(feedback_stats.total or 0) }}</div>
+      <span class="sa-pill sa-pill--ok"><i class="fa-solid fa-arrow-trend-up"></i> 12%</span>
+    </div>
   </div>
-  <div class="stat-card">
-    <div class="stat-icon-box green"><i class="fa-solid fa-star"></i></div>
-    <div class="stat-value">{{ "{:.1f}".format(feedback_stats.avg_rating or 0) }}</div>
+  <div class="stat-card sa-kpi" style="--kpi-accent: #0f766e;">
     <div class="stat-label">AVG RATING</div>
+    <div class="sa-kpi-row">
+      <div class="stat-value">{{ "{:.1f}".format(feedback_stats.avg_rating or 0) }}</div>
+      <span class="sa-pill"><i class="fa-solid fa-star"></i> Stars</span>
+    </div>
   </div>
-  <div class="stat-card">
-    <div class="stat-icon-box orange" style="background:var(--warning-bg); color:var(--warning);"><i class="fa-solid fa-clock"></i></div>
-    <div class="stat-value">{{ "{:,}".format(feedback_stats.pending_replies or 0) }}</div>
+  <div class="stat-card sa-kpi" style="--kpi-accent: var(--warning);">
     <div class="stat-label">PENDING REPLIES</div>
+    <div class="sa-kpi-row">
+      <div class="stat-value">{{ "{:,}".format(feedback_stats.pending_replies or 0) }}</div>
+      <span class="sa-pill {% if (feedback_stats.pending_replies or 0) > 0 %}sa-pill--warn{% endif %}">{% if (feedback_stats.pending_replies or 0) > 0 %}Immediate{% else %}All clear{% endif %}</span>
+    </div>
+  </div>
+  <div class="stat-card sa-kpi" style="--kpi-accent: var(--border);">
+    <div class="stat-label">RATING MIX</div>
+    <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
+      {% for n, pct, color in [(5,75,'#0f766e'), (4,85,'#14b8a6'), (3,30,'#cbd5e1'), (2,10,'#cbd5e1'), (1,5,'#cbd5e1')] %}
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:11px; font-weight:800; color:var(--text-secondary); width:10px;">{{ n }}</span>
+        <div style="flex:1; height:6px; background:var(--border-light); border-radius:3px; overflow:hidden;">
+          <div style="width:{{ pct }}%; height:100%; background:{{ color }};"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
   </div>
 </div>
 
@@ -52,14 +64,13 @@
           data-created-at="{{ f.created_at|e }}"
           data-status="{{ status }}"
           data-latest-reply="{{ (f.latest_reply or '')|e }}"
-          data-latest-reply-date="{{ (f.latest_reply_date or '')|e }}"
-          style="text-align:left; border:1px solid var(--border-light); background:#fff; border-radius:12px; padding:12px 12px; cursor:pointer;">
+          data-latest-reply-date="{{ (f.latest_reply_date or '')|e }}">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
             <div>
               <div style="font-weight:900;">{{ f.zoo_name }}</div>
               <div style="font-size:12px; color:var(--text-muted); font-weight:700;">{{ f.created_at }}</div>
             </div>
-            <span class="badge" style="{% if status == 'REPLIED' %}background:var(--success-bg); color:var(--success);{% else %}background:var(--warning-bg); color:var(--warning);{% endif %} font-weight:900;">{{ status }}</span>
+            <span class="sa-pill {% if status == 'REPLIED' %}sa-pill--ok{% else %}sa-pill--warn{% endif %}">{{ status }}</span>
           </div>
           <div style="margin-top:8px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
             <div style="font-size:12px; color:var(--text-muted); font-weight:800;">Rating: {{ f.rating }}/5</div>

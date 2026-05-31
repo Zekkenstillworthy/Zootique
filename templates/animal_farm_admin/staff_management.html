@@ -47,15 +47,96 @@
       </form>
 
       <div style="margin-top:14px; padding:12px; border:1px solid var(--border); border-radius:10px; background:#fafafa;">
-        <strong>Staff Accounts</strong>
-        <p style="margin-top:6px; color: var(--text-muted);">Seeded demo login: <code>ZooStaff123!</code></p>
-        <ul style="margin-top:8px; padding-left: 18px; color: var(--text-secondary);">
-          {% for s in staff %}
-            <li>{{ s.full_name }} — {{ s.email }}</li>
-          {% else %}
-            <li style="color: var(--text-muted);">No staff users for this zoo.</li>
-          {% endfor %}
-        </ul>
+        <div style="display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:10px;">
+          <strong>Staff Accounts</strong>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="resetStaffForm()">Clear</button>
+        </div>
+
+        <form id="staff-user-form" method="post" enctype="multipart/form-data" action="{{ url_for('animal_farm_admin.save_staff_user') }}" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <input type="hidden" name="user_id" value="" />
+
+          <div style="grid-column: span 2;">
+            <label style="font-weight:600; color:var(--text-secondary);">Full Name</label>
+            <input type="text" name="full_name" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+          </div>
+
+          <div>
+            <label style="font-weight:600; color:var(--text-secondary);">Email</label>
+            <input type="email" name="email" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+          </div>
+          <div>
+            <label style="font-weight:600; color:var(--text-secondary);">Username (optional)</label>
+            <input type="text" name="username" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+          </div>
+
+          <div>
+            <label style="font-weight:600; color:var(--text-secondary);">Status</label>
+            <select name="status" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;">
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-weight:600; color:var(--text-secondary);">Password</label>
+            <input type="password" name="password" placeholder="(required for new staff)" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+          </div>
+
+          <div style="grid-column: span 2;">
+            <label style="font-weight:600; color:var(--text-secondary);">Profile Image (optional)</label>
+            <input type="file" name="profile_image_file" accept="image/*" />
+          </div>
+
+          <div style="grid-column: span 2; display:flex; gap:10px; align-items:center;">
+            <button class="btn btn-primary" type="submit"><i class="fa-solid fa-user-plus"></i> Save Staff User</button>
+            <span style="color: var(--text-muted); font-size: 12px;">Use “Edit” to load a user; leave password blank to keep it unchanged.</span>
+          </div>
+        </form>
+
+        <div style="margin-top:12px;">
+          <div class="table-wrap" style="margin:0;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Staff</th>
+                  <th>Status</th>
+                  <th style="width:170px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in staff %}
+                  <tr>
+                    <td>
+                      <div style="display:flex; align-items:center; gap:10px;">
+                        {% if s.profile_image %}
+                          <img src="{{ s.profile_image }}" alt="" style="width:34px; height:34px; object-fit:cover; border-radius:50%; border:1px solid var(--border);" />
+                        {% else %}
+                          <div style="width:34px; height:34px; border-radius:50%; border:1px solid var(--border); background:white;"></div>
+                        {% endif %}
+                        <div>
+                          <div style="font-weight:700; color: var(--text);">{{ s.full_name }}</div>
+                          <div style="color: var(--text-muted); font-size:12px;">{{ s.email }}{% if s.username %} • {{ s.username }}{% endif %}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="badge badge-{{ 'active' if (s.status or 'active')=='active' else 'inactive' }}">{{ s.status or 'active' }}</span>
+                    </td>
+                    <td>
+                      <button class="btn btn-outline btn-sm" type="button" onclick='fillStaffForm({{ s.id|tojson }}, {{ (s.full_name or "")|tojson }}, {{ (s.email or "")|tojson }}, {{ (s.username or "")|tojson }}, {{ (s.status or "active")|tojson }})'>
+                        <i class="fa-solid fa-pen"></i> Edit
+                      </button>
+                      <form method="post" action="{{ url_for('animal_farm_admin.delete_staff_user', user_id=s.id) }}" style="display:inline;" onsubmit="return confirm('Delete this staff user?');">
+                        <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr><td colspan="3" style="color: var(--text-muted);">No staff users for this zoo.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -88,8 +169,8 @@
                 <td>{{ t.due_date.strftime('%Y-%m-%d') if t.due_date else '-' }}</td>
                 <td><span class="badge badge-{{ 'active' if t.status != 'done' else 'inactive' }}">{{ t.status }}</span></td>
                 <td>
-                  <button class="btn btn-outline btn-sm" type="button"
-                          onclick="fillTaskForm({{ t.id }}, {{ t.title|tojson }}, {{ (t.description or '')|tojson }}, {{ (t.assigned_to_user_id or '')|tojson }}, {{ (t.due_date.strftime('%Y-%m-%d') if t.due_date else '')|tojson }}, {{ t.status|tojson }})">
+                        <button class="btn btn-outline btn-sm" type="button"
+                          onclick='fillTaskForm({{ t.id|tojson }}, {{ t.title|tojson }}, {{ (t.description or "")|tojson }}, {{ (t.assigned_to_user_id or "")|tojson }}, {{ (t.due_date.strftime("%Y-%m-%d") if t.due_date else "")|tojson }}, {{ t.status|tojson }})'>
                     <i class="fa-solid fa-pen"></i> Edit
                   </button>
                   <form method="post" action="{{ url_for('animal_farm_admin.delete_staff_task', task_id=t.id) }}" style="display:inline;" onsubmit="return confirm('Delete this task?');">
@@ -118,6 +199,33 @@
     form.querySelector('input[name="due_date"]').value = dueDate || '';
     form.querySelector('select[name="status"]').value = status || 'pending';
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function fillStaffForm(id, fullName, email, username, status) {
+    const form = document.getElementById('staff-user-form');
+    if (!form) return;
+    form.querySelector('input[name="user_id"]').value = id || '';
+    form.querySelector('input[name="full_name"]').value = fullName || '';
+    form.querySelector('input[name="email"]').value = email || '';
+    form.querySelector('input[name="username"]').value = username || '';
+    form.querySelector('select[name="status"]').value = status || 'active';
+    form.querySelector('input[name="password"]').value = '';
+    const fileInput = form.querySelector('input[name="profile_image_file"]');
+    if (fileInput) fileInput.value = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetStaffForm() {
+    const form = document.getElementById('staff-user-form');
+    if (!form) return;
+    form.querySelector('input[name="user_id"]').value = '';
+    form.querySelector('input[name="full_name"]').value = '';
+    form.querySelector('input[name="email"]').value = '';
+    form.querySelector('input[name="username"]').value = '';
+    form.querySelector('select[name="status"]').value = 'active';
+    form.querySelector('input[name="password"]').value = '';
+    const fileInput = form.querySelector('input[name="profile_image_file"]');
+    if (fileInput) fileInput.value = '';
   }
 </script>
 {% endblock %}

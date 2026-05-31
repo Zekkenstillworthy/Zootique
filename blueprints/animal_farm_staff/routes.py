@@ -223,32 +223,7 @@ def map_zones():
 
 @zoo_staff_bp.route('/notifications')
 def notifications():
-    user = _current_user()
-    zoo = _current_zoo()
-    if not user or not zoo:
-        flash('Your account is not linked to an establishment.', 'error')
-        return redirect(url_for('animal_farm_staff.dashboard'))
-
-    since = datetime.utcnow() - timedelta(days=7)
-    recent_tasks = (
-        StaffTask.query
-        .filter_by(zoo_id=zoo.id, assigned_to_user_id=user.id)
-        .filter(StaffTask.created_at >= since)
-        .order_by(StaffTask.created_at.desc())
-        .limit(50)
-        .all()
-    )
-    if not recent_tasks:
-        recent_tasks = (
-            StaffTask.query
-            .filter_by(zoo_id=zoo.id)
-            .filter(StaffTask.created_at >= since)
-            .order_by(StaffTask.created_at.desc())
-            .limit(50)
-            .all()
-        )
-
-    return render_template('animal_farm_staff/notifications.html', recent_tasks=recent_tasks)
+    return redirect(url_for('animal_farm_staff.dashboard'))
 
 
 @zoo_staff_bp.route('/profile', methods=['GET', 'POST'])

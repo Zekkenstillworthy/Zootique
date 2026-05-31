@@ -77,6 +77,32 @@ def create_app() -> Flask:
 
         return {"csrf_token": csrf_token}
 
+    @app.context_processor
+    def inject_current_zoo_name():
+        """Expose the active/assigned Zoo name for header display."""
+        zoo_name = None
+        try:
+            role = session.get('role')
+            user_id = session.get('user_id')
+
+            from models import User, Zoo  # local import to avoid circulars at app startup
+
+            if role in {'zoo_admin', 'zoo_staff'} and user_id:
+                user = db.session.get(User, int(user_id))
+                if user and user.zoo_id:
+                    zoo = db.session.get(Zoo, int(user.zoo_id))
+                    zoo_name = zoo.name if zoo else None
+
+            if role == 'visitor':
+                selected_zoo_id = session.get('selected_zoo_id')
+                if selected_zoo_id:
+                    zoo = db.session.get(Zoo, int(selected_zoo_id))
+                    zoo_name = zoo.name if zoo else zoo_name
+        except Exception:
+            zoo_name = None
+
+        return {'current_zoo_name': zoo_name}
+
     # --- Database configuration (Postgres-only) ---
     database_url = (os.environ.get("DATABASE_URL") or "").strip()
     if not database_url:
@@ -123,6 +149,18 @@ def create_app() -> Flask:
                 "Verify the server is running and the username/password/database are correct."
                 + missing_db_hint
             ) from ex
+
+        # Auto-seed demo data in development/testing so pages don't render empty states.
+        # Idempotent: only inserts when the relevant tables/sections are empty.
+        auto_seed = os.environ.get("AUTO_SEED_DEMO_DATA", "1").strip().lower() not in {"0", "false", "no", "off"}
+        if env_name in {"development", "dev", "testing", "test"} and auto_seed:
+            try:
+                from services.demo_seed import ensure_demo_data
+
+                ensure_demo_data(allow_create_tables=True)
+            except Exception:
+                # Seeding is best-effort; the app should still boot even if seeding fails.
+                db.session.rollback()
 
     # Inject mock data into application config
     app.config["ANIMALS"]    = data.ANIMALS

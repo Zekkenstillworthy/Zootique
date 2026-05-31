@@ -54,7 +54,7 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th style="width:70px;">Image</th>
                                 <th>Visitor</th>
                                 <th>Date</th>
                                 <th>Amount</th>
@@ -64,7 +64,14 @@
                         <tbody>
                             {% for b in recent_bookings %}
                                 <tr>
-                                    <td>{{ b.id }}</td>
+                                    <td>
+                                        {% set booking_img = (b.image_url or (b.service.image_url if b.service else None)) %}
+                                        {% if booking_img %}
+                                            <img src="{{ booking_img }}" alt="" style="width:54px; height:38px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
+                                        {% else %}
+                                            <span style="color: var(--text-muted);">-</span>
+                                        {% endif %}
+                                    </td>
                                     <td>{{ b.visitor_name }}</td>
                                     <td>{{ b.date }} {{ b.time or '' }}</td>
                                     <td>₱{{ '%.2f'|format(b.amount or 0) }}</td>

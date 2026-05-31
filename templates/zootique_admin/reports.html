@@ -12,28 +12,38 @@
   '07': 'JUL', '08': 'AUG', '09': 'SEP', '10': 'OCT', '11': 'NOV', '12': 'DEC'
 } %}
 
-<div class="page-subheader" style="margin-bottom:16px;">
-  <div class="ps-left">
-    <h2>REPORTS</h2>
-    <p>Live subscription, performance, and revenue analytics.</p>
+<div class="sa-section-head" style="margin-top:0;">
+  <div>
+    <h2>Reports</h2>
+    <div class="sa-section-sub">Live subscription, performance, and revenue analytics.</div>
+  </div>
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <button class="btn btn-secondary" type="button"><i class="fa-regular fa-file-pdf"></i> Export PDF</button>
+    <button class="btn btn-outline" type="button"><i class="fa-solid fa-file-csv"></i> Download CSV</button>
   </div>
 </div>
 
 <div class="stats-grid" style="--stats-cols: 3; margin-bottom:16px;">
-  <div class="stat-card">
-    <div class="stat-icon-box green"><i class="fa-solid fa-peso-sign"></i></div>
-    <div class="stat-value">₱{{ "{:,.2f}".format(financial_report.yearly_income or 0) }}</div>
+  <div class="stat-card sa-kpi" style="--kpi-accent: #14b8a6;">
     <div class="stat-label">FISCAL YEAR REVENUE</div>
+    <div class="sa-kpi-row">
+      <div class="stat-value">₱{{ "{:,.2f}".format(financial_report.yearly_income or 0) }}</div>
+      <span class="sa-pill">YTD</span>
+    </div>
   </div>
-  <div class="stat-card">
-    <div class="stat-icon-box blue"><i class="fa-solid fa-tree"></i></div>
-    <div class="stat-value">{{ "{:,}".format(subs_report.active or 0) }}</div>
+  <div class="stat-card sa-kpi" style="--kpi-accent: var(--primary);">
     <div class="stat-label">ACTIVE PARTNER PRESERVES</div>
+    <div class="sa-kpi-row">
+      <div class="stat-value">{{ "{:,}".format(subs_report.active or 0) }}</div>
+      <span class="sa-pill">Active</span>
+    </div>
   </div>
-  <div class="stat-card">
-    <div class="stat-icon-box orange" style="background:rgba(22,163,74,0.10); color:var(--primary);"><i class="fa-solid fa-heart-pulse"></i></div>
-    <div class="stat-value">{{ "{:.1f}".format(health_pct) }}%</div>
+  <div class="stat-card sa-kpi" style="--kpi-accent: #22c55e;">
     <div class="stat-label">SUBSCRIPTION HEALTH</div>
+    <div class="sa-kpi-row">
+      <div class="stat-value">{{ "{:.1f}".format(health_pct) }}%</div>
+      <span class="sa-pill {% if health_pct >= 80 %}sa-pill--ok{% elif health_pct >= 50 %}sa-pill--warn{% else %}sa-pill--danger{% endif %}">{% if health_pct >= 80 %}Healthy{% elif health_pct >= 50 %}Watch{% else %}Risk{% endif %}</span>
+    </div>
   </div>
 </div>
 

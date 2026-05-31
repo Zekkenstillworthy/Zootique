@@ -49,14 +49,20 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Booking ID</th><th>Visitor</th><th>Service</th>
+                        <th style="width:70px;">Image</th><th>Visitor</th><th>Service</th>
                         <th>Date</th><th>Time</th><th>Guests</th><th>Amount</th><th>Status</th><th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for b in bookings %}
                     <tr>
-                        <td style="color:var(--text-muted); font-size:0.8rem;">{{ b.id }}</td>
+                        <td>
+                            {% if b.image_url %}
+                                <img src="{{ b.image_url }}" alt="" style="width:54px; height:38px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
+                            {% else %}
+                                <span style="color: var(--text-muted);">-</span>
+                            {% endif %}
+                        </td>
                         <td style="font-weight:600;">{{ b.visitor_name }}</td>
                         <td>{{ b.service_name or '—' }}</td>
                         <td>{{ b.date or '—' }}</td>

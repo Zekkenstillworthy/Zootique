@@ -49,7 +49,7 @@
             <h2>Edit Profile Details</h2>
         </div>
         <div class="card-body" style="padding: 2rem;">
-            <form method="POST" action="{{ url_for('animal_farm_admin.save_establishment_profile') }}"
+            <form method="POST" action="{{ url_for('animal_farm_admin.save_establishment_profile') }}" enctype="multipart/form-data"
                   style="display: grid; gap: 1.5rem;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
@@ -102,14 +102,13 @@
                 <div>
                     <label style="display: block; font-size: 0.85rem; font-weight: 700;
                                   color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">
-                        Cover Image URL
+                        Upload Cover Picture (optional)
                     </label>
-                    <input type="url" name="image_url" value="{{ zoo.image_url or '' }}"
-                           placeholder="https://example.com/image.jpg"
+                    <input type="file" name="image_file" accept="image/*"
                            style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0;
                                   border-radius: 8px; font-size: 0.95rem; font-family: inherit;">
                     <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.4rem;">
-                        Paste a publicly accessible image URL to use as the establishment cover photo.
+                        Leave blank to keep the current cover photo.
                     </p>
                 </div>
 

@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+import os
+import uuid
+
+from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
+
+from werkzeug.utils import secure_filename
 
 from models import (
     Animal,
@@ -26,6 +31,34 @@ from services import BookingValidationError, assign_booking_to_staff
 from services.auth_guard import require_role_guard
 
 animal_farm_admin_bp = Blueprint('animal_farm_admin', __name__)
+
+
+_ALLOWED_IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.webp'}
+
+
+def _save_uploaded_image(file_storage, subfolder: str) -> str | None:
+    """Save an uploaded image under uploads/<subfolder>/ and return a /uploads/... URL."""
+    if not file_storage or not getattr(file_storage, "filename", ""):
+        return None
+
+    original_name = secure_filename(file_storage.filename)
+    if not original_name:
+        return None
+
+    _, ext = os.path.splitext(original_name)
+    ext = (ext or '').lower()
+    if ext not in _ALLOWED_IMAGE_EXTENSIONS:
+        flash('Unsupported image type. Please upload PNG, JPG, JPEG, GIF, or WEBP.', 'error')
+        return None
+
+    parts = [p for p in (subfolder or '').replace('\\', '/').split('/') if p]
+    folder = os.path.join(current_app.config['UPLOAD_FOLDER'], *parts)
+    os.makedirs(folder, exist_ok=True)
+
+    stored_name = f"{uuid.uuid4().hex}{ext}"
+    file_storage.save(os.path.join(folder, stored_name))
+    rel_path = '/'.join(parts + [stored_name])
+    return f"/uploads/{rel_path}"
 
 
 @animal_farm_admin_bp.before_request
@@ -159,14 +192,111 @@ def booking_management():
         .all()
     )
 
+    services = (
+        Service.query
+        .filter_by(zoo_id=zoo.id)
+        .order_by(Service.name.asc())
+        .all()
+    )
+
     return render_template(
         'animal_farm_admin/bookings.html',
         zoo=zoo,
         bookings=bookings,
         selected_status=status,
         staff_members=staff_members,
+        services=services,
         selected_assigned_to=assigned_to,
     )
+
+
+@animal_farm_admin_bp.post('/bookings/<booking_id>/update')
+def update_booking(booking_id: str):
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_admin.booking_management'))
+
+    booking = Booking.query.filter_by(id=booking_id, zoo_id=zoo.id).first()
+    if not booking:
+        flash('Booking not found.', 'error')
+        return redirect(url_for('animal_farm_admin.booking_management'))
+
+    service_id_raw = (request.form.get('service_id') or '').strip()
+    date = (request.form.get('date') or '').strip()
+    time = (request.form.get('time') or '').strip()
+    guests = request.form.get('guests', type=int) or 1
+    amount_raw = (request.form.get('amount') or '').strip()
+    status = (request.form.get('status') or '').strip()
+    staff_user_id_raw = (request.form.get('assigned_staff_user_id') or '').strip()
+    image_file = request.files.get('image_file')
+
+    if not date:
+        flash('Booking date is required.', 'error')
+        return redirect(url_for('animal_farm_admin.booking_management'))
+    if not time:
+        flash('Booking time is required.', 'error')
+        return redirect(url_for('animal_farm_admin.booking_management'))
+    if guests < 1:
+        guests = 1
+    if status and status not in {'Pending', 'Confirmed', 'Cancelled'}:
+        flash('Invalid status.', 'error')
+        return redirect(url_for('animal_farm_admin.booking_management'))
+
+    service = None
+    if service_id_raw:
+        if not service_id_raw.isdigit():
+            flash('Invalid service selection.', 'error')
+            return redirect(url_for('animal_farm_admin.booking_management'))
+        service = Service.query.filter_by(id=int(service_id_raw), zoo_id=zoo.id).first()
+        if not service:
+            flash('Selected service was not found.', 'error')
+            return redirect(url_for('animal_farm_admin.booking_management'))
+
+    assigned_staff_user_id = None
+    if staff_user_id_raw:
+        if not staff_user_id_raw.isdigit():
+            flash('Invalid staff selection.', 'error')
+            return redirect(url_for('animal_farm_admin.booking_management'))
+        staff_user = User.query.filter_by(id=int(staff_user_id_raw), role='zoo_staff', zoo_id=zoo.id).first()
+        if not staff_user:
+            flash('Selected staff member was not found.', 'error')
+            return redirect(url_for('animal_farm_admin.booking_management'))
+        assigned_staff_user_id = staff_user.id
+
+    amount = None
+    if amount_raw:
+        try:
+            amount = float(amount_raw)
+        except Exception:
+            flash('Amount must be a number.', 'error')
+            return redirect(url_for('animal_farm_admin.booking_management'))
+
+    booking.date = date
+    booking.time = time
+    booking.guests = guests
+    if status:
+        booking.status = status
+    booking.assigned_staff_user_id = assigned_staff_user_id
+
+    if service:
+        booking.service_id = service.id
+        booking.service_name = service.name
+        booking.zoo_id = service.zoo_id
+        if amount is None:
+            booking.amount = float(service.price or 0)
+    if amount is not None:
+        booking.amount = amount
+
+    if image_file and image_file.filename:
+        uploaded_url = _save_uploaded_image(image_file, 'booking_images')
+        if not uploaded_url:
+            return redirect(url_for('animal_farm_admin.booking_management'))
+        booking.image_url = uploaded_url
+
+    db.session.commit()
+    flash('Booking updated.', 'success')
+    return redirect(url_for('animal_farm_admin.booking_management'))
 
 
 @animal_farm_admin_bp.post('/bookings/<booking_id>/status')
@@ -257,7 +387,7 @@ def save_establishment_profile():
     zoo_type = (request.form.get('type') or '').strip() or None
     location = (request.form.get('location') or '').strip() or None
     description = (request.form.get('description') or '').strip() or None
-    image_url = (request.form.get('image_url') or '').strip() or None
+    image_file = request.files.get('image_file')
 
     if not name:
         flash('Establishment name is required.', 'error')
@@ -267,7 +397,12 @@ def save_establishment_profile():
     zoo.type = zoo_type
     zoo.location = location
     zoo.description = description
-    zoo.image_url = image_url
+
+    if image_file and image_file.filename:
+        uploaded_url = _save_uploaded_image(image_file, 'zoo_images')
+        if not uploaded_url:
+            return redirect(url_for('animal_farm_admin.establishment_profile'))
+        zoo.image_url = uploaded_url
     db.session.commit()
 
     flash('Establishment profile updated.', 'success')
@@ -299,7 +434,7 @@ def save_service():
     name = (request.form.get('name') or '').strip()
     price_raw = (request.form.get('price') or '').strip()
     description = (request.form.get('description') or '').strip() or None
-    image_url = (request.form.get('image_url') or '').strip() or None
+    image_file = request.files.get('image_file')
 
     if not name:
         flash('Service name is required.', 'error')
@@ -320,7 +455,12 @@ def save_service():
     service.name = name
     service.price = price
     service.description = description
-    service.image_url = image_url
+
+    if image_file and image_file.filename:
+        uploaded_url = _save_uploaded_image(image_file, 'service_images')
+        if not uploaded_url:
+            return redirect(url_for('animal_farm_admin.services_management'))
+        service.image_url = uploaded_url
 
     db.session.commit()
     flash('Service saved.', 'success')
@@ -363,7 +503,7 @@ def save_animal():
     habitat = (request.form.get('habitat') or '').strip() or None
     status = (request.form.get('status') or '').strip() or None
     description = (request.form.get('description') or '').strip() or None
-    image_url = (request.form.get('image_url') or '').strip() or None
+    image_file = request.files.get('image_file')
 
     if not name:
         flash('Animal name is required.', 'error')
@@ -381,7 +521,12 @@ def save_animal():
     animal.habitat = habitat
     animal.status = status
     animal.description = description
-    animal.image_url = image_url
+
+    if image_file and image_file.filename:
+        uploaded_url = _save_uploaded_image(image_file, 'animal_images')
+        if not uploaded_url:
+            return redirect(url_for('animal_farm_admin.animals_management'))
+        animal.image_url = uploaded_url
 
     db.session.commit()
     flash('Animal saved.', 'success')
@@ -426,6 +571,7 @@ def save_event():
     event_type = (request.form.get('type') or '').strip() or None
     time = (request.form.get('time') or '').strip() or None
     location = (request.form.get('location') or '').strip() or None
+    image_file = request.files.get('image_file')
 
     if not name:
         flash('Event name is required.', 'error')
@@ -442,6 +588,12 @@ def save_event():
     event.type = event_type
     event.time = time
     event.location = location
+
+    if image_file and image_file.filename:
+        uploaded_url = _save_uploaded_image(image_file, 'event_images')
+        if not uploaded_url:
+            return redirect(url_for('animal_farm_admin.events_management'))
+        event.image_url = uploaded_url
 
     db.session.commit()
     flash('Event saved.', 'success')
@@ -500,6 +652,7 @@ def save_promotion():
     discount = (request.form.get('discount') or '').strip() or None
     valid_until = (request.form.get('valid_until') or '').strip() or None
     promo_type = (request.form.get('promo_type') or '').strip() or None
+    image_file = request.files.get('image_file')
 
     if not name or not code:
         flash('Promotion name and code are required.', 'error')
@@ -517,6 +670,12 @@ def save_promotion():
     promotion.discount = discount
     promotion.valid_until = valid_until
     promotion.promo_type = promo_type
+
+    if image_file and image_file.filename:
+        uploaded_url = _save_uploaded_image(image_file, 'promotion_images')
+        if not uploaded_url:
+            return redirect(url_for('animal_farm_admin.promotions_management'))
+        promotion.image_url = uploaded_url
 
     try:
         db.session.commit()
@@ -606,19 +765,16 @@ def save_landing_map():
 
     title = (request.form.get('landing_map_title') or '').strip()
     description = (request.form.get('landing_map_description') or '').strip() or None
-    image_url = (request.form.get('landing_map_image_url') or '').strip() or None
-
-    if image_url and not (
-        image_url.startswith('http://')
-        or image_url.startswith('https://')
-        or image_url.startswith('/uploads/')
-    ):
-        flash('Map image URL must start with http://, https://, or /uploads/.', 'error')
-        return redirect(url_for('animal_farm_admin.visitor_map_zone_management'))
+    image_file = request.files.get('landing_map_image_file')
 
     zoo.landing_map_title = title or None
     zoo.landing_map_description = description
-    zoo.landing_map_image_url = image_url
+
+    if image_file and image_file.filename:
+        uploaded_url = _save_uploaded_image(image_file, 'map_images')
+        if not uploaded_url:
+            return redirect(url_for('animal_farm_admin.visitor_map_zone_management'))
+        zoo.landing_map_image_url = uploaded_url
     zoo.landing_map_updated_at = datetime.utcnow()
 
     db.session.commit()
@@ -636,8 +792,8 @@ def save_zone():
     zone_id = request.form.get('zone_id')
     name = (request.form.get('name') or '').strip()
     description = (request.form.get('description') or '').strip() or None
-    map_image_url = (request.form.get('map_image_url') or '').strip() or None
     panorama_360_url = (request.form.get('panorama_360_url') or '').strip() or None
+    map_image_file = request.files.get('map_image_file')
 
     if not name:
         flash('Zone name is required.', 'error')
@@ -652,8 +808,13 @@ def save_zone():
 
     zone.name = name
     zone.description = description
-    zone.map_image_url = map_image_url
     zone.panorama_360_url = panorama_360_url
+
+    if map_image_file and map_image_file.filename:
+        uploaded_url = _save_uploaded_image(map_image_file, 'zone_maps')
+        if not uploaded_url:
+            return redirect(url_for('animal_farm_admin.visitor_map_zone_management'))
+        zone.map_image_url = uploaded_url
 
     db.session.commit()
     flash('Zone saved.', 'success')
@@ -757,6 +918,106 @@ def staff_management():
     staff = User.query.filter_by(role='zoo_staff', zoo_id=zoo.id).order_by(User.full_name.asc()).all()
     tasks = StaffTask.query.filter_by(zoo_id=zoo.id).order_by(StaffTask.created_at.desc()).limit(200).all()
     return render_template('animal_farm_admin/staff_management.html', zoo=zoo, staff=staff, tasks=tasks)
+
+
+@animal_farm_admin_bp.post('/staff-management/staff/save')
+def save_staff_user():
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_admin.staff_management'))
+
+    user_id = (request.form.get('user_id') or '').strip()
+    full_name = (request.form.get('full_name') or '').strip()
+    email = (request.form.get('email') or '').strip().lower()
+    username = (request.form.get('username') or '').strip() or None
+    status = (request.form.get('status') or 'active').strip().lower()
+    password = request.form.get('password') or ''
+    image_file = request.files.get('profile_image_file')
+
+    if not full_name or not email:
+        flash('Full name and email are required.', 'error')
+        return redirect(url_for('animal_farm_admin.staff_management'))
+    if status not in {'active', 'suspended'}:
+        flash('Invalid staff status.', 'error')
+        return redirect(url_for('animal_farm_admin.staff_management'))
+
+    staff_user = None
+    if user_id:
+        if not user_id.isdigit():
+            flash('Invalid staff user.', 'error')
+            return redirect(url_for('animal_farm_admin.staff_management'))
+        staff_user = User.query.filter_by(id=int(user_id), role='zoo_staff', zoo_id=zoo.id).first()
+        if not staff_user:
+            flash('Staff user not found.', 'error')
+            return redirect(url_for('animal_farm_admin.staff_management'))
+
+    existing_email = User.query.filter(User.email == email)
+    if staff_user:
+        existing_email = existing_email.filter(User.id != staff_user.id)
+    if existing_email.first():
+        flash('Email already exists.', 'error')
+        return redirect(url_for('animal_farm_admin.staff_management'))
+
+    if username:
+        existing_username = User.query.filter(User.username == username)
+        if staff_user:
+            existing_username = existing_username.filter(User.id != staff_user.id)
+        if existing_username.first():
+            flash('Username already exists.', 'error')
+            return redirect(url_for('animal_farm_admin.staff_management'))
+
+    if not staff_user:
+        if len(password) < 8:
+            flash('Password is required (min 8 characters) for new staff.', 'error')
+            return redirect(url_for('animal_farm_admin.staff_management'))
+        staff_user = User(email=email, role='zoo_staff', zoo_id=zoo.id)
+        staff_user.set_password(password)
+        db.session.add(staff_user)
+    else:
+        staff_user.email = email
+        if password:
+            if len(password) < 8:
+                flash('Password must be at least 8 characters.', 'error')
+                return redirect(url_for('animal_farm_admin.staff_management'))
+            staff_user.set_password(password)
+
+    staff_user.full_name = full_name
+    staff_user.username = username
+    staff_user.status = status
+
+    if image_file and image_file.filename:
+        uploaded_url = _save_uploaded_image(image_file, 'profile_pictures')
+        if not uploaded_url:
+            return redirect(url_for('animal_farm_admin.staff_management'))
+        staff_user.profile_image = uploaded_url
+
+    db.session.commit()
+    flash('Staff user saved.', 'success')
+    return redirect(url_for('animal_farm_admin.staff_management'))
+
+
+@animal_farm_admin_bp.post('/staff-management/staff/<int:user_id>/delete')
+def delete_staff_user(user_id: int):
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_admin.staff_management'))
+    staff_user = User.query.filter_by(id=user_id, role='zoo_staff', zoo_id=(zoo.id if zoo else None)).first()
+    if not staff_user:
+        flash('Staff user not found.', 'error')
+        return redirect(url_for('animal_farm_admin.staff_management'))
+
+    # Unassign bookings & tasks first to keep UI consistent.
+    Booking.query.filter(Booking.assigned_staff_user_id == staff_user.id, Booking.zoo_id == zoo.id).update(
+        {Booking.assigned_staff_user_id: None}
+    )
+    StaffTask.query.filter_by(assigned_to_user_id=staff_user.id, zoo_id=zoo.id).update({StaffTask.assigned_to_user_id: None})
+
+    db.session.delete(staff_user)
+    db.session.commit()
+    flash('Staff user deleted.', 'success')
+    return redirect(url_for('animal_farm_admin.staff_management'))
 
 
 @animal_farm_admin_bp.post('/staff-management/tasks/save')

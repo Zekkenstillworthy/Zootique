@@ -92,6 +92,7 @@ class Booking(db.Model):
     payment_status = db.Column(db.String(20), nullable=False, default='unpaid')  # unpaid|paid|refunded|failed
     payment_reference = db.Column(db.String(100), nullable=True)
     paid_at = db.Column(db.DateTime, nullable=True)
+    image_url = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     zoo = db.relationship('Zoo', lazy=True)
@@ -125,8 +126,14 @@ class Event(db.Model):
     type = db.Column(db.String(50))
     time = db.Column(db.String(50))
     location = db.Column(db.String(150))
+    image_url = db.Column(db.String(500), nullable=True)
 
     zoo = db.relationship('Zoo', lazy=True)
+
+    @property
+    def banner_url(self):
+        # Backwards-compatible alias used by visitor templates.
+        return self.image_url
 
 class Promotion(db.Model):
     __tablename__ = 'promotions'
@@ -138,6 +145,7 @@ class Promotion(db.Model):
     country = db.Column(db.String(60), nullable=True, default='Philippines')
     discount = db.Column(db.String(20))
     valid_until = db.Column(db.String(20))
+    image_url = db.Column(db.String(500), nullable=True)
 
     zoo = db.relationship('Zoo', lazy=True)
 

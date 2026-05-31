@@ -1,66 +1,55 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard{% endblock %}
-{% block page_title %}Dashboard{% endblock %}
+{% block title %}Super Admin{% endblock %}
+{% block page_title %}Super Admin{% endblock %}
 
 {% block content %}
 
-<div class="page-subheader" style="margin-bottom:16px;">
-    <div class="ps-left">
-        <h2>SUPER ADMIN DASHBOARD</h2>
-        <p>Live operational intelligence across partner wildlife preserves.</p>
-    </div>
-</div>
-
 <!-- KPI Cards -->
 <div class="stats-grid" style="--stats-cols: 4;">
-    <div class="stat-card">
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
-            <div class="stat-icon-box blue"><i class="fa-solid fa-building"></i></div>
-            {% if stats.zoos_new_this_month %}
-                <span class="badge badge-active">+{{ stats.zoos_new_this_month }} this mo.</span>
-            {% else %}
-                <span class="badge">No new this mo.</span>
-            {% endif %}
-        </div>
-        <div class="stat-value">{{ "{:,}".format(stats.total_zoos) }}</div>
+    <div class="stat-card sa-kpi" style="--kpi-accent: var(--success);">
         <div class="stat-label">TOTAL REGISTERED ZOOS</div>
-    </div>
-    <div class="stat-card">
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
-            <div class="stat-icon-box green"><i class="fa-solid fa-circle-check"></i></div>
-            <span class="badge badge-active">{{ stats.subs_health_pct }}% health</span>
-        </div>
-        <div class="stat-value">{{ "{:,}".format(stats.active_subscriptions) }}</div>
-        <div class="stat-label">ACTIVE SUBSCRIPTIONS</div>
-    </div>
-    <div class="stat-card">
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
-            <div class="stat-icon-box orange"><i class="fa-solid fa-circle-xmark"></i></div>
-            {% if stats.expired_subscriptions %}
-                <span class="badge badge-pending">Requires attention</span>
+        <div class="sa-kpi-row">
+            <div class="stat-value">{{ "{:,}".format(stats.total_zoos) }}</div>
+            {% if stats.zoos_new_this_month %}
+                <span class="sa-pill sa-pill--ok">+{{ stats.zoos_new_this_month }} this mo.</span>
             {% else %}
-                <span class="badge badge-active">All good</span>
+                <span class="sa-pill">No new this mo.</span>
             {% endif %}
         </div>
-        <div class="stat-value">{{ "{:,}".format(stats.expired_subscriptions) }}</div>
-        <div class="stat-label">EXPIRED SUBSCRIPTIONS</div>
     </div>
-    <div class="stat-card">
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
-            <div class="stat-icon-box yellow"><i class="fa-solid fa-peso-sign"></i></div>
+    <div class="stat-card sa-kpi" style="--kpi-accent: #0d9488;">
+        <div class="stat-label">ACTIVE SUBSCRIPTIONS</div>
+        <div class="sa-kpi-row">
+            <div class="stat-value">{{ "{:,}".format(stats.active_subscriptions) }}</div>
+            <span class="sa-pill sa-pill--ok">{{ stats.subs_health_pct }}% Health</span>
+        </div>
+    </div>
+    <div class="stat-card sa-kpi" style="--kpi-accent: var(--warning);">
+        <div class="stat-label">EXPIRED SUBSCRIPTIONS</div>
+        <div class="sa-kpi-row">
+            <div class="stat-value">{{ "{:,}".format(stats.expired_subscriptions) }}</div>
+            {% if stats.expired_subscriptions %}
+                <span class="sa-pill sa-pill--warn">Requires Attention</span>
+            {% else %}
+                <span class="sa-pill sa-pill--ok">All good</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="stat-card sa-kpi" style="--kpi-accent: #14b8a6;">
+        <div class="stat-label">MONTHLY REVENUE</div>
+        <div class="sa-kpi-row">
+            <div class="stat-value">₱{{ "{:,.0f}".format(stats.monthly_revenue) }}</div>
             {% if stats.revenue_change_pct is not none %}
                 {% if stats.revenue_change_pct >= 0 %}
-                    <span class="badge badge-active">+{{ "{:.1f}".format(stats.revenue_change_pct) }}%</span>
+                    <span class="sa-pill sa-pill--ok">+{{ "{:.1f}".format(stats.revenue_change_pct) }}%</span>
                 {% else %}
-                    <span class="badge badge-pending">{{ "{:.1f}".format(stats.revenue_change_pct) }}%</span>
+                    <span class="sa-pill sa-pill--danger">{{ "{:.1f}".format(stats.revenue_change_pct) }}%</span>
                 {% endif %}
             {% else %}
-                <span class="badge">—</span>
+                <span class="sa-pill">—</span>
             {% endif %}
         </div>
-        <div class="stat-value">₱{{ "{:,.2f}".format(stats.monthly_revenue) }}</div>
-        <div class="stat-label">MONTHLY REVENUE</div>
     </div>
 </div>
 
@@ -70,7 +59,7 @@
     <div class="card-panel">
         <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
             <h2>NEW ZOO REGISTRATIONS TREND</h2>
-            <div style="font-size:12px; color:rgba(255,255,255,0.9); font-weight:800;">Last 6 months</div>
+            <span class="sa-pill">Last 6 months</span>
         </div>
         <div class="card-body" style="padding-top:0;">
             <div class="sa-chart-card" data-sa-line="registrations" style="height:240px; border:1px solid var(--border-light); border-radius:12px; background:#fff; overflow:hidden;"></div>
@@ -81,7 +70,7 @@
     <div class="card-panel">
         <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
             <h2>REVENUE GROWTH</h2>
-            <span class="badge">Monthly</span>
+            <span class="sa-pill">Monthly</span>
         </div>
         <div class="card-body">
             <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
@@ -110,13 +99,13 @@
                 <div style="margin-top:10px; font-size:12px; color:var(--text-light);">
                     {% if stats.revenue_change_pct is not none %}
                         {% if stats.revenue_change_pct >= 0 %}
-                            <span class="badge badge-active">+{{ "{:.1f}".format(stats.revenue_change_pct) }}%</span>
+                            <span class="sa-pill sa-pill--ok">+{{ "{:.1f}".format(stats.revenue_change_pct) }}%</span>
                         {% else %}
-                            <span class="badge badge-pending">{{ "{:.1f}".format(stats.revenue_change_pct) }}%</span>
+                            <span class="sa-pill sa-pill--danger">{{ "{:.1f}".format(stats.revenue_change_pct) }}%</span>
                         {% endif %}
                         <span style="margin-left:8px;">vs previous month</span>
                     {% else %}
-                        <span class="badge">No prior-month baseline</span>
+                        <span class="sa-pill">No prior-month baseline</span>
                     {% endif %}
                 </div>
             </div>

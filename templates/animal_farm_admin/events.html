@@ -10,7 +10,7 @@
             <h2>Add / Edit Event</h2>
         </div>
         <div class="card-body">
-            <form method="post" action="{{ url_for('animal_farm_admin.save_event') }}" style="display:flex; flex-direction:column; gap:10px;">
+            <form method="post" enctype="multipart/form-data" action="{{ url_for('animal_farm_admin.save_event') }}" style="display:flex; flex-direction:column; gap:10px;">
                 <input type="hidden" name="event_id" value="">
 
                 <label style="font-weight:600; color:var(--text-secondary);">Name</label>
@@ -24,6 +24,9 @@
 
                 <label style="font-weight:600; color:var(--text-secondary);">Location (optional)</label>
                 <input type="text" name="location" placeholder="e.g., Main Pavilion" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+
+                <label style="font-weight:600; color:var(--text-secondary);">Image (optional)</label>
+                <input type="file" name="image_file" accept="image/*" />
 
                 <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Event</button>
             </form>
@@ -39,6 +42,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th style="width:70px;">Image</th>
                             <th>Name</th>
                             <th>Type</th>
                             <th>Time</th>
@@ -49,13 +53,20 @@
                     <tbody>
                         {% for e in events %}
                             <tr>
+                                <td>
+                                    {% if e.image_url %}
+                                        <img src="{{ e.image_url }}" alt="" style="width:54px; height:38px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
+                                    {% else %}
+                                        <span style="color: var(--text-muted);">-</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ e.name }}</td>
                                 <td>{{ e.type or '-' }}</td>
                                 <td>{{ e.time or '-' }}</td>
                                 <td>{{ e.location or '-' }}</td>
                                 <td>
                                     <button class="btn btn-outline btn-sm" type="button"
-                                                    onclick="fillEventForm({{ e.id }}, {{ e.name|tojson }}, {{ (e.type or '')|tojson }}, {{ (e.time or '')|tojson }}, {{ (e.location or '')|tojson }})">
+                                                    onclick='fillEventForm({{ e.id|tojson }}, {{ e.name|tojson }}, {{ (e.type or "")|tojson }}, {{ (e.time or "")|tojson }}, {{ (e.location or "")|tojson }})'>
                                         <i class="fa-solid fa-pen"></i> Edit
                                     </button>
                                     <form method="post" action="{{ url_for('animal_farm_admin.delete_event', event_id=e.id) }}" style="display:inline;" onsubmit="return confirm('Delete this event?');">
@@ -64,7 +75,7 @@
                                 </td>
                             </tr>
                         {% else %}
-                            <tr><td colspan="5" style="color: var(--text-muted);">No events yet.</td></tr>
+                            <tr><td colspan="6" style="color: var(--text-muted);">No events yet.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>

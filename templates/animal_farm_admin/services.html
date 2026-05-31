@@ -10,7 +10,7 @@
             <h2>Add / Edit Service</h2>
         </div>
         <div class="card-body">
-            <form method="post" action="{{ url_for('animal_farm_admin.save_service') }}" style="display:flex; flex-direction:column; gap:10px;">
+            <form method="post" action="{{ url_for('animal_farm_admin.save_service') }}" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:10px;">
                 <input type="hidden" name="service_id" value="">
 
                 <label style="font-weight:600; color:var(--text-secondary);">Name</label>
@@ -19,8 +19,9 @@
                 <label style="font-weight:600; color:var(--text-secondary);">Price (PHP)</label>
                 <input type="number" name="price" step="0.01" placeholder="e.g., 499.00" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
 
-                <label style="font-weight:600; color:var(--text-secondary);">Image URL (optional)</label>
-                <input type="text" name="image_url" placeholder="https://..." style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <label style="font-weight:600; color:var(--text-secondary);">Upload Picture (optional)</label>
+                <input type="file" name="image_file" accept="image/*" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <p style="margin:0; color: var(--text-muted); font-size: 12px;">Leave blank to keep the existing picture when editing.</p>
 
                 <label style="font-weight:600; color:var(--text-secondary);">Description (optional)</label>
                 <textarea name="description" rows="4" placeholder="Short description" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
@@ -40,6 +41,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th style="width:70px;">Image</th>
                             <th>Name</th>
                             <th>Price</th>
                             <th>Description</th>
@@ -49,12 +51,19 @@
                     <tbody>
                         {% for s in services %}
                             <tr>
+                                <td>
+                                    {% if s.image_url %}
+                                        <img src="{{ s.image_url }}" alt="" style="width:54px; height:38px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
+                                    {% else %}
+                                        <span style="color: var(--text-muted);">-</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ s.name }}</td>
                                 <td>₱{{ '%.2f'|format(s.price or 0) }}</td>
                                 <td>{{ (s.description or '-')|truncate(80) }}</td>
                                 <td>
                                     <button class="btn btn-outline btn-sm" type="button"
-                                                    onclick="fillServiceForm({{ s.id }}, {{ s.name|tojson }}, {{ (s.price or 0)|tojson }}, {{ (s.image_url or '')|tojson }}, {{ (s.description or '')|tojson }})">
+                                                    onclick='fillServiceForm({{ s.id|tojson }}, {{ s.name|tojson }}, {{ (s.price or 0)|tojson }}, {{ (s.description or "")|tojson }})'>
                                         <i class="fa-solid fa-pen"></i> Edit
                                     </button>
                                     <form method="post" action="{{ url_for('animal_farm_admin.delete_service', service_id=s.id) }}" style="display:inline;" onsubmit="return confirm('Delete this service?');">
@@ -63,7 +72,7 @@
                                 </td>
                             </tr>
                         {% else %}
-                            <tr><td colspan="4" style="color: var(--text-muted);">No services yet.</td></tr>
+                            <tr><td colspan="5" style="color: var(--text-muted);">No services yet.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -73,13 +82,12 @@
 </div>
 
 <script>
-    function fillServiceForm(id, name, price, imageUrl, description) {
+    function fillServiceForm(id, name, price, description) {
         const form = document.querySelector('form[action$="/services/save"]');
         if (!form) return;
         form.querySelector('input[name="service_id"]').value = id;
         form.querySelector('input[name="name"]').value = name || '';
         form.querySelector('input[name="price"]').value = price || '';
-        form.querySelector('input[name="image_url"]').value = imageUrl || '';
         form.querySelector('textarea[name="description"]').value = description || '';
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }

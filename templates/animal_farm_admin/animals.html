@@ -10,7 +10,7 @@
       <h2>Add / Edit Animal</h2>
     </div>
     <div class="card-body">
-      <form method="post" action="{{ url_for('animal_farm_admin.save_animal') }}" style="display:flex; flex-direction:column; gap:10px;">
+      <form method="post" action="{{ url_for('animal_farm_admin.save_animal') }}" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:10px;">
         <input type="hidden" name="animal_id" value="">
 
         <label style="font-weight:600; color:var(--text-secondary);">Name</label>
@@ -25,8 +25,9 @@
         <label style="font-weight:600; color:var(--text-secondary);">Status</label>
         <input type="text" name="status" placeholder="e.g., Healthy" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
 
-        <label style="font-weight:600; color:var(--text-secondary);">Image URL (optional)</label>
-        <input type="text" name="image_url" placeholder="https://..." style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+        <label style="font-weight:600; color:var(--text-secondary);">Upload Picture (optional)</label>
+        <input type="file" name="image_file" accept="image/*" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+        <p style="margin:0; color: var(--text-muted); font-size: 12px;">Leave blank to keep the existing picture when editing.</p>
 
         <label style="font-weight:600; color:var(--text-secondary);">Description (optional)</label>
         <textarea name="description" rows="4" placeholder="Short description" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
@@ -46,6 +47,7 @@
         <table>
           <thead>
             <tr>
+              <th style="width:70px;">Image</th>
               <th>Name</th>
               <th>Species</th>
               <th>Habitat</th>
@@ -56,13 +58,20 @@
           <tbody>
             {% for a in animals %}
               <tr>
+                <td>
+                  {% if a.image_url %}
+                    <img src="{{ a.image_url }}" alt="" style="width:54px; height:38px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
+                  {% else %}
+                    <span style="color: var(--text-muted);">-</span>
+                  {% endif %}
+                </td>
                 <td>{{ a.name }}</td>
                 <td>{{ a.species or '-' }}</td>
                 <td>{{ a.habitat or '-' }}</td>
                 <td>{{ a.status or '-' }}</td>
                 <td>
                   <button class="btn btn-outline btn-sm" type="button"
-                          onclick="fillAnimalForm({{ a.id }}, {{ a.name|tojson }}, {{ (a.species or '')|tojson }}, {{ (a.habitat or '')|tojson }}, {{ (a.status or '')|tojson }}, {{ (a.image_url or '')|tojson }}, {{ (a.description or '')|tojson }})">
+                      onclick='fillAnimalForm({{ a.id|tojson }}, {{ a.name|tojson }}, {{ (a.species or "")|tojson }}, {{ (a.habitat or "")|tojson }}, {{ (a.status or "")|tojson }}, {{ (a.description or "")|tojson }})'>
                     <i class="fa-solid fa-pen"></i> Edit
                   </button>
                   <form method="post" action="{{ url_for('animal_farm_admin.delete_animal', animal_id=a.id) }}" style="display:inline;" onsubmit="return confirm('Delete this animal?');">
@@ -71,7 +80,7 @@
                 </td>
               </tr>
             {% else %}
-              <tr><td colspan="5" style="color: var(--text-muted);">No animals yet.</td></tr>
+              <tr><td colspan="6" style="color: var(--text-muted);">No animals yet.</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -81,7 +90,7 @@
 </div>
 
 <script>
-  function fillAnimalForm(id, name, species, habitat, status, imageUrl, description) {
+  function fillAnimalForm(id, name, species, habitat, status, description) {
     const form = document.querySelector('form[action$="/animals/save"]');
     if (!form) return;
     form.querySelector('input[name="animal_id"]').value = id;
@@ -89,7 +98,6 @@
     form.querySelector('input[name="species"]').value = species || '';
     form.querySelector('input[name="habitat"]').value = habitat || '';
     form.querySelector('input[name="status"]').value = status || '';
-    form.querySelector('input[name="image_url"]').value = imageUrl || '';
     form.querySelector('textarea[name="description"]').value = description || '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }

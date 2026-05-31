@@ -1,68 +1,73 @@
 ﻿{% extends "base.html" %}
 
-{% block title %}Subscriptions Management{% endblock %}
-{% block page_title %}Subscriptions{% endblock %}
+{% block title %}Subscription Management{% endblock %}
+{% block page_title %}Subscription Management{% endblock %}
 
 {% block content %}
 
-<div class="page-subheader" style="margin-bottom:16px;">
-  <div class="ps-left">
-    <h2>ZOO SUBSCRIPTIONS</h2>
-    <p>Configure subscription features and access levels for partners.</p>
-  </div>
+<div class="sa-tabs" style="margin-bottom:18px;">
+  <button class="sa-tab is-active" type="button" data-sa-tab="subs">Zoo Subscriptions</button>
+  <button class="sa-tab" type="button" data-sa-tab="plans">Plan Manager</button>
 </div>
 
-<!-- Stats -->
-<div class="stats-grid" style="--stats-cols: 4; margin-bottom:16px;">
-  <div class="stat-card">
-    <div class="stat-icon-box green"><i class="fa-solid fa-circle-check"></i></div>
-    <div class="stat-value">{{ "{:,}".format(sub_stats.active or 0) }}</div>
-    <div class="stat-label">ACTIVE SUBSCRIPTIONS</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon-box blue"><i class="fa-solid fa-money-bills"></i></div>
-    <div class="stat-value">₱{{ "{:,.2f}".format(sub_stats.mrr or 0) }}</div>
-    <div class="stat-label">TOTAL REVENUE (MRR)</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon-box orange" style="background:var(--warning-bg); color:var(--warning);"><i class="fa-solid fa-rotate"></i></div>
-    <div class="stat-value">{{ "{:,}".format(sub_stats.pending_renewals or 0) }}</div>
-    <div class="stat-label">PENDING RENEWALS</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon-box purple"><i class="fa-solid fa-arrow-trend-down"></i></div>
-    <div class="stat-value">{{ "{:.1f}".format(sub_stats.churn_rate or 0) }}%</div>
-    <div class="stat-label">CHURN RATE</div>
-  </div>
-</div>
-
-{% set _needs_attention = (sub_stats.pending_renewals or 0) > 0 or (sub_stats.expired or 0) > 0 %}
-{% if _needs_attention %}
-<!-- Alert banner -->
-<div class="card-panel" style="margin-bottom:16px; border-left:4px solid var(--warning); background:var(--warning-bg);">
-  <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-    <div style="display:flex; align-items:flex-start; gap:10px;">
-      <i class="fa-solid fa-triangle-exclamation" style="color:var(--warning); margin-top:2px;"></i>
-      <div>
-        <div style="font-weight:900; letter-spacing:0.02em;">SUBSCRIPTION ATTENTION REQUIRED</div>
-        <div style="font-size:12px; color:#92400e; font-weight:700;">
-          {{ sub_stats.pending_renewals or 0 }} pending renewals • {{ sub_stats.expired or 0 }} expired
-        </div>
+<div data-sa-panel="subs">
+  <!-- Stats -->
+  <div class="stats-grid" style="--stats-cols: 4; margin-bottom:18px;">
+    <div class="stat-card sa-kpi" style="--kpi-accent: #0f766e;">
+      <div class="stat-label">ACTIVE SUBSCRIPTIONS</div>
+      <div class="sa-kpi-row">
+        <div class="stat-value">{{ "{:,}".format(sub_stats.active or 0) }}</div>
+        <span class="sa-pill sa-pill--ok">+12%</span>
       </div>
     </div>
-    <div style="font-size:12px; font-weight:800; color:#92400e;">Review</div>
+    <div class="stat-card sa-kpi" style="--kpi-accent: #14b8a6;">
+      <div class="stat-label">TOTAL REVENUE (MRR)</div>
+      <div class="sa-kpi-row">
+        <div class="stat-value">₱{{ "{:,.2f}".format(sub_stats.mrr or 0) }}</div>
+        <span class="sa-pill">Monthly</span>
+      </div>
+    </div>
+    <div class="stat-card sa-kpi" style="--kpi-accent: var(--warning);">
+      <div class="stat-label">PENDING RENEWALS</div>
+      <div class="sa-kpi-row">
+        <div class="stat-value">{{ "{:,}".format(sub_stats.pending_renewals or 0) }}</div>
+        <span class="sa-pill {% if (sub_stats.pending_renewals or 0) > 0 %}sa-pill--warn{% endif %}">{% if (sub_stats.pending_renewals or 0) > 0 %}Review{% else %}All good{% endif %}</span>
+      </div>
+    </div>
+    <div class="stat-card sa-kpi" style="--kpi-accent: var(--danger);">
+      <div class="stat-label">CHURN RATE</div>
+      <div class="sa-kpi-row">
+        <div class="stat-value">{{ "{:.1f}".format(sub_stats.churn_rate or 0) }}%</div>
+        <span class="sa-pill">Rolling</span>
+      </div>
+    </div>
   </div>
-</div>
-{% endif %}
 
-<div class="two-col" style="--two-col-template: 1.25fr 0.75fr; margin-bottom:16px;">
+  {% set _needs_attention = (sub_stats.pending_renewals or 0) > 0 or (sub_stats.expired or 0) > 0 %}
+  {% if _needs_attention %}
+  <div class="card-panel" style="margin-bottom:16px; border-left:4px solid var(--warning); background:var(--warning-bg);">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px;">
+      <div style="display:flex; align-items:flex-start; gap:10px;">
+        <i class="fa-solid fa-triangle-exclamation" style="color:var(--warning); margin-top:2px;"></i>
+        <div>
+          <div style="font-weight:900; letter-spacing:0.02em;">SUBSCRIPTION ATTENTION REQUIRED</div>
+          <div style="font-size:12px; color:#92400e; font-weight:700;">
+            {{ sub_stats.pending_renewals or 0 }} pending renewals • {{ sub_stats.expired or 0 }} expired
+          </div>
+        </div>
+      </div>
+      <span class="sa-pill sa-pill--warn">Review</span>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Directory table -->
   <div class="card-panel" style="margin-bottom:0;">
     <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
       <h2>ZOO MEMBERSHIP DIRECTORY</h2>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <input type="text" placeholder="Search Zoo Name..." style="max-width:220px;">
-        <button class="btn btn-ghost btn-sm" type="button">Filters</button>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <input type="text" placeholder="Search Zoo Name..." style="max-width:260px;">
+        <button class="btn btn-ghost btn-sm" type="button"><i class="fa-solid fa-filter"></i> Filters</button>
       </div>
     </div>
 
@@ -71,38 +76,38 @@
         <thead>
           <tr>
             <th>ZOO NAME</th>
+            <th>PLAN TYPE</th>
             <th>STATUS</th>
-            <th>PLAN TIER</th>
-            <th>LAST PAYMENT</th>
-            <th>RENEWAL DATE</th>
+            <th>START DATE</th>
+            <th>END DATE</th>
             <th style="text-align:right;">AMOUNT</th>
-            <th>ACTIONS</th>
+            <th style="text-align:right;">ACTIONS</th>
           </tr>
         </thead>
         <tbody>
           {% for sub in subscriptions %}
           <tr>
             <td class="fw-600">{{ sub.zoo_name }}</td>
+            <td style="font-weight:700;">{{ sub.plan_name }}</td>
             <td>
               {% if sub.status == 'Active' %}
-              <span class="badge badge-confirmed">Active</span>
+              <span class="sa-pill sa-pill--ok">ACTIVE</span>
               {% else %}
-              <span class="badge" style="background:var(--danger-bg); color:var(--danger);">Expired</span>
+              <span class="sa-pill sa-pill--danger">EXPIRED</span>
               {% endif %}
             </td>
-            <td>{{ sub.plan_name }}</td>
-            <td style="color:var(--text-muted); font-size:12px;">{{ sub.latest_payment_date }}</td>
+            <td style="color:var(--text-muted); font-size:12px;">{{ sub.start_date }}</td>
             <td style="color:var(--text-muted); font-size:12px;">{{ sub.end_date }}</td>
             <td style="text-align:right; font-weight:800; color:var(--primary);">₱{{ "{:,.2f}".format(sub.latest_payment_amount or 0) }}</td>
-            <td>
-              <div style="display:grid; gap:6px; min-width:190px;">
-                <form method="post" action="{{ url_for('zootique_admin.renew_subscription', subscription_id=sub.subscription_id) }}" style="display:flex; gap:6px; align-items:center;">
-                  <input type="number" name="months" min="1" value="1" style="max-width:64px; padding:4px 6px;">
+            <td style="text-align:right;">
+              <div style="display:grid; gap:8px; justify-items:end; min-width:220px;">
+                <form method="post" action="{{ url_for('zootique_admin.renew_subscription', subscription_id=sub.subscription_id) }}" style="display:flex; gap:6px; align-items:center; justify-content:flex-end;">
+                  <input type="number" name="months" min="1" value="1" style="max-width:70px;">
                   <button class="btn btn-outline btn-sm" type="submit">Renew</button>
                 </form>
 
-                <form method="post" action="{{ url_for('zootique_admin.change_subscription_plan', subscription_id=sub.subscription_id) }}" style="display:flex; gap:6px; align-items:center;">
-                  <select name="plan_id" style="padding:4px 6px; min-width:108px;">
+                <form method="post" action="{{ url_for('zootique_admin.change_subscription_plan', subscription_id=sub.subscription_id) }}" style="display:flex; gap:6px; align-items:center; justify-content:flex-end;">
+                  <select name="plan_id" style="min-width:120px;">
                     {% for p in plans %}
                     <option value="{{ p.id }}" {% if p.id == sub.plan_id %}selected{% endif %}>{{ p.name }}</option>
                     {% endfor %}
@@ -111,7 +116,7 @@
                 </form>
 
                 <form method="post" action="{{ url_for('zootique_admin.cancel_subscription', subscription_id=sub.subscription_id) }}">
-                  <button class="btn btn-sm" type="submit" style="background:var(--danger-bg); color:var(--danger); border:1px solid rgba(239,68,68,0.35); width:100%;">Cancel</button>
+                  <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger);">Cancel</button>
                 </form>
               </div>
             </td>
@@ -129,128 +134,129 @@
     </div>
   </div>
 
-  <!-- Pricing tiers -->
-  <div class="card-panel" style="margin-bottom:0;">
-    <div class="card-header">
+  <div class="sa-section-head">
+    <div>
       <h2>Global Pricing Tiers</h2>
+      <div class="sa-section-sub">Configure subscription features and access levels for partners.</div>
     </div>
-    <div class="card-body" style="display:flex; flex-direction:column; gap:12px;">
-      {% for plan in plan_tiers[:3] %}
-      <div class="card-panel" style="margin:0; {% if plan.is_popular %}border:1px solid rgba(22,163,74,0.35); background:rgba(22,163,74,0.06);{% else %}border:1px solid var(--border-light);{% endif %}">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-          <div>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <div style="font-weight:900;">{{ plan.name }}</div>
-              {% if plan.is_popular %}
-              <span class="badge" style="background:rgba(22,163,74,0.16); color:var(--primary); font-weight:900;">POPULAR CHOICE</span>
-              {% endif %}
-            </div>
-            <div style="font-size:12px; color:var(--text-muted); font-weight:700;">{{ plan.description }}</div>
-          </div>
-          <div style="font-weight:900; color:var(--text);">₱{{ "{:,.2f}".format(plan.price or 0) }}<span style="font-size:12px; color:var(--text-muted); font-weight:800;">{{ plan.duration_label }}</span></div>
-        </div>
-      </div>
-      {% else %}
-      <div class="empty-state">No pricing tiers configured yet.</div>
-      {% endfor %}
-
-      {% if plan_tiers|length > 3 %}
-      <div style="font-size:12px; color:var(--text-muted); font-weight:700;">
-        Showing 3 of {{ plan_tiers|length }} plans.
-      </div>
-      {% endif %}
-
-      <div style="display:flex; gap:8px;">
-        <a class="btn btn-primary" href="#plan-manager"><i class="fa-solid fa-plus"></i> Add New Plan</a>
-        <a class="btn btn-ghost" href="#plan-manager"><i class="fa-regular fa-pen-to-square"></i> Edit Features</a>
-      </div>
-    </div>
+    <a class="btn btn-primary" href="#plan-manager"><i class="fa-solid fa-plus"></i> Add New Plan</a>
   </div>
-</div>
 
-<!-- Plan Manager (existing functionality) -->
-<div id="plan-manager" class="two-col" style="--two-col-template: 1fr 1.1fr;">
-
-  <!-- Add / Edit Plan -->
-  <div class="card-panel" style="margin-bottom:0;">
-    <div class="card-header">
-      <h2>PLAN MANAGER — {% if edit_plan %}Edit{% else %}Add{% endif %}</h2>
-    </div>
-    <div class="card-body">
-      <form method="post" action="{{ url_for('zootique_admin.save_subscription_plan') }}" style="display:flex; flex-direction:column; gap:12px;">
-        {% if edit_plan %}
-          <input type="hidden" name="plan_id" value="{{ edit_plan.id }}">
-        {% endif %}
-
-        <div>
-          <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Plan Name</label>
-          <input type="text" name="name" value="{{ edit_plan.name if edit_plan else '' }}" placeholder="Basic Field, Habitat Pro, ..." required>
-        </div>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-          <div>
-            <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Price</label>
-            <input type="number" name="price" step="0.01" value="{{ edit_plan.price if edit_plan else '' }}" placeholder="0.00" required>
-          </div>
-          <div>
-            <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Duration</label>
-            <select name="duration" required>
-              <option value="monthly" {% if edit_plan and edit_plan.duration == 'monthly' %}selected{% endif %}>Monthly</option>
-              <option value="yearly" {% if edit_plan and edit_plan.duration == 'yearly' %}selected{% endif %}>Yearly</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Features (one per line)</label>
-          <textarea name="features" rows="6" placeholder="Up to 500 Animals\n3 Admin Users\nBasic Reporting">{{ edit_plan.features if edit_plan and edit_plan.features else '' }}</textarea>
-        </div>
-
-        <div style="display:flex; gap:8px;">
-          <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Plan</button>
-          {% if edit_plan %}
-            <a class="btn btn-ghost" href="{{ url_for('zootique_admin.manage_subscriptions') }}">Discard</a>
+  <div class="sa-pricing-grid">
+    {% for tier in plan_tiers[:3] %}
+      {% set plan_obj = (plans | selectattr('id', 'equalto', tier.id) | first) %}
+      <div class="sa-plan-card {% if tier.is_popular %}is-featured{% endif %}">
+        <div class="sa-plan-tier">{% if loop.index == 1 %}Standard Tier{% elif loop.index == 2 %}Advanced Tier{% else %}Elite Tier{% endif %}</div>
+        <div class="sa-plan-name">{{ tier.name }}</div>
+        <div class="sa-plan-price">₱{{ "{:,.0f}".format(tier.price or 0) }} <small>{{ tier.duration_label }}</small></div>
+        <div class="sa-plan-features">
+          {% if plan_obj and plan_obj.features %}
+            {% for line in (plan_obj.features or '').splitlines()[:4] %}
+              {% if line.strip() %}
+              <div class="sa-plan-feature"><i class="fa-solid fa-circle-check"></i> <span>{{ line }}</span></div>
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            <div class="sa-plan-feature"><i class="fa-solid fa-circle-check"></i> <span>{{ tier.description }}</span></div>
           {% endif %}
         </div>
-      </form>
-    </div>
+        <div style="margin-top:14px;">
+          <a class="btn btn-ghost" href="#plan-manager">Edit Features</a>
+        </div>
+      </div>
+    {% else %}
+      <div class="empty-state">No pricing tiers configured yet.</div>
+    {% endfor %}
   </div>
 
-  <!-- Plans Table -->
-  <div class="card-panel" style="margin-bottom:0;">
-    <div class="card-header">
-      <h2>PREMIUM TIER • Global Pricing Tiers</h2>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>PLAN</th>
-            <th style="text-align:right;">PRICE</th>
-            <th>DURATION</th>
-            <th>FEATURES</th>
-            <th>ACTIONS</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for p in plans %}
-          <tr>
-            <td class="fw-600">{{ p.name }}</td>
-            <td style="text-align:right;">₱{{ "{:,.2f}".format(p.price) }}</td>
-            <td style="text-transform:capitalize;">{{ p.duration }}</td>
-            <td style="color:var(--text-muted); font-size:12px;">{{ (p.features or '—')|replace('\n', ', ') }}</td>
-            <td>
-              <a class="btn btn-ghost btn-sm" href="{{ url_for('zootique_admin.manage_subscriptions', edit_plan=p.id) }}"><i class="fa-regular fa-pen-to-square"></i> Modify Subscription</a>
-            </td>
-          </tr>
-          {% else %}
-          <tr><td colspan="5" class="empty-state">No plans available.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
+</div>
 
+
+<div data-sa-panel="plans" style="display:none;">
+  <!-- Plan Manager (existing functionality) -->
+  <div id="plan-manager" class="two-col" style="--two-col-template: 1fr 1.1fr;">
+
+    <!-- Add / Edit Plan -->
+    <div class="card-panel" style="margin-bottom:0;">
+      <div class="card-header">
+        <h2>PLAN MANAGER — {% if edit_plan %}Edit{% else %}Add{% endif %}</h2>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('zootique_admin.save_subscription_plan') }}" style="display:flex; flex-direction:column; gap:12px;">
+          {% if edit_plan %}
+            <input type="hidden" name="plan_id" value="{{ edit_plan.id }}">
+          {% endif %}
+
+          <div>
+            <label>Plan Name</label>
+            <input type="text" name="name" value="{{ edit_plan.name if edit_plan else '' }}" placeholder="Basic Field, Habitat Pro, ..." required>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div>
+              <label>Price</label>
+              <input type="number" name="price" step="0.01" value="{{ edit_plan.price if edit_plan else '' }}" placeholder="0.00" required>
+            </div>
+            <div>
+              <label>Duration</label>
+              <select name="duration" required>
+                <option value="monthly" {% if edit_plan and edit_plan.duration == 'monthly' %}selected{% endif %}>Monthly</option>
+                <option value="yearly" {% if edit_plan and edit_plan.duration == 'yearly' %}selected{% endif %}>Yearly</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label>Features (one per line)</label>
+            <textarea name="features" rows="7" placeholder="Up to 500 Animals\n3 Admin Users\nBasic Reporting">{{ edit_plan.features if edit_plan and edit_plan.features else '' }}</textarea>
+          </div>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Plan</button>
+            {% if edit_plan %}
+              <a class="btn btn-ghost" href="{{ url_for('zootique_admin.manage_subscriptions') }}">Discard</a>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Plans Table -->
+    <div class="card-panel" style="margin-bottom:0;">
+      <div class="card-header">
+        <h2>GLOBAL PRICING TIERS</h2>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>PLAN</th>
+              <th style="text-align:right;">PRICE</th>
+              <th>DURATION</th>
+              <th>FEATURES</th>
+              <th style="text-align:right;">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in plans %}
+            <tr>
+              <td class="fw-600">{{ p.name }}</td>
+              <td style="text-align:right; font-weight:900;">₱{{ "{:,.2f}".format(p.price) }}</td>
+              <td style="text-transform:capitalize;">{{ p.duration }}</td>
+              <td style="color:var(--text-muted); font-size:12px;">{{ (p.features or '—')|replace('\n', ', ') }}</td>
+              <td style="text-align:right;">
+                <a class="btn btn-ghost btn-sm" href="{{ url_for('zootique_admin.manage_subscriptions', edit_plan=p.id) }}#plan-manager"><i class="fa-regular fa-pen-to-square"></i> Edit</a>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="empty-state">No plans available.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 {% endblock %}

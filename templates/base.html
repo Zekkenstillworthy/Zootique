@@ -43,8 +43,9 @@
         .visitor-nav-links {
             display: flex;
             align-items: center;
-            gap: 2rem;
+            gap: 1.25rem;
             height: 100%;
+            flex-wrap: nowrap;
         }
 
         .visitor-nav-link {
@@ -57,6 +58,7 @@
             align-items: center;
             position: relative;
             transition: color 0.2s ease;
+            white-space: nowrap;
         }
 
         .visitor-nav-link:hover {
@@ -82,7 +84,14 @@
         .visitor-nav-actions {
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1rem;
+        }
+
+        /* Keep the navbar from feeling cramped on medium screens */
+        @media (max-width: 1100px) {
+            .visitor-nav-links { gap: 0.9rem; }
+            .visitor-nav-link { font-size: 0.9rem; }
+            .visitor-nav-actions { gap: 0.75rem; }
         }
 
         .visitor-nav-icon {
@@ -148,6 +157,7 @@
         <!-- Super Admin Brand -->
         <div class="sa-brand">
             <div class="sa-logo">Zootique</div>
+            <div class="sa-version">SUPER ADMIN</div>
         </div>
         {% else %}
         <!-- Brand -->
@@ -254,10 +264,6 @@
                class="nav-item {% if request.endpoint in ['animal_farm_staff.report_incident', 'animal_farm_staff.daily_operations_log'] %}active{% endif %}">
                 <i class="fa-solid fa-clipboard-list"></i> Daily Operations Log
             </a>
-            <a href="{{ url_for('animal_farm_staff.notifications') }}"
-               class="nav-item {% if request.endpoint == 'animal_farm_staff.notifications' %}active{% endif %}">
-                <i class="fa-solid fa-bell"></i> Staff Notifications
-            </a>
             <a href="{{ url_for('animal_farm_staff.profile') }}"
                class="nav-item {% if request.endpoint == 'animal_farm_staff.profile' %}active{% endif %}">
                 <i class="fa-solid fa-user-gear"></i> Staff Profile & Account
@@ -292,15 +298,8 @@
                class="nav-item {% if request.endpoint == 'zootique_admin.settings' %}active{% endif %}">
                 <i class="fa-solid fa-gear"></i> Settings
             </a>
-            <a href="{{ url_for('auth.logout') }}" class="nav-item">
-                <i class="fa-solid fa-right-from-bracket"></i> Logout
-            </a>
             {% endif %}
         </nav>
-
-        {% if request.blueprint == 'zootique_admin' %}
-        {% else %}
-        {% endif %}
 
     </aside>
 
@@ -311,34 +310,49 @@
         <header class="top-header">
             {% set _app_label = 'Zootique Admin' if request.blueprint == 'zootique_admin' else ('Animal Farm Admin' if request.blueprint == 'animal_farm_admin' else ('Animal Farm Staff' if request.blueprint == 'animal_farm_staff' else 'Admin')) %}
             {% set _home_url = url_for('zootique_admin.dashboard') if request.blueprint == 'zootique_admin' else (url_for('animal_farm_admin.dashboard') if request.blueprint == 'animal_farm_admin' else (url_for('animal_farm_staff.dashboard') if request.blueprint == 'animal_farm_staff' else '#')) %}
+            
+            {% if request.blueprint == 'zootique_admin' %}
+            <div class="header-title" style="margin-bottom:0;">
+                <span class="page-heading">{% block page_title %}{% endblock %}</span>
+            </div>
+            <div class="header-actions">
+                {% set _sa_name = (session.get('full_name') or 'Super Admin') %}
+                <button class="icon-btn" type="button" title="Notifications"><i class="fa-regular fa-bell"></i></button>
+                <a href="{{ url_for('zootique_admin.settings') }}" style="display:flex; align-items:center; gap:10px; text-decoration:none;">
+                    <span style="font-size: 14px; font-weight: 600; color: var(--text-muted);">Admin Profile</span>
+                    <img src="https://ui-avatars.com/api/?name={{ _sa_name }}&background=1a3024&color=fff" alt="Avatar" style="width: 36px; height: 36px; border-radius: 50%;" />
+                </a>
+                <a class="icon-btn" href="{{ url_for('auth.logout') }}" title="Sign Out" aria-label="Sign Out">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
+            {% else %}
             <div class="header-title">
                 <div class="breadcrumbs" aria-label="Breadcrumb">
                     <a href="{{ _home_url }}">{{ _app_label }}</a>
                     <span class="crumb-sep">/</span>
                     <span class="crumb-current" aria-current="page">{{ self.page_title() }}</span>
                 </div>
-                <span class="page-heading">{% block page_title %}{% endblock %}</span>
+                <span class="page-heading">{{ self.page_title() }}</span>
             </div>
             <div class="header-actions">
-                {% if request.blueprint == 'zootique_admin' %}
-                    {% set _sa_name = (session.get('full_name') or 'Super Admin') %}
-                    <button class="icon-btn" title="Notifications" aria-label="Notifications"><i class="fa-solid fa-bell"></i></button>
-                    <a href="{{ url_for('auth.logout') }}" style="color:#ef4444; text-decoration:none; font-size:14px; font-weight:600; display:inline-flex; align-items:center; gap:8px; margin-left:16px;"><i class="fa-solid fa-right-from-bracket"></i> Sign out</a>
-                    <div class="avatar" title="{{ _sa_name }}">{{ _sa_name[0]|upper }}</div>
-                {% else %}
                     <button class="icon-btn" title="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    {% if request.blueprint != 'animal_farm_staff' %}
                     <button class="icon-btn" title="Notifications"><i class="fa-solid fa-bell"></i></button>
+                    {% endif %}
                     {% if session.get('user_id') %}
                     <div style="display:flex; align-items:center; gap:12px; margin-left:16px;">
                         <div class="avatar" title="{{ session.get('full_name', 'User') }}">{{ session.get('full_name', 'U')[0]|upper }}</div>
-                        <a href="{{ url_for('auth.logout') }}" style="color:#ef4444; text-decoration:none; font-size:14px; font-weight:600;"><i class="fa-solid fa-right-from-bracket"></i> Sign out</a>
+                        <span style="color:var(--text-muted); text-decoration:none; font-size:14px; font-weight:800;">
+                            {{ current_zoo_name or 'Zoo' }}
+                        </span>
                     </div>
                     {% else %}
                     <div class="avatar" title="Guest">G</div>
                     <a href="{{ url_for('auth.portal') }}" style="color:#10b981; text-decoration:none; font-size:14px; font-weight:600; margin-left:12px;"><i class="fa-solid fa-right-to-bracket"></i> Sign in</a>
                     {% endif %}
-                {% endif %}
             </div>
+            {% endif %}
         </header>
 
         <!-- Page Content -->
@@ -369,17 +383,26 @@
         </a>
 
         <nav class="visitor-nav-links">
-            {% set _has_selected_zoo = session.get('role') == 'visitor' and session.get('selected_zoo_id') %}
+            {#
+               Visitor navbar should reflect "signed in as Visitor" even if another
+               role is currently active (e.g. user last visited an admin module).
+               We store multi-role logins in session['auth_by_role'].
+            #}
+            {% set _auth_by_role = session.get('auth_by_role') %}
+            {% set _visitor_role_state = (_auth_by_role.get('visitor') if _auth_by_role is mapping else None) %}
+            {% set _has_visitor_role = _visitor_role_state is mapping and _visitor_role_state.get('user_id') %}
+            {% set _is_visitor_authed = (session.get('user_id') and session.get('role') == 'visitor') or _has_visitor_role %}
+            {% set _has_selected_zoo = _is_visitor_authed and session.get('selected_zoo_id') %}
 
             <a href="/" class="visitor-nav-link">Back to Landing</a>
 
-            {% if session.get('user_id') and session.get('role') == 'visitor' %}
+            {% if _is_visitor_authed %}
             <a href="{{ url_for('visitor.choose_zoo') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.choose_zoo' %}active{% endif %}">
                 {% if _has_selected_zoo %}Change Zoo{% else %}Choose Zoo{% endif %}
             </a>
             {% endif %}
 
-            {% if _has_selected_zoo %}
+            {% if _is_visitor_authed %}
             <a href="{{ url_for('visitor.my_bookings') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.my_bookings' %}active{% endif %}">Bookings</a>
             <a href="{{ url_for('visitor.services') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.services' %}active{% endif %}">Services</a>
             <a href="{{ url_for('visitor.animals') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.animals' %}active{% endif %}">Animals</a>
@@ -391,12 +414,7 @@
         </nav>
 
         <div class="visitor-nav-actions">
-            <div class="visitor-nav-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
-            <div class="visitor-nav-icon">
-                <i class="fa-solid fa-bell"></i>
-                <span class="visitor-badge">3</span>
-            </div>
-            {% if session.get('user_id') and session.get('role') == 'visitor' %}
+            {% if _is_visitor_authed %}
                 <a href="{{ url_for('visitor.profile') }}" title="Profile">
                     <img src="https://ui-avatars.com/api/?name={{ session.get('full_name', 'Visitor') }}&background=e2e8f0&color=1a4f32" alt="Avatar" class="visitor-avatar">
                 </a>
@@ -415,21 +433,23 @@
 <main class="visitor-main animate">
 {% endif %}
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div class="container" style="padding: 14px 2rem 0 2rem; display:flex; flex-direction:column; gap:8px;">
-        {% for category, message in messages %}
-        {% if category == 'success' %}
-        <div style="background: white; border: 1px solid #e2e8f0; border-left: 4px solid #16a34a; border-radius: 10px; padding: 12px 14px; color: #1e293b; font-weight: 600; font-size: 0.9rem;">
-        {% else %}
-        <div style="background: white; border: 1px solid #e2e8f0; border-left: 4px solid #ef4444; border-radius: 10px; padding: 12px 14px; color: #1e293b; font-weight: 600; font-size: 0.9rem;">
-        {% endif %}
-            {{ message }}
+    {% if not is_admin %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="container" style="padding: 14px 2rem 0 2rem; display:flex; flex-direction:column; gap:8px;">
+            {% for category, message in messages %}
+            {% if category == 'success' %}
+            <div style="background: white; border: 1px solid #e2e8f0; border-left: 4px solid #16a34a; border-radius: 10px; padding: 12px 14px; color: #1e293b; font-weight: 600; font-size: 0.9rem;">
+            {% else %}
+            <div style="background: white; border: 1px solid #e2e8f0; border-left: 4px solid #ef4444; border-radius: 10px; padding: 12px 14px; color: #1e293b; font-weight: 600; font-size: 0.9rem;">
+            {% endif %}
+                {{ message }}
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
+        {% endif %}
+        {% endwith %}
     {% endif %}
-    {% endwith %}
 
     {% block content %}{% endblock %}
 

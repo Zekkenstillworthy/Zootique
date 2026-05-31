@@ -26,6 +26,84 @@ from services import (
 visitor_bp = Blueprint("visitor", __name__)
 
 
+def _is_user_active(user: User | None) -> bool:
+    if not user:
+        return False
+    status = getattr(user, "status", "active")
+    return str(status or "active").strip().lower() == "active"
+
+
+@visitor_bp.before_request
+def _activate_saved_visitor_role():
+    """Activate the saved Visitor role (if present) for all visitor pages.
+
+    Some visitor routes are intentionally public (e.g. promotions/events). Without
+    this hook, those pages won't call the login guard and the base navbar will
+    render the guest header even when the user has previously signed in as a
+    Visitor (stored in session['auth_by_role']).
+    """
+
+    auth_by_role = session.get("auth_by_role")
+    if not isinstance(auth_by_role, dict):
+        return None
+
+    role_state = auth_by_role.get("visitor")
+    if not isinstance(role_state, dict):
+        return None
+
+    role_user_id = role_state.get("user_id")
+    if not role_user_id:
+        return None
+
+    # If Visitor role is already active, nothing to do.
+    if session.get("role") == "visitor" and session.get("user_id"):
+        return None
+
+    try:
+        visitor_user_id = int(role_user_id)
+    except Exception:
+        return None
+
+    user = db.session.get(User, visitor_user_id)
+    if not _is_user_active(user):
+        # Stored role is stale; remove it so the UI doesn't flip-flop.
+        auth_by_role.pop("visitor", None)
+        session["auth_by_role"] = auth_by_role
+        return None
+
+    session["user_id"] = int(user.id)
+    session["role"] = "visitor"
+    session["full_name"] = user.full_name or role_state.get("full_name") or session.get("full_name")
+    session.permanent = True
+    session.modified = True
+    return None
+
+
+def _selected_zoo_id() -> int | None:
+    zoo_id = session.get("selected_zoo_id")
+    if zoo_id is None:
+        return None
+    try:
+        zoo_id_int = int(zoo_id)
+    except Exception:
+        return None
+    return zoo_id_int if zoo_id_int > 0 else None
+
+
+def _maybe_filter_by_selected_zoo(query, model):
+    """Filter a SQLAlchemy query by selected zoo when applicable."""
+    selected_zoo_id = _selected_zoo_id()
+    if not selected_zoo_id:
+        return query
+    if hasattr(model, "zoo_id"):
+        # Include global records (NULL zoo_id) so shared promos/events still show.
+        try:
+            return query.filter(or_(model.zoo_id == selected_zoo_id, model.zoo_id.is_(None)))
+        except Exception:
+            return query.filter(model.zoo_id == selected_zoo_id)
+    return query
+
+
 def _strip_mvp_terms(value: str | None) -> str | None:
     if not value:
         return value
@@ -59,7 +137,7 @@ def _require_visitor_login():
 
     if session.get("user_id") and session.get("role") == "visitor":
         user = _current_user()
-        if user and (getattr(user, "status", "active") or "active") == "active":
+        if _is_user_active(user):
             # Keep role-specific state in sync.
             auth_by_role["visitor"] = {"user_id": int(user.id), "full_name": user.full_name}
             session["auth_by_role"] = auth_by_role
@@ -109,9 +187,42 @@ def _safe_relative_redirect(target: str | None):
 @visitor_bp.route("/choose-zoo", methods=["GET", "POST"])
 @visitor_login_required
 def choose_zoo():
-    zoos = Zoo.query.order_by(Zoo.id.asc()).all()
-    if not zoos:
-        zoos = current_app.config.get("ZOOS", [])
+    all_zoos = Zoo.query.order_by(Zoo.id.asc()).all()
+
+    def _zoo_field(zoo_obj, field: str):
+        if zoo_obj is None:
+            return None
+        if hasattr(zoo_obj, field):
+            return getattr(zoo_obj, field)
+        if isinstance(zoo_obj, dict):
+            return zoo_obj.get(field)
+        return None
+
+    def _zoo_type(zoo_obj) -> str | None:
+        raw = _zoo_field(zoo_obj, "type")
+        if raw is None:
+            return None
+        value = str(raw).strip()
+        return value or None
+
+    # Build the list of available categories from data.
+    category_counts: dict[str, int] = {}
+    for zoo in all_zoos:
+        t = _zoo_type(zoo)
+        if not t:
+            continue
+        category_counts[t] = category_counts.get(t, 0) + 1
+    categories = sorted(category_counts.keys())
+
+    selected_type = (request.args.get("type") or "").strip() or None
+    if selected_type and selected_type not in category_counts:
+        selected_type = None
+
+    filtered_zoos = (
+        [z for z in all_zoos if _zoo_type(z) == selected_type]
+        if selected_type
+        else []
+    )
 
     if request.method == "POST":
         zoo_id_raw = (request.form.get("zoo_id") or "").strip()
@@ -140,13 +251,27 @@ def choose_zoo():
     selected_zoo = None
     selected_id = session.get("selected_zoo_id")
     if selected_id:
-        if isinstance(zoos, list) and zoos and isinstance(zoos[0], dict):
-            selected_zoo = next((z for z in zoos if z.get("id") == selected_id), None)
+        if isinstance(all_zoos, list) and all_zoos and isinstance(all_zoos[0], dict):
+            selected_zoo = next((z for z in all_zoos if z.get("id") == selected_id), None)
         else:
             selected_zoo = db.session.get(Zoo, int(selected_id))
 
     next_url = (request.args.get("next") or "").strip() or None
-    return render_template("visitor/choose_zoo.html", zoos=zoos, selected_zoo=selected_zoo, next_url=next_url)
+    icon_map = {
+        "Zoo Park": "fa-paw",
+        "Farm Animal Attraction": "fa-cow",
+        "Farm Attraction": "fa-tractor",
+    }
+    return render_template(
+        "visitor/choose_zoo.html",
+        zoos=filtered_zoos,
+        zoo_categories=categories,
+        selected_type=selected_type,
+        category_counts=category_counts,
+        category_icon_map=icon_map,
+        selected_zoo=selected_zoo,
+        next_url=next_url,
+    )
 
 
 def _generate_booking_id() -> str:
@@ -213,41 +338,28 @@ def home():
         return redirect(url_for("visitor.choose_zoo"))
 
     zoos = Zoo.query.order_by(Zoo.id.asc()).all()
-    services = Service.query.order_by(Service.id.asc()).all()
-    promotions = Promotion.query.order_by(Promotion.id.asc()).all()
-    events = Event.query.order_by(Event.id.asc()).all()
+    services = _maybe_filter_by_selected_zoo(Service.query, Service).order_by(Service.id.asc()).all()
+    promotions = _maybe_filter_by_selected_zoo(Promotion.query, Promotion).order_by(Promotion.id.asc()).all()
+    events = _maybe_filter_by_selected_zoo(Event.query, Event).order_by(Event.id.asc()).all()
 
-    # Backwards-compatible fallback if DB is empty (e.g., before seeding)
-    if not zoos:
-        zoos = current_app.config.get("ZOOS", [])
-    if not services:
-        services = current_app.config.get("SERVICES", [])
-    if not promotions:
-        promotions = current_app.config.get("PROMOTIONS", [])
-    if not events:
-        events = current_app.config.get("EVENTS", [])
+    selected_zoo_id = _selected_zoo_id()
 
     user = _current_user()
     bookings: list[Booking] | list[dict]
     if user and session.get("role") == "visitor":
-        bookings = (
-            Booking.query.filter(_booking_owner_filter(user))
-            .order_by(Booking.created_at.desc())
-            .limit(5)
-            .all()
-        )
+        booking_query = Booking.query.filter(_booking_owner_filter(user))
+        if selected_zoo_id:
+            booking_query = booking_query.filter(Booking.zoo_id == selected_zoo_id)
+        bookings = booking_query.order_by(Booking.created_at.desc()).limit(5).all()
     else:
         bookings = Booking.query.order_by(Booking.created_at.desc()).limit(5).all()
-    if not bookings:
-        bookings = current_app.config.get("BOOKINGS", [])
 
     selected_zoo = None
-    selected_zoo_id = session.get("selected_zoo_id")
     if selected_zoo_id:
         if zoos and isinstance(zoos[0], dict):
             selected_zoo = next((z for z in zoos if z.get("id") == selected_zoo_id), None)
         else:
-            selected_zoo = db.session.get(Zoo, int(selected_zoo_id))
+            selected_zoo = db.session.get(Zoo, selected_zoo_id)
 
     if not selected_zoo:
         selected_zoo = zoos[0] if zoos else None
@@ -297,8 +409,7 @@ def home():
 def list_zoos():
     db_zoos = Zoo.query.order_by(Zoo.id.asc()).all()
     if not db_zoos:
-        zoos = current_app.config.get("ZOOS", [])
-        return render_template("visitor/zoos.html", zoos=zoos)
+        return render_template("visitor/zoos.html", zoos=[])
 
     zoos = []
     for zoo in db_zoos:
@@ -348,33 +459,34 @@ def zoo_detail(zoo_id: int):
         zoo_services = Service.query.filter_by(zoo_id=zoo_id).order_by(Service.id.asc()).all()
         return render_template("visitor/zoo_detail.html", zoo=zoo, animals=zoo_animals, services=zoo_services)
 
-    # Fallback to mock config data
-    zoos = current_app.config.get("ZOOS", [])
-    zoo_dict = next((z for z in zoos if z.get("id") == zoo_id), None)
-    if not zoo_dict:
-        abort(404)
-    zoo_animals = [a for a in current_app.config.get("ANIMALS", []) if a.get("zoo_id") == zoo_id]
-    zoo_services = [s for s in current_app.config.get("SERVICES", []) if s.get("zoo_id") == zoo_id]
-    return render_template("visitor/zoo_detail.html", zoo=zoo_dict, animals=zoo_animals, services=zoo_services)
+    abort(404)
 
 @visitor_bp.get("/animals")
 def animals():
-    zoo_animals = Animal.query.order_by(Animal.id.asc()).all()
-    if not zoo_animals:
-        zoo_animals = current_app.config.get("ANIMALS", [])
-    return render_template("visitor/animals.html", animals=zoo_animals)
+    zoo_animals = _maybe_filter_by_selected_zoo(Animal.query, Animal).order_by(Animal.id.asc()).all()
+    habitat_count = 0
+    try:
+        habitat_count = len({(getattr(a, "habitat", None) or "").strip() for a in zoo_animals if (getattr(a, "habitat", None) or "").strip()})
+    except Exception:
+        habitat_count = 0
+
+    return render_template(
+        "visitor/animals.html",
+        animals=zoo_animals,
+        animal_count=(len(zoo_animals) if isinstance(zoo_animals, list) else 0),
+        habitat_count=habitat_count,
+    )
 
 @visitor_bp.get("/animals/<int:animal_id>")
 def animal_detail(animal_id: int):
     animal = db.session.get(Animal, animal_id)
     if animal:
+        selected_zoo_id = _selected_zoo_id()
+        if selected_zoo_id and int(getattr(animal, "zoo_id", 0) or 0) != selected_zoo_id:
+            abort(404)
         return render_template("visitor/animal_detail.html", animal=animal)
 
-    zoo_animals = current_app.config.get("ANIMALS", [])
-    animal_dict = next((item for item in zoo_animals if item.get("id") == animal_id), None)
-    if not animal_dict:
-        abort(404)
-    return render_template("visitor/animal_detail.html", animal=animal_dict)
+    abort(404)
 
 @visitor_bp.route("/bookings", methods=["GET", "POST"])
 @visitor_login_required
@@ -384,6 +496,7 @@ def my_bookings():
         return _require_visitor_login()
 
     if request.method == "POST":
+        selected_zoo_id = _selected_zoo_id()
         service_id = request.form.get("service_id", type=int)
         date = (request.form.get("date") or "").strip()
         time = (request.form.get("time") or "").strip()
@@ -395,6 +508,10 @@ def my_bookings():
         service = db.session.get(Service, service_id)
         if not service:
             flash("Selected service was not found.", "error")
+            return redirect(url_for("visitor.my_bookings"))
+
+        if selected_zoo_id and int(getattr(service, "zoo_id", 0) or 0) != selected_zoo_id:
+            flash("Selected service is not available for your chosen zoo.", "error")
             return redirect(url_for("visitor.my_bookings"))
         if not date:
             flash("Please choose a date.", "error")
@@ -429,7 +546,10 @@ def my_bookings():
         .order_by(Booking.created_at.desc())
         .all()
     )
-    services = Service.query.order_by(Service.name.asc()).all()
+    selected_zoo_id = _selected_zoo_id()
+    if selected_zoo_id:
+        bookings = [b for b in bookings if int(getattr(b, "zoo_id", 0) or 0) == selected_zoo_id]
+    services = _maybe_filter_by_selected_zoo(Service.query, Service).order_by(Service.name.asc()).all()
 
     total_bookings = len(bookings)
     total_spent = sum((b.amount or 0) for b in bookings)
@@ -464,7 +584,11 @@ def cancel_booking(booking_id: str):
     if not user:
         return _require_visitor_login()
 
-    booking = Booking.query.filter(_booking_owner_filter_by_id(user, booking_id)).first()
+    booking_query = Booking.query.filter(_booking_owner_filter_by_id(user, booking_id))
+    selected_zoo_id = _selected_zoo_id()
+    if selected_zoo_id:
+        booking_query = booking_query.filter(Booking.zoo_id == selected_zoo_id)
+    booking = booking_query.first()
     if not booking:
         abort(404)
 
@@ -485,7 +609,11 @@ def reschedule_booking(booking_id: str):
     if not user:
         return _require_visitor_login()
 
-    booking = Booking.query.filter(_booking_owner_filter_by_id(user, booking_id)).first()
+    booking_query = Booking.query.filter(_booking_owner_filter_by_id(user, booking_id))
+    selected_zoo_id = _selected_zoo_id()
+    if selected_zoo_id:
+        booking_query = booking_query.filter(Booking.zoo_id == selected_zoo_id)
+    booking = booking_query.first()
     if not booking:
         abort(404)
 
@@ -517,24 +645,90 @@ def reschedule_booking(booking_id: str):
 
 @visitor_bp.get("/events")
 def events():
-    events = Event.query.order_by(Event.id.asc()).all()
-    if not events:
-        events = current_app.config.get("EVENTS", [])
+    # If a Visitor is logged in, require Zoo selection so the page matches
+    # the admin module's zoo-scoped view.
+    if session.get("user_id") and session.get("role") == "visitor" and not session.get("selected_zoo_id"):
+        next_url = request.full_path
+        if next_url.endswith("?"):
+            next_url = next_url[:-1]
+        return redirect(url_for("visitor.choose_zoo", next=next_url))
+
+    selected_zoo_id = _selected_zoo_id()
+    query = Event.query
+    if selected_zoo_id:
+        # Admin events are zoo-scoped; do the same here (exclude global NULL zoo events).
+        query = query.filter(Event.zoo_id == selected_zoo_id)
+
+    events = query.order_by(Event.id.asc()).all()
     return render_template("visitor/events.html", events=events)
 
 @visitor_bp.get("/services")
 def services():
-    all_services = Service.query.order_by(Service.id.asc()).all()
-    if not all_services:
-        all_services = current_app.config.get("SERVICES", [])
+    if session.get("user_id") and session.get("role") == "visitor" and not session.get("selected_zoo_id"):
+        next_url = request.full_path
+        if next_url.endswith("?"):
+            next_url = next_url[:-1]
+        return redirect(url_for("visitor.choose_zoo", next=next_url))
+
+    all_services = _maybe_filter_by_selected_zoo(Service.query, Service).order_by(Service.id.asc()).all()
     return render_template("visitor/services.html", services=all_services)
 
 @visitor_bp.get("/promotions")
 def promotions():
-    promos = Promotion.query.order_by(Promotion.id.asc()).all()
-    if not promos:
-        promos = current_app.config.get("PROMOTIONS", [])
-    return render_template("visitor/promotions.html", promotions=promos)
+    if session.get("user_id") and session.get("role") == "visitor" and not session.get("selected_zoo_id"):
+        next_url = request.full_path
+        if next_url.endswith("?"):
+            next_url = next_url[:-1]
+        return redirect(url_for("visitor.choose_zoo", next=next_url))
+
+    selected_zoo_id = _selected_zoo_id()
+    query = Promotion.query
+
+    # Keep visitor view consistent with the admin module:
+    # show only the current/selected zoo's promotions (no cross-zoo fallbacks).
+    if selected_zoo_id:
+        query = query.filter(Promotion.zoo_id == selected_zoo_id)
+
+    # Some environments keep promotions scoped by country in the admin UI.
+    # Apply the same constraint when the model supports it.
+    if getattr(Promotion, "country", None) is not None:
+        query = query.filter(Promotion.country == "Philippines")
+
+    promos = query.order_by(Promotion.id.asc()).all()
+
+    ending_soon_count = 0
+    try:
+        from datetime import date
+
+        today = date.today()
+        for promo in promos:
+            valid_until = None
+            if isinstance(promo, dict):
+                valid_until = (promo.get("valid_until") or "").strip() or None
+            else:
+                valid_until = (getattr(promo, "valid_until", None) or "").strip() or None
+
+            if not valid_until:
+                continue
+
+            # Expecting ISO date strings (YYYY-MM-DD). If not parseable, ignore.
+            try:
+                y, m, d = valid_until.split("-", 2)
+                until_date = date(int(y), int(m), int(d))
+            except Exception:
+                continue
+
+            days_left = (until_date - today).days
+            if 0 <= days_left <= 7:
+                ending_soon_count += 1
+    except Exception:
+        ending_soon_count = 0
+
+    return render_template(
+        "visitor/promotions.html",
+        promotions=promos,
+        ending_soon_count=ending_soon_count,
+    )
 
 @visitor_bp.route("/feedback", methods=["GET", "POST"])
 def feedback():
@@ -544,7 +738,10 @@ def feedback():
         if not (session.get("user_id") and session.get("role") == "visitor"):
             return _require_visitor_login()
 
+        selected_zoo_id = _selected_zoo_id()
         zoo_id = request.form.get("zoo_id", type=int)
+        if selected_zoo_id:
+            zoo_id = selected_zoo_id
         rating = request.form.get("rating", type=int)
         comment = (request.form.get("comment") or "").strip()
         try:
@@ -566,7 +763,7 @@ def feedback():
 
     zoos = Zoo.query.order_by(Zoo.name.asc()).all()
 
-    selected_zoo_id = request.args.get("zoo_id", type=int)
+    selected_zoo_id = request.args.get("zoo_id", type=int) or _selected_zoo_id()
     sort = (request.args.get("sort") or "recent").strip().lower()
     page = request.args.get("page", type=int) or 1
     if page < 1:
@@ -629,7 +826,12 @@ def update_feedback(feedback_id: int):
         return _require_visitor_login()
 
     feedback = db.session.get(Feedback, feedback_id)
+    selected_zoo_id = _selected_zoo_id()
+    if selected_zoo_id and feedback and int(getattr(feedback, "zoo_id", 0) or 0) != selected_zoo_id:
+        abort(404)
     zoo_id = request.form.get("zoo_id", type=int)
+    if selected_zoo_id:
+        zoo_id = selected_zoo_id
     rating = request.form.get("rating", type=int)
     comment = (request.form.get("comment") or "").strip()
     try:
@@ -659,6 +861,9 @@ def delete_feedback(feedback_id: int):
         return _require_visitor_login()
 
     feedback = db.session.get(Feedback, feedback_id)
+    selected_zoo_id = _selected_zoo_id()
+    if selected_zoo_id and feedback and int(getattr(feedback, "zoo_id", 0) or 0) != selected_zoo_id:
+        abort(404)
     try:
         delete_visitor_feedback(feedback=feedback, user=user)
     except FeedbackValidationError as exc:
@@ -735,9 +940,10 @@ def profile():
 
 @visitor_bp.get("/park-info")
 def park_info():
-    zoo = Zoo.query.order_by(Zoo.id.asc()).first()
+    selected_zoo_id = _selected_zoo_id()
+    zoo = db.session.get(Zoo, selected_zoo_id) if selected_zoo_id else None
     if not zoo:
-        zoo = (current_app.config.get("ZOOS") or [None])[0]
+        zoo = Zoo.query.order_by(Zoo.id.asc()).first()
     return render_template("visitor/park_info.html", zoo=zoo)
 
 
@@ -791,7 +997,11 @@ def checkout():
             flash("Booking ID is required for checkout.", "error")
             return redirect(url_for("visitor.checkout"))
 
-        booking = Booking.query.filter(_booking_owner_filter_by_id(user, booking_id)).first()
+        booking_query = Booking.query.filter(_booking_owner_filter_by_id(user, booking_id))
+        selected_zoo_id = _selected_zoo_id()
+        if selected_zoo_id:
+            booking_query = booking_query.filter(Booking.zoo_id == selected_zoo_id)
+        booking = booking_query.first()
         if not booking:
             abort(404)
 
@@ -814,11 +1024,17 @@ def checkout():
     booking_id = (request.args.get("booking_id") or "").strip()
 
     base_query = Booking.query.filter(_booking_owner_filter(user)).order_by(Booking.created_at.desc())
+    selected_zoo_id = _selected_zoo_id()
+    if selected_zoo_id:
+        base_query = base_query.filter(Booking.zoo_id == selected_zoo_id)
     unpaid_bookings = [b for b in base_query.all() if (b.payment_status or "unpaid").lower() != "paid"]
 
     booking = None
     if booking_id:
-        booking = Booking.query.filter(_booking_owner_filter_by_id(user, booking_id)).first()
+        booking_query = Booking.query.filter(_booking_owner_filter_by_id(user, booking_id))
+        if selected_zoo_id:
+            booking_query = booking_query.filter(Booking.zoo_id == selected_zoo_id)
+        booking = booking_query.first()
         if not booking:
             abort(404)
     elif unpaid_bookings:

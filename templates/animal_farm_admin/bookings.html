@@ -28,12 +28,84 @@
         <button class="btn btn-primary" type="submit"><i class="fa-solid fa-filter"></i> Filter</button>
     </form>
 
+    <div class="card-body" style="padding-bottom:0;">
+        <div style="padding:12px; border:1px solid var(--border); border-radius:12px; background:#fafafa;">
+            <div style="display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:10px;">
+                <strong>Edit Booking</strong>
+                <button class="btn btn-ghost btn-sm" type="button" onclick="resetBookingForm()">Clear</button>
+            </div>
+            <form id="booking-edit-form" method="post" enctype="multipart/form-data"
+                  data-action-template="{{ url_for('animal_farm_admin.update_booking', booking_id='BOOKING_ID') }}"
+                  action="{{ url_for('animal_farm_admin.update_booking', booking_id='BOOKING_ID') }}"
+                  style="display:grid; grid-template-columns: repeat(6, 1fr); gap:10px; align-items:end;">
+                <input type="hidden" name="booking_id" value="">
+
+                <div style="grid-column: span 2;">
+                    <label style="font-weight:600; color:var(--text-secondary);">Booking</label>
+                    <input type="text" name="booking_id_display" readonly placeholder="Select a booking" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%; background:white;" />
+                </div>
+
+                <div>
+                    <label style="font-weight:600; color:var(--text-secondary);">Date</label>
+                    <input type="date" name="date" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+                </div>
+                <div>
+                    <label style="font-weight:600; color:var(--text-secondary);">Time</label>
+                    <input type="text" name="time" required placeholder="e.g., 2:00 PM" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+                </div>
+                <div>
+                    <label style="font-weight:600; color:var(--text-secondary);">Guests</label>
+                    <input type="number" name="guests" min="1" value="1" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+                </div>
+                <div>
+                    <label style="font-weight:600; color:var(--text-secondary);">Amount</label>
+                    <input type="number" step="0.01" name="amount" placeholder="" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+                </div>
+
+                <div style="grid-column: span 2;">
+                    <label style="font-weight:600; color:var(--text-secondary);">Service</label>
+                    <select name="service_id" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;">
+                        <option value="">(keep current)</option>
+                        {% for s in services %}
+                        <option value="{{ s.id }}">{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="grid-column: span 2;">
+                    <label style="font-weight:600; color:var(--text-secondary);">Assigned Staff</label>
+                    <select name="assigned_staff_user_id" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;">
+                        <option value="">Unassigned</option>
+                        {% for s in staff_members %}
+                        <option value="{{ s.id }}">{{ s.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label style="font-weight:600; color:var(--text-secondary);">Status</label>
+                    <select name="status" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;">
+                        <option value="Pending">Pending</option>
+                        <option value="Confirmed">Confirmed</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-weight:600; color:var(--text-secondary);">Image</label>
+                    <input type="file" name="image_file" accept="image/*" style="width:100%;" />
+                </div>
+                <div style="grid-column: span 6; display:flex; gap:10px; align-items:center;">
+                    <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Booking</button>
+                    <span id="booking-edit-hint" style="color: var(--text-muted); font-size:12px;">Click “Edit” on a row to populate this form.</span>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card-body">
         <div class="table-wrap">
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th style="width:70px;">Image</th>
                         <th>Visitor</th>
                         <th>Service</th>
                         <th>Date</th>
@@ -47,7 +119,14 @@
                 <tbody>
                     {% for b in bookings %}
                     <tr>
-                        <td>{{ b.id }}</td>
+                        <td>
+                            {% set booking_img = (b.image_url or (b.service.image_url if b.service else None)) %}
+                            {% if booking_img %}
+                                <img src="{{ booking_img }}" alt="" style="width:54px; height:38px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
+                            {% else %}
+                                <span style="color: var(--text-muted);">-</span>
+                            {% endif %}
+                        </td>
                         <td>{{ b.visitor_name }}</td>
                         <td>{{ b.service_name or (b.service.name if b.service else '-') }}</td>
                         <td>{{ b.date }} {{ b.time or '' }}</td>
@@ -60,6 +139,10 @@
                         <td>{{ b.assigned_staff_user.full_name if b.assigned_staff_user else 'Unassigned' }}</td>
                         <td>
                             <div style="display:grid; gap:8px;">
+                                <button class="btn btn-outline btn-sm" type="button"
+                                        onclick='fillBookingForm({{ b.id|tojson }}, {{ (b.date or "")|tojson }}, {{ (b.time or "")|tojson }}, {{ (b.guests or 1)|tojson }}, {{ (b.amount or 0)|tojson }}, {{ (b.service_id or "")|tojson }}, {{ (b.assigned_staff_user_id or "")|tojson }}, {{ (b.status or "Pending")|tojson }})'>
+                                    <i class="fa-solid fa-pen"></i> Edit Booking
+                                </button>
                                 <form method="post" action="{{ url_for('animal_farm_admin.assign_booking', booking_id=b.id) }}" style="display:flex; gap:8px; align-items:center;">
                                     <select name="staff_user_id" style="padding:6px 10px; border:1px solid var(--border); border-radius:8px; min-width: 170px;">
                                         <option value="">Unassigned</option>
@@ -88,4 +171,40 @@
         </div>
     </div>
 </div>
+
+<script>
+    function fillBookingForm(id, date, time, guests, amount, serviceId, assignedStaffUserId, status) {
+        const form = document.getElementById('booking-edit-form');
+        if (!form) return;
+        const tpl = form.getAttribute('data-action-template') || '';
+        const action = tpl.replace('BOOKING_ID', encodeURIComponent(String(id || '')));
+        form.action = action;
+        form.querySelector('input[name="booking_id"]').value = id || '';
+        form.querySelector('input[name="booking_id_display"]').value = id || '';
+        form.querySelector('input[name="date"]').value = date || '';
+        form.querySelector('input[name="time"]').value = time || '';
+        form.querySelector('input[name="guests"]').value = guests || 1;
+        form.querySelector('input[name="amount"]').value = amount || '';
+        form.querySelector('select[name="service_id"]').value = serviceId || '';
+        form.querySelector('select[name="assigned_staff_user_id"]').value = assignedStaffUserId || '';
+        form.querySelector('select[name="status"]').value = status || 'Pending';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetBookingForm() {
+        const form = document.getElementById('booking-edit-form');
+        if (!form) return;
+        form.querySelector('input[name="booking_id"]').value = '';
+        form.querySelector('input[name="booking_id_display"]').value = '';
+        form.querySelector('input[name="date"]').value = '';
+        form.querySelector('input[name="time"]').value = '';
+        form.querySelector('input[name="guests"]').value = 1;
+        form.querySelector('input[name="amount"]').value = '';
+        form.querySelector('select[name="service_id"]').value = '';
+        form.querySelector('select[name="assigned_staff_user_id"]').value = '';
+        form.querySelector('select[name="status"]').value = 'Pending';
+        const fileInput = form.querySelector('input[name="image_file"]');
+        if (fileInput) fileInput.value = '';
+    }
+</script>
 {% endblock %}

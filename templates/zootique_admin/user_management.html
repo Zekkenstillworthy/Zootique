@@ -5,14 +5,12 @@
 
 {% block content %}
 
-<div class="page-subheader" style="margin-bottom:16px;">
-  <div class="ps-left">
-    <h2>USER MANAGEMENT</h2>
-    <p>Manage zoo admin accounts and access across the platform.</p>
+<div class="sa-section-head" style="margin-top:0;">
+  <div>
+    <h2>Personnel Directory</h2>
+    <div class="sa-section-sub">Manage global access and staff permissions across all botanical sectors.</div>
   </div>
-  <div class="ps-right">
-    <a class="btn btn-ghost" href="#sa_user_form"><i class="fa-solid fa-user-plus"></i> Add Zoo Admin</a>
-  </div>
+  <a class="btn btn-primary" href="#sa_user_form"><i class="fa-solid fa-user-plus"></i> Invite User</a>
 </div>
 
 {% set ns = namespace(active=0, suspended=0) %}
@@ -20,35 +18,33 @@
   {% if u.status == 'Active' %}{% set ns.active = ns.active + 1 %}{% else %}{% set ns.suspended = ns.suspended + 1 %}{% endif %}
 {% endfor %}
 
-<div class="stats-grid" style="--stats-cols: 4; margin-bottom:16px;">
-  <div class="stat-card">
-    <div class="stat-icon-box blue"><i class="fa-solid fa-users"></i></div>
-    <div class="stat-value">{{ users|length }}</div>
-    <div class="stat-label">TOTAL ZOO ADMINS</div>
+<div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+  <div class="sa-tabs">
+    <button class="sa-tab is-active" type="button">Active Staff</button>
+    <button class="sa-tab" type="button">Pending Invites</button>
+    <button class="sa-tab" type="button">Archived</button>
   </div>
-  <div class="stat-card">
-    <div class="stat-icon-box green"><i class="fa-solid fa-user-check"></i></div>
-    <div class="stat-value">{{ ns.active }}</div>
-    <div class="stat-label">ACTIVE</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon-box orange" style="background:rgba(239, 68, 68, 0.12); color:#ef4444;"><i class="fa-solid fa-user-slash"></i></div>
-    <div class="stat-value">{{ ns.suspended }}</div>
-    <div class="stat-label">SUSPENDED</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon-box yellow"><i class="fa-solid fa-building"></i></div>
-    <div class="stat-value">{{ zoos|length }}</div>
-    <div class="stat-label">ZOOS IN SYSTEM</div>
+  <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <div style="position:relative;">
+      <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-light); font-size:12px;"></i>
+      <input type="text" placeholder="Search by name, email or zoo..." style="padding-left:32px; width:260px;">
+    </div>
+    <select>
+      <option>All Roles</option>
+    </select>
+    <select>
+      <option>All Status</option>
+    </select>
   </div>
 </div>
 
-<div class="two-col" style="--two-col-template: 1.35fr 0.95fr;">
-  <div class="card-panel">
-    <div class="card-header"><h2>PERSONNEL DIRECTORY</h2></div>
-    <div class="table-wrap">
-      <table>
-        <thead>
+<div class="card-panel" style="margin-bottom:24px;">
+  <div class="card-header">
+    <h2>ACTIVE PERSONNEL ROSTER</h2>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
           <tr>
             <th>NAME</th>
             <th>EMAIL</th>
@@ -153,6 +149,33 @@
         </div>
       </form>
     </div>
+  </div>
+</div>
+
+<div class="stats-grid" style="--stats-cols: 3; margin-top:24px;">
+  <div class="stat-card" style="border-left:4px solid #14b8a6; padding: 16px 20px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <div class="stat-label" style="font-size:10px; color:#64748b; font-weight:700;">ACTIVE SESSIONS</div>
+      <i class="fa-solid fa-network-wired" style="color:#14b8a6;"></i>
+    </div>
+    <div class="stat-value" style="font-size: 32px; font-weight: 800; margin-top:12px; margin-bottom:8px;">{{ ns.active }}</div>
+    <p style="font-size:12px; color:#64748b; margin:0; line-height:1.4;">Currently managing park operations across multiple zones.</p>
+  </div>
+  <div class="stat-card" style="border-left:4px solid #0f766e; padding: 16px 20px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <div class="stat-label" style="font-size:10px; color:#64748b; font-weight:700;">PENDING INVITES</div>
+      <i class="fa-regular fa-envelope" style="color:#0f766e;"></i>
+    </div>
+    <div class="stat-value" style="font-size: 32px; font-weight: 800; margin-top:12px; margin-bottom:8px;">{{ ns.suspended }}</div>
+    <p style="font-size:12px; color:#64748b; margin:0; line-height:1.4;">Staff members awaiting activation for their assigned sector.</p>
+  </div>
+  <div class="stat-card" style="border-left:4px solid #b45309; padding: 16px 20px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <div class="stat-label" style="font-size:10px; color:#64748b; font-weight:700;">ACCESS LEVEL SHIFTS</div>
+      <i class="fa-solid fa-shield-halved" style="color:#b45309;"></i>
+    </div>
+    <div class="stat-value" style="font-size: 32px; font-weight: 800; margin-top:12px; margin-bottom:8px;">+5</div>
+    <p style="font-size:12px; color:#64748b; margin:0; line-height:1.4;">Recent role upgrades recorded in the last 24 hours.</p>
   </div>
 </div>
 

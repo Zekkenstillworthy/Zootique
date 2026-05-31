@@ -6,91 +6,53 @@
 <!-- FULL WIDTH HERO -->
 <div style="background: linear-gradient(135deg, #718873 0%, #516d56 100%); color: white; padding: 4rem 4rem 6rem 4rem; position: relative;">
     <div style="margin-bottom: 1.5rem; color: rgba(255,255,255,0.7); font-size: 0.85rem;">
-        Home > <span style="font-weight: 600; color: white;">Promotions</span>
+        <span style="font-weight: 600; color: white;">Promotions</span>
     </div>
 
     <div style="display: flex; justify-content: space-between;">
-        <div style="max-width: 600px;">
+        <div style="max-width: 650px;">
             <div style="background: #fca000; color: #1a4f32; padding: 0.3rem 1rem; border-radius: 20px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; width: fit-content; margin-bottom: 1.5rem;"><i class="fa-solid fa-ticket"></i> Exclusive Deals</div>
             <h1 style="font-size: 3.5rem; margin-bottom: 1rem; line-height: 1.1;">Deals & Promotions</h1>
             <p style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 2.5rem;">Unlock incredible savings on your next wildlife adventure at Zootique</p>
             
             <div style="display: flex; gap: 1.5rem; align-items: center; font-size: 0.85rem; margin-bottom: 2.5rem; font-weight: 600;">
-                <span>💳 8 Active Deals</span>
-                <span style="color:#fecaca;"><i class="fa-solid fa-clock"></i> 3 Ending Soon</span>
-                <span style="color:#fecaca;"><i class="fa-solid fa-tag"></i> 1,284 Redeemed</span>
-                <span style="color:#fef08a;">💰 Avg. ₱240 Saved</span>
-            </div>
-
-            <div style="display: flex; gap: 0.5rem; max-width: 400px;">
-                <input type="text" placeholder="Have a code? Enter it here..." style="flex: 1; padding: 0.8rem 1rem; border-radius: 6px; border: none;">
-                <button class="btn" style="background: #fca000; color: white; border: none; padding: 0 1.5rem; border-radius: 6px; font-weight: bold;">Apply</button>
+                <span>💳 {{ promotions|length }} Active Deal{{ '' if promotions|length == 1 else 's' }}</span>
+                <span style="color:#fecaca;"><i class="fa-solid fa-clock"></i> {{ ending_soon_count|default(0) }} Ending Soon</span>
             </div>
         </div>
-        
-        <!-- Loyalty points floating card -->
-        <div style="background: white; border-radius: 12px; width: 300px; color: #1e293b; padding-bottom: 1.5rem; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; z-index: 10;">
-            <div style="background: #1a4f32; color: white; padding: 1rem; font-size: 0.9rem; font-weight: bold;">👑 My Loyalty Points</div>
-            <div style="padding: 2rem;">
-                <div style="font-size: 2.5rem; font-weight: 800; color: #1a4f32;">320 <span style="font-size: 1rem; color: #64748b;">pts</span></div>
-                <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 1rem;">80 more points to unlock ₱50 reward</div>
-                <div style="background: #f8fafc; padding: 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600;">🎁 ₱50 discount at 400 pts</div>
-            </div>
-            <a href="#" style="color: #0ea5e9; font-size: 0.85rem; font-weight: 600;">View Rewards</a>
-        </div>
     </div>
-</div>
-
-<div style="background: white; border-bottom: 1px solid #e2e8f0; padding: 2rem 0;">
-    <div class="container" style="display: flex; justify-content: space-around; text-align: center;">
-        <div><div style="font-size: 1.8rem; font-weight: 800; color: #1a4f32;">8</div><div style="font-size: 0.8rem; color: #64748b; font-weight: 600;">🎫 Active Promotions</div></div>
-        <div><div style="font-size: 1.8rem; font-weight: 800; color: #1a4f32;">3</div><div style="font-size: 0.8rem; color: #64748b; font-weight: 600;"><i class="fa-regular fa-clock" style="color:#ef4444;"></i> Ending This Week</div></div>
-        <div><div style="font-size: 1.8rem; font-weight: 800; color: #1a4f32;">1,284</div><div style="font-size: 0.8rem; color: #64748b; font-weight: 600;">🎫 Total Redeemed</div></div>
-        <div><div style="font-size: 1.8rem; font-weight: 800; color: #1a4f32;">₱2.1M</div><div style="font-size: 0.8rem; color: #64748b; font-weight: 600;">💰 Total Saved by Visitors</div></div>
-    </div>
-</div>
-
-<div style="background: #fefcf3; border-bottom: 1px solid #fef08a; padding: 0.8rem; color: #ca8a04; font-size: 0.85rem; font-weight: 600; text-align: center;">
-    <span style="color: #b45309;"><i class="fa-solid fa-clock"></i> Deals Ending Soon &mdash; Don't Miss Out!</span> &nbsp;&nbsp;&nbsp; 🟡 Kids Go Free - Ends in 2 days &nbsp;&nbsp;&nbsp; 🟡 SAFARI20 - Ends in 5 days
 </div>
 
 <div class="container" style="padding: 3rem 0;">
-    <!-- Staff Favorite Promo (Big span) -->
-    <div style="background: #2a5a41; color: white; border-radius: 12px; padding: 3rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between;">
-        <div>
-            <div style="font-size: 0.8rem; font-weight: bold; color: #fca000; text-transform: uppercase;"><i class="fa-solid fa-star"></i> Staff Favourite</div>
-            <div style="font-size: 3.5rem; font-weight: 800;">20% OFF</div>
-            <div style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem;">Summer Safari Discount</div>
-            <div style="font-style: italic; opacity: 0.9; margin-bottom: 1.5rem;">On all Guided Tour bookings</div>
-        </div>
-        <div style="text-align: right;">
-            <div style="font-size: 0.85rem; opacity: 0.8; margin-bottom: 0.5rem;">Use code at checkout:</div>
-            <div style="background: white; color: #1a4f32; padding: 0.8rem 2rem; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 1.5rem; cursor: pointer;">
-                SAFARI20 <i class="fa-regular fa-copy" style="font-size: 1rem; color: #64748b; margin-left: 0.5rem;"></i>
-            </div>
-            <div style="margin-top: 1rem; font-size: 0.8rem; opacity: 0.8;">Valid until end of month</div>
-        </div>
-    </div>
-
-    <!-- Active Promotions Grid -->
-    <h2 style="font-size: 1.5rem; color: #1a4f32; margin-bottom: 1.5rem;">All Active Promotions</h2>
+    <h2 style="font-size: 1.5rem; color: #1a4f32; margin-bottom: 1.5rem;">All Promotions</h2>
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;">
         {% for promo in promotions %}
+        {% set promo_name = (promo.name if promo.name is defined else promo.get('name')) %}
+        {% set promo_code = (promo.code if promo.code is defined else promo.get('code')) %}
+        {% set promo_discount = (promo.discount if promo.discount is defined else promo.get('discount')) %}
+        {% set promo_valid_until = (promo.valid_until_display if promo.valid_until_display is defined else (promo.valid_until if promo.valid_until is defined else promo.get('valid_until'))) %}
+        {% set promo_type = (promo.promo_type if promo.promo_type is defined else promo.get('promo_type')) %}
         <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column;">
             <div style="padding: 1.5rem; flex: 1;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-                    <div style="background: #fef08a; color: #854d0e; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">{{ promo.discount }}</div>
+                    {% if promo_discount %}
+                      <div style="background: #fef08a; color: #854d0e; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">{{ promo_discount }}</div>
+                    {% endif %}
+                    {% if promo_type %}
+                      <div style="font-size: 0.75rem; font-weight: 800; color: #64748b;">{{ promo_type }}</div>
+                    {% endif %}
                 </div>
-                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.2rem; color: #1a4f32;">{{ promo.name }}</h3>
-                <p style="color: #64748b; font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.5rem;">{{ promo.description }}</p>
-                <div style="color: #475569; font-size: 0.8rem; display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem;">
-                    <i class="fa-solid fa-clock" style="color: #f59e0b;"></i> Valid from {{ promo.valid_from }} to {{ promo.valid_to }}
-                </div>
+                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.2rem; color: #1a4f32;">{{ promo_name }}</h3>
+                {% if promo_valid_until %}
+                  <div style="color: #475569; font-size: 0.8rem; display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem;">
+                      <i class="fa-solid fa-clock" style="color: #f59e0b;"></i> Valid until {{ promo_valid_until }}
+                  </div>
+                {% endif %}
             </div>
             <div style="background: #f8fafc; padding: 1rem 1.5rem; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; align-items: center;">
                 <div style="font-size: 0.8rem; color: #64748b;">Promo Code:</div>
                 <div style="font-weight: 800; color: #1a4f32; padding: 0.4rem 0.8rem; border: 1px dashed #1a4f32; border-radius: 4px; font-size: 0.9rem;">
-                    {{ promo.code }}
+                    {{ promo_code }}
                 </div>
             </div>
         </div>

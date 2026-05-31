@@ -68,13 +68,15 @@ body.superadmin {
   --sidebar-border:    rgba(255,255,255,0.10);
   --sidebar-width:     240px;
 
-  --primary:           #16a34a; /* green accent */
-  --primary-dark:      #15803d;
+  /* Reference UI uses a deep evergreen for primary actions */
+  --primary:           #093c24;
+  --primary-dark:      #072b1a;
   --primary-light:     #dcfce7;
   --accent:            #16a34a;
   --accent-hover:      #15803d;
 
-  --bg:                #f8fafc;
+  /* Slightly warm canvas like the mockups */
+  --bg:                #fbfaf6;
   --surface:           #ffffff;
   --border:            #e5e7eb;
   --border-light:      #f1f5f9;
@@ -85,45 +87,119 @@ body.superadmin {
 }
 
 body.superadmin .sidebar {
-  background: linear-gradient(180deg, #0a3a2a 0%, #062b1e 100%);
+  background: #093f24;
 }
 
 body.superadmin .sidebar-nav {
-  padding: 14px 10px;
+  padding: 20px 10px;
 }
 
 body.superadmin .nav-item {
-  color: rgba(255,255,255,0.78);
-  margin: 6px 6px;
-  border-radius: 14px;
-  padding: 11px 14px;
+  color: rgba(255,255,255,0.7);
+  margin: 6px 10px;
+  border-radius: 8px;
+  padding: 14px 16px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
 }
 
 body.superadmin .nav-item i {
-  width: 18px;
-  font-size: 13px;
-  opacity: 0.95;
+  width: 24px;
+  font-size: 15px;
+  opacity: 1;
 }
 
 body.superadmin .nav-item.active {
-  background: rgba(255,255,255,0.08);
+  background: #145936;
+  color: #ffffff;
 }
 
 body.superadmin .nav-item.active::before {
-  background: var(--primary);
-  border-radius: 14px 0 0 14px;
+  display: none;
 }
 
 body.superadmin .top-header .page-heading {
   color: #0f172a;
 }
 
+body.superadmin .top-header {
+  height: 64px;
+  padding: 0 28px;
+  box-shadow: none;
+}
+
+body.superadmin .top-header .page-heading {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+body.superadmin .top-header .header-actions .icon-btn {
+  width: 38px;
+  height: 38px;
+}
+
 body.superadmin .content-body {
   background: var(--bg);
+}
+
+/* Super Admin KPI cards */
+.stat-card.sa-kpi {
+  border-left: 4px solid var(--kpi-accent, var(--border));
+  padding: 16px 20px;
+}
+
+body.superadmin .stat-card.sa-kpi .stat-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+body.superadmin .stat-card.sa-kpi .stat-value {
+  font-size: 32px;
+  font-weight: 900;
+}
+
+.sa-kpi-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.sa-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  border: 1px solid transparent;
+  background: var(--border-light);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.sa-pill.sa-pill--ok {
+  background: color-mix(in srgb, var(--success) 12%, #ffffff 88%);
+  color: var(--primary);
+  border-color: color-mix(in srgb, var(--success) 26%, transparent 74%);
+}
+
+.sa-pill.sa-pill--warn {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 25%, transparent 75%);
+}
+
+.sa-pill.sa-pill--danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 25%, transparent 75%);
 }
 
 /* Super Admin sidebar header */
@@ -263,9 +339,49 @@ body.superadmin .content-body {
 }
 
 /* Super Admin feedback cards */
+button.sa-feedback-card {
+  text-align: left;
+  width: 100%;
+  border: 1px solid var(--border-light);
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+}
+
+button.sa-feedback-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+
 button.sa-feedback-card.is-active {
   border-color: rgba(22, 163, 74, 0.55) !important;
   box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.10);
+}
+
+/* Super Admin settings tabs */
+body.superadmin [data-sa-settings] .sa-tabs {
+  display: flex;
+  gap: 10px;
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 18px;
+}
+
+body.superadmin [data-sa-settings] .sa-tab {
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  padding: 12px 16px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+body.superadmin [data-sa-settings] .sa-tab.is-active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
 }
 
 /* Super Admin progress */
@@ -280,6 +396,115 @@ button.sa-feedback-card.is-active {
   height: 100%;
   background: var(--primary);
   border-radius: 999px;
+}
+
+/* Super Admin sections */
+.sa-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 22px 0 12px;
+}
+
+.sa-section-head h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: -0.2px;
+}
+
+.sa-section-sub {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Pricing tiers */
+.sa-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 1100px) { .sa-pricing-grid { grid-template-columns: 1fr; } }
+
+.sa-plan-card {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+
+.sa-plan-card .sa-plan-tier {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-light);
+}
+
+.sa-plan-card .sa-plan-name {
+  margin-top: 6px;
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.sa-plan-card .sa-plan-price {
+  margin-top: 10px;
+  font-size: 34px;
+  font-weight: 950;
+  letter-spacing: -0.4px;
+  color: var(--text);
+}
+
+.sa-plan-card .sa-plan-price small {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.sa-plan-card .sa-plan-features {
+  margin-top: 14px;
+  display: grid;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.sa-plan-card .sa-plan-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.sa-plan-card .sa-plan-feature i {
+  margin-top: 2px;
+  color: color-mix(in srgb, var(--primary) 70%, #ffffff 30%);
+}
+
+.sa-plan-card.is-featured {
+  background: var(--primary);
+  border-color: rgba(255,255,255,0.14);
+}
+
+.sa-plan-card.is-featured .sa-plan-tier,
+.sa-plan-card.is-featured .sa-plan-name,
+.sa-plan-card.is-featured .sa-plan-price,
+.sa-plan-card.is-featured .sa-plan-features {
+  color: #ffffff;
+}
+
+.sa-plan-card.is-featured .sa-plan-price small {
+  color: rgba(255,255,255,0.72);
+}
+
+.sa-plan-card.is-featured .sa-plan-feature i {
+  color: rgba(255,255,255,0.9);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

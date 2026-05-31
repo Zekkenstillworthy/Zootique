@@ -1,0 +1,17 @@
+lenient_failed 14
+by_status {200: 1, 302: 8, 401: 5}
+failures:
+[SuperAdmin-Login] /auth/login/zootique_admin - 
+[Super Admin] /zootique-admin/ - /auth/login/zootique_admin?next=/zootique-admin/
+[Super Admin] /zootique-admin/feedback - /auth/login/zootique_admin?next=/zootique-admin/feedback
+[Super Admin] /zootique-admin/reports - /auth/login/zootique_admin?next=/zootique-admin/reports
+[Super Admin] /zootique-admin/settings - /auth/login/zootique_admin?next=/zootique-admin/settings
+[Super Admin] /zootique-admin/subscriptions - /auth/login/zootique_admin?next=/zootique-admin/subscriptions
+[Super Admin] /zootique-admin/user-management - /auth/login/zootique_admin?next=/zootique-admin/user-management
+[Super Admin] /zootique-admin/users - /auth/login/zootique_admin?next=/zootique-admin/users
+[Super Admin] /zootique-admin/zoo-feedback - /auth/login/zootique_admin?next=/zootique-admin/zoo-feedback
+[API-SuperAdmin] /api/auth/me - 
+[API-SuperAdmin] /api/super-admin/profile - 
+[API-SuperAdmin] /api/super-admin/subscriptions - 
+[API-SuperAdmin] /api/super-admin/users - 
+[API-SuperAdmin] /api/super-admin/zoo-feedback - 

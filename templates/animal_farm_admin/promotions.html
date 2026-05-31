@@ -29,7 +29,7 @@
                     <h2>Add / Edit Promotion</h2>
                 </div>
                 <div class="card-body">
-                    <form method="post" action="{{ url_for('animal_farm_admin.save_promotion') }}" style="display:flex; flex-direction:column; gap:10px;">
+                    <form method="post" enctype="multipart/form-data" action="{{ url_for('animal_farm_admin.save_promotion') }}" style="display:flex; flex-direction:column; gap:10px;">
                         <input type="hidden" name="promo_id" value="">
 
                         <label style="font-weight:600; color:var(--text-secondary);">Name</label>
@@ -51,6 +51,9 @@
                         <label style="font-weight:600; color:var(--text-secondary);">Valid Until (optional)</label>
                         <input type="text" name="valid_until" placeholder="YYYY-MM-DD" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
 
+                        <label style="font-weight:600; color:var(--text-secondary);">Image (optional)</label>
+                        <input type="file" name="image_file" accept="image/*" />
+
                         <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Promotion</button>
                     </form>
                 </div>
@@ -65,6 +68,7 @@
                         <table>
                             <thead>
                                 <tr>
+                                    <th style="width:70px;">Image</th>
                                     <th>Name</th>
                                     <th>Type</th>
                                     <th>Code</th>
@@ -76,6 +80,13 @@
                             <tbody>
                                 {% for p in promotions %}
                                     <tr>
+                                        <td>
+                                            {% if p.image_url %}
+                                                <img src="{{ p.image_url }}" alt="" style="width:54px; height:38px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
+                                            {% else %}
+                                                <span style="color: var(--text-muted);">-</span>
+                                            {% endif %}
+                                        </td>
                                         <td>{{ p.name }}</td>
                                         <td>{{ p.promo_type or '-' }}</td>
                                         <td><strong>{{ p.code }}</strong></td>
@@ -83,7 +94,7 @@
                                         <td>{{ p.valid_until or '-' }}</td>
                                         <td>
                                             <button class="btn btn-outline btn-sm" type="button"
-                                                            onclick="fillPromoForm({{ p.id }}, {{ p.name|tojson }}, {{ (p.promo_type or '')|tojson }}, {{ p.code|tojson }}, {{ (p.discount or '')|tojson }}, {{ (p.valid_until or '')|tojson }})">
+                                                            onclick='fillPromoForm({{ p.id|tojson }}, {{ p.name|tojson }}, {{ (p.promo_type or "")|tojson }}, {{ p.code|tojson }}, {{ (p.discount or "")|tojson }}, {{ (p.valid_until or "")|tojson }})'>
                                                 <i class="fa-solid fa-pen"></i> Edit
                                             </button>
                                             <form method="post" action="{{ url_for('animal_farm_admin.delete_promotion', promo_id=p.id) }}" style="display:inline;" onsubmit="return confirm('Delete this promotion?');">
@@ -92,7 +103,7 @@
                                         </td>
                                     </tr>
                                 {% else %}
-                                    <tr><td colspan="6" style="color: var(--text-muted);">No promotions yet.</td></tr>
+                                    <tr><td colspan="7" style="color: var(--text-muted);">No promotions yet.</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>

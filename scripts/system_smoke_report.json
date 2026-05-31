@@ -1,0 +1,996 @@
+{
+  "overall": {
+    "total": 111,
+    "passed": 76,
+    "failed": 35,
+    "percent": 68.47
+  },
+  "modules": {
+    "API-Admin": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0,
+      "percent": 100.0
+    },
+    "API-Public": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "percent": 100.0
+    },
+    "API-Staff": {
+      "total": 7,
+      "passed": 7,
+      "failed": 0,
+      "percent": 100.0
+    },
+    "API-SuperAdmin": {
+      "total": 5,
+      "passed": 0,
+      "failed": 5,
+      "percent": 0.0
+    },
+    "API-Visitor": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "percent": 100.0
+    },
+    "Auth": {
+      "total": 9,
+      "passed": 8,
+      "failed": 1,
+      "percent": 88.89
+    },
+    "Public": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "percent": 100.0
+    },
+    "Super Admin": {
+      "total": 8,
+      "passed": 0,
+      "failed": 8,
+      "percent": 0.0
+    },
+    "SuperAdmin-Login": {
+      "total": 1,
+      "passed": 0,
+      "failed": 1,
+      "percent": 0.0
+    },
+    "Visitor": {
+      "total": 19,
+      "passed": 12,
+      "failed": 7,
+      "percent": 63.16
+    },
+    "Visitor-ChooseZoo": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "percent": 100.0
+    },
+    "Visitor-Login": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "percent": 100.0
+    },
+    "Zoo Admin": {
+      "total": 26,
+      "passed": 15,
+      "failed": 11,
+      "percent": 57.69
+    },
+    "Zoo Staff": {
+      "total": 15,
+      "passed": 13,
+      "failed": 2,
+      "percent": 86.67
+    },
+    "ZooAdmin-Login": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "percent": 100.0
+    },
+    "ZooStaff-Login": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "percent": 100.0
+    }
+  },
+  "checks": [
+    {
+      "module": "Public",
+      "path": "/",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Auth",
+      "path": "/auth/establishment-selection",
+      "ok": false,
+      "status_code": 302,
+      "location": "/auth/login-selection",
+      "note": ""
+    },
+    {
+      "module": "Auth",
+      "path": "/auth/portal",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Auth",
+      "path": "/auth/register-admin-step1",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Auth",
+      "path": "/auth/register-admin-step2",
+      "ok": true,
+      "status_code": 302,
+      "location": "/auth/register-admin-step1",
+      "note": ""
+    },
+    {
+      "module": "Auth",
+      "path": "/auth/register-step-1",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Auth",
+      "path": "/auth/register-step-2",
+      "ok": true,
+      "status_code": 302,
+      "location": "/auth/register-admin-step1",
+      "note": ""
+    },
+    {
+      "module": "Auth",
+      "path": "/auth/registration-success",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Auth",
+      "path": "/auth/role-selection",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Auth",
+      "path": "/auth/logout",
+      "ok": true,
+      "status_code": 302,
+      "location": "/",
+      "note": ""
+    },
+    {
+      "module": "API-Public",
+      "path": "/api/health",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Visitor-Login",
+      "path": "/auth/login/visitor",
+      "ok": true,
+      "status_code": 302,
+      "location": "/visitor/choose-zoo",
+      "note": ""
+    },
+    {
+      "module": "Visitor-ChooseZoo",
+      "path": "/visitor/choose-zoo [POST]",
+      "ok": true,
+      "status_code": 302,
+      "location": "/visitor/",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/choose-zoo",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/animals",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/bookings",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/checkout",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/events",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/exclusive-offers",
+      "ok": false,
+      "status_code": 301,
+      "location": "/visitor/promotions",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/experiences-services",
+      "ok": false,
+      "status_code": 301,
+      "location": "/visitor/services",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/feedback",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/landing",
+      "ok": false,
+      "status_code": 301,
+      "location": "/visitor/",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/park-events",
+      "ok": false,
+      "status_code": 301,
+      "location": "/visitor/events",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/park-info",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/profile",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/promotions",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/services",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/visitor-landing",
+      "ok": false,
+      "status_code": 301,
+      "location": "/visitor/",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/wildlife-directory",
+      "ok": false,
+      "status_code": 301,
+      "location": "/visitor/animals",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/zoo-homepage",
+      "ok": false,
+      "status_code": 301,
+      "location": "/visitor/",
+      "note": ""
+    },
+    {
+      "module": "Visitor",
+      "path": "/visitor/zoos",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Visitor",
+      "path": "/api/auth/me",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Visitor",
+      "path": "/api/visitor/bookings",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Visitor",
+      "path": "/api/visitor/feedback",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Visitor",
+      "path": "/api/visitor/profile",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "ZooAdmin-Login",
+      "path": "/auth/login/zoo_admin",
+      "ok": true,
+      "status_code": 302,
+      "location": "/animal-farm-admin/",
+      "note": "manila_zoo_admin@example.com"
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/analytics",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/analytics-reports",
+      "ok": false,
+      "status_code": 301,
+      "location": "/animal-farm-admin/analytics",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/animals",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/booking-management",
+      "ok": false,
+      "status_code": 301,
+      "location": "/animal-farm-admin/bookings",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/bookings",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/establishment-profile",
+      "ok": false,
+      "status_code": 301,
+      "location": "/animal-farm-admin/profile",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/events",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/events-management",
+      "ok": false,
+      "status_code": 301,
+      "location": "/animal-farm-admin/events",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/feedback",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/map-zones",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/payment-revenue-management",
+      "ok": false,
+      "status_code": 301,
+      "location": "/animal-farm-admin/revenue",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/profile",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/promotions",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/promotions-management",
+      "ok": false,
+      "status_code": 301,
+      "location": "/animal-farm-admin/promotions",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/revenue",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/services",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/services-management",
+      "ok": false,
+      "status_code": 301,
+      "location": "/animal-farm-admin/services",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/settings",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/staff-management",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/subscriptions",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/support-feedback",
+      "ok": false,
+      "status_code": 301,
+      "location": "/animal-farm-admin/system-feedback",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/system-feedback",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/visitor-feedback-management",
+      "ok": false,
+      "status_code": 301,
+      "location": "/animal-farm-admin/feedback",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/visitor-map-zone-management",
+      "ok": false,
+      "status_code": 301,
+      "location": "/animal-farm-admin/map-zones",
+      "note": ""
+    },
+    {
+      "module": "Zoo Admin",
+      "path": "/animal-farm-admin/logout",
+      "ok": false,
+      "status_code": 302,
+      "location": "/auth/logout",
+      "note": ""
+    },
+    {
+      "module": "API-Admin",
+      "path": "/api/admin/animals",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Admin",
+      "path": "/api/admin/bookings",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Admin",
+      "path": "/api/admin/events",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Admin",
+      "path": "/api/admin/profile",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Admin",
+      "path": "/api/admin/promotions",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Admin",
+      "path": "/api/admin/services",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Admin",
+      "path": "/api/admin/staff-tasks",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Admin",
+      "path": "/api/admin/system-feedback",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Admin",
+      "path": "/api/admin/visitor-feedback",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Admin",
+      "path": "/api/admin/zones",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Admin",
+      "path": "/api/auth/me",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "ZooStaff-Login",
+      "path": "/auth/login/zoo_staff",
+      "ok": true,
+      "status_code": 302,
+      "location": "/animal-farm-staff/",
+      "note": "manila_zoo_staff1@example.com"
+    },
+    {
+      "module": "Zoo Staff",
+      "path": "/animal-farm-staff/",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Staff",
+      "path": "/animal-farm-staff/bookings",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Staff",
+      "path": "/animal-farm-staff/daily-operations-log",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Staff",
+      "path": "/animal-farm-staff/dashboard",
+      "ok": false,
+      "status_code": 301,
+      "location": "/animal-farm-staff/",
+      "note": ""
+    },
+    {
+      "module": "Zoo Staff",
+      "path": "/animal-farm-staff/events",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Staff",
+      "path": "/animal-farm-staff/feedback",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Staff",
+      "path": "/animal-farm-staff/feeding",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Staff",
+      "path": "/animal-farm-staff/incident",
+      "ok": false,
+      "status_code": 301,
+      "location": "/animal-farm-staff/incidents",
+      "note": ""
+    },
+    {
+      "module": "Zoo Staff",
+      "path": "/animal-farm-staff/incidents",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Staff",
+      "path": "/animal-farm-staff/map-zones",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Staff",
+      "path": "/animal-farm-staff/notifications",
+      "ok": true,
+      "status_code": 302,
+      "location": "/animal-farm-staff/",
+      "note": ""
+    },
+    {
+      "module": "Zoo Staff",
+      "path": "/animal-farm-staff/profile",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Staff",
+      "path": "/animal-farm-staff/tasks",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "Zoo Staff",
+      "path": "/animal-farm-staff/logout",
+      "ok": true,
+      "status_code": 302,
+      "location": "/animal-farm-staff/logout-confirm",
+      "note": ""
+    },
+    {
+      "module": "Zoo Staff",
+      "path": "/animal-farm-staff/logout-confirm",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Staff",
+      "path": "/api/auth/me",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Staff",
+      "path": "/api/staff/bookings/assigned",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Staff",
+      "path": "/api/staff/events",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Staff",
+      "path": "/api/staff/feedback",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Staff",
+      "path": "/api/staff/notifications",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Staff",
+      "path": "/api/staff/profile",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-Staff",
+      "path": "/api/staff/tasks",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "SuperAdmin-Login",
+      "path": "/auth/login/zootique_admin",
+      "ok": false,
+      "status_code": 200,
+      "location": "",
+      "note": "superadmin@zootique.local"
+    },
+    {
+      "module": "Super Admin",
+      "path": "/zootique-admin/",
+      "ok": false,
+      "status_code": 302,
+      "location": "/auth/login/zootique_admin?next=/zootique-admin/",
+      "note": ""
+    },
+    {
+      "module": "Super Admin",
+      "path": "/zootique-admin/feedback",
+      "ok": false,
+      "status_code": 302,
+      "location": "/auth/login/zootique_admin?next=/zootique-admin/feedback",
+      "note": ""
+    },
+    {
+      "module": "Super Admin",
+      "path": "/zootique-admin/reports",
+      "ok": false,
+      "status_code": 302,
+      "location": "/auth/login/zootique_admin?next=/zootique-admin/reports",
+      "note": ""
+    },
+    {
+      "module": "Super Admin",
+      "path": "/zootique-admin/settings",
+      "ok": false,
+      "status_code": 302,
+      "location": "/auth/login/zootique_admin?next=/zootique-admin/settings",
+      "note": ""
+    },
+    {
+      "module": "Super Admin",
+      "path": "/zootique-admin/subscriptions",
+      "ok": false,
+      "status_code": 302,
+      "location": "/auth/login/zootique_admin?next=/zootique-admin/subscriptions",
+      "note": ""
+    },
+    {
+      "module": "Super Admin",
+      "path": "/zootique-admin/user-management",
+      "ok": false,
+      "status_code": 302,
+      "location": "/auth/login/zootique_admin?next=/zootique-admin/user-management",
+      "note": ""
+    },
+    {
+      "module": "Super Admin",
+      "path": "/zootique-admin/users",
+      "ok": false,
+      "status_code": 302,
+      "location": "/auth/login/zootique_admin?next=/zootique-admin/users",
+      "note": ""
+    },
+    {
+      "module": "Super Admin",
+      "path": "/zootique-admin/zoo-feedback",
+      "ok": false,
+      "status_code": 302,
+      "location": "/auth/login/zootique_admin?next=/zootique-admin/zoo-feedback",
+      "note": ""
+    },
+    {
+      "module": "API-SuperAdmin",
+      "path": "/api/auth/me",
+      "ok": false,
+      "status_code": 401,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-SuperAdmin",
+      "path": "/api/super-admin/profile",
+      "ok": false,
+      "status_code": 401,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-SuperAdmin",
+      "path": "/api/super-admin/subscriptions",
+      "ok": false,
+      "status_code": 401,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-SuperAdmin",
+      "path": "/api/super-admin/users",
+      "ok": false,
+      "status_code": 401,
+      "location": "",
+      "note": ""
+    },
+    {
+      "module": "API-SuperAdmin",
+      "path": "/api/super-admin/zoo-feedback",
+      "ok": false,
+      "status_code": 401,
+      "location": "",
+      "note": ""
+    }
+  ]
+}
