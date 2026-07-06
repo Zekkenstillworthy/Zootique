@@ -4,7 +4,29 @@
 {% block page_title %}Animals{% endblock %}
 
 {% block content %}
-<div class="two-col" style="--two-col-template: 1fr 1fr;">
+{% set selected_tab = request.args.get('tab', 'all') %}
+<div style="margin-bottom: 16px;">
+    <div class="nav-dropdown" style="position: relative; width: fit-content;">
+        <button class="nav-dropdown-trigger" onclick="toggleDropdown(event, 'animals-page-dropdown')" style="padding: 10px 14px; background: white; border: 1px solid var(--border); border-radius: 8px; width: auto;">
+            <span><i class="fa-solid fa-paw"></i> Animals</span>
+            <i class="fa-solid fa-chevron-down"></i>
+        </button>
+        <div class="nav-dropdown-menu" id="animals-page-dropdown" style="position: absolute; top: 100%; left: 0; background: white; border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; width: auto; min-width: 200px; margin-top: -8px;">
+            <a href="{{ url_for('animal_farm_admin.animals_management') }}?tab=add"
+               class="nav-dropdown-item {% if selected_tab == 'add' %}active{% endif %}">
+                <i class="fa-solid fa-plus-circle"></i> Add/Edit Animal
+            </a>
+            <a href="{{ url_for('animal_farm_admin.animals_management') }}?tab=list"
+               class="nav-dropdown-item {% if selected_tab == 'list' %}active{% endif %}">
+                <i class="fa-solid fa-list"></i> Animal List
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="two-col" style="--two-col-template: 1fr 1fr; {% if selected_tab == 'list' %}--two-col-template: 1fr;{% elif selected_tab == 'add' %}--two-col-template: 1fr;{% endif %}">
+  
+  {% if selected_tab in ['add', 'all'] %}
   <div class="card-panel">
     <div class="card-header">
       <h2>Add / Edit Animal</h2>
@@ -14,30 +36,32 @@
         <input type="hidden" name="animal_id" value="">
 
         <label style="font-weight:600; color:var(--text-secondary);">Name</label>
-        <input type="text" name="name" placeholder="Animal name" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+        <input type="text" name="name" placeholder="Animal name" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
         <label style="font-weight:600; color:var(--text-secondary);">Species</label>
-        <input type="text" name="species" placeholder="e.g., Bengal Tiger" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+        <input type="text" name="species" placeholder="e.g., Bengal Tiger" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
         <label style="font-weight:600; color:var(--text-secondary);">Habitat</label>
-        <input type="text" name="habitat" placeholder="e.g., Forest" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+        <input type="text" name="habitat" placeholder="e.g., Forest" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
         <label style="font-weight:600; color:var(--text-secondary);">Status</label>
-        <input type="text" name="status" placeholder="e.g., Healthy" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+        <input type="text" name="status" placeholder="e.g., Healthy" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
         <label style="font-weight:600; color:var(--text-secondary);">Upload Picture (optional)</label>
-        <input type="file" name="image_file" accept="image/*" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+        <input type="file" name="image_file" accept="image/*" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
         <p style="margin:0; color: var(--text-muted); font-size: 12px;">Leave blank to keep the existing picture when editing.</p>
 
         <label style="font-weight:600; color:var(--text-secondary);">Description (optional)</label>
-        <textarea name="description" rows="4" placeholder="Short description" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
+        <textarea name="description" rows="4" placeholder="Short description" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;"></textarea>
 
         <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Animal</button>
         <p style="color: var(--text-muted); font-size: 12px;">To edit an animal, use the Edit button in the table.</p>
       </form>
     </div>
   </div>
+  {% endif %}
 
+  {% if selected_tab in ['list', 'all'] %}
   <div class="card-panel">
     <div class="card-header">
       <h2>Animal List</h2>
@@ -87,6 +111,7 @@
       </div>
     </div>
   </div>
+  {% endif %}
 </div>
 
 <script>

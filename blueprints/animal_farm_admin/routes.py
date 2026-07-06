@@ -28,6 +28,13 @@ from models import (
     db,
 )
 from services import BookingValidationError, assign_booking_to_staff
+from services.layout_config import (
+    WIDGET_CATALOG,
+    build_zoo_dashboard_widget_map,
+    get_layout_config_for_zoo,
+    order_dashboard_widgets,
+    save_layout_config,
+)
 from services.auth_guard import require_role_guard
 
 animal_farm_admin_bp = Blueprint('animal_farm_admin', __name__)
@@ -97,29 +104,21 @@ def dashboard():
         flash('Your account is not linked to a zoo. Please contact support.', 'error')
         return render_template('animal_farm_admin/dashboard.html', zoo=None)
 
-    # KPIs
+    now = datetime.utcnow()
+    layout_config = get_layout_config_for_zoo(zoo.id)
+    widget_map = build_zoo_dashboard_widget_map(zoo, now=now)
+    dashboard_widgets = order_dashboard_widgets(widget_map, layout_config)
+
     animals_count = Animal.query.filter_by(zoo_id=zoo.id).count()
     services_count = Service.query.filter_by(zoo_id=zoo.id).count()
     bookings_count = Booking.query.filter_by(zoo_id=zoo.id).count()
+    monthly_revenue = widget_map.get('revenue_summary', {}).get('monthly_revenue', 0.0)
 
-    # Revenue (current month, from bookings)
-    now = datetime.utcnow()
-    month_prefix = now.strftime('%Y-%m')
-    month_bookings = Booking.query.filter(
-        Booking.zoo_id == zoo.id,
-        Booking.date.like(f"{month_prefix}%"),
-    ).all()
-    monthly_revenue = sum([float(b.amount or 0) for b in month_bookings])
-
-    # Subscription status
     subscription = (
         ZooSubscription.query.filter_by(zoo_id=zoo.id)
         .order_by(ZooSubscription.end_date.desc())
         .first()
     )
-    if subscription:
-        subscription.refresh_status(now)
-        db.session.commit()
 
     open_tasks = StaffTask.query.filter_by(zoo_id=zoo.id).filter(StaffTask.status != 'done').count()
 
@@ -132,6 +131,10 @@ def dashboard():
         monthly_revenue=monthly_revenue,
         subscription=subscription,
         open_tasks=open_tasks,
+        layout_config=layout_config,
+        layout_style=layout_config.get('layout_style', 'grid'),
+        dashboard_widgets=dashboard_widgets,
+        widget_map=widget_map,
     )
 
 
@@ -168,6 +171,74 @@ def subscriptions():
         plans=plans,
         payments=payments,
     )
+
+@animal_farm_admin_bp.get('/layout-changer')
+def layout_changer():
+    """Zoo Admin MVP: Let zoo admins customise their own dashboard layout."""
+    zoo = _current_zoo()
+    if not zoo:
+        flash('Your account is not linked to a zoo.', 'error')
+        return redirect(url_for('animal_farm_admin.dashboard'))
+
+    now = datetime.utcnow()
+    layout_config = get_layout_config_for_zoo(zoo.id)
+    widget_map = build_zoo_dashboard_widget_map(zoo, now=now)
+    dashboard_widgets = order_dashboard_widgets(widget_map, layout_config)
+
+    return render_template(
+        'animal_farm_admin/layout_changer.html',
+        zoo=zoo,
+        layout_config=layout_config,
+        dashboard_widgets=dashboard_widgets,
+        layout_styles=[
+            {'value': 'grid',    'label': 'Grid'},
+            {'value': 'list',    'label': 'List'},
+            {'value': 'compact', 'label': 'Compact'},
+        ],
+        theme_variants=[
+            {'value': 'light',      'label': 'Light'},
+            {'value': 'zoo_accent', 'label': 'Zoo Branded'},
+        ],
+    )
+
+
+import json as _json
+
+@animal_farm_admin_bp.post('/layout-changer/save')
+def save_layout():
+    """MVP: Persist the zoo admin's chosen dashboard layout."""
+    zoo = _current_zoo()
+    if not zoo:
+        flash('Your account is not linked to a zoo.', 'error')
+        return redirect(url_for('animal_farm_admin.dashboard'))
+
+    # Parse widget order
+    widget_order_raw = (request.form.get('widget_order') or '').strip()
+    try:
+        widget_order = _json.loads(widget_order_raw) if widget_order_raw else []
+    except ValueError:
+        widget_order = []
+
+    # Collect visibility
+    widget_visibility = {w['id']: False for w in WIDGET_CATALOG}
+    for wid in request.form.getlist('visible_widgets'):
+        if wid in widget_visibility:
+            widget_visibility[wid] = True
+
+    layout_style = (request.form.get('layout_style') or 'grid').strip().lower()
+    theme_variant = (request.form.get('theme_variant') or 'light').strip().lower()
+
+    save_layout_config(
+        zoo_id=zoo.id,
+        widget_visibility=widget_visibility,
+        widget_order=widget_order,
+        layout_style=layout_style,
+        theme_variant=theme_variant,
+    )
+    db.session.commit()
+    flash('Dashboard layout saved successfully.', 'success')
+    return redirect(url_for('animal_farm_admin.layout_changer'))
+
 
 @animal_farm_admin_bp.route('/bookings')
 def booking_management():

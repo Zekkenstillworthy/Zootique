@@ -49,9 +49,24 @@ class Zoo(db.Model):
 
     subscriptions = db.relationship('ZooSubscription', back_populates='zoo', lazy=True)
     admin_feedbacks = db.relationship('ZooAdminFeedback', back_populates='zoo', lazy=True)
+    layout_config = db.relationship('ZooLayoutConfig', back_populates='zoo', uselist=False, cascade='all, delete-orphan', lazy=True)
 
     zones = db.relationship('ZooZone', back_populates='zoo', lazy=True)
     staff_tasks = db.relationship('StaffTask', back_populates='zoo', lazy=True)
+
+
+class ZooLayoutConfig(db.Model):
+    __tablename__ = 'zoo_layout_configs'
+    id = db.Column(db.Integer, primary_key=True)
+    zoo_id = db.Column(db.Integer, db.ForeignKey('zoos.id', ondelete='CASCADE'), nullable=False, unique=True)
+    widget_visibility = db.Column(db.JSON, nullable=False, default=dict)
+    widget_order = db.Column(db.JSON, nullable=False, default=list)
+    layout_style = db.Column(db.String(20), nullable=False, default='grid')
+    theme_variant = db.Column(db.String(30), nullable=False, default='light')
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    zoo = db.relationship('Zoo', back_populates='layout_config', lazy=True)
 
 class Animal(db.Model):
     __tablename__ = 'animals'

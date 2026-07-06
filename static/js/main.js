@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   initAdminSidebarScrollPersistence();
+  initZootiqueAdminSoftNav();
 
   const isSuperAdmin = document.body.classList.contains("superadmin");
   if (!isSuperAdmin) return;
@@ -74,6 +75,63 @@ function initAdminSidebarScrollPersistence() {
 
   // Persist on unload as a fallback
   window.addEventListener("beforeunload", save);
+}
+
+function initZootiqueAdminSoftNav() {
+  if (!document.body.classList.contains("superadmin")) return;
+
+  const sidebarNav = document.querySelector(".sidebar-nav");
+  const contentBody = document.querySelector(".content-body");
+  if (!sidebarNav || !contentBody) return;
+
+  const softNavLinks = Array.from(sidebarNav.querySelectorAll('a[data-sa-soft-nav="subscriptions"]'));
+  if (!softNavLinks.length) return;
+
+  async function loadSoftNav(url, pushHistory = true) {
+    const target = new URL(url, window.location.origin);
+    target.searchParams.set("partial", "1");
+
+    const response = await fetch(target.toString(), {
+      headers: { "X-Requested-With": "fetch" },
+      credentials: "same-origin",
+    });
+    if (!response.ok) throw new Error(`Failed to load ${target.pathname}`);
+
+    const html = await response.text();
+    contentBody.innerHTML = html;
+    if (pushHistory) {
+      window.history.pushState({}, "", url);
+    }
+    window.scrollTo({ top: 0, behavior: "auto" });
+
+    softNavLinks.forEach((link) => link.classList.remove("active"));
+    const activeLink = softNavLinks.find((link) => link.href === url || link.href === target.origin + target.pathname);
+    if (activeLink) activeLink.classList.add("active");
+  }
+
+  sidebarNav.addEventListener("click", (event) => {
+    const link = event.target && event.target.closest ? event.target.closest('a[data-sa-soft-nav="subscriptions"]') : null;
+    if (!link) return;
+    if (event.button === 1 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    event.preventDefault();
+    loadSoftNav(link.href).catch(() => {
+      window.location.href = link.href;
+    });
+  });
+
+  window.addEventListener("popstate", () => {
+    const current = window.location.pathname;
+    const activeLink = softNavLinks.find((link) => {
+      const linkUrl = new URL(link.href);
+      return linkUrl.pathname === current;
+    });
+    if (activeLink) {
+      loadSoftNav(activeLink.href, false).catch(() => {
+        window.location.reload();
+      });
+    }
+  });
 }
 
 function getSuperAdminStore() {

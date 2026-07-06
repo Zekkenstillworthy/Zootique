@@ -7,15 +7,19 @@
 <div style="display: grid; gap: 2rem; max-width: 900px; margin: 0 auto;">
 
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
+    {% if messages %}
+    <div style="margin: 0 0 18px 0; display:flex; flex-direction:column; gap:8px;">
         {% for category, message in messages %}
-          <div style="background: {% if category == 'success' %}#dcfce7{% else %}#fee2e2{% endif %};
-                      color: {% if category == 'success' %}#16a34a{% else %}#dc2626{% endif %};
-                      padding: 0.9rem 1.2rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem;">
-            {{ message }}
-          </div>
+        {% if category == 'success' %}
+        <div class="card-panel" style="margin:0; padding:12px 14px; border-left:4px solid var(--success);">
+        {% else %}
+        <div class="card-panel" style="margin:0; padding:12px 14px; border-left:4px solid #ef4444;">
+        {% endif %}
+            <div style="font-size:13px; font-weight:600;">{{ message }}</div>
+        </div>
         {% endfor %}
-      {% endif %}
+    </div>
+    {% endif %}
     {% endwith %}
 
     <!-- Hero card -->
@@ -55,47 +59,43 @@
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                     <div>
-                        <label style="display: block; font-size: 0.85rem; font-weight: 700;
-                                      color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                        <label style="font-weight:600; color:var(--text-secondary);">
                             Establishment Name <span style="color: var(--danger);">*</span>
                         </label>
                         <input type="text" name="name" required value="{{ zoo.name }}"
-                               style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0;
-                                      border-radius: 8px; font-size: 0.95rem; font-family: inherit;">
+                               style="width: 100%; padding:10px 12px; border:1px solid var(--border);
+                                      border-radius:8px; font-size: 0.95rem; font-family: inherit;">
                     </div>
 
                     <div>
-                        <label style="display: block; font-size: 0.85rem; font-weight: 700;
-                                      color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                        <label style="font-weight:600; color:var(--text-secondary);">
                             Type / Category
                         </label>
                         <input type="text" name="type" value="{{ zoo.type or '' }}"
                                placeholder="e.g. Wildlife Park, Aquarium…"
-                               style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0;
-                                      border-radius: 8px; font-size: 0.95rem; font-family: inherit;">
+                               style="width: 100%; padding:10px 12px; border:1px solid var(--border);
+                                      border-radius:8px; font-size: 0.95rem; font-family: inherit;">
                     </div>
                 </div>
 
                 <div>
-                    <label style="display: block; font-size: 0.85rem; font-weight: 700;
-                                  color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                    <label style="font-weight:600; color:var(--text-secondary);">
                         Location / Address
                     </label>
                     <input type="text" name="location" value="{{ zoo.location or '' }}"
                            placeholder="Full address or region"
-                           style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0;
-                                  border-radius: 8px; font-size: 0.95rem; font-family: inherit;">
+                           style="width: 100%; padding:10px 12px; border:1px solid var(--border);
+                                  border-radius:8px; font-size: 0.95rem; font-family: inherit;">
                 </div>
 
                 <div>
-                    <label style="display: block; font-size: 0.85rem; font-weight: 700;
-                                  color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                    <label style="font-weight:600; color:var(--text-secondary);">
                         Description
                     </label>
                     <textarea name="description" rows="5"
                               placeholder="Describe your establishment — visible to visitors on the public site."
-                              style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0;
-                                     border-radius: 8px; font-size: 0.95rem; font-family: inherit;
+                              style="width: 100%; padding:10px 12px; border:1px solid var(--border);
+                                     border-radius:8px; font-size: 0.95rem; font-family: inherit;
                                      resize: vertical;">{{ zoo.description or '' }}</textarea>
                 </div>
 

@@ -14,13 +14,13 @@
         <input type="hidden" name="task_id" value="">
 
         <label style="font-weight:600; color:var(--text-secondary);">Title</label>
-        <input type="text" name="title" placeholder="e.g., Prepare group tour route" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+        <input type="text" name="title" placeholder="e.g., Prepare group tour route" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
         <label style="font-weight:600; color:var(--text-secondary);">Description (optional)</label>
-        <textarea name="description" rows="4" placeholder="Details" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
+        <textarea name="description" rows="4" placeholder="Details" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;"></textarea>
 
         <label style="font-weight:600; color:var(--text-secondary);">Assign To</label>
-        <select name="assigned_to_user_id" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;">
+        <select name="assigned_to_user_id" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;">
           <option value="">Unassigned</option>
           {% for s in staff %}
             <option value="{{ s.id }}">{{ s.full_name }} ({{ s.email }})</option>
@@ -56,28 +56,28 @@
           <input type="hidden" name="user_id" value="" />
 
           <div style="grid-column: span 2;">
-            <label style="font-weight:600; color:var(--text-secondary);">Full Name</label>
+            <label style="font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">Full Name</label>
             <input type="text" name="full_name" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
           </div>
 
           <div>
-            <label style="font-weight:600; color:var(--text-secondary);">Email</label>
+            <label style="font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">Email</label>
             <input type="email" name="email" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
           </div>
           <div>
-            <label style="font-weight:600; color:var(--text-secondary);">Username (optional)</label>
+            <label style="font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">Username (optional)</label>
             <input type="text" name="username" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
           </div>
 
           <div>
-            <label style="font-weight:600; color:var(--text-secondary);">Status</label>
+            <label style="font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">Status</label>
             <select name="status" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;">
               <option value="active">Active</option>
               <option value="suspended">Suspended</option>
             </select>
           </div>
           <div>
-            <label style="font-weight:600; color:var(--text-secondary);">Password</label>
+            <label style="font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">Password</label>
             <input type="password" name="password" placeholder="(required for new staff)" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
           </div>
 

@@ -13,13 +13,13 @@
             {% if user %}
             <form method="post" action="{{ url_for('animal_farm_admin.update_profile') }}" style="display:flex; flex-direction:column; gap:10px;">
                 <label style="font-weight:600; color:var(--text-secondary);">Full Name</label>
-                <input type="text" name="full_name" value="{{ user.full_name or '' }}" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <input type="text" name="full_name" value="{{ user.full_name or '' }}" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
                 <label style="font-weight:600; color:var(--text-secondary);">Username (optional)</label>
-                <input type="text" name="username" value="{{ user.username or '' }}" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <input type="text" name="username" value="{{ user.username or '' }}" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
                 <label style="font-weight:600; color:var(--text-secondary);">Email</label>
-                <input type="email" name="email" value="{{ user.email }}" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <input type="email" name="email" value="{{ user.email }}" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
                 <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Profile</button>
             </form>
@@ -44,13 +44,13 @@
         <div class="card-body">
             <form method="post" action="{{ url_for('animal_farm_admin.update_security') }}" style="display:flex; flex-direction:column; gap:10px;">
                 <label style="font-weight:600; color:var(--text-secondary);">Current Password</label>
-                <input type="password" name="current_password" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <input type="password" name="current_password" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
                 <label style="font-weight:600; color:var(--text-secondary);">New Password</label>
-                <input type="password" name="new_password" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <input type="password" name="new_password" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
                 <label style="font-weight:600; color:var(--text-secondary);">Confirm New Password</label>
-                <input type="password" name="confirm_password" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <input type="password" name="confirm_password" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
                 <button class="btn btn-primary" type="submit"><i class="fa-solid fa-lock"></i> Update Password</button>
                 <p style="color: var(--text-muted); font-size: 12px;">Minimum 8 characters.</p>

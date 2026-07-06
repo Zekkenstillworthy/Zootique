@@ -3,13 +3,16 @@ from __future__ import annotations
 from datetime import datetime
 from functools import wraps
 import math
+import os
 import re
+import secrets
 from urllib.parse import urlparse
 
 from flask import Blueprint, current_app, render_template, abort, request, redirect, url_for, flash, session
 from sqlalchemy import func, or_, inspect
+from werkzeug.utils import secure_filename
 
-from models import db, Zoo, Animal, Service, Booking, Event, Promotion, Feedback, User, ZooZone
+from models import db, Zoo, Animal, Service, Booking, BookingPayment, Event, Promotion, Feedback, User, ZooZone
 from services import (
     BookingAuthorizationError,
     BookingValidationError,
@@ -165,7 +168,7 @@ def visitor_login_required(view_func):
 
         # MVP: require Zoo selection before accessing protected visitor pages.
         if session.get("role") == "visitor":
-            if request.endpoint != "visitor.choose_zoo" and not session.get("selected_zoo_id"):
+            if request.endpoint not in {"visitor.choose_zoo", "visitor.profile"} and not session.get("selected_zoo_id"):
                 next_url = request.full_path
                 if next_url.endswith("?"):
                     next_url = next_url[:-1]
@@ -883,6 +886,124 @@ def profile():
     if not user:
         return _require_visitor_login()
 
+    show_tab = (request.args.get("tab") or "profile").strip().lower()
+    allowed_tabs = {"profile", "bookings", "security", "notifications", "visits", "payments", "linked-accounts", "danger"}
+    if show_tab not in allowed_tabs:
+        show_tab = "profile"
+
+    bookings = Booking.query.filter(_booking_owner_filter(user)).order_by(Booking.created_at.desc()).all()
+    review_aliases = list(_feedback_owner_aliases(user))
+    reviews = (
+        Feedback.query
+        .filter(or_(Feedback.user_id == user.id, Feedback.visitor_name.in_(review_aliases)))
+        .order_by(Feedback.id.desc())
+        .all()
+    )
+    payment_history = (
+        BookingPayment.query
+        .join(Booking, BookingPayment.booking_id == Booking.id)
+        .filter(or_(Booking.user_id == user.id, BookingPayment.payer_user_id == user.id))
+        .order_by(BookingPayment.created_at.desc())
+        .all()
+    )
+
+    if request.method == "POST":
+        action = (request.form.get("action") or show_tab or "profile").strip().lower()
+
+        if action == "profile":
+            full_name = (request.form.get("full_name") or "").strip()
+            email = (request.form.get("email") or "").strip().lower()
+            username = (request.form.get("username") or "").strip() or None
+
+            if not full_name:
+                flash("Full name is required.", "error")
+                return redirect(url_for("visitor.profile", tab="profile", edit=1))
+
+            if email and email != user.email:
+                existing = User.query.filter(User.email == email, User.id != user.id).first()
+                if existing:
+                    flash("That email is already in use.", "error")
+                    return redirect(url_for("visitor.profile", tab="profile", edit=1))
+                user.email = email
+
+            if username and username != user.username:
+                existing_un = User.query.filter(User.username == username, User.id != user.id).first()
+                if existing_un:
+                    flash("That username is already in use.", "error")
+                    return redirect(url_for("visitor.profile", tab="profile", edit=1))
+                user.username = username
+
+            profile_picture = request.files.get("profile_picture")
+            if profile_picture and profile_picture.filename:
+                filename = secure_filename(profile_picture.filename)
+                ext = os.path.splitext(filename)[1].lower()
+                if ext not in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
+                    flash("Unsupported image type. Use png/jpg/webp/gif.", "error")
+                    return redirect(url_for("visitor.profile", tab="profile", edit=1))
+
+                profile_folder = os.path.join(current_app.config["UPLOAD_FOLDER"], "profile_pictures")
+                os.makedirs(profile_folder, exist_ok=True)
+                stored_name = f"visitor_{user.id}_{secrets.token_hex(6)}{ext}"
+                profile_picture.save(os.path.join(profile_folder, stored_name))
+                user.profile_image = f"profile_pictures/{stored_name}"
+
+            user.full_name = full_name
+            db.session.commit()
+            session["full_name"] = user.full_name
+            flash("Profile updated.", "success")
+            return redirect(url_for("visitor.profile", tab="profile"))
+
+        if action == "security":
+            current_password = request.form.get("current_password") or ""
+            new_password = request.form.get("new_password") or ""
+            confirm_password = request.form.get("confirm_password") or ""
+
+            if not user.check_password(current_password):
+                flash("Current password is incorrect.", "error")
+                return redirect(url_for("visitor.profile", tab="security"))
+            if len(new_password) < 8:
+                flash("New password must be at least 8 characters.", "error")
+                return redirect(url_for("visitor.profile", tab="security"))
+            if new_password != confirm_password:
+                flash("New password and confirmation do not match.", "error")
+                return redirect(url_for("visitor.profile", tab="security"))
+
+            user.set_password(new_password)
+            db.session.commit()
+            flash("Password updated.", "success")
+            return redirect(url_for("visitor.profile", tab="security"))
+
+        if action == "notifications":
+            session["visitor_notification_prefs"] = {
+                "email_bookings": bool(request.form.get("email_bookings")),
+                "email_promos": bool(request.form.get("email_promos")),
+                "sms_alerts": bool(request.form.get("sms_alerts")),
+                "visit_reminders": bool(request.form.get("visit_reminders")),
+            }
+            flash("Notification preferences saved.", "success")
+            return redirect(url_for("visitor.profile", tab="notifications"))
+
+        flash("Unknown profile action.", "error")
+        return redirect(url_for("visitor.profile", tab=show_tab))
+
+    notification_prefs = session.get("visitor_notification_prefs")
+    if not isinstance(notification_prefs, dict):
+        notification_prefs = {
+            "email_bookings": True,
+            "email_promos": True,
+            "sms_alerts": False,
+            "visit_reminders": True,
+        }
+
+    total_spent = db.session.query(func.sum(Booking.amount)).filter(_booking_owner_filter(user)).scalar() or 0
+    active_bookings = sum(1 for b in bookings if (b.status or "").lower() in {"confirmed", "pending"})
+    profile_image_url = url_for("uploaded_file", filename=user.profile_image) if getattr(user, "profile_image", None) else None
+    linked_accounts = {
+        "email": user.email,
+        "username": user.username or "Not set",
+        "member_since": user.created_at.strftime("%B %Y") if user.created_at else "Unknown",
+    }
+
     if request.method == "POST":
         full_name = (request.form.get("full_name") or "").strip()
         email = (request.form.get("email") or "").strip().lower()
@@ -935,6 +1056,15 @@ def profile():
         reviews_count=reviews_count,
         total_spent=float(total_spent),
         points=points,
+        bookings=bookings,
+        total_bookings=bookings_count,
+        active_bookings=active_bookings,
+        recent_reviews=reviews[:5],
+        payment_history=payment_history,
+        notification_prefs=notification_prefs,
+        profile_image_url=profile_image_url,
+        linked_accounts=linked_accounts,
+        show_tab=show_tab,
         edit=(request.args.get("edit") == "1"),
     )
 

@@ -12,13 +12,13 @@
         <form method="post" action="{{ url_for('animal_farm_admin.save_landing_map') }}" enctype="multipart/form-data" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
             <div style="display:flex; flex-direction:column; gap:8px;">
                 <label style="font-weight:600; color:var(--text-secondary);">Map Title</label>
-                <input type="text" name="landing_map_title" value="{{ landing_map.title }}" placeholder="e.g., Lyger Zoo Visitor Map" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <input type="text" name="landing_map_title" value="{{ landing_map.title }}" placeholder="e.g., Lyger Zoo Visitor Map" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
                 <label style="font-weight:600; color:var(--text-secondary);">Map Description</label>
-                <textarea name="landing_map_description" rows="3" placeholder="Help visitors plan their route" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;">{{ landing_map.description }}</textarea>
+                <textarea name="landing_map_description" rows="3" placeholder="Help visitors plan their route" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;">{{ landing_map.description }}</textarea>
 
                 <label style="font-weight:600; color:var(--text-secondary);">Upload Map Image (optional)</label>
-                <input type="file" name="landing_map_image_file" accept="image/*" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <input type="file" name="landing_map_image_file" accept="image/*" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
                 <p style="margin:0; color: var(--text-muted); font-size: 12px;">Leave blank to keep the current map image.</p>
 
                 <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
@@ -52,17 +52,17 @@
                 <input type="hidden" name="zone_id" value="">
 
                 <label style="font-weight:600; color:var(--text-secondary);">Zone Name</label>
-                <input type="text" name="name" placeholder="e.g., Safari Walk" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <input type="text" name="name" placeholder="e.g., Safari Walk" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
                 <label style="font-weight:600; color:var(--text-secondary);">Description (optional)</label>
-                <textarea name="description" rows="3" placeholder="Short description" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
+                <textarea name="description" rows="3" placeholder="Short description" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;"></textarea>
 
                 <label style="font-weight:600; color:var(--text-secondary);">Upload Zone Map Image (optional)</label>
-                <input type="file" name="map_image_file" accept="image/*" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <input type="file" name="map_image_file" accept="image/*" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
                 <p style="margin:0; color: var(--text-muted); font-size: 12px;">Leave blank to keep the existing picture when editing.</p>
 
                 <label style="font-weight:600; color:var(--text-secondary);">360° Panorama URL (optional)</label>
-                <input type="text" name="panorama_360_url" placeholder="https://..." style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <input type="text" name="panorama_360_url" placeholder="https://..." style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
                 <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Zone</button>
             </form>

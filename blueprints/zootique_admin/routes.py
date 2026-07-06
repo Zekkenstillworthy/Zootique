@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import secrets
+import json
 from datetime import datetime, timedelta
 
 from flask import Blueprint, current_app, render_template, redirect, url_for, request, flash, session
@@ -37,6 +38,13 @@ def require_zootique_admin():
         return result
 
 
+from services.layout_config import (
+    WIDGET_CATALOG,
+    build_zoo_dashboard_widget_map,
+    get_layout_config_for_zoo,
+    order_dashboard_widgets,
+    save_layout_config,
+)
 def _month_start(dt: datetime) -> datetime:
     return dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
@@ -261,10 +269,78 @@ def dashboard():
         zoo_performance=zoo_performance,
     )
 
-@admin_bp.get("/subscriptions")
-def manage_subscriptions():
+
+@admin_bp.route('/layout-manager', methods=['GET', 'POST'])
+def layout_manager():
+    zoos = Zoo.query.order_by(Zoo.name.asc()).all()
+    selected_zoo_id = request.args.get('zoo_id') if request.method == 'GET' else request.form.get('zoo_id')
+
+    selected_zoo = None
+    if selected_zoo_id and str(selected_zoo_id).isdigit():
+        selected_zoo = db.session.get(Zoo, int(selected_zoo_id))
+    if selected_zoo is None and zoos:
+        selected_zoo = zoos[0]
+
+    layout_config = get_layout_config_for_zoo(selected_zoo.id if selected_zoo else None)
+    dashboard_widget_map = build_zoo_dashboard_widget_map(selected_zoo) if selected_zoo else {}
+    dashboard_widgets = order_dashboard_widgets(dashboard_widget_map, layout_config)
+
+    if request.method == 'POST':
+        target_zoo_id_raw = (request.form.get('zoo_id') or '').strip()
+        if not target_zoo_id_raw.isdigit():
+            flash('Select a zoo before saving layout settings.', 'error')
+            return redirect(url_for('zootique_admin.layout_manager'))
+
+        target_zoo = db.session.get(Zoo, int(target_zoo_id_raw))
+        if not target_zoo:
+            flash('Selected zoo was not found.', 'error')
+            return redirect(url_for('zootique_admin.layout_manager'))
+
+        widget_order_raw = (request.form.get('widget_order') or '').strip()
+        try:
+            widget_order = json.loads(widget_order_raw) if widget_order_raw else []
+        except ValueError:
+            widget_order = []
+
+        widget_visibility = {widget['id']: False for widget in WIDGET_CATALOG}
+        for widget_id in request.form.getlist('visible_widgets'):
+            if widget_id in widget_visibility:
+                widget_visibility[widget_id] = True
+
+        layout_style = (request.form.get('layout_style') or 'grid').strip().lower()
+        theme_variant = (request.form.get('theme_variant') or 'light').strip().lower()
+
+        save_layout_config(
+            zoo_id=target_zoo.id,
+            widget_visibility=widget_visibility,
+            widget_order=widget_order,
+            layout_style=layout_style,
+            theme_variant=theme_variant,
+        )
+        db.session.commit()
+        flash(f'Layout settings saved for {target_zoo.name}.', 'success')
+        return redirect(url_for('zootique_admin.layout_manager', zoo_id=target_zoo.id))
+
+    return render_template(
+        'zootique_admin/layout_manager.html',
+        zoos=zoos,
+        selected_zoo=selected_zoo,
+        layout_config=layout_config,
+        dashboard_widgets=dashboard_widgets,
+        widget_catalog=WIDGET_CATALOG,
+        layout_styles=[
+            {'value': 'grid', 'label': 'Grid'},
+            {'value': 'list', 'label': 'List'},
+            {'value': 'compact', 'label': 'Compact'},
+        ],
+        theme_variants=[
+            {'value': 'light', 'label': 'Light'},
+            {'value': 'zoo_accent', 'label': 'Zoo-branded accent'},
+        ],
+    )
+
+def _build_subscription_management_context(edit_plan_id: str | None = None):
     now = datetime.utcnow()
-    edit_plan_id = request.args.get('edit_plan')
     edit_plan = db.session.get(SubscriptionPlan, int(edit_plan_id)) if (edit_plan_id and edit_plan_id.isdigit()) else None
 
     subscriptions = (
@@ -356,11 +432,10 @@ def manage_subscriptions():
             "is_popular": bool(popular_plan_id and plan.id == popular_plan_id),
         })
 
-    return render_template(
-        "zootique_admin/subscriptions.html",
-        subscriptions=sub_rows,
-        plans=plans,
-        sub_stats={
+    return {
+        "subscriptions": sub_rows,
+        "plans": plans,
+        "sub_stats": {
             "active": int(active_count),
             "mrr": float(mrr_total),
             "pending_renewals": int(pending_renewals),
@@ -368,8 +443,52 @@ def manage_subscriptions():
             "expired": int(expired_count),
             "total": int(total_subs),
         },
-        plan_tiers=plan_tiers,
-        edit_plan=edit_plan,
+        "plan_tiers": plan_tiers,
+        "edit_plan": edit_plan,
+    }
+
+def _render_subscription_view(full_template: str, partial_template: str, context: dict):
+    if (request.args.get('partial') or '').strip().lower() in {'1', 'true', 'yes', 'on'}:
+        return render_template(partial_template, **context)
+    return render_template(full_template, **context)
+
+
+@admin_bp.get("/subscriptions")
+def manage_subscriptions():
+    section = (request.args.get('section') or '').strip().lower()
+    edit_plan_id = request.args.get('edit_plan')
+    if section == 'global-pricing-tiers':
+        return redirect(url_for('zootique_admin.subscription_pricing_tiers'))
+    if section == 'plan-manager' or edit_plan_id:
+        if edit_plan_id:
+            return redirect(url_for('zootique_admin.subscription_plan_manager', edit_plan=edit_plan_id))
+        return redirect(url_for('zootique_admin.subscription_plan_manager'))
+
+    context = _build_subscription_management_context()
+    return _render_subscription_view(
+        "zootique_admin/subscriptions_directory.html",
+        "zootique_admin/_subscriptions_directory.html",
+        context,
+    )
+
+
+@admin_bp.get("/subscriptions/global-pricing-tiers")
+def subscription_pricing_tiers():
+    context = _build_subscription_management_context()
+    return _render_subscription_view(
+        "zootique_admin/subscriptions_pricing_tiers.html",
+        "zootique_admin/_subscriptions_pricing_tiers.html",
+        context,
+    )
+
+
+@admin_bp.get("/subscriptions/plan-manager")
+def subscription_plan_manager():
+    context = _build_subscription_management_context(request.args.get('edit_plan'))
+    return _render_subscription_view(
+        "zootique_admin/subscriptions_plan_manager.html",
+        "zootique_admin/_subscriptions_plan_manager.html",
+        context,
     )
 
 
@@ -511,7 +630,7 @@ def save_subscription_plan():
         db.session.rollback()
         flash(f'Failed to save plan: {e}', 'error')
 
-    return redirect(url_for('zootique_admin.manage_subscriptions'))
+    return redirect(url_for('zootique_admin.subscription_plan_manager', edit_plan=plan.id))
 
 @admin_bp.get("/zoo-feedback")
 def view_feedback():

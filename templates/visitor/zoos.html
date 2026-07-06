@@ -423,9 +423,9 @@
   <!-- Filter Pills -->
   <div class="filter-tabs">
     <button class="filter-pill active" data-filter="all" id="filter-all">All</button>
-    <button class="filter-pill" data-filter="zoo" id="filter-zoo">Zoo Parks</button>
-    <button class="filter-pill" data-filter="wildlife" id="filter-wildlife">Wildlife Parks</button>
-    <button class="filter-pill" data-filter="farm" id="filter-farm">Farm Attractions</button>
+    {% for slug in zoo_types %}
+    <button class="filter-pill" data-filter="{{ slug }}" id="filter-{{ slug }}">{{ type_labels.get(slug, slug) }}</button>
+    {% endfor %}
   </div>
 
   <!-- Zoo Cards -->
@@ -460,9 +460,19 @@
             <div class="price-label">Starting from</div>
             <div class="price-value">₱{{ "%.2f"|format(zoo.price) }}</div>
           </div>
-          <a href="{{ url_for('visitor.home') }}" class="btn-book">
-            Book Now
-          </a>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+            <a href="{{ url_for('visitor.park_info', zoo_id=zoo.id) }}" class="btn-book" style="background:#ffffff; color:#1a4f32; border:1px solid #cbd5e1; box-shadow:none;">
+              <i class="fa-solid fa-circle-info"></i> Info
+            </a>
+            <form method="post" action="{{ url_for('visitor.choose_zoo') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="zoo_id" value="{{ zoo.id }}">
+              <input type="hidden" name="next" value="{{ url_for('visitor.my_bookings') }}">
+              <button type="submit" class="btn-book">
+                <i class="fa-solid fa-ticket"></i> Book Now
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>

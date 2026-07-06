@@ -3,15 +3,197 @@
 {% block title %}Dashboard | Animal Farm Admin{% endblock %}
 {% block page_title %}Animal Farm Admin Dashboard{% endblock %}
 
-{% block content %}
-<div class="hero-box">
-    <div class="hero-text">
-        <h2>Welcome{% if zoo %}, {{ zoo.name }}{% endif %}</h2>
-        <p>Manage bookings, services, animals, promotions, and staff tasks.</p>
-    </div>
-    <div class="hero-image" style="background: linear-gradient(rgba(26, 79, 50, 0.8), rgba(26, 79, 50, 0.6)), url('https://images.unsplash.com/photo-1516253593875-bd7ba052fbc5?auto=format&fit=crop&w=800&q=80'); background-size: cover; background-position: center;"></div>
-</div>
+{% block extra_head %}
+<style>
+    .zoo-dashboard-shell {
+        --dashboard-accent: var(--primary);
+        --dashboard-soft: var(--primary-light);
+        display: grid;
+        gap: 18px;
+    }
 
+    .zoo-dashboard-shell.theme-zoo_accent {
+        --dashboard-accent: #0f6d3c;
+        --dashboard-soft: #dcfce7;
+    }
+
+    .zoo-dashboard-hero {
+        border-radius: 18px;
+        padding: 22px;
+        background: linear-gradient(135deg, color-mix(in srgb, var(--dashboard-accent) 92%, #000 8%), var(--dashboard-accent));
+        color: #ffffff;
+        box-shadow: var(--shadow-md);
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(240px, 360px);
+        gap: 18px;
+        align-items: center;
+    }
+
+    .zoo-dashboard-hero h2 {
+        margin: 0 0 8px 0;
+        font-size: 30px;
+        font-weight: 950;
+        letter-spacing: -0.4px;
+    }
+
+    .zoo-dashboard-hero p {
+        margin: 0;
+        max-width: 60ch;
+        color: rgba(255,255,255,0.84);
+    }
+
+    .zoo-dashboard-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    @media (max-width: 900px) {
+        .zoo-dashboard-hero { grid-template-columns: 1fr; }
+        .zoo-dashboard-summary { grid-template-columns: 1fr; }
+    }
+
+    .zoo-dashboard-summary .summary-chip {
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.16);
+    }
+
+    .zoo-dashboard-summary .summary-chip .label {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.74);
+    }
+
+    .zoo-dashboard-summary .summary-chip .value {
+        margin-top: 6px;
+        font-size: 20px;
+        font-weight: 900;
+    }
+
+    .zoo-dashboard-grid {
+        display: grid;
+        gap: 16px;
+    }
+
+    .zoo-dashboard-grid.layout-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .zoo-dashboard-grid.layout-list {
+        grid-template-columns: 1fr;
+    }
+
+    .zoo-dashboard-grid.layout-compact {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    @media (max-width: 900px) {
+        .zoo-dashboard-grid.layout-grid,
+        .zoo-dashboard-grid.layout-compact { grid-template-columns: 1fr; }
+    }
+
+    .dashboard-widget {
+        background: var(--surface);
+        border: 1px solid var(--border-light);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+    }
+
+    .dashboard-widget.is-hidden {
+        display: none;
+    }
+
+    .dashboard-widget.compact .card-body {
+        padding: 14px;
+    }
+
+    .dashboard-widget-header {
+        background: var(--dashboard-accent);
+        color: #ffffff;
+        padding: 14px 16px;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .dashboard-widget-header h3 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 900;
+    }
+
+    .dashboard-widget-body {
+        padding: 16px;
+        display: grid;
+        gap: 12px;
+    }
+
+    .dashboard-metric {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .dashboard-metric .metric-label {
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .dashboard-metric .metric-value {
+        color: var(--text);
+        font-size: 22px;
+        font-weight: 950;
+        line-height: 1;
+    }
+
+    .dashboard-progress {
+        height: 10px;
+        background: #e2e8f0;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .dashboard-progress-bar {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--dashboard-accent), color-mix(in srgb, var(--dashboard-accent) 65%, #ffffff 35%));
+    }
+
+    .dashboard-feedback-item {
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid var(--border-light);
+        background: #f8fafc;
+    }
+
+    .dashboard-feedback-item strong {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 6px;
+    }
+
+    .dashboard-empty-state {
+        border: 1px dashed var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        color: var(--text-muted);
+        background: rgba(255,255,255,0.6);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
 {% if not zoo %}
     <div class="card-panel" style="margin-top: 18px;">
         <div class="card-header">
@@ -22,53 +204,133 @@
         </div>
     </div>
 {% else %}
+    <div class="zoo-dashboard-shell theme-{{ layout_config.theme_variant }}">
+        <section class="zoo-dashboard-hero">
+            <div>
+                <span class="sa-pill" style="background:rgba(255,255,255,0.14); color:#fff; border-color:rgba(255,255,255,0.15);">{{ layout_config.layout_style|title }} layout</span>
+                <h2 style="margin-top:12px;">Welcome, {{ zoo.name }}</h2>
+                <p>Manage the zoo operations that matter most. Your dashboard now follows the layout published for this zoo.</p>
+            </div>
+            <div class="zoo-dashboard-summary">
+                <div class="summary-chip">
+                    <div class="label">Animals</div>
+                    <div class="value">{{ animals_count }}</div>
+                </div>
+                <div class="summary-chip">
+                    <div class="label">Bookings</div>
+                    <div class="value">{{ bookings_count }}</div>
+                </div>
+                <div class="summary-chip">
+                    <div class="label">Open Tasks</div>
+                    <div class="value">{{ open_tasks }}</div>
+                </div>
+            </div>
+        </section>
 
-    <div class="stats-grid" style="--stats-cols: 5; margin-top: 18px;">
-        <div class="stat-card">
-            <div class="stat-icon-box green"><i class="fa-solid fa-paw"></i></div>
-            <div class="stat-value">{{ animals_count }}</div>
-            <div class="stat-label">Animals</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon-box blue"><i class="fa-solid fa-list-check"></i></div>
-            <div class="stat-value">{{ services_count }}</div>
-            <div class="stat-label">Services</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon-box purple"><i class="fa-solid fa-calendar-check"></i></div>
-            <div class="stat-value">{{ bookings_count }}</div>
-            <div class="stat-label">Bookings</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon-box yellow"><i class="fa-solid fa-peso-sign"></i></div>
-            <div class="stat-value">₱{{ '%.2f'|format(monthly_revenue or 0) }}</div>
-            <div class="stat-label">Monthly Revenue</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon-box orange"><i class="fa-solid fa-user-check"></i></div>
-            <div class="stat-value">{{ open_tasks }}</div>
-            <div class="stat-label">Open Tasks</div>
+        {% set visible_widgets = dashboard_widgets | selectattr('visible') | list %}
+        <div class="zoo-dashboard-grid layout-{{ layout_style }}">
+            {% for widget in visible_widgets %}
+            <article class="dashboard-widget{% if layout_style == 'compact' %} compact{% endif %}" data-widget-id="{{ widget.id }}">
+                <div class="dashboard-widget-header">
+                    <h3><i class="{{ widget.icon }}"></i> {{ widget.label }}</h3>
+                    <span class="sa-pill" style="background:rgba(255,255,255,0.14); color:#fff; border-color:rgba(255,255,255,0.18);">Live</span>
+                </div>
+                <div class="dashboard-widget-body">
+                    {% if widget.id == 'revenue_summary' %}
+                        <div class="dashboard-metric">
+                            <span class="metric-label">Monthly revenue</span>
+                            <span class="metric-value">₱{{ '{:,.0f}'.format(widget.monthly_revenue or 0) }}</span>
+                        </div>
+                        <div class="dashboard-metric">
+                            <span class="metric-label">Bookings this month</span>
+                            <span class="metric-value">{{ widget.booking_count }}</span>
+                        </div>
+                        <div>
+                            <div class="dashboard-metric" style="margin-bottom:8px;">
+                                <span class="metric-label">Goal progress</span>
+                                <span class="metric-label">{{ widget.revenue_goal_pct }}%</span>
+                            </div>
+                            <div class="dashboard-progress">
+                                <div class="dashboard-progress-bar" data-progress-width="{{ widget.revenue_goal_pct }}"></div>
+                            </div>
+                        </div>
+                        {% if widget.revenue_change_pct is not none %}
+                            <div class="sa-pill {% if widget.revenue_change_pct >= 0 %}sa-pill--ok{% else %}sa-pill--danger{% endif %}">
+                                {% if widget.revenue_change_pct >= 0 %}+{% endif %}{{ '{:.1f}'.format(widget.revenue_change_pct) }}% vs previous month
+                            </div>
+                        {% endif %}
+                    {% elif widget.id == 'membership_stats' %}
+                        <div class="dashboard-metric">
+                            <span class="metric-label">Status</span>
+                            <span class="metric-value" style="font-size:16px;">{{ widget.status }}</span>
+                        </div>
+                        <div class="dashboard-metric">
+                            <span class="metric-label">Days remaining</span>
+                            <span class="metric-value">{{ widget.days_remaining if widget.days_remaining is not none else '—' }}</span>
+                        </div>
+                        <div class="dashboard-metric">
+                            <span class="metric-label">Open tasks</span>
+                            <span class="metric-value">{{ widget.open_tasks }}</span>
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 13px;">
+                            {% if subscription %}
+                                <strong>{{ subscription.plan.name }}</strong> subscription runs until {{ subscription.end_date.strftime('%Y-%m-%d') }}.
+                            {% else %}
+                                No active subscription record was found.
+                            {% endif %}
+                        </div>
+                    {% elif widget.id == 'recent_feedback' %}
+                        {% for item in widget['items'] %}
+                            <div class="dashboard-feedback-item">
+                                <strong>
+                                    <span>{{ item.visitor_name }}</span>
+                                    <span style="color: var(--warning);">{{ '★' * item.rating }}</span>
+                                </strong>
+                                <p style="margin:0; color:var(--text-secondary);">{{ item.comment }}</p>
+                                <div style="margin-top:8px; color:var(--text-light); font-size:12px;">{{ item.date }}</div>
+                            </div>
+                        {% else %}
+                            <div class="dashboard-empty-state">No recent feedback yet.</div>
+                        {% endfor %}
+                    {% elif widget.id == 'upcoming_renewals' %}
+                        <div class="dashboard-metric">
+                            <span class="metric-label">Next renewal</span>
+                            <span class="metric-value" style="font-size:16px;">{{ widget.next_due_date or '—' }}</span>
+                        </div>
+                        <div class="dashboard-metric">
+                            <span class="metric-label">Renewal status</span>
+                            <span class="metric-value" style="font-size:16px;">{{ widget.status }}</span>
+                        </div>
+                        <div class="dashboard-metric">
+                            <span class="metric-label">Days remaining</span>
+                            <span class="metric-value">{{ widget.days_remaining if widget.days_remaining is not none else '—' }}</span>
+                        </div>
+                        <a href="{{ url_for('animal_farm_admin.layout_changer') }}"
+                           class="btn btn-ghost" style="margin-top:8px; font-size:12px;">
+                            <i class="fa-solid fa-sliders"></i> Customise your dashboard layout
+                        </a>
+                    {% endif %}
+                </div>
+            </article>
+            {% else %}
+            <div class="dashboard-empty-state">
+                All widgets are currently hidden for this zoo. Contact the Super Admin to publish a visible layout.
+            </div>
+            {% endfor %}
         </div>
     </div>
-
-    <div class="two-col" style="--two-col-template: 1fr 1fr;">
-        <div class="card-panel">
-            <div class="card-header">
-                <h2>Subscription Snapshot</h2>
-            </div>
-            <div class="card-body">
-                {% if subscription %}
-                    <p><strong>Plan:</strong> {{ subscription.plan.name }}</p>
-                    <p><strong>Status:</strong> <span class="badge badge-{{ subscription.status }}">{{ subscription.status }}</span></p>
-                    <p><strong>Valid:</strong> {{ subscription.start_date.strftime('%Y-%m-%d') }} → {{ subscription.end_date.strftime('%Y-%m-%d') }}</p>
-                    <a class="btn btn-outline" href="{{ url_for('animal_farm_admin.subscriptions') }}"><i class="fa-solid fa-id-card"></i> View Subscription</a>
-                {% else %}
-                    <p style="color: var(--text-muted);">No subscription found for this zoo.</p>
-                    <a class="btn btn-outline" href="{{ url_for('animal_farm_admin.subscriptions') }}"><i class="fa-solid fa-id-card"></i> Subscription</a>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const bars = document.querySelectorAll('.dashboard-progress-bar[data-progress-width]');
+    bars.forEach((bar) => {
+        const raw = Number(bar.getAttribute('data-progress-width') || '0');
+        const pct = Number.isFinite(raw) ? Math.max(0, Math.min(raw, 100)) : 0;
+        bar.style.width = pct + '%';
+    });
+});
+</script>
 {% endblock %}

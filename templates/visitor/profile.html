@@ -3,85 +3,84 @@
 {% block title %}My Profile{% endblock %}
 
 {% block content %}
-<!-- UNIQUE FLAT HERO -->
-<div style="background: #1a4f32; color: white; padding: 4rem 2rem 2rem 2rem; display: flex; flex-direction: column; align-items: center; position: relative;">
-    <div style="position: absolute; top: 1rem; left: 2rem; color: rgba(255,255,255,0.7); font-size: 0.85rem;">
-        <span style="font-weight: 600; color: white;">Profile</span>
-    </div>
-
-    <div style="position: relative; margin-bottom: 1rem;">
-        <img src="https://ui-avatars.com/api/?name={{ (user.full_name or 'Visitor')|urlencode }}&background=fff&color=1a4f32&size=100" style="width: 100px; height: 100px; border-radius: 50%; border: 4px solid #1a4f32; outline: 4px solid rgba(255,255,255,0.2);">
-        <i class="fa-solid fa-camera" style="position: absolute; bottom: 0; right: 0; background: white; color: #1a4f32; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"></i>
-    </div>
-    
-    <h1 style="font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem 0;">{{ user.full_name or 'Visitor' }}</h1>
-    <div style="font-size: 0.95rem; opacity: 0.9; margin-bottom: 1rem;">{{ user.email }}</div>
-    
-    <div style="background: #0f291e; color: #4ade80; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: bold; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.4rem;">
-        <i class="fa-solid fa-circle-check"></i> Verified Account
-    </div>
-    
-    <div style="display: flex; gap: 2rem; font-size: 0.85rem; color: #cbd5e1; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap;">
-        <span style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-crown" style="color:#fca000;"></i> Zootique Member</span>
-        <span>·</span>
-        <span>Since {% if user.created_at %}{{ user.created_at.strftime('%B %Y') }}{% else %}—{% endif %}</span>
-    </div>
-    
-    <div style="display: flex; gap: 2rem; font-size: 0.85rem; font-weight: 600; flex-wrap: wrap; justify-content:center;">
-        <span style="color: #ef4444;"><i class="fa-solid fa-calendar-check"></i> {{ bookings_count or 0 }} Visits</span>
-        <span style="color: #fca000;"><i class="fa-solid fa-star"></i> {{ reviews_count or 0 }} Reviews</span>
-        <span style="color: #4ade80;"><i class="fa-solid fa-sack-dollar"></i> ₱{{ "{:,.2f}".format(total_spent or 0) }} Spent</span>
-        <span style="color: #fef08a;">👑 {{ points or 0 }} Points</span>
-    </div>
-</div>
-
 <div class="container" style="padding: 2rem 0 4rem 0;">
-    <!-- COMPLETION BAR -->
-    <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
-        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 0.9rem; color: #1e293b; margin-bottom: 0.8rem;">
-            <span>Complete Your Profile</span> <span>75% Complete</span>
-        </div>
-        <div style="height: 6px; background: #e2e8f0; border-radius: 3px; margin-bottom: 1rem; overflow: hidden;">
-            <div style="width: 75%; height: 100%; background: #1a4f32;"></div>
-        </div>
-        <div style="display: flex; gap: 2rem; font-size: 0.8rem; color: #64748b;">
-            <div style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-phone" style="color:#ef4444;"></i> Add phone number to complete <a href="#" style="color:#0ea5e9; font-weight:bold; text-decoration:none;">Add Now</a></div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-cake-candles" style="color:#ef4444;"></i> Add date of birth for birthday deals <a href="#" style="color:#0ea5e9; font-weight:bold; text-decoration:none;">Add Now</a></div>
-        </div>
-    </div>
-
     <div style="display: grid; grid-template-columns: 250px 1fr; gap: 2rem;">
         
         <!-- SIDEBAR -->
         <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-            <button style="background: #1a4f32; color: white; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem;"><i class="fa-solid fa-user"></i> Profile</button>
-            <a href="{{ url_for('visitor.my_bookings') }}" style="background: transparent; color: #475569; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;">
+            <a href="{{ url_for('visitor.profile', tab='profile') }}" style="background: {{ '#1a4f32' if show_tab == 'profile' else 'transparent' }}; color: {{ 'white' if show_tab == 'profile' else '#475569' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; text-decoration:none;"><i class="fa-solid fa-user"></i> Profile</a>
+            <a href="{{ url_for('visitor.profile', tab='bookings') }}" style="background: {{ '#1a4f32' if show_tab == 'bookings' else 'transparent' }}; color: {{ 'white' if show_tab == 'bookings' else '#475569' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;">
                 <i class="fa-solid fa-calendar-check"></i> My Bookings
             </a>
-            <button style="background: transparent; color: #475569; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer;"><i class="fa-solid fa-lock"></i> Security</button>
-            <button style="background: transparent; color: #475569; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer;"><i class="fa-solid fa-bell"></i> Notifications</button>
-            <button style="background: transparent; color: #475569; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer;"><i class="fa-solid fa-trophy"></i> My Visits & Points</button>
-            <button style="background: transparent; color: #475569; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer;"><i class="fa-solid fa-credit-card"></i> Payment Methods</button>
-            <button style="background: transparent; color: #475569; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer;"><i class="fa-solid fa-link"></i> Linked Accounts</button>
+            <a href="{{ url_for('visitor.profile', tab='security') }}" style="background: {{ '#1a4f32' if show_tab == 'security' else 'transparent' }}; color: {{ 'white' if show_tab == 'security' else '#475569' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;"><i class="fa-solid fa-lock"></i> Security</a>
+            <a href="{{ url_for('visitor.profile', tab='notifications') }}" style="background: {{ '#1a4f32' if show_tab == 'notifications' else 'transparent' }}; color: {{ 'white' if show_tab == 'notifications' else '#475569' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;"><i class="fa-solid fa-bell"></i> Notifications</a>
+            <a href="{{ url_for('visitor.profile', tab='visits') }}" style="background: {{ '#1a4f32' if show_tab == 'visits' else 'transparent' }}; color: {{ 'white' if show_tab == 'visits' else '#475569' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;"><i class="fa-solid fa-trophy"></i> My Visits & Points</a>
+            <a href="{{ url_for('visitor.profile', tab='payments') }}" style="background: {{ '#1a4f32' if show_tab == 'payments' else 'transparent' }}; color: {{ 'white' if show_tab == 'payments' else '#475569' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;"><i class="fa-solid fa-credit-card"></i> Payment Methods</a>
+            <a href="{{ url_for('visitor.profile', tab='linked-accounts') }}" style="background: {{ '#1a4f32' if show_tab == 'linked-accounts' else 'transparent' }}; color: {{ 'white' if show_tab == 'linked-accounts' else '#475569' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;"><i class="fa-solid fa-link"></i> Linked Accounts</a>
             <div style="border-top: 1px solid #e2e8f0; margin: 0.5rem 0;"></div>
-            <button style="background: rgba(239,68,68,0.1); color: #ef4444; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer;"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</button>
+            <a href="{{ url_for('visitor.profile', tab='danger') }}" style="background: {{ '#b91c1c' if show_tab == 'danger' else 'rgba(239,68,68,0.1)' }}; color: {{ 'white' if show_tab == 'danger' else '#ef4444' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</a>
         </div>
 
         <!-- MAIN CONTENT BLOCK -->
         <div style="display: flex; flex-direction: column; gap: 2rem;">
-            
+            {% if show_tab == 'profile' %}
+            <div style="background: #1a4f32; color: white; padding: 2rem; border-radius: 16px; display: flex; flex-direction: column; align-items: center; position: relative;">
+                <div style="position: absolute; top: 1rem; left: 1.25rem; color: rgba(255,255,255,0.7); font-size: 0.85rem;">
+                    <span style="font-weight: 600; color: white;">Profile</span>
+                </div>
+
+                <div style="position: relative; margin-bottom: 1rem; margin-top: 1rem;">
+                    <img src="{{ profile_image_url or ('https://ui-avatars.com/api/?name=' ~ (user.full_name or 'Visitor')|urlencode ~ '&background=fff&color=1a4f32&size=100') }}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 4px solid #1a4f32; outline: 4px solid rgba(255,255,255,0.2);">
+                    <i class="fa-solid fa-camera" style="position: absolute; bottom: 0; right: 0; background: white; color: #1a4f32; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"></i>
+                </div>
+
+                <h1 style="font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem 0;">{{ user.full_name or 'Visitor' }}</h1>
+                <div style="font-size: 0.95rem; opacity: 0.9; margin-bottom: 1rem;">{{ user.email }}</div>
+
+                <div style="background: #0f291e; color: #4ade80; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: bold; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <i class="fa-solid fa-circle-check"></i> Verified Account
+                </div>
+
+                <div style="display: flex; gap: 2rem; font-size: 0.85rem; color: #cbd5e1; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap;">
+                    <span style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-crown" style="color:#fca000;"></i> Zootique Member</span>
+                    <span>·</span>
+                    <span>Since {% if user.created_at %}{{ user.created_at.strftime('%B %Y') }}{% else %}—{% endif %}</span>
+                </div>
+
+                <div style="display: flex; gap: 2rem; font-size: 0.85rem; font-weight: 600; flex-wrap: wrap; justify-content:center;">
+                    <span style="color: #ef4444;"><i class="fa-solid fa-calendar-check"></i> {{ bookings_count or 0 }} Visits</span>
+                    <span style="color: #fca000;"><i class="fa-solid fa-star"></i> {{ reviews_count or 0 }} Reviews</span>
+                    <span style="color: #4ade80;"><i class="fa-solid fa-sack-dollar"></i> ₱{{ "{:,.2f}".format(total_spent or 0) }} Spent</span>
+                    <span style="color: #fef08a;">👑 {{ points or 0 }} Points</span>
+                </div>
+            </div>
+
+            <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+                <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 0.9rem; color: #1e293b; margin-bottom: 0.8rem;">
+                    <span>Complete Your Profile</span> <span>75% Complete</span>
+                </div>
+                <div style="height: 6px; background: #e2e8f0; border-radius: 3px; margin-bottom: 1rem; overflow: hidden;">
+                    <div style="width: 75%; height: 100%; background: #1a4f32;"></div>
+                </div>
+                <div style="display: flex; gap: 2rem; font-size: 0.8rem; color: #64748b; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-phone" style="color:#ef4444;"></i> Add phone number to complete <a href="#" style="color:#0ea5e9; font-weight:bold; text-decoration:none;">Add Now</a></div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-cake-candles" style="color:#ef4444;"></i> Add date of birth for birthday deals <a href="#" style="color:#0ea5e9; font-weight:bold; text-decoration:none;">Add Now</a></div>
+                </div>
+            </div>
+
             <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap;">
                     <h3 style="margin: 0; font-size: 1.2rem; color: #1a4f32;">Personal Information</h3>
                     {% if edit %}
-                    <a href="{{ url_for('visitor.profile') }}" class="btn" style="background: transparent; color: #475569; border: 1px solid #cbd5e1; padding: 0.5rem 1.2rem; border-radius: 6px; font-weight: bold; font-size: 0.85rem; text-decoration:none;"><i class="fa-solid fa-xmark"></i> Cancel</a>
+                    <a href="{{ url_for('visitor.profile', tab='profile') }}" class="btn" style="background: transparent; color: #475569; border: 1px solid #cbd5e1; padding: 0.5rem 1.2rem; border-radius: 6px; font-weight: bold; font-size: 0.85rem; text-decoration:none;"><i class="fa-solid fa-xmark"></i> Cancel</a>
                     {% else %}
-                    <a href="{{ url_for('visitor.profile', edit=1) }}" class="btn" style="background: transparent; color: #1a4f32; border: 1px solid #1a4f32; padding: 0.5rem 1.2rem; border-radius: 6px; font-weight: bold; font-size: 0.85rem; text-decoration:none;"><i class="fa-solid fa-pen"></i> Edit Profile</a>
+                    <a href="{{ url_for('visitor.profile', tab='profile', edit=1) }}" class="btn" style="background: transparent; color: #1a4f32; border: 1px solid #1a4f32; padding: 0.5rem 1.2rem; border-radius: 6px; font-weight: bold; font-size: 0.85rem; text-decoration:none;"><i class="fa-solid fa-pen"></i> Edit Profile</a>
                     {% endif %}
                 </div>
 
                 {% if edit %}
-                <form method="post" action="{{ url_for('visitor.profile') }}" style="display:grid; grid-template-columns: 1fr 1fr; gap: 1.2rem;">
+                <form method="post" action="{{ url_for('visitor.profile', tab='profile') }}" enctype="multipart/form-data" style="display:grid; grid-template-columns: 1fr 1fr; gap: 1.2rem;">
+                    <input type="hidden" name="action" value="profile">
                     <div>
                         <label style="display:block; font-size:0.75rem; color:#94a3b8; font-weight: 800; margin-bottom: 0.4rem;">Full Name</label>
                         <input name="full_name" required value="{{ user.full_name or '' }}" style="width:100%; padding: 0.8rem 1rem; border: 1px solid #cbd5e1; border-radius: 10px; font-family: 'Inter', sans-serif;">
@@ -93,6 +92,10 @@
                     <div>
                         <label style="display:block; font-size:0.75rem; color:#94a3b8; font-weight: 800; margin-bottom: 0.4rem;">Username (optional)</label>
                         <input name="username" value="{{ user.username or '' }}" placeholder="e.g. mynickname" style="width:100%; padding: 0.8rem 1rem; border: 1px solid #cbd5e1; border-radius: 10px; font-family: 'Inter', sans-serif;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.75rem; color:#94a3b8; font-weight: 800; margin-bottom: 0.4rem;">Profile Photo</label>
+                        <input type="file" name="profile_picture" accept=".png,.jpg,.jpeg,.webp,.gif" style="width:100%; padding: 0.65rem 0;">
                     </div>
                     <div style="display:flex; align-items:end; justify-content:flex-end;">
                         <button class="btn" type="submit" style="background:#1a4f32; color:white; border:none; padding: 0.8rem 1.4rem; border-radius: 10px; font-weight: 900; width: fit-content;">
@@ -122,9 +125,143 @@
                 </div>
                 {% endif %}
             </div>
+            {% elif show_tab == 'bookings' %}
+            <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h3 style="margin:0; font-size: 1.2rem; color: #1a4f32;">My Bookings</h3>
+                        <div style="color:#64748b; font-size:0.9rem;">All reservations for this account</div>
+                    </div>
+                </div>
 
-            <!-- More profile blocks omitted for length but scaffolded -->
+                <div style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap;">
+                    <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px; font-weight:700;">Total: {{ total_bookings or 0 }}</div>
+                    <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px;">Active: {{ (status_counts.get('Confirmed',0) + status_counts.get('Pending',0)) if status_counts else 0 }}</div>
+                    <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px;">Spent: ₱{{ "{:,.2f}".format(total_spent or 0) }}</div>
+                    <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px;">Points: {{ points or 0 }}</div>
+                </div>
 
+                <div style="display:flex; flex-direction:column; gap:1rem; margin-top:0.75rem;">
+                    {% for b in bookings %}
+                    <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:1rem; display:flex; justify-content:space-between; gap:1rem;">
+                        <div>
+                            <div style="font-weight:800;">{{ b.service_name or 'Service' }} · #{{ b.id }}</div>
+                            <div style="color:#64748b;">{{ b.date }} · {{ b.time }}</div>
+                            <div style="margin-top:0.5rem; color:#475569;">{{ b.guests or 1 }} guests{% if b.zoo and b.zoo.name %} · {{ b.zoo.name }}{% endif %}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-weight:900; color:#1a4f32;">₱{{ "{:,.2f}".format(b.amount or 0) }}</div>
+                            <div style="margin-top:0.5rem;"><span style="padding:0.25rem 0.6rem; border-radius:999px; font-weight:800; background: #f1f5f9;">{{ b.status or 'Pending' }}</span></div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:1rem; text-align:center; color:#64748b; font-weight:700;">No bookings found for this account.</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% elif show_tab == 'security' %}
+            <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">
+                <h3 style="margin:0 0 0.5rem 0; font-size: 1.2rem; color: #1a4f32;">Security</h3>
+                <div style="color:#64748b; margin-bottom:1rem;">Manage your password and sign-in protection.</div>
+                <form method="post" action="{{ url_for('visitor.profile', tab='security') }}" style="display:grid; gap:1rem; max-width: 560px;">
+                    <input type="hidden" name="action" value="security">
+                    <div>
+                        <label style="display:block; font-size:0.75rem; color:#94a3b8; font-weight: 800; margin-bottom: 0.4rem;">Current Password</label>
+                        <input type="password" name="current_password" required style="width:100%; padding:0.8rem 1rem; border:1px solid #cbd5e1; border-radius:10px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.75rem; color:#94a3b8; font-weight: 800; margin-bottom: 0.4rem;">New Password</label>
+                        <input type="password" name="new_password" required minlength="8" style="width:100%; padding:0.8rem 1rem; border:1px solid #cbd5e1; border-radius:10px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.75rem; color:#94a3b8; font-weight: 800; margin-bottom: 0.4rem;">Confirm New Password</label>
+                        <input type="password" name="confirm_password" required minlength="8" style="width:100%; padding:0.8rem 1rem; border:1px solid #cbd5e1; border-radius:10px;">
+                    </div>
+                    <button type="submit" class="btn" style="background:#1a4f32; color:white; border:none; padding:0.8rem 1.2rem; border-radius:10px; font-weight:800; width:fit-content;">Update Password</button>
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;">Two-factor authentication and login alerts can be enabled here later.</div>
+                </form>
+                </div>
+            </div>
+            {% elif show_tab == 'notifications' %}
+            <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">
+                <h3 style="margin:0 0 0.5rem 0; font-size: 1.2rem; color: #1a4f32;">Notifications</h3>
+                <div style="color:#64748b; margin-bottom:1rem;">Choose how you want to receive booking and promo updates.</div>
+                <form method="post" action="{{ url_for('visitor.profile', tab='notifications') }}" style="display:grid; gap:1rem; max-width: 560px;">
+                    <input type="hidden" name="action" value="notifications">
+                    <label style="display:flex; gap:0.75rem; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;">
+                        <input type="checkbox" name="email_bookings" {% if notification_prefs.email_bookings %}checked{% endif %}>
+                        <span>Email me booking confirmations and updates</span>
+                    </label>
+                    <label style="display:flex; gap:0.75rem; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;">
+                        <input type="checkbox" name="email_promos" {% if notification_prefs.email_promos %}checked{% endif %}>
+                        <span>Email me promotions and event offers</span>
+                    </label>
+                    <label style="display:flex; gap:0.75rem; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;">
+                        <input type="checkbox" name="sms_alerts" {% if notification_prefs.sms_alerts %}checked{% endif %}>
+                        <span>Send SMS alerts for urgent booking changes</span>
+                    </label>
+                    <label style="display:flex; gap:0.75rem; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;">
+                        <input type="checkbox" name="visit_reminders" {% if notification_prefs.visit_reminders %}checked{% endif %}>
+                        <span>Remind me about upcoming visits</span>
+                    </label>
+                    <button type="submit" class="btn" style="background:#1a4f32; color:white; border:none; padding:0.8rem 1.2rem; border-radius:10px; font-weight:800; width:fit-content;">Save Preferences</button>
+                </form>
+            </div>
+            {% elif show_tab == 'visits' %}
+            <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">
+                <h3 style="margin:0 0 0.5rem 0; font-size: 1.2rem; color: #1a4f32;">My Visits & Points</h3>
+                <div style="color:#64748b; margin-bottom:1rem;">Track your visit history and rewards balance.</div>
+                <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                    <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px; font-weight:700;">Visits: {{ bookings_count or 0 }}</div>
+                    <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px; font-weight:700;">Points: {{ points or 0 }}</div>
+                    <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px; font-weight:700;">Reviews: {{ reviews_count or 0 }}</div>
+                </div>
+                <div style="margin-top:1rem; display:grid; gap:0.75rem;">
+                    {% for review in recent_reviews %}
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;">
+                        <div style="font-weight:800; color:#1e293b;">{{ review.visitor_name or 'Review' }}</div>
+                        <div style="color:#64748b; font-size:0.9rem;">{{ review.comment or 'No comment provided.' }}</div>
+                    </div>
+                    {% else %}
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem; color:#64748b;">No reviews recorded yet.</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% elif show_tab == 'payments' %}
+            <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">
+                <h3 style="margin:0 0 0.5rem 0; font-size: 1.2rem; color: #1a4f32;">Payment Methods</h3>
+                <div style="color:#64748b; margin-bottom:1rem;">Recent booking payment history for this account.</div>
+                <div style="display:grid; gap:1rem;">
+                    {% for payment in payment_history %}
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem; display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+                        <div>
+                            <div style="font-weight:800; color:#1e293b;">{{ payment.method|title }} · {{ payment.reference }}</div>
+                            <div style="color:#64748b; font-size:0.9rem;">{{ payment.booking.service_name or 'Booking' }} · {{ payment.created_at.strftime('%b %d, %Y') if payment.created_at else '—' }}</div>
+                        </div>
+                        <div style="font-weight:800; color:#1a4f32;">₱{{ "{:,.2f}".format(payment.amount or 0) }}</div>
+                    </div>
+                    {% else %}
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;">No payment records found yet.</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% elif show_tab == 'linked-accounts' %}
+            <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">
+                <h3 style="margin:0 0 0.5rem 0; font-size: 1.2rem; color: #1a4f32;">Linked Accounts</h3>
+                <div style="color:#64748b; margin-bottom:1rem;">Connected details for this visitor account.</div>
+                <div style="display:grid; gap:1rem; max-width: 560px;">
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;"><strong>Email:</strong> {{ linked_accounts.email }}</div>
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;"><strong>Username:</strong> {{ linked_accounts.username }}</div>
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;"><strong>Member since:</strong> {{ linked_accounts.member_since }}</div>
+                </div>
+            </div>
+            {% elif show_tab == 'danger' %}
+            <div style="background: white; border-radius: 12px; border: 1px solid #fecaca; padding: 2rem;">
+                <h3 style="margin:0 0 0.5rem 0; font-size: 1.2rem; color: #b91c1c;">Danger Zone</h3>
+                <div style="color:#64748b; margin-bottom:1rem;">Account actions that should be handled carefully.</div>
+                <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:1rem;">Delete account and other destructive actions can be added here later.</div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

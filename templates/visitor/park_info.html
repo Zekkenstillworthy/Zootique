@@ -9,47 +9,48 @@
         <span style="font-weight: 600; color: white;">Park Info</span>
     </div>
 
-    <div style="display: flex; justify-content: space-between;">
-        <div style="max-width: 600px;">
-            <div style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 0.3rem 1rem; border-radius: 20px; font-size: 0.75rem; font-weight: bold; width: fit-content; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-circle-info"></i> Essential Guide</div>
-            <h1 style="font-size: 3.5rem; margin-bottom: 1rem; line-height: 1.1;">Park Information</h1>
-            <p style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 2.5rem;">Everything you need to know to plan a perfect day at Zootique</p>
+    <div style="display: flex; justify-content: space-between; gap: 2rem; flex-wrap: wrap;">
+        <div style="max-width: 650px;">
+            <div style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 0.3rem 1rem; border-radius: 20px; font-size: 0.75rem; font-weight: bold; width: fit-content; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-circle-info"></i> Live park guide</div>
+            <h1 style="font-size: 3.5rem; margin-bottom: 1rem; line-height: 1.1;">{{ zoo.name if zoo else 'Selected Park' }} Information</h1>
+            <p style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 2rem;">{{ zoo.description if zoo and zoo.description else 'Explore the latest visitor information for this zoo.' }}</p>
             
-            <div style="display: flex; gap: 1.5rem; align-items: center; font-size: 0.85rem; margin-bottom: 2.5rem;">
-                <span style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-regular fa-clock" style="color:#fca000;"></i> Open 8:00 AM - 6:00 PM</span>
-                <span style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-calendar-check" style="color:#4ade80;"></i> Open Every Day</span>
-                <span style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-location-dot" style="color:#60a5fa;"></i> East Capitol Drive</span>
+            <div style="display: flex; gap: 1.5rem; align-items: center; font-size: 0.85rem; margin-bottom: 2rem; flex-wrap: wrap;">
+                <span style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-tag" style="color:#fca000;"></i> {{ zoo_type }}</span>
+                <span style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-location-dot" style="color:#60a5fa;"></i> {{ zoo_location }}</span>
+                <span style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-ticket" style="color:#4ade80;"></i> {{ service_count }} experiences</span>
             </div>
 
-            <div style="display: flex; gap: 1rem;">
-                <button class="btn" style="background: white; color: #1a4f32; border: none; padding: 0.8rem 1.5rem; border-radius: 6px; font-weight: bold;"><i class="fa-solid fa-map"></i> Download Map PDF</button>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <a href="{{ url_for('visitor.choose_zoo') }}" class="btn" style="background: white; color: #1a4f32; border: none; padding: 0.8rem 1.5rem; border-radius: 6px; font-weight: bold; text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to zoo selection</a>
             </div>
         </div>
         
-        <!-- Floating Info Card -->
         <div style="background: white; border-radius: 12px; width: 320px; color: #1e293b; padding: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 10;">
             <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-                <div style="width: 50px; height: 50px; border-radius: 8px; background: #fef08a; color: #ca8a04; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"><i class="fa-solid fa-cloud-sun"></i></div>
+                <div style="width: 50px; height: 50px; border-radius: 8px; background: #fef08a; color: #ca8a04; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"><i class="fa-solid fa-info"></i></div>
                 <div>
-                    <div style="font-weight: bold; font-size: 1.1rem;">Partly Cloudy</div>
-                    <div style="color: #64748b; font-size: 0.8rem;">Perfect day for the zoo!</div>
+                    <div style="font-weight: bold; font-size: 1.1rem;">{{ zoo.name if zoo else 'Selected park' }}</div>
+                    <div style="color: #64748b; font-size: 0.8rem;">{{ zoo_location }}</div>
                 </div>
             </div>
             
-            <div style="font-weight: bold; font-size: 0.85rem; margin-bottom: 0.5rem; color: #1a4f32;">Today's Schedule</div>
+            <div style="font-weight: bold; font-size: 0.85rem; margin-bottom: 0.5rem; color: #1a4f32;">Park highlights</div>
             <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.5rem; color: #475569;">
-                <span>Gates Open</span> <span>8:00 AM</span>
+                <span>Featured animals</span> <span>{{ animal_count }}</span>
             </div>
             <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.5rem; color: #475569;">
-                <span>Ticket Booth Closes</span> <span>5:00 PM</span>
+                <span>Visitor experiences</span> <span>{{ service_count }}</span>
             </div>
             <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 1.5rem; color: #475569;">
-                <span>Park Closes</span> <span>6:00 PM</span>
+                <span>Park type</span> <span>{{ zoo_type }}</span>
             </div>
             
+            {% if featured_animals %}
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.8rem; border-radius: 8px; font-size: 0.8rem; color: #475569;">
-                <i class="fa-solid fa-volume-high" style="color: #fca000;"></i> <b>Notice:</b> The Reptile House will be closed from 1PM - 2PM for maintenance.
+                <i class="fa-solid fa-paw" style="color: #fca000;"></i> <b>Featured animals:</b> {{ featured_animals | join(', ') }}
             </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -76,20 +77,20 @@
                 
                 <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 1.5rem;">
                     <div style="background: #e2e8f0; height: 250px; width: 100%; display: flex; align-items: center; justify-content: center; color: #94a3b8;">
-                        <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=800&h=300" style="width: 100%; height: 100%; object-fit: cover;">
+                        <img src="{{ zoo.image_url if zoo and zoo.image_url else 'https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=800&h=300' }}" style="width: 100%; height: 100%; object-fit: cover;">
                     </div>
                     <div style="padding: 1.5rem;">
-                        <h4 style="margin: 0 0 0.5rem 0; font-size: 1.1rem;">Zootique Main Entrance</h4>
-                        <p style="color: #475569; font-size: 0.9rem; margin-bottom: 1.5rem;">123 Wildlife Boulevard, East Capitol Drive, Metro City, 1001</p>
+                        <h4 style="margin: 0 0 0.5rem 0; font-size: 1.1rem;">{{ zoo.name if zoo else 'Selected park' }}</h4>
+                        <p style="color: #475569; font-size: 0.9rem; margin-bottom: 1.5rem;">{{ zoo_location }}</p>
                         
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                             <div>
-                                <h5 style="margin: 0 0 0.5rem 0; font-size: 0.95rem; color: #1a4f32;"><i class="fa-solid fa-car"></i> By Car</h5>
-                                <p style="color: #64748b; font-size: 0.85rem; line-height: 1.5;">Ample parking is available at the main entrance. Parking fee is ₱50 for cars and ₱20 for motorcycles per day.</p>
+                                <h5 style="margin: 0 0 0.5rem 0; font-size: 0.95rem; color: #1a4f32;"><i class="fa-solid fa-car"></i> Visitor access</h5>
+                                <p style="color: #64748b; font-size: 0.85rem; line-height: 1.5;">This park currently lists {{ service_count }} visitor experiences and {{ animal_count }} featured animals for guests to explore.</p>
                             </div>
                             <div>
-                                <h5 style="margin: 0 0 0.5rem 0; font-size: 0.95rem; color: #1a4f32;"><i class="fa-solid fa-bus"></i> By Public Transit</h5>
-                                <p style="color: #64748b; font-size: 0.85rem; line-height: 1.5;">Take the City Bus Route B and alight at the Zoo Gate stop. The entrance is a 2-minute walk from the stop.</p>
+                                <h5 style="margin: 0 0 0.5rem 0; font-size: 0.95rem; color: #1a4f32;"><i class="fa-solid fa-list"></i> Available highlights</h5>
+                                <p style="color: #64748b; font-size: 0.85rem; line-height: 1.5;">{% if featured_services %}{{ featured_services | join(', ') }}{% else %}Visit the booking area to view current activities.{% endif %}</p>
                             </div>
                         </div>
                     </div>
@@ -99,37 +100,18 @@
             <!-- PARK RULES -->
             <section id="park-rules" style="margin-bottom: 4rem;">
                 <h2 style="font-size: 1.8rem; color: #1a4f32; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-clipboard-list" style="color: #fca000;"></i> Park Rules & etiquette</h2>
-                <p style="color: #475569; font-size: 0.95rem; margin-bottom: 2rem;">To ensure a safe and enjoyable experience for all guests and our animals, please observe the following rules during your visit:</p>
+                <p style="color: #475569; font-size: 0.95rem; margin-bottom: 2rem;">The following guidance is tailored to {{ zoo.name if zoo else 'this park' }} so visitors can enjoy a smooth trip through the grounds.</p>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    {% for rule in park_rules %}
                     <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; display: flex; gap: 1rem;">
-                        <div style="color: #ef4444; font-size: 1.5rem;"><i class="fa-solid fa-ban"></i></div>
+                        <div style="color: #1a4f32; font-size: 1.5rem;"><i class="fa-solid fa-circle-check"></i></div>
                         <div>
-                            <div style="font-weight: bold; font-size: 0.95rem; color: #1e293b; margin-bottom: 0.2rem;">Do not feed the animals</div>
-                            <div style="color: #64748b; font-size: 0.8rem;">Our animals have strict diets. Feeding them outside of designated feeding sessions is strictly prohibited.</div>
+                            <div style="font-weight: bold; font-size: 0.95rem; color: #1e293b; margin-bottom: 0.2rem;">{{ rule.title }}</div>
+                            <div style="color: #64748b; font-size: 0.8rem;">{{ rule.text }}</div>
                         </div>
                     </div>
-                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; display: flex; gap: 1rem;">
-                        <div style="color: #10b981; font-size: 1.5rem;"><i class="fa-solid fa-camera"></i></div>
-                        <div>
-                            <div style="font-weight: bold; font-size: 0.95rem; color: #1e293b; margin-bottom: 0.2rem;">No flash photography</div>
-                            <div style="color: #64748b; font-size: 0.8rem;">Flash photography can startle or harm the animals, especially in indoor or nocturnal exhibits.</div>
-                        </div>
-                    </div>
-                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; display: flex; gap: 1rem;">
-                        <div style="color: #ef4444; font-size: 1.5rem;"><i class="fa-solid fa-ban"></i></div>
-                        <div>
-                            <div style="font-weight: bold; font-size: 0.95rem; color: #1e293b; margin-bottom: 0.2rem;">No pets allowed</div>
-                            <div style="color: #64748b; font-size: 0.8rem;">For the safety of our animals and your pets, only certified service animals are permitted.</div>
-                        </div>
-                    </div>
-                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; display: flex; gap: 1rem;">
-                        <div style="color: #1a4f32; font-size: 1.5rem;"><i class="fa-solid fa-trash-can"></i></div>
-                        <div>
-                            <div style="font-weight: bold; font-size: 0.95rem; color: #1e293b; margin-bottom: 0.2rem;">Keep the park clean</div>
-                            <div style="color: #64748b; font-size: 0.8rem;">Please dispose of your trash in the designated recycling and waste bins located throughout the park.</div>
-                        </div>
-                    </div>
+                    {% endfor %}
                 </div>
             </section>
         </div>
@@ -137,33 +119,31 @@
         <!-- SIDEBAR INFO -->
         <div>
             <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
-                <h4 style="margin: 0 0 1rem 0; font-size: 1.1rem; color: #1a4f32; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.8rem;">Contact Us</h4>
+                <h4 style="margin: 0 0 1rem 0; font-size: 1.1rem; color: #1a4f32; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.8rem;">Park details</h4>
                 
                 <div style="display: flex; gap: 1rem; margin-bottom: 1rem; align-items: flex-start;">
-                    <div style="color: #fca000; margin-top: 2px;"><i class="fa-solid fa-phone"></i></div>
+                    <div style="color: #fca000; margin-top: 2px;"><i class="fa-solid fa-location-dot"></i></div>
                     <div>
-                        <div style="font-weight: bold; font-size: 0.85rem; color: #1e293b;">Phone</div>
-                        <div style="color: #475569; font-size: 0.85rem;">+63 (2) 8123 4567</div>
+                        <div style="font-weight: bold; font-size: 0.85rem; color: #1e293b;">Location</div>
+                        <div style="color: #475569; font-size: 0.85rem;">{{ zoo_location }}</div>
                     </div>
                 </div>
                 
                 <div style="display: flex; gap: 1rem; margin-bottom: 1rem; align-items: flex-start;">
-                    <div style="color: #fca000; margin-top: 2px;"><i class="fa-solid fa-envelope"></i></div>
+                    <div style="color: #fca000; margin-top: 2px;"><i class="fa-solid fa-tag"></i></div>
                     <div>
-                        <div style="font-weight: bold; font-size: 0.85rem; color: #1e293b;">Email</div>
-                        <div style="color: #475569; font-size: 0.85rem;">info@zootique.com</div>
+                        <div style="font-weight: bold; font-size: 0.85rem; color: #1e293b;">Type</div>
+                        <div style="color: #475569; font-size: 0.85rem;">{{ zoo_type }}</div>
                     </div>
                 </div>
             </div>
 
             <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
-                <h4 style="margin: 0 0 1rem 0; font-size: 1.1rem; color: #1a4f32; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.8rem;">Facilities</h4>
+                <h4 style="margin: 0 0 1rem 0; font-size: 1.1rem; color: #1a4f32; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.8rem;">Current offerings</h4>
                 <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; color: #475569; display: flex; flex-direction: column; gap: 0.8rem;">
-                    <li><i class="fa-solid fa-wheelchair" style="color: #94a3b8; width: 20px;"></i> Wheelchair Rentals</li>
-                    <li><i class="fa-solid fa-baby-carriage" style="color: #94a3b8; width: 20px;"></i> Stroller Rentals</li>
-                    <li><i class="fa-solid fa-kit-medical" style="color: #94a3b8; width: 20px;"></i> First Aid Stations</li>
-                    <li><i class="fa-solid fa-wifi" style="color: #94a3b8; width: 20px;"></i> Free Wi-Fi</li>
-                    <li><i class="fa-solid fa-suitcase" style="color: #94a3b8; width: 20px;"></i> Lockers</li>
+                    {% for facility in facilities %}
+                    <li><i class="fa-solid {{ facility.icon }}" style="color: #94a3b8; width: 20px;"></i> {{ facility.label }}</li>
+                    {% endfor %}
                 </ul>
             </div>
         </div>

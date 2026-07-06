@@ -4,6 +4,26 @@
 {% block page_title %}Promotions Management{% endblock %}
 
 {% block content %}
+{% set selected_tab = request.args.get('tab', 'all') %}
+<div style="margin-bottom: 16px;">
+    <div class="nav-dropdown" style="position: relative; width: fit-content;">
+        <button class="nav-dropdown-trigger" onclick="toggleDropdown(event, 'promotions-page-dropdown')" style="padding: 10px 14px; background: white; border: 1px solid var(--border); border-radius: 8px; width: auto;">
+            <span><i class="fa-solid fa-tags"></i> Promotions</span>
+            <i class="fa-solid fa-chevron-down"></i>
+        </button>
+        <div class="nav-dropdown-menu" id="promotions-page-dropdown" style="position: absolute; top: 100%; left: 0; background: white; border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; width: auto; min-width: 200px; margin-top: -8px;">
+            <a href="{{ url_for('animal_farm_admin.promotions_management') }}?tab=add"
+               class="nav-dropdown-item {% if selected_tab == 'add' %}active{% endif %}">
+                <i class="fa-solid fa-plus-circle"></i> Add/Edit Promotion
+            </a>
+            <a href="{{ url_for('animal_farm_admin.promotions_management') }}?tab=list"
+               class="nav-dropdown-item {% if selected_tab == 'list' %}active{% endif %}">
+                <i class="fa-solid fa-list"></i> Promotion List
+            </a>
+        </div>
+    </div>
+</div>
+
 <div class="card-panel">
     <div class="card-header">
         <h2>Philippine Promotions</h2>
@@ -23,7 +43,9 @@
     </form>
 
     <div class="card-body">
-        <div class="two-col" style="--two-col-template: 1fr 1fr;">
+        <div class="two-col" style="--two-col-template: 1fr 1fr; {% if selected_tab == 'list' %}--two-col-template: 1fr;{% elif selected_tab == 'add' %}--two-col-template: 1fr;{% endif %}">
+            
+            {% if selected_tab in ['add', 'all'] %}
             <div class="card-panel" style="margin:0;">
                 <div class="card-header">
                     <h2>Add / Edit Promotion</h2>
@@ -33,32 +55,34 @@
                         <input type="hidden" name="promo_id" value="">
 
                         <label style="font-weight:600; color:var(--text-secondary);">Name</label>
-                        <input type="text" name="name" placeholder="e.g., Family Weekend Deal" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                        <input type="text" name="name" placeholder="e.g., Family Weekend Deal" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
                         <label style="font-weight:600; color:var(--text-secondary);">Type</label>
-                        <select name="promo_type" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;">
+                        <select name="promo_type" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;">
                             {% for t in promo_types %}
                                 <option value="{{ t }}">{{ t }}</option>
                             {% endfor %}
                         </select>
 
                         <label style="font-weight:600; color:var(--text-secondary);">Code</label>
-                        <input type="text" name="code" placeholder="e.g., FAMILY10" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; text-transform: uppercase;" />
+                        <input type="text" name="code" placeholder="e.g., FAMILY10" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; text-transform: uppercase; width:100%;" />
 
                         <label style="font-weight:600; color:var(--text-secondary);">Discount (optional)</label>
-                        <input type="text" name="discount" placeholder="e.g., 10%" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                        <input type="text" name="discount" placeholder="e.g., 10%" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
                         <label style="font-weight:600; color:var(--text-secondary);">Valid Until (optional)</label>
-                        <input type="text" name="valid_until" placeholder="YYYY-MM-DD" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                        <input type="text" name="valid_until" placeholder="YYYY-MM-DD" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
                         <label style="font-weight:600; color:var(--text-secondary);">Image (optional)</label>
-                        <input type="file" name="image_file" accept="image/*" />
+                        <input type="file" name="image_file" accept="image/*" style="width:100%;" />
 
                         <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Promotion</button>
                     </form>
                 </div>
             </div>
+            {% endif %}
 
+            {% if selected_tab in ['list', 'all'] %}
             <div class="card-panel" style="margin:0;">
                 <div class="card-header">
                     <h2>Promotion List</h2>
@@ -110,6 +134,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>

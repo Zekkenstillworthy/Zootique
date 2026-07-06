@@ -1,0 +1,35 @@
+<div>
+  <div class="sa-section-head" style="margin-bottom:18px;">
+    <div>
+      <h2>Global Pricing Tiers</h2>
+      <div class="sa-section-sub">Configure subscription features and access levels for partners.</div>
+    </div>
+  </div>
+
+  <div class="sa-pricing-grid">
+    {% for tier in plan_tiers[:3] %}
+      {% set plan_obj = (plans | selectattr('id', 'equalto', tier.id) | first) %}
+      <div class="sa-plan-card {% if tier.is_popular %}is-featured{% endif %}">
+        <div class="sa-plan-tier">{% if loop.index == 1 %}Standard Tier{% elif loop.index == 2 %}Advanced Tier{% else %}Elite Tier{% endif %}</div>
+        <div class="sa-plan-name">{{ tier.name }}</div>
+        <div class="sa-plan-price">₱{{ "{:,.0f}".format(tier.price or 0) }} <small>{{ tier.duration_label }}</small></div>
+        <div class="sa-plan-features">
+          {% if plan_obj and plan_obj.features %}
+            {% for line in (plan_obj.features or '').splitlines()[:4] %}
+              {% if line.strip() %}
+              <div class="sa-plan-feature"><i class="fa-solid fa-circle-check"></i> <span>{{ line }}</span></div>
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            <div class="sa-plan-feature"><i class="fa-solid fa-circle-check"></i> <span>{{ tier.description }}</span></div>
+          {% endif %}
+        </div>
+        <div style="margin-top:14px;">
+          <a class="btn btn-ghost" href="{{ url_for('zootique_admin.subscription_plan_manager') }}">Edit Features</a>
+        </div>
+      </div>
+    {% else %}
+      <div class="empty-state">No pricing tiers configured yet.</div>
+    {% endfor %}
+  </div>
+</div>

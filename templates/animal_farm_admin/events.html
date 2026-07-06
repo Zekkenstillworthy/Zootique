@@ -4,7 +4,29 @@
 {% block page_title %}Events Management{% endblock %}
 
 {% block content %}
-<div class="two-col" style="--two-col-template: 1fr 1fr;">
+{% set selected_tab = request.args.get('tab', 'all') %}
+<div style="margin-bottom: 16px;">
+    <div class="nav-dropdown" style="position: relative; width: fit-content;">
+        <button class="nav-dropdown-trigger" onclick="toggleDropdown(event, 'events-page-dropdown')" style="padding: 10px 14px; background: white; border: 1px solid var(--border); border-radius: 8px; width: auto;">
+            <span><i class="fa-solid fa-calendar-days"></i> Events</span>
+            <i class="fa-solid fa-chevron-down"></i>
+        </button>
+        <div class="nav-dropdown-menu" id="events-page-dropdown" style="position: absolute; top: 100%; left: 0; background: white; border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; width: auto; min-width: 200px; margin-top: -8px;">
+            <a href="{{ url_for('animal_farm_admin.events_management') }}?tab=add"
+               class="nav-dropdown-item {% if selected_tab == 'add' %}active{% endif %}">
+                <i class="fa-solid fa-plus-circle"></i> Add/Edit Event
+            </a>
+            <a href="{{ url_for('animal_farm_admin.events_management') }}?tab=list"
+               class="nav-dropdown-item {% if selected_tab == 'list' %}active{% endif %}">
+                <i class="fa-solid fa-list"></i> Event List
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="two-col" style="--two-col-template: 1fr 1fr; {% if selected_tab == 'list' %}--two-col-template: 1fr;{% elif selected_tab == 'add' %}--two-col-template: 1fr;{% endif %}">
+    
+    {% if selected_tab in ['add', 'all'] %}
     <div class="card-panel">
         <div class="card-header">
             <h2>Add / Edit Event</h2>
@@ -14,25 +36,27 @@
                 <input type="hidden" name="event_id" value="">
 
                 <label style="font-weight:600; color:var(--text-secondary);">Name</label>
-                <input type="text" name="name" placeholder="Event name" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <input type="text" name="name" placeholder="Event name" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
                 <label style="font-weight:600; color:var(--text-secondary);">Type (optional)</label>
-                <input type="text" name="type" placeholder="e.g., Workshop" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <input type="text" name="type" placeholder="e.g., Workshop" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
                 <label style="font-weight:600; color:var(--text-secondary);">Time (optional)</label>
-                <input type="text" name="time" placeholder="e.g., 2:00 PM" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <input type="text" name="time" placeholder="e.g., 2:00 PM" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
                 <label style="font-weight:600; color:var(--text-secondary);">Location (optional)</label>
-                <input type="text" name="location" placeholder="e.g., Main Pavilion" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <input type="text" name="location" placeholder="e.g., Main Pavilion" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
                 <label style="font-weight:600; color:var(--text-secondary);">Image (optional)</label>
-                <input type="file" name="image_file" accept="image/*" />
+                <input type="file" name="image_file" accept="image/*" style="width:100%;" />
 
                 <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Event</button>
             </form>
         </div>
     </div>
+    {% endif %}
 
+    {% if selected_tab in ['list', 'all'] %}
     <div class="card-panel">
         <div class="card-header">
             <h2>Event List</h2>
@@ -82,6 +106,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 
 <script>

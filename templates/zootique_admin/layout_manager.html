@@ -1,0 +1,647 @@
+{% extends "base.html" %}
+
+{% block title %}Layout Manager{% endblock %}
+{% block page_title %}Layout Manager{% endblock %}
+
+{% block extra_head %}
+<style>
+  .layout-manager-shell {
+    display: grid;
+    gap: 18px;
+  }
+
+  .layout-manager-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  .layout-manager-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  @media (max-width: 1100px) {
+    .layout-manager-grid { grid-template-columns: 1fr; }
+  }
+
+  .layout-panel {
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff, #fbfcfd);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .layout-panel-header {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .layout-panel-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 900;
+    color: var(--text);
+  }
+
+  .layout-panel-body {
+    padding: 18px;
+  }
+
+  .layout-selector-bar {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  @media (max-width: 820px) {
+    .layout-selector-bar { grid-template-columns: 1fr; }
+  }
+
+  .layout-selector-bar .form-group {
+    margin-bottom: 0;
+  }
+
+  .layout-widget-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .layout-widget-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: #ffffff;
+  }
+
+  .layout-widget-row.is-hidden {
+    opacity: 0.56;
+    background: #f8fafc;
+  }
+
+  .layout-widget-handle {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--border-light);
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .layout-widget-meta strong {
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .layout-widget-meta p {
+    margin: 4px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .layout-widget-order {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .layout-widget-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .layout-widget-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text-secondary);
+  }
+
+  .layout-widget-toggle input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+  }
+
+  .layout-preview-frame {
+    --preview-accent: var(--primary);
+    --preview-soft: var(--primary-light);
+    background: linear-gradient(180deg, #f8fafc, #ffffff);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  .layout-preview-frame[data-theme-variant="zoo_accent"] {
+    --preview-accent: #0f6d3c;
+    --preview-soft: #dcfce7;
+  }
+
+  .layout-preview-hero {
+    padding: 16px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--preview-accent) 94%, #000 6%), var(--preview-accent));
+    color: #ffffff;
+    display: grid;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .layout-preview-hero h4 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 900;
+  }
+
+  .layout-preview-hero p {
+    margin: 0;
+    color: rgba(255,255,255,0.82);
+    font-size: 13px;
+  }
+
+  .layout-preview-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  @media (max-width: 820px) {
+    .layout-preview-stats { grid-template-columns: 1fr; }
+  }
+
+  .layout-preview-stat {
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.18);
+  }
+
+  .layout-preview-stat .label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.78);
+  }
+
+  .layout-preview-stat .value {
+    margin-top: 6px;
+    font-size: 18px;
+    font-weight: 900;
+  }
+
+  .layout-preview-grid {
+    display: grid;
+    gap: 14px;
+  }
+
+  .layout-preview-grid.layout-style-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .layout-preview-grid.layout-style-list {
+    grid-template-columns: 1fr;
+  }
+
+  .layout-preview-grid.layout-style-compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  @media (max-width: 820px) {
+    .layout-preview-grid.layout-style-grid,
+    .layout-preview-grid.layout-style-compact { grid-template-columns: 1fr; }
+  }
+
+  .preview-widget {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .preview-widget.is-hidden {
+    display: none;
+  }
+
+  .preview-widget.compact {
+    padding-bottom: 2px;
+  }
+
+  .preview-widget-header {
+    background: var(--preview-accent);
+    color: #ffffff;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .preview-widget-header h5 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 900;
+  }
+
+  .preview-widget-body {
+    padding: 16px;
+    display: grid;
+    gap: 10px;
+  }
+
+  .preview-metric {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .preview-metric .metric-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+
+  .preview-metric .metric-value {
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--text);
+  }
+
+  .preview-feedback-item {
+    padding: 12px;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid var(--border-light);
+  }
+
+  .preview-feedback-item strong {
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .preview-feedback-item p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  .layout-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="layout-manager-shell">
+  <div class="card-panel">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div>
+        <h2>Zoo Admin Dashboard Layout</h2>
+        <div style="margin-top:6px; color:rgba(255,255,255,0.8); font-size:13px;">Configure widgets per zoo, then publish the layout Zoo Admins will see on their next dashboard load.</div>
+      </div>
+      <span class="sa-pill">Preview before publish</span>
+    </div>
+    <div class="card-body">
+      <div class="layout-manager-toolbar">
+        <form method="get" action="{{ url_for('zootique_admin.layout_manager') }}" class="layout-selector-bar" style="margin:0; width:100%;">
+          <div class="form-group">
+            <label for="zoo_picker" class="form-label">Zoo</label>
+            <select id="zoo_picker" name="zoo_id">
+              {% for zoo in zoos %}
+                <option value="{{ zoo.id }}" {% if selected_zoo and selected_zoo.id == zoo.id %}selected{% endif %}>{{ zoo.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Current theme</label>
+            <div class="sa-pill">{{ layout_config.theme_variant.replace('_', ' ')|title }}</div>
+          </div>
+          <div class="form-group" style="display:flex; align-items:end;">
+            <button type="submit" class="btn btn-outline" style="width:100%; justify-content:center;">Load Zoo</button>
+          </div>
+        </form>
+      </div>
+
+      {% if selected_zoo %}
+      <form id="layout-manager-form" method="post" action="{{ url_for('zootique_admin.layout_manager') }}">
+        <input type="hidden" name="zoo_id" value="{{ selected_zoo.id }}">
+        <input type="hidden" name="widget_order" id="widget_order" value='{{ layout_config.widget_order|tojson }}'>
+
+        <div class="layout-manager-grid">
+          <section class="layout-panel">
+            <div class="layout-panel-header">
+              <h3>Control Panel</h3>
+              <span class="sa-pill">{{ selected_zoo.name }}</span>
+            </div>
+            <div class="layout-panel-body">
+              <div class="layout-selector-bar">
+                <div class="form-group">
+                  <label class="form-label" for="layout_style">Layout style</label>
+                  <select id="layout_style" name="layout_style">
+                    {% for option in layout_styles %}
+                      <option value="{{ option.value }}" {% if layout_config.layout_style == option.value %}selected{% endif %}>{{ option.label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="theme_variant">Theme variant</label>
+                  <select id="theme_variant" name="theme_variant">
+                    {% for option in theme_variants %}
+                      <option value="{{ option.value }}" {% if layout_config.theme_variant == option.value %}selected{% endif %}>{{ option.label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Visible widgets</label>
+                  <div class="sa-pill">Drag not required; use the up/down controls</div>
+                </div>
+              </div>
+
+              <div id="widget_rows" class="layout-widget-list">
+                {% for widget in dashboard_widgets %}
+                <article class="layout-widget-row{% if not widget.visible %} is-hidden{% endif %}" data-widget-id="{{ widget.id }}">
+                  <div class="layout-widget-handle" aria-hidden="true" title="Reorder widget">
+                    <i class="fa-solid fa-grip-vertical"></i>
+                  </div>
+                  <div class="layout-widget-meta">
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                      <strong>{{ widget.label }}</strong>
+                      <span class="layout-widget-order"></span>
+                    </div>
+                    <p>{{ widget.description }}</p>
+                  </div>
+                  <div class="layout-widget-actions">
+                    <label class="layout-widget-toggle">
+                      <input type="checkbox" name="visible_widgets" value="{{ widget.id }}" {% if widget.visible %}checked{% endif %}>
+                      <span>Visible</span>
+                    </label>
+                    <button type="button" class="btn btn-ghost btn-sm" data-move="up"><i class="fa-solid fa-arrow-up"></i></button>
+                    <button type="button" class="btn btn-ghost btn-sm" data-move="down"><i class="fa-solid fa-arrow-down"></i></button>
+                  </div>
+                </article>
+                {% endfor %}
+              </div>
+
+              <div class="layout-form-actions">
+                <a class="btn btn-ghost" href="{{ url_for('animal_farm_admin.dashboard') }}" target="_blank" rel="noreferrer"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open Zoo Admin dashboard</a>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Publish layout</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="layout-panel">
+            <div class="layout-panel-header">
+              <h3>Preview before publish</h3>
+              <span class="sa-pill">Live</span>
+            </div>
+            <div class="layout-panel-body">
+              <div id="preview_frame" class="layout-preview-frame" data-layout-style="{{ layout_config.layout_style }}" data-theme-variant="{{ layout_config.theme_variant }}">
+                <div class="layout-preview-hero">
+                  <div>
+                    <span class="sa-pill" style="background:rgba(255,255,255,0.16); color:#fff; border-color:rgba(255,255,255,0.15);">{{ selected_zoo.name }}</span>
+                    <h4 style="margin-top:10px;">{{ layout_config.layout_style|title }} layout</h4>
+                    <p>{{ layout_config.theme_variant.replace('_', ' ')|title }} theme variant applied.</p>
+                  </div>
+                  <div class="layout-preview-stats">
+                    <div class="layout-preview-stat">
+                      <div class="label">Widgets visible</div>
+                      <div class="value" data-preview-visible-count>0</div>
+                    </div>
+                    <div class="layout-preview-stat">
+                      <div class="label">Layout style</div>
+                      <div class="value" data-preview-layout-style>{{ layout_config.layout_style|title }}</div>
+                    </div>
+                    <div class="layout-preview-stat">
+                      <div class="label">Theme</div>
+                      <div class="value" data-preview-theme>{{ layout_config.theme_variant.replace('_', ' ')|title }}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="preview_grid" class="layout-preview-grid layout-style-{{ layout_config.layout_style }}">
+                  {% for widget in dashboard_widgets %}
+                  <article class="preview-widget{% if not widget.visible %} is-hidden{% endif %}{% if layout_config.layout_style == 'compact' %} compact{% endif %}" data-preview-widget="{{ widget.id }}">
+                    <div class="preview-widget-header">
+                      <h5><i class="{{ widget.icon }}"></i> {{ widget.label }}</h5>
+                      <span class="sa-pill" style="background:rgba(255,255,255,0.14); color:#fff; border-color:rgba(255,255,255,0.18);">Preview</span>
+                    </div>
+                    <div class="preview-widget-body">
+                      {% if widget.id == 'revenue_summary' %}
+                        <div class="preview-metric">
+                          <span class="metric-label">Monthly revenue</span>
+                          <span class="metric-value">₱{{ '{:,.0f}'.format(widget.monthly_revenue or 0) }}</span>
+                        </div>
+                        <div class="preview-metric">
+                          <span class="metric-label">Revenue goal</span>
+                          <span class="metric-value">{{ widget.revenue_goal_pct }}%</span>
+                        </div>
+                        <div class="preview-metric">
+                          <span class="metric-label">Bookings this month</span>
+                          <span class="metric-value">{{ widget.booking_count }}</span>
+                        </div>
+                      {% elif widget.id == 'membership_stats' %}
+                        <div class="preview-metric">
+                          <span class="metric-label">Status</span>
+                          <span class="metric-value" style="font-size:16px;">{{ widget.status }}</span>
+                        </div>
+                        <div class="preview-metric">
+                          <span class="metric-label">Days remaining</span>
+                          <span class="metric-value">{{ widget.days_remaining if widget.days_remaining is not none else '—' }}</span>
+                        </div>
+                        <div class="preview-metric">
+                          <span class="metric-label">Open tasks</span>
+                          <span class="metric-value">{{ widget.open_tasks }}</span>
+                        </div>
+                      {% elif widget.id == 'recent_feedback' %}
+                        {% for item in widget['items'][:3] %}
+                          <div class="preview-feedback-item">
+                            <strong>{{ item.visitor_name }} <span style="color:var(--warning);">{{ '★' * item.rating }}</span></strong>
+                            <p>{{ item.comment }}</p>
+                            <div style="margin-top:6px; color:var(--text-light); font-size:12px;">{{ item.date }}</div>
+                          </div>
+                        {% else %}
+                          <div style="color:var(--text-muted);">No feedback yet.</div>
+                        {% endfor %}
+                      {% elif widget.id == 'upcoming_renewals' %}
+                        <div class="preview-metric">
+                          <span class="metric-label">Next due date</span>
+                          <span class="metric-value" style="font-size:16px;">{{ widget.next_due_date or '—' }}</span>
+                        </div>
+                        <div class="preview-metric">
+                          <span class="metric-label">Status</span>
+                          <span class="metric-value" style="font-size:16px;">{{ widget.status }}</span>
+                        </div>
+                        <div class="preview-metric">
+                          <span class="metric-label">Days remaining</span>
+                          <span class="metric-value">{{ widget.days_remaining if widget.days_remaining is not none else '—' }}</span>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </article>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </form>
+      {% else %}
+      <div class="card-panel" style="margin:0;">
+        <div class="card-body">
+          <p style="margin:0; color:var(--text-muted);">Create or assign a zoo first, then return here to configure its dashboard layout.</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(() => {
+  const form = document.getElementById('layout-manager-form');
+  const rowsContainer = document.getElementById('widget_rows');
+  const previewGrid = document.getElementById('preview_grid');
+  const previewFrame = document.getElementById('preview_frame');
+  const orderInput = document.getElementById('widget_order');
+  const layoutStyle = document.getElementById('layout_style');
+  const themeVariant = document.getElementById('theme_variant');
+  const visibleCount = document.querySelector('[data-preview-visible-count]');
+  const layoutStyleLabel = document.querySelector('[data-preview-layout-style]');
+  const themeLabel = document.querySelector('[data-preview-theme]');
+
+  if (!form || !rowsContainer || !previewGrid || !previewFrame || !orderInput) return;
+
+  const getRows = () => Array.from(rowsContainer.querySelectorAll('.layout-widget-row'));
+  const getPreviewWidgets = () => Array.from(previewGrid.querySelectorAll('[data-preview-widget]'));
+
+  const updateOrderNumbers = () => {
+    getRows().forEach((row, index) => {
+      const badge = row.querySelector('.layout-widget-order');
+      if (badge) badge.textContent = '#' + (index + 1);
+    });
+  };
+
+  const syncHiddenField = () => {
+    orderInput.value = JSON.stringify(getRows().map((row) => row.dataset.widgetId));
+  };
+
+  const syncPreview = () => {
+    const rowIds = getRows().map((row) => row.dataset.widgetId);
+    rowIds.forEach((widgetId) => {
+      const row = rowsContainer.querySelector('[data-widget-id="' + widgetId + '"]');
+      const preview = previewGrid.querySelector('[data-preview-widget="' + widgetId + '"]');
+      if (!row || !preview) return;
+      const checkbox = row.querySelector('input[type="checkbox"]');
+      const visible = !!(checkbox && checkbox.checked);
+      row.classList.toggle('is-hidden', !visible);
+      preview.classList.toggle('is-hidden', !visible);
+      preview.classList.toggle('compact', layoutStyle && layoutStyle.value === 'compact');
+    });
+
+    rowIds.forEach((widgetId) => {
+      const preview = previewGrid.querySelector('[data-preview-widget="' + widgetId + '"]');
+      if (preview) previewGrid.appendChild(preview);
+    });
+
+    if (visibleCount) {
+      visibleCount.textContent = getRows().filter((row) => {
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        return checkbox && checkbox.checked;
+      }).length.toString();
+    }
+
+    if (layoutStyleLabel && layoutStyle) {
+      layoutStyleLabel.textContent = layoutStyle.options[layoutStyle.selectedIndex]?.textContent || '';
+      previewFrame.dataset.layoutStyle = layoutStyle.value;
+      previewGrid.className = 'layout-preview-grid layout-style-' + layoutStyle.value;
+      getPreviewWidgets().forEach((widget) => widget.classList.toggle('compact', layoutStyle.value === 'compact'));
+    }
+
+    if (themeLabel && themeVariant) {
+      themeLabel.textContent = themeVariant.options[themeVariant.selectedIndex]?.textContent || '';
+      previewFrame.dataset.themeVariant = themeVariant.value;
+    }
+
+    updateOrderNumbers();
+    syncHiddenField();
+  };
+
+  const moveRow = (row, direction) => {
+    const sibling = direction === 'up' ? row.previousElementSibling : row.nextElementSibling;
+    if (!sibling) return;
+    if (direction === 'up') {
+      rowsContainer.insertBefore(row, sibling);
+    } else {
+      rowsContainer.insertBefore(sibling, row);
+    }
+    syncPreview();
+  };
+
+  rowsContainer.querySelectorAll('.layout-widget-row').forEach((row) => {
+    const checkbox = row.querySelector('input[type="checkbox"]');
+    const upButton = row.querySelector('[data-move="up"]');
+    const downButton = row.querySelector('[data-move="down"]');
+
+    if (checkbox) {
+      checkbox.addEventListener('change', syncPreview);
+    }
+    if (upButton) {
+      upButton.addEventListener('click', () => moveRow(row, 'up'));
+    }
+    if (downButton) {
+      downButton.addEventListener('click', () => moveRow(row, 'down'));
+    }
+  });
+
+  if (layoutStyle) {
+    layoutStyle.addEventListener('change', syncPreview);
+  }
+  if (themeVariant) {
+    themeVariant.addEventListener('change', syncPreview);
+  }
+
+  form.addEventListener('submit', syncHiddenField);
+
+  syncPreview();
+})();
+</script>
+{% endblock %}

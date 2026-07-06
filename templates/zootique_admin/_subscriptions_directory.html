@@ -1,0 +1,122 @@
+<div>
+  <div class="stats-grid" style="--stats-cols: 4; margin-bottom:18px;">
+    <div class="stat-card sa-kpi" style="--kpi-accent: #0f766e;">
+      <div class="stat-label">ACTIVE SUBSCRIPTIONS</div>
+      <div class="sa-kpi-row">
+        <div class="stat-value">{{ "{:,}".format(sub_stats.active or 0) }}</div>
+        <span class="sa-pill sa-pill--ok">+12%</span>
+      </div>
+    </div>
+    <div class="stat-card sa-kpi" style="--kpi-accent: #14b8a6;">
+      <div class="stat-label">TOTAL REVENUE (MRR)</div>
+      <div class="sa-kpi-row">
+        <div class="stat-value">₱{{ "{:,.2f}".format(sub_stats.mrr or 0) }}</div>
+        <span class="sa-pill">Monthly</span>
+      </div>
+    </div>
+    <div class="stat-card sa-kpi" style="--kpi-accent: var(--warning);">
+      <div class="stat-label">PENDING RENEWALS</div>
+      <div class="sa-kpi-row">
+        <div class="stat-value">{{ "{:,}".format(sub_stats.pending_renewals or 0) }}</div>
+        <span class="sa-pill {% if (sub_stats.pending_renewals or 0) > 0 %}sa-pill--warn{% endif %}">{% if (sub_stats.pending_renewals or 0) > 0 %}Review{% else %}All good{% endif %}</span>
+      </div>
+    </div>
+    <div class="stat-card sa-kpi" style="--kpi-accent: var(--danger);">
+      <div class="stat-label">CHURN RATE</div>
+      <div class="sa-kpi-row">
+        <div class="stat-value">{{ "{:.1f}".format(sub_stats.churn_rate or 0) }}%</div>
+        <span class="sa-pill">Rolling</span>
+      </div>
+    </div>
+  </div>
+
+  {% set _needs_attention = (sub_stats.pending_renewals or 0) > 0 or (sub_stats.expired or 0) > 0 %}
+  {% if _needs_attention %}
+  <div class="card-panel" style="margin-bottom:16px; border-left:4px solid var(--warning); background:var(--warning-bg);">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px;">
+      <div style="display:flex; align-items:flex-start; gap:10px;">
+        <i class="fa-solid fa-triangle-exclamation" style="color:var(--warning); margin-top:2px;"></i>
+        <div>
+          <div style="font-weight:900; letter-spacing:0.02em;">SUBSCRIPTION ATTENTION REQUIRED</div>
+          <div style="font-size:12px; color:#92400e; font-weight:700;">
+            {{ sub_stats.pending_renewals or 0 }} pending renewals • {{ sub_stats.expired or 0 }} expired
+          </div>
+        </div>
+      </div>
+      <span class="sa-pill sa-pill--warn">Review</span>
+    </div>
+  </div>
+  {% endif %}
+
+  <div id="zoo-membership-directory" class="card-panel" style="margin-bottom:0; scroll-margin-top:96px;">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+      <h2>ZOO MEMBERSHIP DIRECTORY</h2>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <input type="text" placeholder="Search Zoo Name..." style="max-width:260px;">
+        <button class="btn btn-ghost btn-sm" type="button"><i class="fa-solid fa-filter"></i> Filters</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ZOO NAME</th>
+            <th>PLAN TYPE</th>
+            <th>STATUS</th>
+            <th>START DATE</th>
+            <th>END DATE</th>
+            <th style="text-align:right;">AMOUNT</th>
+            <th style="text-align:right;">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sub in subscriptions %}
+          <tr>
+            <td class="fw-600">{{ sub.zoo_name }}</td>
+            <td style="font-weight:700;">{{ sub.plan_name }}</td>
+            <td>
+              {% if sub.status == 'Active' %}
+              <span class="sa-pill sa-pill--ok">ACTIVE</span>
+              {% else %}
+              <span class="sa-pill sa-pill--danger">EXPIRED</span>
+              {% endif %}
+            </td>
+            <td style="color:var(--text-muted); font-size:12px;">{{ sub.start_date }}</td>
+            <td style="color:var(--text-muted); font-size:12px;">{{ sub.end_date }}</td>
+            <td style="text-align:right; font-weight:800; color:var(--primary);">₱{{ "{:,.2f}".format(sub.latest_payment_amount or 0) }}</td>
+            <td style="text-align:right;">
+              <div style="display:grid; gap:8px; justify-items:end; min-width:220px;">
+                <form method="post" action="{{ url_for('zootique_admin.renew_subscription', subscription_id=sub.subscription_id) }}" style="display:flex; gap:6px; align-items:center; justify-content:flex-end;">
+                  <input type="number" name="months" min="1" value="1" style="max-width:70px;">
+                  <button class="btn btn-outline btn-sm" type="submit">Renew</button>
+                </form>
+
+                <form method="post" action="{{ url_for('zootique_admin.change_subscription_plan', subscription_id=sub.subscription_id) }}" style="display:flex; gap:6px; align-items:center; justify-content:flex-end;">
+                  <select name="plan_id" style="min-width:120px;">
+                    {% for p in plans %}
+                    <option value="{{ p.id }}" {% if p.id == sub.plan_id %}selected{% endif %}>{{ p.name }}</option>
+                    {% endfor %}
+                  </select>
+                  <button class="btn btn-ghost btn-sm" type="submit">Change</button>
+                </form>
+
+                <form method="post" action="{{ url_for('zootique_admin.cancel_subscription', subscription_id=sub.subscription_id) }}">
+                  <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger);">Cancel</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="empty-state">No subscriptions found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div style="padding:12px 16px; border-top:1px solid var(--border-light); font-size:12px; color:var(--text-muted);">
+      Showing {{ subscriptions|length }} entries
+    </div>
+  </div>
+</div>

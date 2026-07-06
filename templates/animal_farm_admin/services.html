@@ -4,7 +4,29 @@
 {% block page_title %}Services Management{% endblock %}
 
 {% block content %}
-<div class="two-col" style="--two-col-template: 1fr 1fr;">
+{% set selected_tab = request.args.get('tab', 'all') %}
+<div style="margin-bottom: 16px;">
+    <div class="nav-dropdown" style="position: relative; width: fit-content;">
+        <button class="nav-dropdown-trigger" onclick="toggleDropdown(event, 'services-page-dropdown')" style="padding: 10px 14px; background: white; border: 1px solid var(--border); border-radius: 8px; width: auto;">
+            <span><i class="fa-solid fa-list-check"></i> Services</span>
+            <i class="fa-solid fa-chevron-down"></i>
+        </button>
+        <div class="nav-dropdown-menu" id="services-page-dropdown" style="position: absolute; top: 100%; left: 0; background: white; border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; width: auto; min-width: 200px; margin-top: -8px;">
+            <a href="{{ url_for('animal_farm_admin.services_management') }}?tab=add"
+               class="nav-dropdown-item {% if selected_tab == 'add' %}active{% endif %}">
+                <i class="fa-solid fa-plus-circle"></i> Add/Edit Service
+            </a>
+            <a href="{{ url_for('animal_farm_admin.services_management') }}?tab=list"
+               class="nav-dropdown-item {% if selected_tab == 'list' %}active{% endif %}">
+                <i class="fa-solid fa-list"></i> Service List
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="two-col" style="--two-col-template: 1fr 1fr; {% if selected_tab == 'list' %}--two-col-template: 1fr;{% elif selected_tab == 'add' %}--two-col-template: 1fr;{% endif %}">
+    
+    {% if selected_tab in ['add', 'all'] %}
     <div class="card-panel">
         <div class="card-header">
             <h2>Add / Edit Service</h2>
@@ -14,24 +36,26 @@
                 <input type="hidden" name="service_id" value="">
 
                 <label style="font-weight:600; color:var(--text-secondary);">Name</label>
-                <input type="text" name="name" placeholder="e.g., Safari Tour" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <input type="text" name="name" placeholder="e.g., Safari Tour" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
                 <label style="font-weight:600; color:var(--text-secondary);">Price (PHP)</label>
-                <input type="number" name="price" step="0.01" placeholder="e.g., 499.00" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <input type="number" name="price" step="0.01" placeholder="e.g., 499.00" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
                 <label style="font-weight:600; color:var(--text-secondary);">Upload Picture (optional)</label>
-                <input type="file" name="image_file" accept="image/*" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;" />
+                <input type="file" name="image_file" accept="image/*" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
                 <p style="margin:0; color: var(--text-muted); font-size: 12px;">Leave blank to keep the existing picture when editing.</p>
 
                 <label style="font-weight:600; color:var(--text-secondary);">Description (optional)</label>
-                <textarea name="description" rows="4" placeholder="Short description" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px;"></textarea>
+                <textarea name="description" rows="4" placeholder="Short description" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;"></textarea>
 
                 <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Service</button>
                 <p style="color: var(--text-muted); font-size: 12px;">To edit a service, use the Edit button in the table.</p>
             </form>
         </div>
     </div>
+    {% endif %}
 
+    {% if selected_tab in ['list', 'all'] %}
     <div class="card-panel">
         <div class="card-header">
             <h2>Service List</h2>
@@ -79,6 +103,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 
 <script>
