@@ -79,14 +79,14 @@ def _current_user() -> User | None:
     user_id = session.get('user_id')
     if not user_id:
         return None
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 
 def _current_zoo() -> Zoo | None:
     u = _current_user()
     if not u or not u.zoo_id:
         return None
-    return Zoo.query.get(int(u.zoo_id))
+    return db.session.get(Zoo, int(u.zoo_id))
 
 
 def _parse_date(value: str | None):

@@ -272,72 +272,7 @@ def dashboard():
 
 @admin_bp.route('/layout-manager', methods=['GET', 'POST'])
 def layout_manager():
-    zoos = Zoo.query.order_by(Zoo.name.asc()).all()
-    selected_zoo_id = request.args.get('zoo_id') if request.method == 'GET' else request.form.get('zoo_id')
-
-    selected_zoo = None
-    if selected_zoo_id and str(selected_zoo_id).isdigit():
-        selected_zoo = db.session.get(Zoo, int(selected_zoo_id))
-    if selected_zoo is None and zoos:
-        selected_zoo = zoos[0]
-
-    layout_config = get_layout_config_for_zoo(selected_zoo.id if selected_zoo else None)
-    dashboard_widget_map = build_zoo_dashboard_widget_map(selected_zoo) if selected_zoo else {}
-    dashboard_widgets = order_dashboard_widgets(dashboard_widget_map, layout_config)
-
-    if request.method == 'POST':
-        target_zoo_id_raw = (request.form.get('zoo_id') or '').strip()
-        if not target_zoo_id_raw.isdigit():
-            flash('Select a zoo before saving layout settings.', 'error')
-            return redirect(url_for('zootique_admin.layout_manager'))
-
-        target_zoo = db.session.get(Zoo, int(target_zoo_id_raw))
-        if not target_zoo:
-            flash('Selected zoo was not found.', 'error')
-            return redirect(url_for('zootique_admin.layout_manager'))
-
-        widget_order_raw = (request.form.get('widget_order') or '').strip()
-        try:
-            widget_order = json.loads(widget_order_raw) if widget_order_raw else []
-        except ValueError:
-            widget_order = []
-
-        widget_visibility = {widget['id']: False for widget in WIDGET_CATALOG}
-        for widget_id in request.form.getlist('visible_widgets'):
-            if widget_id in widget_visibility:
-                widget_visibility[widget_id] = True
-
-        layout_style = (request.form.get('layout_style') or 'grid').strip().lower()
-        theme_variant = (request.form.get('theme_variant') or 'light').strip().lower()
-
-        save_layout_config(
-            zoo_id=target_zoo.id,
-            widget_visibility=widget_visibility,
-            widget_order=widget_order,
-            layout_style=layout_style,
-            theme_variant=theme_variant,
-        )
-        db.session.commit()
-        flash(f'Layout settings saved for {target_zoo.name}.', 'success')
-        return redirect(url_for('zootique_admin.layout_manager', zoo_id=target_zoo.id))
-
-    return render_template(
-        'zootique_admin/layout_manager.html',
-        zoos=zoos,
-        selected_zoo=selected_zoo,
-        layout_config=layout_config,
-        dashboard_widgets=dashboard_widgets,
-        widget_catalog=WIDGET_CATALOG,
-        layout_styles=[
-            {'value': 'grid', 'label': 'Grid'},
-            {'value': 'list', 'label': 'List'},
-            {'value': 'compact', 'label': 'Compact'},
-        ],
-        theme_variants=[
-            {'value': 'light', 'label': 'Light'},
-            {'value': 'zoo_accent', 'label': 'Zoo-branded accent'},
-        ],
-    )
+    return redirect(url_for('zootique_admin.dashboard'))
 
 def _build_subscription_management_context(edit_plan_id: str | None = None):
     now = datetime.utcnow()
@@ -473,6 +408,7 @@ def manage_subscriptions():
 
 
 @admin_bp.get("/subscriptions/global-pricing-tiers")
+@admin_bp.get("/subscriptions/subscription-plan")
 def subscription_pricing_tiers():
     context = _build_subscription_management_context()
     return _render_subscription_view(
@@ -630,7 +566,30 @@ def save_subscription_plan():
         db.session.rollback()
         flash(f'Failed to save plan: {e}', 'error')
 
-    return redirect(url_for('zootique_admin.subscription_plan_manager', edit_plan=plan.id))
+    return redirect(url_for('zootique_admin.subscription_pricing_tiers'))
+
+
+@admin_bp.post('/subscriptions/plans/<int:plan_id>/delete')
+def delete_subscription_plan(plan_id: int):
+    plan = db.session.get(SubscriptionPlan, plan_id)
+    if not plan:
+        flash('Subscription plan not found.', 'error')
+        return redirect(url_for('zootique_admin.subscription_pricing_tiers'))
+
+    active_usage = db.session.query(ZooSubscription).filter(ZooSubscription.plan_id == plan.id).first()
+    if active_usage:
+        flash(f"Cannot delete plan '{plan.name}' because it is assigned to existing subscriptions.", 'error')
+        return redirect(url_for('zootique_admin.subscription_pricing_tiers'))
+
+    try:
+        db.session.delete(plan)
+        db.session.commit()
+        flash(f"Subscription plan '{plan.name}' deleted.", 'success')
+    except Exception as exc:
+        db.session.rollback()
+        flash(f"Failed to delete plan: {exc}", 'error')
+
+    return redirect(url_for('zootique_admin.subscription_pricing_tiers'))
 
 @admin_bp.get("/zoo-feedback")
 def view_feedback():

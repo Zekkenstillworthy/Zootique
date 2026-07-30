@@ -1,9 +1,9 @@
 {
   "overall": {
     "total": 111,
-    "passed": 76,
-    "failed": 35,
-    "percent": 68.47
+    "passed": 88,
+    "failed": 23,
+    "percent": 79.28
   },
   "modules": {
     "API-Admin": {
@@ -26,9 +26,9 @@
     },
     "API-SuperAdmin": {
       "total": 5,
-      "passed": 0,
-      "failed": 5,
-      "percent": 0.0
+      "passed": 5,
+      "failed": 0,
+      "percent": 100.0
     },
     "API-Visitor": {
       "total": 4,
@@ -50,15 +50,15 @@
     },
     "Super Admin": {
       "total": 8,
-      "passed": 0,
-      "failed": 8,
-      "percent": 0.0
+      "passed": 6,
+      "failed": 2,
+      "percent": 75.0
     },
     "SuperAdmin-Login": {
       "total": 1,
-      "passed": 0,
-      "failed": 1,
-      "percent": 0.0
+      "passed": 1,
+      "failed": 0,
+      "percent": 100.0
     },
     "Visitor": {
       "total": 19,
@@ -883,112 +883,112 @@
     {
       "module": "SuperAdmin-Login",
       "path": "/auth/login/zootique_admin",
-      "ok": false,
-      "status_code": 200,
-      "location": "",
+      "ok": true,
+      "status_code": 302,
+      "location": "/zootique-admin/",
       "note": "superadmin@zootique.local"
     },
     {
       "module": "Super Admin",
       "path": "/zootique-admin/",
-      "ok": false,
-      "status_code": 302,
-      "location": "/auth/login/zootique_admin?next=/zootique-admin/",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
       "note": ""
     },
     {
       "module": "Super Admin",
       "path": "/zootique-admin/feedback",
       "ok": false,
-      "status_code": 302,
-      "location": "/auth/login/zootique_admin?next=/zootique-admin/feedback",
+      "status_code": 301,
+      "location": "/zootique-admin/zoo-feedback",
       "note": ""
     },
     {
       "module": "Super Admin",
       "path": "/zootique-admin/reports",
-      "ok": false,
-      "status_code": 302,
-      "location": "/auth/login/zootique_admin?next=/zootique-admin/reports",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
       "note": ""
     },
     {
       "module": "Super Admin",
       "path": "/zootique-admin/settings",
-      "ok": false,
-      "status_code": 302,
-      "location": "/auth/login/zootique_admin?next=/zootique-admin/settings",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
       "note": ""
     },
     {
       "module": "Super Admin",
       "path": "/zootique-admin/subscriptions",
-      "ok": false,
-      "status_code": 302,
-      "location": "/auth/login/zootique_admin?next=/zootique-admin/subscriptions",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
       "note": ""
     },
     {
       "module": "Super Admin",
       "path": "/zootique-admin/user-management",
-      "ok": false,
-      "status_code": 302,
-      "location": "/auth/login/zootique_admin?next=/zootique-admin/user-management",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
       "note": ""
     },
     {
       "module": "Super Admin",
       "path": "/zootique-admin/users",
       "ok": false,
-      "status_code": 302,
-      "location": "/auth/login/zootique_admin?next=/zootique-admin/users",
+      "status_code": 301,
+      "location": "/zootique-admin/user-management",
       "note": ""
     },
     {
       "module": "Super Admin",
       "path": "/zootique-admin/zoo-feedback",
-      "ok": false,
-      "status_code": 302,
-      "location": "/auth/login/zootique_admin?next=/zootique-admin/zoo-feedback",
+      "ok": true,
+      "status_code": 200,
+      "location": "",
       "note": ""
     },
     {
       "module": "API-SuperAdmin",
       "path": "/api/auth/me",
-      "ok": false,
-      "status_code": 401,
+      "ok": true,
+      "status_code": 200,
       "location": "",
       "note": ""
     },
     {
       "module": "API-SuperAdmin",
       "path": "/api/super-admin/profile",
-      "ok": false,
-      "status_code": 401,
+      "ok": true,
+      "status_code": 200,
       "location": "",
       "note": ""
     },
     {
       "module": "API-SuperAdmin",
       "path": "/api/super-admin/subscriptions",
-      "ok": false,
-      "status_code": 401,
+      "ok": true,
+      "status_code": 200,
       "location": "",
       "note": ""
     },
     {
       "module": "API-SuperAdmin",
       "path": "/api/super-admin/users",
-      "ok": false,
-      "status_code": 401,
+      "ok": true,
+      "status_code": 200,
       "location": "",
       "note": ""
     },
     {
       "module": "API-SuperAdmin",
       "path": "/api/super-admin/zoo-feedback",
-      "ok": false,
-      "status_code": 401,
+      "ok": true,
+      "status_code": 200,
       "location": "",
       "note": ""
     }

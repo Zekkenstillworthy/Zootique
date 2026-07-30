@@ -88,23 +88,13 @@
             <td style="color:var(--text-muted); font-size:12px;">{{ sub.end_date }}</td>
             <td style="text-align:right; font-weight:800; color:var(--primary);">₱{{ "{:,.2f}".format(sub.latest_payment_amount or 0) }}</td>
             <td style="text-align:right;">
-              <div style="display:grid; gap:8px; justify-items:end; min-width:220px;">
-                <form method="post" action="{{ url_for('zootique_admin.renew_subscription', subscription_id=sub.subscription_id) }}" style="display:flex; gap:6px; align-items:center; justify-content:flex-end;">
-                  <input type="number" name="months" min="1" value="1" style="max-width:70px;">
-                  <button class="btn btn-outline btn-sm" type="submit">Renew</button>
+              <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center;">
+                <form method="post" action="{{ url_for('zootique_admin.renew_subscription', subscription_id=sub.subscription_id) }}" style="display:inline;">
+                  <input type="hidden" name="months" value="1">
+                  <button class="btn btn-outline btn-sm" type="submit"><i class="fa-solid fa-check"></i> Confirm</button>
                 </form>
-
-                <form method="post" action="{{ url_for('zootique_admin.change_subscription_plan', subscription_id=sub.subscription_id) }}" style="display:flex; gap:6px; align-items:center; justify-content:flex-end;">
-                  <select name="plan_id" style="min-width:120px;">
-                    {% for p in plans %}
-                    <option value="{{ p.id }}" {% if p.id == sub.plan_id %}selected{% endif %}>{{ p.name }}</option>
-                    {% endfor %}
-                  </select>
-                  <button class="btn btn-ghost btn-sm" type="submit">Change</button>
-                </form>
-
-                <form method="post" action="{{ url_for('zootique_admin.cancel_subscription', subscription_id=sub.subscription_id) }}">
-                  <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger);">Cancel</button>
+                <form method="post" action="{{ url_for('zootique_admin.cancel_subscription', subscription_id=sub.subscription_id) }}" style="display:inline;" onsubmit="return confirm('Cancel this subscription?');">
+                  <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger);"><i class="fa-solid fa-xmark"></i> Cancel</button>
                 </form>
               </div>
             </td>
@@ -120,41 +110,6 @@
     <div style="padding:12px 16px; border-top:1px solid var(--border-light); font-size:12px; color:var(--text-muted);">
       Showing {{ subscriptions|length }} entries
     </div>
-  </div>
-
-  <div id="global-pricing-tiers" class="sa-section-head" style="scroll-margin-top:96px;">
-    <div>
-      <h2>Global Pricing Tiers</h2>
-      <div class="sa-section-sub">Configure subscription features and access levels for partners.</div>
-    </div>
-    <a class="btn btn-primary" href="#plan-manager"><i class="fa-solid fa-plus"></i> Add New Plan</a>
-  </div>
-
-  <div class="sa-pricing-grid">
-    {% for tier in plan_tiers[:3] %}
-      {% set plan_obj = (plans | selectattr('id', 'equalto', tier.id) | first) %}
-      <div class="sa-plan-card {% if tier.is_popular %}is-featured{% endif %}">
-        <div class="sa-plan-tier">{% if loop.index == 1 %}Standard Tier{% elif loop.index == 2 %}Advanced Tier{% else %}Elite Tier{% endif %}</div>
-        <div class="sa-plan-name">{{ tier.name }}</div>
-        <div class="sa-plan-price">₱{{ "{:,.0f}".format(tier.price or 0) }} <small>{{ tier.duration_label }}</small></div>
-        <div class="sa-plan-features">
-          {% if plan_obj and plan_obj.features %}
-            {% for line in (plan_obj.features or '').splitlines()[:4] %}
-              {% if line.strip() %}
-              <div class="sa-plan-feature"><i class="fa-solid fa-circle-check"></i> <span>{{ line }}</span></div>
-              {% endif %}
-            {% endfor %}
-          {% else %}
-            <div class="sa-plan-feature"><i class="fa-solid fa-circle-check"></i> <span>{{ tier.description }}</span></div>
-          {% endif %}
-        </div>
-        <div style="margin-top:14px;">
-          <a class="btn btn-ghost" href="#plan-manager">Edit Features</a>
-        </div>
-      </div>
-    {% else %}
-      <div class="empty-state">No pricing tiers configured yet.</div>
-    {% endfor %}
   </div>
 
   <div id="plan-manager" class="two-col" style="--two-col-template: 1fr 1.1fr; scroll-margin-top:96px;">
@@ -205,7 +160,7 @@
 
     <div class="card-panel" style="margin-bottom:0;">
       <div class="card-header">
-        <h2>GLOBAL PRICING TIERS</h2>
+        <h2>SUBSCRIPTION PLANS</h2>
       </div>
       <div class="table-wrap">
         <table>

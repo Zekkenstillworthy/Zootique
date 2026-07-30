@@ -1,13 +1,18 @@
-<div>
-  <div class="sa-section-head" style="margin-bottom:18px;">
+<div style="display:flex; flex-direction:column; gap:24px;">
+  <!-- Section Header -->
+  <div class="sa-section-head" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
     <div>
-      <h2>Global Pricing Tiers</h2>
+      <h2 style="margin:0;">Subscription Plan</h2>
       <div class="sa-section-sub">Configure subscription features and access levels for partners.</div>
     </div>
+    <button class="btn btn-primary btn-open-plan-modal" type="button">
+      <i class="fa-solid fa-plus"></i> Add New Plan
+    </button>
   </div>
 
+  <!-- Pricing Cards Grid -->
   <div class="sa-pricing-grid">
-    {% for tier in plan_tiers[:3] %}
+    {% for tier in plan_tiers %}
       {% set plan_obj = (plans | selectattr('id', 'equalto', tier.id) | first) %}
       <div class="sa-plan-card {% if tier.is_popular %}is-featured{% endif %}">
         <div class="sa-plan-tier">{% if loop.index == 1 %}Standard Tier{% elif loop.index == 2 %}Advanced Tier{% else %}Elite Tier{% endif %}</div>
@@ -15,7 +20,7 @@
         <div class="sa-plan-price">₱{{ "{:,.0f}".format(tier.price or 0) }} <small>{{ tier.duration_label }}</small></div>
         <div class="sa-plan-features">
           {% if plan_obj and plan_obj.features %}
-            {% for line in (plan_obj.features or '').splitlines()[:4] %}
+            {% for line in (plan_obj.features or '').splitlines() %}
               {% if line.strip() %}
               <div class="sa-plan-feature"><i class="fa-solid fa-circle-check"></i> <span>{{ line }}</span></div>
               {% endif %}
@@ -25,11 +30,185 @@
           {% endif %}
         </div>
         <div style="margin-top:14px;">
-          <a class="btn btn-ghost" href="{{ url_for('zootique_admin.subscription_plan_manager') }}">Edit Features</a>
+          <button class="btn btn-ghost btn-open-plan-modal"
+            type="button"
+            data-id="{{ tier.id }}"
+            data-name="{{ tier.name }}"
+            data-price="{{ tier.price }}"
+            data-duration="{% if plan_obj %}{{ plan_obj.duration }}{% else %}monthly{% endif %}"
+            data-features="{% if plan_obj %}{{ plan_obj.features }}{% endif %}">
+            <i class="fa-regular fa-pen-to-square"></i> Edit Features
+          </button>
         </div>
       </div>
     {% else %}
       <div class="empty-state">No pricing tiers configured yet.</div>
     {% endfor %}
   </div>
+
+  <!-- Subscription Plans Table -->
+  <div class="card-panel" style="margin-bottom:0;">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+      <h2 style="margin:0;">SUBSCRIPTION PLANS</h2>
+      <button class="btn btn-outline btn-sm btn-open-plan-modal" type="button">
+        <i class="fa-solid fa-plus"></i> Add Plan
+      </button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>PLAN</th>
+            <th style="text-align:right;">PRICE</th>
+            <th>DURATION</th>
+            <th>FEATURES</th>
+            <th style="text-align:right;">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in plans %}
+          <tr>
+            <td class="fw-600">{{ p.name }}</td>
+            <td style="text-align:right; font-weight:900;">₱{{ "{:,.2f}".format(p.price) }}</td>
+            <td style="text-transform:capitalize;">{{ p.duration }}</td>
+            <td style="color:var(--text-muted); font-size:12px;">{{ (p.features or '—')|replace('\n', ', ') }}</td>
+            <td style="text-align:right;">
+              <div style="display:flex; gap:6px; justify-content:flex-end; align-items:center;">
+                <button class="btn btn-ghost btn-sm btn-open-plan-modal"
+                  type="button"
+                  data-id="{{ p.id }}"
+                  data-name="{{ p.name }}"
+                  data-price="{{ p.price }}"
+                  data-duration="{{ p.duration }}"
+                  data-features="{{ p.features or '' }}">
+                  <i class="fa-regular fa-pen-to-square"></i> Edit
+                </button>
+                <form method="post" action="{{ url_for('zootique_admin.delete_subscription_plan', plan_id=p.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete {{ p.name }}?');">
+                  <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger, #dc2626);">
+                    <i class="fa-solid fa-trash"></i> Delete
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" class="empty-state">No plans available.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
+
+<!-- Plan Manager Modal / Popup -->
+<div id="planManagerModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; padding: 1.5rem; transition: all 0.2s ease;">
+  <div class="card-panel" style="width: 100%; max-width: 540px; margin: 0; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1); border-radius: var(--border-radius, 12px); overflow: hidden; transform: translateY(0); transition: transform 0.2s ease;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-light, #e2e8f0);">
+      <h2 id="planModalTitle" style="margin: 0; font-size: 1.1rem; font-weight: 700;">PLAN MANAGER — Add</h2>
+      <button type="button" onclick="closePlanModal()" style="background: none; border: none; font-size: 1.5rem; line-height: 1; color: var(--text-muted, #64748b); cursor: pointer; padding: 0;">&times;</button>
+    </div>
+    <div class="card-body" style="padding: 1.25rem 1.5rem;">
+      <form id="planModalForm" method="post" action="{{ url_for('zootique_admin.save_subscription_plan') }}" style="display:flex; flex-direction:column; gap:14px;">
+        <input type="hidden" id="modalPlanId" name="plan_id" value="">
+
+        <div>
+          <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-muted, #64748b); margin-bottom:4px;">Plan Name</label>
+          <input type="text" id="modalPlanName" name="name" placeholder="Basic Field, Habitat Pro, ..." required style="width:100%;">
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div>
+            <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-muted, #64748b); margin-bottom:4px;">Price (₱)</label>
+            <input type="number" id="modalPlanPrice" name="price" step="0.01" placeholder="0.00" required style="width:100%;">
+          </div>
+          <div>
+            <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-muted, #64748b); margin-bottom:4px;">Duration</label>
+            <select id="modalPlanDuration" name="duration" required style="width:100%;">
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-muted, #64748b); margin-bottom:4px;">Features (one per line)</label>
+          <textarea id="modalPlanFeatures" name="features" rows="6" placeholder="Up to 500 Animals&#10;3 Admin Users&#10;Basic Reporting" style="width:100%; font-family:inherit;"></textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:6px;">
+          <button class="btn btn-ghost" type="button" onclick="closePlanModal()">Cancel</button>
+          <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Plan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+window.openPlanModal = function(id = '', name = '', price = '', duration = 'monthly', features = '') {
+  const modal = document.getElementById('planManagerModal');
+  const title = document.getElementById('planModalTitle');
+  const planId = document.getElementById('modalPlanId');
+  const planName = document.getElementById('modalPlanName');
+  const planPrice = document.getElementById('modalPlanPrice');
+  const planDuration = document.getElementById('modalPlanDuration');
+  const planFeatures = document.getElementById('modalPlanFeatures');
+
+  if (!modal) return;
+
+  if (id) {
+    title.innerText = 'PLAN MANAGER — Edit Plan';
+    planId.value = id;
+    planName.value = name;
+    planPrice.value = price;
+    planDuration.value = duration || 'monthly';
+    planFeatures.value = features;
+  } else {
+    title.innerText = 'PLAN MANAGER — Add Plan';
+    planId.value = '';
+    planName.value = '';
+    planPrice.value = '';
+    planDuration.value = 'monthly';
+    planFeatures.value = '';
+  }
+
+  modal.style.display = 'flex';
+};
+
+window.closePlanModal = function() {
+  const modal = document.getElementById('planManagerModal');
+  if (modal) modal.style.display = 'none';
+};
+
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.btn-open-plan-modal');
+  if (btn) {
+    e.preventDefault();
+    openPlanModal(
+      btn.getAttribute('data-id') || '',
+      btn.getAttribute('data-name') || '',
+      btn.getAttribute('data-price') || '',
+      btn.getAttribute('data-duration') || 'monthly',
+      btn.getAttribute('data-features') || ''
+    );
+  }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('planManagerModal');
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === this) {
+        closePlanModal();
+      }
+    });
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('open_plan_manager') === '1') {
+    openPlanModal();
+  }
+});
+</script>

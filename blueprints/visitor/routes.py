@@ -94,16 +94,12 @@ def _selected_zoo_id() -> int | None:
 
 
 def _maybe_filter_by_selected_zoo(query, model):
-    """Filter a SQLAlchemy query by selected zoo when applicable."""
+    """Filter a SQLAlchemy query strictly by the selected zoo."""
     selected_zoo_id = _selected_zoo_id()
     if not selected_zoo_id:
         return query
     if hasattr(model, "zoo_id"):
-        # Include global records (NULL zoo_id) so shared promos/events still show.
-        try:
-            return query.filter(or_(model.zoo_id == selected_zoo_id, model.zoo_id.is_(None)))
-        except Exception:
-            return query.filter(model.zoo_id == selected_zoo_id)
+        return query.filter(model.zoo_id == selected_zoo_id)
     return query
 
 
@@ -278,20 +274,12 @@ def choose_zoo():
 
 
 def _generate_booking_id() -> str:
-    # IDs are strings like BK-1001
-    last_id = (
-        db.session.query(func.max(Booking.id))
-        .filter(Booking.id.like("BK-%"))
-        .scalar()
-    )
-    if not last_id:
-        return "BK-1001"
-    try:
-        suffix = int(str(last_id).split("BK-", 1)[1])
-        return f"BK-{suffix + 1}"
-    except Exception:
-        # Fallback if existing data has unexpected values
-        return f"BK-{int(datetime.utcnow().timestamp())}"
+    """Generate a unique booking ID using cryptographically random hex.
+
+    Uses secrets.token_hex instead of DB max-query to avoid race conditions
+    when multiple bookings are created simultaneously.
+    """
+    return f"BK-{secrets.token_hex(5).upper()}"
 
 
 def _booking_supports_user_id() -> bool:
@@ -355,7 +343,8 @@ def home():
             booking_query = booking_query.filter(Booking.zoo_id == selected_zoo_id)
         bookings = booking_query.order_by(Booking.created_at.desc()).limit(5).all()
     else:
-        bookings = Booking.query.order_by(Booking.created_at.desc()).limit(5).all()
+        # Never return cross-zoo booking data without a valid user context.
+        bookings = []
 
     selected_zoo = None
     if selected_zoo_id:
@@ -365,7 +354,10 @@ def home():
             selected_zoo = db.session.get(Zoo, selected_zoo_id)
 
     if not selected_zoo:
-        selected_zoo = zoos[0] if zoos else None
+        # selected_zoo_id in session no longer matches any zoo (deleted zoo, stale session).
+        # Clear the stale selection and send the visitor to choose a valid zoo.
+        session.pop("selected_zoo_id", None)
+        return redirect(url_for("visitor.choose_zoo"))
     landing_map = None
 
     if selected_zoo:
@@ -1070,10 +1062,12 @@ def profile():
 
 @visitor_bp.get("/park-info")
 def park_info():
-    selected_zoo_id = _selected_zoo_id()
-    zoo = db.session.get(Zoo, selected_zoo_id) if selected_zoo_id else None
+    zoo_id = request.args.get("zoo_id", type=int) or _selected_zoo_id()
+    if not zoo_id:
+        return redirect(url_for("visitor.choose_zoo"))
+    zoo = db.session.get(Zoo, zoo_id)
     if not zoo:
-        zoo = Zoo.query.order_by(Zoo.id.asc()).first()
+        abort(404)
     return render_template("visitor/park_info.html", zoo=zoo)
 
 

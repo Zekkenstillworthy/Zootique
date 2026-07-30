@@ -1,61 +1,151 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Settings | Animal Farm Admin{% endblock %}
 {% block page_title %}Settings{% endblock %}
 
 {% block content %}
-<div class="two-col" style="--two-col-template: 1fr 1fr;">
+
+{% set section = request.args.get('section', 'profile') %}
+
+<div style="max-width: 640px;">
+
+    {% if section == 'profile' %}
+    <!-- ===== PROFILE ===== -->
     <div class="card-panel">
         <div class="card-header">
-            <h2>Profile</h2>
+            <h2><i class="fa-solid fa-circle-user" style="margin-right:8px; opacity:0.8;"></i>PROFILE</h2>
         </div>
         <div class="card-body">
             {% if user %}
-            <form method="post" action="{{ url_for('animal_farm_admin.update_profile') }}" style="display:flex; flex-direction:column; gap:10px;">
-                <label style="font-weight:600; color:var(--text-secondary);">Full Name</label>
-                <input type="text" name="full_name" value="{{ user.full_name or '' }}" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+            <form method="post" action="{{ url_for('animal_farm_admin.update_profile') }}" style="display:flex; flex-direction:column; gap:16px;">
 
-                <label style="font-weight:600; color:var(--text-secondary);">Username (optional)</label>
-                <input type="text" name="username" value="{{ user.username or '' }}" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-
-                <label style="font-weight:600; color:var(--text-secondary);">Email</label>
-                <input type="email" name="email" value="{{ user.email }}" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-
-                <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Profile</button>
-            </form>
-
-            {% if zoo %}
-                <div style="margin-top:14px; padding:12px; border:1px solid var(--border); border-radius:10px; background:#fafafa;">
-                    <strong>Zoo</strong>
-                    <p style="margin-top:6px; color: var(--text-muted);">{{ zoo.name }}{% if zoo.location %} — {{ zoo.location }}{% endif %}</p>
+                <div>
+                    <label style="display:block; font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Full Name</label>
+                    <input type="text" name="full_name" value="{{ user.full_name or '' }}" required style="width:100%;">
                 </div>
-            {% endif %}
 
+                <div>
+                    <label style="display:block; font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Username <span style="color:var(--text-light); font-weight:600;">(optional)</span></label>
+                    <input type="text" name="username" value="{{ user.username or '' }}" style="width:100%;">
+                </div>
+
+                <div>
+                    <label style="display:block; font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Email</label>
+                    <input type="email" name="email" value="{{ user.email }}" required style="width:100%;">
+                </div>
+
+                {% if zoo %}
+                <div style="padding:12px 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--border-light); display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-building" style="color:var(--text-muted);"></i>
+                    <div>
+                        <div style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">Zoo</div>
+                        <div style="font-size:13px; font-weight:600; color:var(--text-secondary); margin-top:2px;">{{ zoo.name }}{% if zoo.location %} — {{ zoo.location }}{% endif %}</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div style="display:flex; gap:10px; padding-top:4px;">
+                    <button class="btn btn-primary" type="submit" style="flex:1;"><i class="fa-solid fa-floppy-disk"></i> Save Profile</button>
+                    <a href="{{ url_for('animal_farm_admin.settings') }}?section=security" class="btn" style="flex:1; background:var(--border-light); color:var(--text-muted); text-align:center; border:1px solid var(--border); text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:700; border-radius:var(--radius); padding:10px; font-size:13px;">
+                        <i class="fa-solid fa-shield-halved"></i> Go to Security
+                    </a>
+                </div>
+            </form>
             {% else %}
-                <p style="color: var(--text-muted);">Not logged in.</p>
+            <p style="color:var(--text-muted);">Not logged in.</p>
             {% endif %}
         </div>
     </div>
 
+    {% else %}
+    <!-- ===== ACCOUNT SECURITY ===== -->
     <div class="card-panel">
         <div class="card-header">
-            <h2>Account Security</h2>
+            <h2><i class="fa-solid fa-shield-halved" style="margin-right:8px; opacity:0.8;"></i>ACCOUNT SECURITY</h2>
         </div>
         <div class="card-body">
-            <form method="post" action="{{ url_for('animal_farm_admin.update_security') }}" style="display:flex; flex-direction:column; gap:10px;">
-                <label style="font-weight:600; color:var(--text-secondary);">Current Password</label>
-                <input type="password" name="current_password" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+            <form method="post" action="{{ url_for('animal_farm_admin.update_security') }}" style="display:flex; flex-direction:column; gap:16px;">
 
-                <label style="font-weight:600; color:var(--text-secondary);">New Password</label>
-                <input type="password" name="new_password" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+                <div style="background:var(--info-bg); border:1px solid rgba(37,99,235,0.2); border-radius:var(--radius); padding:12px 14px; font-size:13px; color:var(--info); font-weight:600; display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Enter your current password to set a new one. Minimum 8 characters.
+                </div>
 
-                <label style="font-weight:600; color:var(--text-secondary);">Confirm New Password</label>
-                <input type="password" name="confirm_password" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+                <div>
+                    <label style="display:block; font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Current Password <span style="color:var(--danger);">*</span></label>
+                    <input id="current_password" type="password" name="current_password" required placeholder="••••••••" style="width:100%;">
+                </div>
 
-                <button class="btn btn-primary" type="submit"><i class="fa-solid fa-lock"></i> Update Password</button>
-                <p style="color: var(--text-muted); font-size: 12px;">Minimum 8 characters.</p>
+                <div>
+                    <label style="display:block; font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">New Password <span style="color:var(--danger);">*</span></label>
+                    <input id="new_password" type="password" name="new_password" required placeholder="Enter new password" style="width:100%;">
+                    <div id="pw_strength" style="margin-top:6px; font-size:12px; color:var(--text-muted);">Strength: —</div>
+                </div>
+
+                <div>
+                    <label style="display:block; font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Confirm New Password <span style="color:var(--danger);">*</span></label>
+                    <input id="confirm_password" type="password" name="confirm_password" required placeholder="Confirm new password" style="width:100%;">
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-radius:var(--radius); background:var(--border-light); border:1px solid var(--border);">
+                    <div>
+                        <div style="font-weight:700; font-size:13px;">Show/Hide Password</div>
+                        <div style="font-size:12px; color:var(--text-muted);">Toggle password visibility</div>
+                    </div>
+                    <input id="toggle_password" type="checkbox" style="width:18px; height:18px; cursor:pointer;">
+                </div>
+
+                <div style="display:flex; gap:10px; padding-top:4px;">
+                    <button class="btn btn-primary" type="submit" style="flex:1;"><i class="fa-solid fa-lock"></i> Update Password</button>
+                    <a href="{{ url_for('animal_farm_admin.settings') }}?section=profile" class="btn" style="flex:1; background:var(--border-light); color:var(--text-muted); text-align:center; border:1px solid var(--border); text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:700; border-radius:var(--radius); padding:10px; font-size:13px;">
+                        <i class="fa-solid fa-circle-user"></i> Go to Profile
+                    </a>
+                </div>
             </form>
         </div>
     </div>
+    {% endif %}
+
 </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const toggle = document.getElementById('toggle_password');
+    const pwIds = ['current_password', 'new_password', 'confirm_password'];
+    if (toggle) {
+        toggle.addEventListener('change', function () {
+            pwIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.type = toggle.checked ? 'text' : 'password';
+            });
+        });
+    }
+
+    const newPw = document.getElementById('new_password');
+    const strength = document.getElementById('pw_strength');
+    function computeStrength(pw) {
+        let score = 0;
+        if (!pw) return { label: '—', color: 'var(--text-muted)' };
+        if (pw.length >= 8) score++;
+        if (/[A-Z]/.test(pw)) score++;
+        if (/[a-z]/.test(pw)) score++;
+        if (/[0-9]/.test(pw)) score++;
+        if (/[^A-Za-z0-9]/.test(pw)) score++;
+        if (score <= 2) return { label: 'Weak', color: 'var(--danger)' };
+        if (score === 3) return { label: 'Medium', color: 'var(--warning)' };
+        return { label: 'Strong', color: 'var(--success)' };
+    }
+    if (newPw && strength) {
+        newPw.addEventListener('input', function () {
+            const res = computeStrength(newPw.value);
+            strength.textContent = 'Strength: ' + res.label;
+            strength.style.color = res.color;
+            strength.style.fontWeight = '700';
+        });
+    }
+})();
+</script>
 {% endblock %}

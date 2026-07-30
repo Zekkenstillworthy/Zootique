@@ -141,89 +141,119 @@
             background: #fdfdfc;
         }
 
-        /* Dropdown Navigation Styles */
+        /* Dropdown Navigation Styles — dark sidebar theme */
         .nav-dropdown {
             display: flex;
             flex-direction: column;
             gap: 0;
         }
 
+        /* Trigger button matches .nav-item exactly */
         .nav-dropdown-trigger {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 8px;
-            padding: 12px 16px;
-            color: #64748b;
-            font-weight: 600;
+            padding: 10px 18px;
+            color: rgba(255,255,255,0.65);
+            font-size: 13px;
+            font-weight: 500;
             text-decoration: none;
-            border-radius: 8px;
-            transition: all 0.2s ease;
+            border-radius: 0;
+            transition: background 0.2s ease, color 0.2s ease;
             cursor: pointer;
             border: none;
             background: none;
             width: 100%;
-            font-size: 1rem;
+            text-align: left;
+        }
+
+        .nav-dropdown-trigger .trigger-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+            white-space: nowrap;
+        }
+
+        .nav-dropdown-trigger .trigger-label i {
+            width: 16px;
+            text-align: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .nav-dropdown-trigger .chevron {
+            font-size: 10px;
+            opacity: 0.6;
+            transition: transform 0.2s ease;
+            flex-shrink: 0;
         }
 
         .nav-dropdown-trigger:hover {
-            background-color: #f1f5f9;
-            color: #1a4f32;
-        }
-
-        .nav-dropdown-trigger i:last-child {
-            font-size: 0.85rem;
-            transition: transform 0.2s ease;
-        }
-
-        .nav-dropdown-trigger.active i:last-child {
-            transform: rotate(180deg);
+            background: rgba(255,255,255,0.10);
+            color: #ffffff;
         }
 
         .nav-dropdown-trigger.active {
-            color: #1a4f32;
-            font-weight: 700;
+            background: rgba(255,255,255,0.12);
+            color: #ffffff;
+            font-weight: 600;
         }
 
+        .nav-dropdown-trigger.active .chevron {
+            transform: rotate(180deg);
+            opacity: 1;
+        }
+
+        /* Submenu: same dark background, slightly indented */
         .nav-dropdown-menu {
             display: none;
             flex-direction: column;
             gap: 0;
-            background-color: #f8fafc;
-            border-radius: 8px;
+            background: rgba(0,0,0,0.15);
             overflow: hidden;
-            max-height: 0;
-            transition: max-height 0.3s ease;
         }
 
         .nav-dropdown-menu.open {
             display: flex;
-            max-height: 500px;
         }
 
+        /* Sub-items: indented, light text matching sidebar */
         .nav-dropdown-item {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px 16px 12px 40px;
-            color: #64748b;
+            gap: 10px;
+            padding: 9px 18px 9px 42px;
+            color: rgba(255,255,255,0.55);
             text-decoration: none;
-            font-size: 0.95rem;
+            font-size: 12px;
             font-weight: 500;
-            transition: all 0.2s ease;
-            border-left: 3px solid transparent;
+            transition: background 0.2s ease, color 0.2s ease;
+            white-space: nowrap;
+            border-left: 2px solid transparent;
+            position: relative;
+        }
+
+        .nav-dropdown-item i {
+            width: 14px;
+            text-align: center;
+            font-size: 12px;
+            flex-shrink: 0;
         }
 
         .nav-dropdown-item:hover {
-            background-color: #e2e8f0;
-            color: #1a4f32;
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.90);
+            border-left-color: rgba(255,255,255,0.25);
         }
 
         .nav-dropdown-item.active {
-            background-color: #dbeafe;
-            color: #1a4f32;
+            background: rgba(255,255,255,0.10);
+            color: #ffffff;
             font-weight: 600;
-            border-left-color: #1a4f32;
+            border-left-color: var(--accent, #e67e22);
         }
     </style>
 </head>
@@ -271,9 +301,9 @@
 
             <!-- Services Dropdown -->
             <div class="nav-dropdown">
-                <button class="nav-dropdown-trigger" onclick="toggleDropdown(event, 'services-dropdown')">
-                    <span><i class="fa-solid fa-list-check"></i> Services</span>
-                    <i class="fa-solid fa-chevron-down"></i>
+                <button class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.services_management' %}active{% endif %}" onclick="toggleDropdown(event, 'services-dropdown')">
+                    <span class="trigger-label"><i class="fa-solid fa-list-check"></i> Services</span>
+                    <i class="fa-solid fa-chevron-down chevron"></i>
                 </button>
                 <div class="nav-dropdown-menu" id="services-dropdown">
                     <a href="{{ url_for('animal_farm_admin.services_management') }}?tab=add"
@@ -289,9 +319,9 @@
 
             <!-- Animals Dropdown -->
             <div class="nav-dropdown">
-                <button class="nav-dropdown-trigger" onclick="toggleDropdown(event, 'animals-dropdown')">
-                    <span><i class="fa-solid fa-paw"></i> Animals</span>
-                    <i class="fa-solid fa-chevron-down"></i>
+                <button class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.animals_management' %}active{% endif %}" onclick="toggleDropdown(event, 'animals-dropdown')">
+                    <span class="trigger-label"><i class="fa-solid fa-paw"></i> Animals</span>
+                    <i class="fa-solid fa-chevron-down chevron"></i>
                 </button>
                 <div class="nav-dropdown-menu" id="animals-dropdown">
                     <a href="{{ url_for('animal_farm_admin.animals_management') }}?tab=add"
@@ -307,9 +337,9 @@
 
             <!-- Events Dropdown -->
             <div class="nav-dropdown">
-                <button class="nav-dropdown-trigger" onclick="toggleDropdown(event, 'events-dropdown')">
-                    <span><i class="fa-solid fa-calendar-days"></i> Events</span>
-                    <i class="fa-solid fa-chevron-down"></i>
+                <button class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.events_management' %}active{% endif %}" onclick="toggleDropdown(event, 'events-dropdown')">
+                    <span class="trigger-label"><i class="fa-solid fa-calendar-days"></i> Events</span>
+                    <i class="fa-solid fa-chevron-down chevron"></i>
                 </button>
                 <div class="nav-dropdown-menu" id="events-dropdown">
                     <a href="{{ url_for('animal_farm_admin.events_management') }}?tab=add"
@@ -325,9 +355,9 @@
 
             <!-- Promotions Dropdown -->
             <div class="nav-dropdown">
-                <button class="nav-dropdown-trigger" onclick="toggleDropdown(event, 'promotions-dropdown')">
-                    <span><i class="fa-solid fa-tags"></i> Promotions</span>
-                    <i class="fa-solid fa-chevron-down"></i>
+                <button class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.promotions_management' %}active{% endif %}" onclick="toggleDropdown(event, 'promotions-dropdown')">
+                    <span class="trigger-label"><i class="fa-solid fa-tags"></i> Promotions</span>
+                    <i class="fa-solid fa-chevron-down chevron"></i>
                 </button>
                 <div class="nav-dropdown-menu" id="promotions-dropdown">
                     <a href="{{ url_for('animal_farm_admin.promotions_management') }}?tab=add"
@@ -344,10 +374,30 @@
                class="nav-item {% if request.endpoint == 'animal_farm_admin.visitor_feedback_management' %}active{% endif %}">
                 <i class="fa-solid fa-comments"></i> Visitor Feedback
             </a>
-            <a href="{{ url_for('animal_farm_admin.visitor_map_zone_management') }}"
-               class="nav-item {% if request.endpoint == 'animal_farm_admin.visitor_map_zone_management' %}active{% endif %}">
-                <i class="fa-solid fa-map-location-dot"></i> Map & Zones
-            </a>
+            <!-- Map & Zones Dropdown -->
+            <div class="nav-dropdown">
+                <button class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.visitor_map_zone_management' %}active{% endif %}" onclick="toggleDropdown(event, 'afa-map-dropdown')">
+                    <span class="trigger-label"><i class="fa-solid fa-map-location-dot"></i> Map & Zones</span>
+                    <i class="fa-solid fa-chevron-down chevron"></i>
+                </button>
+                <div class="nav-dropdown-menu {% if request.endpoint == 'animal_farm_admin.visitor_map_zone_management' %}open{% endif %}" id="afa-map-dropdown">
+                    <a href="{{ url_for('animal_farm_admin.visitor_map_zone_management') }}?tab=add"
+                       data-mz-tab="add"
+                       class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.visitor_map_zone_management' and request.args.get('tab', 'add') == 'add' %}active{% endif %}">
+                        <i class="fa-solid fa-plus-circle"></i> Add / Edit Zone
+                    </a>
+                    <a href="{{ url_for('animal_farm_admin.visitor_map_zone_management') }}?tab=landing-map"
+                       data-mz-tab="landing-map"
+                       class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.visitor_map_zone_management' and request.args.get('tab') == 'landing-map' %}active{% endif %}">
+                        <i class="fa-solid fa-map"></i> Landing Page Map
+                    </a>
+                    <a href="{{ url_for('animal_farm_admin.visitor_map_zone_management') }}?tab=zones"
+                       data-mz-tab="zones"
+                       class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.visitor_map_zone_management' and request.args.get('tab') == 'zones' %}active{% endif %}">
+                        <i class="fa-solid fa-layer-group"></i> Zones
+                    </a>
+                </div>
+            </div>
              <a href="{{ url_for('animal_farm_admin.payment_revenue_management') }}"
                class="nav-item {% if request.endpoint == 'animal_farm_admin.payment_revenue_management' %}active{% endif %}">
                 <i class="fa-solid fa-money-bills"></i> Revenue
@@ -360,22 +410,51 @@
                              class="nav-item {% if request.endpoint == 'animal_farm_admin.system_feedback' %}active{% endif %}">
                                 <i class="fa-solid fa-headset"></i> Feedback to Super Admin
                         </a>
-            <a href="{{ url_for('animal_farm_admin.staff_management') }}"
-               class="nav-item {% if request.endpoint == 'animal_farm_admin.staff_management' %}active{% endif %}">
-                <i class="fa-solid fa-user-check"></i> Staff Management
-            </a>
-            <a href="{{ url_for('animal_farm_admin.establishment_profile') }}"
-               class="nav-item {% if request.endpoint == 'animal_farm_admin.establishment_profile' %}active{% endif %}">
-                <i class="fa-solid fa-building"></i> Establishment Profile
-            </a>
-            <a href="{{ url_for('animal_farm_admin.settings') }}"
-               class="nav-item {% if request.endpoint == 'animal_farm_admin.settings' %}active{% endif %}">
-                <i class="fa-solid fa-gear"></i> Settings
-            </a>
-            <a href="{{ url_for('animal_farm_admin.layout_changer') }}"
-               class="nav-item {% if request.endpoint == 'animal_farm_admin.layout_changer' %}active{% endif %}">
-                <i class="fa-solid fa-sliders"></i> Customize Dashboard
-            </a>
+            <!-- Staff Management Dropdown -->
+            <div class="nav-dropdown">
+                <button class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.staff_management' %}active{% endif %}" onclick="toggleDropdown(event, 'afa-staff-dropdown')">
+                    <span class="trigger-label"><i class="fa-solid fa-user-check"></i> Staff Management</span>
+                    <i class="fa-solid fa-chevron-down chevron"></i>
+                </button>
+                <div class="nav-dropdown-menu {% if request.endpoint == 'animal_farm_admin.staff_management' %}open{% endif %}" id="afa-staff-dropdown">
+                    <a href="{{ url_for('animal_farm_admin.staff_management') }}?tab=assign"
+                       data-sm-tab="assign"
+                       class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.staff_management' and request.args.get('tab', 'assign') == 'assign' %}active{% endif %}">
+                        <i class="fa-solid fa-clipboard-list"></i> Assign Task
+                    </a>
+                    <a href="{{ url_for('animal_farm_admin.staff_management') }}?tab=accounts"
+                       data-sm-tab="accounts"
+                       class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.staff_management' and request.args.get('tab') == 'accounts' %}active{% endif %}">
+                        <i class="fa-solid fa-users"></i> Staff Accounts
+                    </a>
+                    <a href="{{ url_for('animal_farm_admin.staff_management') }}?tab=tasks"
+                       data-sm-tab="tasks"
+                       class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.staff_management' and request.args.get('tab') == 'tasks' %}active{% endif %}">
+                        <i class="fa-solid fa-list-check"></i> Task List
+                    </a>
+                </div>
+            </div>
+            <!-- Settings Dropdown -->
+            <div class="nav-dropdown">
+                <button class="nav-dropdown-trigger {% if request.endpoint in ['animal_farm_admin.settings', 'animal_farm_admin.establishment_profile'] %}active{% endif %}" onclick="toggleDropdown(event, 'afa-settings-dropdown')">
+                    <span class="trigger-label"><i class="fa-solid fa-gear"></i> Settings</span>
+                    <i class="fa-solid fa-chevron-down chevron"></i>
+                </button>
+                <div class="nav-dropdown-menu {% if request.endpoint in ['animal_farm_admin.settings', 'animal_farm_admin.establishment_profile'] %}open{% endif %}" id="afa-settings-dropdown">
+                    <a href="{{ url_for('animal_farm_admin.settings') }}?section=profile"
+                       class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.settings' and (request.args.get('section', 'profile') == 'profile') %}active{% endif %}">
+                        <i class="fa-solid fa-circle-user"></i> Profile
+                    </a>
+                    <a href="{{ url_for('animal_farm_admin.settings') }}?section=security"
+                       class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.settings' and request.args.get('section') == 'security' %}active{% endif %}">
+                        <i class="fa-solid fa-shield-halved"></i> Account Security
+                    </a>
+                    <a href="{{ url_for('animal_farm_admin.establishment_profile') }}"
+                       class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.establishment_profile' %}active{% endif %}">
+                        <i class="fa-solid fa-building"></i> Establishment Profile
+                    </a>
+                </div>
+            </div>
             <a href="{{ url_for('auth.logout') }}" class="nav-item">
                 <i class="fa-solid fa-right-from-bracket"></i> Logout
             </a>
@@ -389,10 +468,25 @@
                class="nav-item {% if request.endpoint == 'animal_farm_staff.my_bookings' %}active{% endif %}">
                 <i class="fa-solid fa-calendar-check"></i> My Assigned Bookings
             </a>
-            <a href="{{ url_for('animal_farm_staff.events_management') }}"
-               class="nav-item {% if request.endpoint == 'animal_farm_staff.events_management' %}active{% endif %}">
-                <i class="fa-solid fa-calendar-days"></i> Events Management
-            </a>
+            <!-- Events Management Dropdown -->
+            <div class="nav-dropdown">
+                <button class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_staff.events_management' %}active{% endif %}" onclick="toggleDropdown(event, 'afs-events-dropdown')">
+                    <span class="trigger-label"><i class="fa-solid fa-calendar-days"></i> Events Management</span>
+                    <i class="fa-solid fa-chevron-down chevron"></i>
+                </button>
+                <div class="nav-dropdown-menu {% if request.endpoint == 'animal_farm_staff.events_management' %}open{% endif %}" id="afs-events-dropdown">
+                    <a href="{{ url_for('animal_farm_staff.events_management') }}?tab=add"
+                       data-se-tab="add"
+                       class="nav-dropdown-item {% if request.endpoint == 'animal_farm_staff.events_management' and request.args.get('tab', 'add') == 'add' %}active{% endif %}">
+                        <i class="fa-solid fa-plus-circle"></i> Add Event
+                    </a>
+                    <a href="{{ url_for('animal_farm_staff.events_management') }}?tab=list"
+                       data-se-tab="list"
+                       class="nav-dropdown-item {% if request.endpoint == 'animal_farm_staff.events_management' and request.args.get('tab') == 'list' %}active{% endif %}">
+                        <i class="fa-solid fa-calendar-check"></i> Scheduled Events
+                    </a>
+                </div>
+            </div>
             <a href="{{ url_for('animal_farm_staff.map_zones') }}"
                class="nav-item {% if request.endpoint == 'animal_farm_staff.map_zones' %}active{% endif %}">
                 <i class="fa-solid fa-map-location-dot"></i> Map & Zones
@@ -432,18 +526,27 @@
                class="nav-item {% if request.endpoint == 'zootique_admin.view_reports' %}active{% endif %}">
                 <i class="fa-solid fa-chart-line"></i> Reports
             </a>
-            <a href="{{ url_for('zootique_admin.layout_manager') }}"
-               class="nav-item {% if request.endpoint == 'zootique_admin.layout_manager' %}active{% endif %}">
-                <i class="fa-solid fa-sliders"></i> Layout Manager
-            </a>
             <a href="{{ url_for('zootique_admin.user_management') }}"
                class="nav-item {% if request.endpoint == 'zootique_admin.user_management' %}active{% endif %}">
                 <i class="fa-solid fa-users"></i> User Management
             </a>
-            <a href="{{ url_for('zootique_admin.settings') }}"
-               class="nav-item {% if request.endpoint == 'zootique_admin.settings' %}active{% endif %}">
-                <i class="fa-solid fa-gear"></i> Settings
-            </a>
+            <!-- Settings Dropdown -->
+            <div class="nav-dropdown">
+                <button class="nav-dropdown-trigger {% if request.endpoint == 'zootique_admin.settings' %}active{% endif %}" onclick="toggleDropdown(event, 'settings-dropdown')">
+                    <span class="trigger-label"><i class="fa-solid fa-gear"></i> Settings</span>
+                    <i class="fa-solid fa-chevron-down chevron"></i>
+                </button>
+                <div class="nav-dropdown-menu {% if request.endpoint == 'zootique_admin.settings' %}open{% endif %}" id="settings-dropdown">
+                    <a href="{{ url_for('zootique_admin.settings') }}?section=profile"
+                       class="nav-dropdown-item {% if request.endpoint == 'zootique_admin.settings' and (request.args.get('section', 'profile') == 'profile') %}active{% endif %}">
+                        <i class="fa-solid fa-circle-user"></i> Profile Details
+                    </a>
+                    <a href="{{ url_for('zootique_admin.settings') }}?section=security"
+                       class="nav-dropdown-item {% if request.endpoint == 'zootique_admin.settings' and request.args.get('section') == 'security' %}active{% endif %}">
+                        <i class="fa-solid fa-shield-halved"></i> Account Security
+                    </a>
+                </div>
+            </div>
             {% endif %}
         </nav>
 
@@ -568,9 +671,11 @@
                     <i class="fa-solid fa-right-from-bracket" style="margin-right: 8px;"></i> Logout
                 </a>
             {% else %}
+                {% if request.blueprint != 'auth' %}
                 <a href="{{ url_for('auth.login', module_name='visitor') }}" class="visitor-nav-link" style="height:auto; color:#1a4f32; font-weight:800;">
                     <i class="fa-solid fa-right-to-bracket" style="margin-right: 8px;"></i> Sign in
                 </a>
+                {% endif %}
             {% endif %}
         </div>
     </div>
@@ -638,54 +743,142 @@
         }
     }
 
-    // Auto-open dropdown if a tab is set in URL
+    // Auto-open sidebar dropdown based on current URL tab param
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
         const tab = urlParams.get('tab');
-        
-        if (tab === 'add' || tab === 'list') {
-            // Close all dropdowns first
-            document.querySelectorAll('.nav-dropdown-menu.open').forEach(menu => {
-                menu.classList.remove('open');
-                const triggerBtn = menu.previousElementSibling;
-                if (triggerBtn) triggerBtn.classList.remove('active');
-            });
-            
-            // Determine which dropdown to open based on current page
-            const currentUrl = window.location.pathname;
+        const currentUrl = window.location.pathname;
+
+        if (tab && (tab === 'add' || tab === 'list')) {
             let dropdownToOpen = null;
-            
-            if (currentUrl.includes('/services')) {
-                dropdownToOpen = document.getElementById('services-dropdown');
-            } else if (currentUrl.includes('/events')) {
-                dropdownToOpen = document.getElementById('events-dropdown');
-            } else if (currentUrl.includes('/promotions')) {
-                dropdownToOpen = document.getElementById('promotions-dropdown');
-            } else if (currentUrl.includes('/animals')) {
-                dropdownToOpen = document.getElementById('animals-dropdown');
-            }
-            
-            // Open only the appropriate dropdown
-            if (dropdownToOpen) {
+            if (currentUrl.includes('/services')) dropdownToOpen = document.getElementById('services-dropdown');
+            else if (currentUrl.includes('/events')) dropdownToOpen = document.getElementById('events-dropdown');
+            else if (currentUrl.includes('/promotions')) dropdownToOpen = document.getElementById('promotions-dropdown');
+            else if (currentUrl.includes('/animals')) dropdownToOpen = document.getElementById('animals-dropdown');
+
+            if (dropdownToOpen && !dropdownToOpen.classList.contains('open')) {
                 dropdownToOpen.classList.add('open');
                 const triggerBtn = dropdownToOpen.previousElementSibling;
                 if (triggerBtn) triggerBtn.classList.add('active');
             }
-            
-            // Also open page-level dropdowns if they exist
-            const pageDropdownId = currentUrl.includes('/services') ? 'services-page-dropdown' :
-                                   currentUrl.includes('/animals') ? 'animals-page-dropdown' :
-                                   currentUrl.includes('/events') ? 'events-page-dropdown' :
-                                   currentUrl.includes('/promotions') ? 'promotions-page-dropdown' : null;
-            
-            if (pageDropdownId) {
-                const pageDropdown = document.getElementById(pageDropdownId);
-                if (pageDropdown) {
-                    pageDropdown.classList.add('open');
-                    const triggerBtn = pageDropdown.previousElementSibling;
-                    if (triggerBtn) triggerBtn.classList.add('active');
-                }
+        }
+
+        // Map & Zones: client-side tab switching (no page reload)
+        if (currentUrl.includes('/map-zones')) {
+            const MZ_TABS = ['add', 'landing-map', 'zones'];
+
+            function switchMzTab(tab) {
+                if (!MZ_TABS.includes(tab)) tab = 'add';
+                MZ_TABS.forEach(function(t) {
+                    const el = document.getElementById('mz-tab-' + t);
+                    if (el) el.style.display = (t === tab) ? '' : 'none';
+                });
+                document.querySelectorAll('[data-mz-tab]').forEach(function(link) {
+                    link.classList.toggle('active', link.dataset.mzTab === tab);
+                });
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', tab);
+                history.pushState({ mzTab: tab }, '', url.toString());
             }
+
+            // Expose globally so map_zones.html buttons can call it
+            window.switchMzTab = switchMzTab;
+
+            // Show initial tab
+            switchMzTab(urlParams.get('tab') || 'add');
+
+            // Intercept sidebar sub-item clicks
+            document.querySelectorAll('[data-mz-tab]').forEach(function(link) {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    switchMzTab(this.dataset.mzTab);
+                });
+            });
+
+            // Browser back/forward
+            window.addEventListener('popstate', function(e) {
+                const t = (e.state && e.state.mzTab) || new URLSearchParams(window.location.search).get('tab') || 'add';
+                switchMzTab(t);
+            });
+        }
+
+        // Staff Management: client-side tab switching (no page reload)
+        if (currentUrl.includes('/staff-management')) {
+            const SM_TABS = ['assign', 'accounts', 'tasks'];
+
+            function switchSmTab(tab) {
+                if (!SM_TABS.includes(tab)) tab = 'assign';
+                SM_TABS.forEach(function(t) {
+                    const el = document.getElementById('sm-tab-' + t);
+                    if (el) el.style.display = (t === tab) ? '' : 'none';
+                });
+                document.querySelectorAll('[data-sm-tab]').forEach(function(link) {
+                    link.classList.toggle('active', link.dataset.smTab === tab);
+                });
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', tab);
+                history.pushState({ smTab: tab }, '', url.toString());
+            }
+
+            window.switchSmTab = switchSmTab;
+
+            // Show initial tab
+            switchSmTab(urlParams.get('tab') || 'assign');
+
+            // Intercept sidebar sub-item clicks
+            document.querySelectorAll('[data-sm-tab]').forEach(function(link) {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    switchSmTab(this.dataset.smTab);
+                });
+            });
+
+            // Browser back/forward
+            window.addEventListener('popstate', function(e) {
+                const t = (e.state && e.state.smTab) || new URLSearchParams(window.location.search).get('tab') || 'assign';
+                switchSmTab(t);
+            });
+        }
+
+        // Staff Events Management: client-side tab switching (no page reload)
+        if (currentUrl.includes('/animal-farm-staff/events')) {
+            const SE_TABS = ['add', 'list'];
+
+            function switchSeTab(tab) {
+                if (!SE_TABS.includes(tab)) tab = 'add';
+                SE_TABS.forEach(function(t) {
+                    const el = document.getElementById('se-tab-' + t);
+                    if (el) el.style.display = (t === tab) ? '' : 'none';
+                });
+                document.querySelectorAll('[data-se-tab]').forEach(function(link) {
+                    link.classList.toggle('active', link.dataset.seTab === tab);
+                });
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', tab);
+                history.pushState({ seTab: tab }, '', url.toString());
+            }
+
+            window.switchSeTab = switchSeTab;
+
+            // Show initial tab
+            switchSeTab(urlParams.get('tab') || 'add');
+
+            // Intercept sidebar sub-item clicks
+            document.querySelectorAll('[data-se-tab]').forEach(function(link) {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    switchSeTab(this.dataset.seTab);
+                });
+            });
+
+            // Browser back/forward
+            window.addEventListener('popstate', function(e) {
+                const t = (e.state && e.state.seTab) || new URLSearchParams(window.location.search).get('tab') || 'add';
+                switchSeTab(t);
+            });
         }
     });
 </script>

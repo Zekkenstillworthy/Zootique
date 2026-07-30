@@ -1,17 +1,25 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Settings{% endblock %}
 {% block page_title %}Settings{% endblock %}
 
 {% block content %}
 
-<div class="two-col" style="--two-col-template: 1fr 1fr;">
+{% set section = request.args.get('section', 'profile') %}
+
+<div style="max-width: 640px;">
+
+    {% if section == 'profile' %}
+    <!-- ===== PROFILE DETAILS ===== -->
     <div class="card-panel">
-        <div class="card-header"><h2>PROFILE DETAILS</h2></div>
+        <div class="card-header">
+            <h2><i class="fa-solid fa-circle-user" style="margin-right:8px; opacity:0.8;"></i>PROFILE DETAILS</h2>
+        </div>
         <div class="card-body">
-            <form method="post" action="{{ url_for('zootique_admin.update_profile') }}" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <div class="avatar" style="width:54px; height:54px; border-radius:50%; overflow:hidden; background:var(--border-light); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:20px; color:var(--text-secondary);">
+            <form method="post" action="{{ url_for('zootique_admin.update_profile') }}" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:16px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div style="display:flex; align-items:center; gap:14px; padding:14px; background:var(--border-light); border-radius:var(--radius);">
+                    <div class="avatar" style="width:60px; height:60px; border-radius:50%; overflow:hidden; background:var(--border); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:22px; color:var(--text-secondary); flex-shrink:0;">
                         <img
                             id="sa_profile_avatar_img"
                             src="{% if user.profile_image %}{{ url_for('uploaded_file', filename=user.profile_image) }}{% else %}{% endif %}"
@@ -21,68 +29,92 @@
                         <span id="sa_profile_avatar_initial" style="{% if user.profile_image %}display:none;{% endif %}">{{ (user.full_name or 'U')[0]|upper }}</span>
                     </div>
                     <div style="flex:1;">
-                        <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Profile Picture</label>
-                        <input id="profile_picture_input" type="file" name="profile_picture" accept="image/*" style="width:100%;">
+                        <label style="display:block; font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Profile Picture</label>
+                        <input id="profile_picture_input" type="file" name="profile_picture" accept="image/*" style="width:100%; font-size:13px;">
                         <div id="profile_picture_name" style="margin-top:6px; font-size:12px; color:var(--text-muted);">{% if user.profile_image %}Current photo set{% else %}No file selected{% endif %}</div>
                     </div>
                 </div>
 
                 <div>
-                    <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Full Name</label>
+                    <label style="display:block; font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Full Name</label>
                     <input type="text" name="full_name" value="{{ user.full_name or '' }}" style="width:100%;">
                 </div>
                 <div>
-                    <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Username</label>
+                    <label style="display:block; font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Username</label>
                     <input type="text" name="username" value="{{ user.username or '' }}" style="width:100%;">
                 </div>
                 <div>
-                    <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Email Address</label>
+                    <label style="display:block; font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Email Address</label>
                     <input type="email" name="email" value="{{ user.email }}" style="width:100%;">
                 </div>
-                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Profile</button>
+
+                <div style="display:flex; gap:10px; padding-top:4px;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;"><i class="fa-solid fa-floppy-disk"></i> Save Profile</button>
+                    <a href="{{ url_for('zootique_admin.settings') }}?section=security" class="btn" style="flex:1; background:var(--border-light); color:var(--text-muted); text-align:center; border:1px solid var(--border); text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:700; border-radius:var(--radius); padding:10px; font-size:13px;">
+                        <i class="fa-solid fa-shield-halved"></i> Go to Security
+                    </a>
+                </div>
             </form>
         </div>
     </div>
 
+    {% else %}
+    <!-- ===== ACCOUNT SECURITY ===== -->
     <div class="card-panel">
-        <div class="card-header"><h2>ACCOUNT SECURITY</h2></div>
+        <div class="card-header">
+            <h2><i class="fa-solid fa-shield-halved" style="margin-right:8px; opacity:0.8;"></i>ACCOUNT SECURITY</h2>
+        </div>
         <div class="card-body">
-            <form method="post" action="{{ url_for('zootique_admin.update_security') }}" style="display:flex; flex-direction:column; gap:12px;">
+            <form method="post" action="{{ url_for('zootique_admin.update_security') }}" style="display:flex; flex-direction:column; gap:16px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div style="background:var(--info-bg); border:1px solid rgba(37,99,235,0.2); border-radius:var(--radius); padding:12px 14px; font-size:13px; color:var(--info); font-weight:600; display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Update your username or change your password below. Current password is required for any changes.
+                </div>
+
                 <div>
-                    <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Change Username</label>
+                    <label style="display:block; font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Change Username</label>
                     <input type="text" name="new_username" placeholder="New username" value="" style="width:100%;">
                 </div>
 
-                <div style="border-top:1px solid var(--border-light);"></div>
+                <div style="border-top:1px solid var(--border-light); padding-top:4px;"></div>
 
                 <div>
-                    <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Current Password (for verification)</label>
+                    <label style="display:block; font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Current Password <span style="color:var(--danger);">*</span></label>
                     <input id="current_password" type="password" name="current_password" placeholder="••••••••" required style="width:100%;">
                 </div>
                 <div>
-                    <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">New Password</label>
+                    <label style="display:block; font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">New Password</label>
                     <input id="new_password" type="password" name="new_password" placeholder="Enter new password" style="width:100%;">
                     <div id="pw_strength" style="margin-top:6px; font-size:12px; color:var(--text-muted);">Strength: —</div>
                 </div>
                 <div>
-                    <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Confirm Password</label>
+                    <label style="display:block; font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Confirm Password</label>
                     <input id="confirm_password" type="password" name="confirm_password" placeholder="Confirm new password" style="width:100%;">
                 </div>
 
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:1px solid var(--border-light); border-bottom:1px solid var(--border-light);">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-radius:var(--radius); background:var(--border-light); border:1px solid var(--border);">
                     <div>
-                        <div style="font-weight:900; font-size:13px;">Show/Hide Password</div>
+                        <div style="font-weight:700; font-size:13px;">Show/Hide Password</div>
                         <div style="font-size:12px; color:var(--text-muted);">Toggle password visibility</div>
                     </div>
-                    <div>
-                        <input id="toggle_password" type="checkbox" style="width:20px; height:20px;">
-                    </div>
+                    <label style="display:flex; align-items:center; cursor:pointer;">
+                        <input id="toggle_password" type="checkbox" style="width:18px; height:18px; cursor:pointer;">
+                    </label>
                 </div>
 
-                <button type="submit" class="btn btn-primary" style="width:100%; max-width:360px;"><i class="fa-solid fa-shield-halved"></i> Save Security Changes</button>
+                <div style="display:flex; gap:10px; padding-top:4px;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;"><i class="fa-solid fa-shield-halved"></i> Save Security Changes</button>
+                    <a href="{{ url_for('zootique_admin.settings') }}?section=profile" class="btn" style="flex:1; background:var(--border-light); color:var(--text-muted); text-align:center; border:1px solid var(--border); text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:700; border-radius:var(--radius); padding:10px; font-size:13px;">
+                        <i class="fa-solid fa-circle-user"></i> Go to Profile
+                    </a>
+                </div>
             </form>
         </div>
     </div>
+    {% endif %}
+
 </div>
 
 {% endblock %}
@@ -105,67 +137,69 @@
     const strength = document.getElementById('pw_strength');
     function computeStrength(pw) {
       let score = 0;
-      if (!pw) return { label: '—', score: 0 };
+      if (!pw) return { label: '—', color: 'var(--text-muted)' };
       if (pw.length >= 8) score++;
       if (/[A-Z]/.test(pw)) score++;
       if (/[a-z]/.test(pw)) score++;
       if (/[0-9]/.test(pw)) score++;
       if (/[^A-Za-z0-9]/.test(pw)) score++;
-      if (score <= 2) return { label: 'Weak', score };
-      if (score === 3) return { label: 'Medium', score };
-      return { label: 'Strong', score };
+      if (score <= 2) return { label: 'Weak', color: 'var(--danger)' };
+      if (score === 3) return { label: 'Medium', color: 'var(--warning)' };
+      return { label: 'Strong', color: 'var(--success)' };
     }
     if (newPw && strength) {
       newPw.addEventListener('input', function () {
         const res = computeStrength(newPw.value);
         strength.textContent = 'Strength: ' + res.label;
+        strength.style.color = res.color;
+        strength.style.fontWeight = '700';
       });
     }
 
-        // Profile picture preview
-        const fileInput = document.getElementById('profile_picture_input');
-        const fileName = document.getElementById('profile_picture_name');
-        const avatarImg = document.getElementById('sa_profile_avatar_img');
-        const avatarInitial = document.getElementById('sa_profile_avatar_initial');
+    // Profile picture preview
+    const fileInput = document.getElementById('profile_picture_input');
+    const fileName = document.getElementById('profile_picture_name');
+    const avatarImg = document.getElementById('sa_profile_avatar_img');
+    const avatarInitial = document.getElementById('sa_profile_avatar_initial');
 
-        if (avatarImg) {
-            avatarImg.dataset.originalSrc = avatarImg.getAttribute('src') || '';
-            avatarImg.dataset.hasOriginal = avatarImg.dataset.originalSrc ? '1' : '0';
-        }
+    if (avatarImg) {
+        avatarImg.dataset.originalSrc = avatarImg.getAttribute('src') || '';
+        avatarImg.dataset.hasOriginal = avatarImg.dataset.originalSrc ? '1' : '0';
+    }
 
-        if (fileInput && fileName && avatarImg && avatarInitial) {
-            fileInput.addEventListener('change', function () {
-                const file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+    if (fileInput && fileName && avatarImg && avatarInitial) {
+        fileInput.addEventListener('change', function () {
+            const file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
 
-                if (!file) {
-                    fileName.textContent = avatarImg.dataset.hasOriginal === '1' ? 'Current photo set' : 'No file selected';
-                    if (avatarImg.dataset.hasOriginal === '1') {
-                        avatarImg.src = avatarImg.dataset.originalSrc;
-                        avatarImg.style.display = 'block';
-                        avatarInitial.style.display = 'none';
-                    } else {
-                        avatarImg.style.display = 'none';
-                        avatarInitial.style.display = 'block';
-                    }
-                    return;
-                }
-
-                fileName.textContent = 'Selected: ' + file.name;
-
-                if (file.type && !file.type.startsWith('image/')) {
-                    return;
-                }
-
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    if (!e || !e.target) return;
-                    avatarImg.src = String(e.target.result || '');
+            if (!file) {
+                fileName.textContent = avatarImg.dataset.hasOriginal === '1' ? 'Current photo set' : 'No file selected';
+                if (avatarImg.dataset.hasOriginal === '1') {
+                    avatarImg.src = avatarImg.dataset.originalSrc;
                     avatarImg.style.display = 'block';
                     avatarInitial.style.display = 'none';
-                };
-                reader.readAsDataURL(file);
-            });
-        }
+                } else {
+                    avatarImg.style.display = 'none';
+                    avatarInitial.style.display = 'block';
+                }
+                return;
+            }
+
+            fileName.textContent = 'Selected: ' + file.name;
+
+            if (file.type && !file.type.startsWith('image/')) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                if (!e || !e.target) return;
+                avatarImg.src = String(e.target.result || '');
+                avatarImg.style.display = 'block';
+                avatarInitial.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        });
+    }
   })();
 </script>
 {% endblock %}

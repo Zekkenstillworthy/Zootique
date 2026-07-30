@@ -3,54 +3,80 @@
 {% block title %}Login Selection | Zootique{% endblock %}
 
 {% block content %}
-<div style="min-height: 80vh; padding: 4rem 1.25rem; background: #fbfbfb;">
-  <div class="container" style="max-width: 980px;">
+<div style="min-height: 80vh; padding: 5rem 1.5rem; background: #fbfbfb;">
+  <div class="container" style="max-width: 1050px; margin: 0 auto;">
 
-    <div style="text-align: center; margin-bottom: 3rem;">
-      
-      <h1 style="font-size: 2.3rem; color: #1e3a2b; margin-bottom: 0.75rem; font-family: 'Times New Roman', serif;">Select Login Portal</h1>
-      <p style="color: #64748b; font-size: 1.05rem; max-width: 700px; margin: 0 auto;">Choose how you want to sign in. Staff can sign in, but they don’t self-register.</p>
+    <div style="text-align: center; margin-bottom: 4rem;">
+      <h1 style="font-size: 2.8rem; color: #1e3a2b; margin-bottom: 1rem; font-family: 'Times New Roman', serif; font-weight: 800;">Select Login Portal</h1>
+      <p style="color: #64748b; font-size: 1.1rem; max-width: 640px; margin: 0 auto; line-height: 1.6;">Choose how you want to sign in. Staff can sign in, but they don't self-register.</p>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem;">
-
-      <!-- Zoo Admin -->
-      <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2.25rem; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div style="background: #fca000; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: white; margin-bottom: 1.25rem; box-shadow: 0 10px 15px rgba(252,160,0,0.3);">
-          <i class="fa-solid fa-building-user"></i>
-        </div>
-        <h3 style="font-size: 1.25rem; margin-bottom: 0.4rem; color: #1e293b;">Operator (Zoo Admin)</h3>
-        <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 1.75rem;">Manage your zoo’s services, bookings, and staff.</p>
-        <a href="{{ url_for('auth.login', module_name='zoo_admin') }}" class="btn" style="width: 100%; background: #fca000; color: white; padding: 0.85rem; border-radius: 8px; font-weight: 900; font-size: 0.95rem; text-decoration: none; border: 1px solid #fca000;">Sign in as Zoo Admin</a>
-      </div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; align-items: stretch;">
 
       <!-- Visitor -->
-      <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2.25rem; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div style="background: #1a4f32; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: white; margin-bottom: 1.25rem; box-shadow: 0 10px 15px rgba(26,79,50,0.3);">
-          <i class="fa-solid fa-users"></i>
+      <div style="background: white; border-radius: 16px; border: 1px solid #e2e8f0; border-top: 4px solid #1a4f32; padding: 2.5rem 2rem; display: flex; flex-direction: column; align-items: flex-start; text-align: left; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -1px rgba(0,0,0,0.02); height: 100%; box-sizing: border-box;" class="portal-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 1.5rem;">
+          <div style="background: #1a4f32; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: white;">
+            <i class="fa-solid fa-users"></i>
+          </div>
+          <span style="background: #e6f4ea; color: #137333; font-size: 0.7rem; font-weight: 800; padding: 0.25rem 0.75rem; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">Public Access</span>
         </div>
-        <h3 style="font-size: 1.25rem; margin-bottom: 0.4rem; color: #1e293b;">Visitor</h3>
-        <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 1.75rem;">Explore and book experiences at registered zoos.</p>
-        <a href="{{ url_for('auth.login', module_name='visitor') }}" class="btn" style="width: 100%; background: #1a4f32; color: white; padding: 0.85rem; border-radius: 8px; font-weight: 900; font-size: 0.95rem; text-decoration: none; border: 1px solid #1a4f32;">Sign in as Visitor</a>
+        <h3 style="font-size: 1.35rem; font-weight: 800; margin: 0 0 0.75rem 0; color: #1e293b;">Visitor</h3>
+        <p style="font-size: 0.925rem; color: #64748b; margin: 0 0 2rem 0; line-height: 1.6; min-height: 4.5rem;">Explore and book experiences at registered zoos.</p>
+        <div style="width: 100%; margin-top: auto;">
+          <a href="{{ url_for('auth.login', module_name='visitor') }}" class="btn btn-visitor-solid" style="display: block; background: #1a4f32; color: white; padding: 0.8rem; border-radius: 8px; font-weight: 800; font-size: 0.9rem; text-decoration: none; border: 1.5px solid #1a4f32; text-align: center; transition: all 0.2s;">Sign in as Visitor</a>
+        </div>
+      </div>
+
+      <!-- Zoo Admin -->
+      <div style="background: white; border-radius: 16px; border: 1px solid #e2e8f0; border-top: 4px solid #fca000; padding: 2.5rem 2rem; display: flex; flex-direction: column; align-items: flex-start; text-align: left; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -1px rgba(0,0,0,0.02); height: 100%; box-sizing: border-box;" class="portal-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 1.5rem;">
+          <div style="background: #fca000; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: white;">
+            <i class="fa-solid fa-building-user"></i>
+          </div>
+          <span style="background: #fef7e0; color: #b06000; font-size: 0.7rem; font-weight: 800; padding: 0.25rem 0.75rem; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">Management</span>
+        </div>
+        <h3 style="font-size: 1.35rem; font-weight: 800; margin: 0 0 0.75rem 0; color: #1e293b;">Operator (Zoo Admin)</h3>
+        <p style="font-size: 0.925rem; color: #64748b; margin: 0 0 2rem 0; line-height: 1.6; min-height: 4.5rem;">Manage your zoo’s services, bookings, and staff.</p>
+        <div style="width: 100%; margin-top: auto;">
+          <a href="{{ url_for('auth.login', module_name='zoo_admin') }}" class="btn btn-admin-solid" style="display: block; background: #fca000; color: white; padding: 0.8rem; border-radius: 8px; font-weight: 800; font-size: 0.9rem; text-decoration: none; border: 1.5px solid #fca000; text-align: center; transition: all 0.2s;">Sign in as Zoo Admin</a>
+        </div>
       </div>
 
       <!-- Staff -->
-      <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2.25rem; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <div style="background: #0ea5e9; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: white; margin-bottom: 1.25rem; box-shadow: 0 10px 15px rgba(14,165,233,0.25);">
-          <i class="fa-solid fa-user-shield"></i>
+      <div style="background: white; border-radius: 16px; border: 1px solid #e2e8f0; border-top: 4px solid #2563eb; padding: 2.5rem 2rem; display: flex; flex-direction: column; align-items: flex-start; text-align: left; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -1px rgba(0,0,0,0.02); height: 100%; box-sizing: border-box;" class="portal-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 1.5rem;">
+          <div style="background: #2563eb; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: white;">
+            <i class="fa-solid fa-id-badge"></i>
+          </div>
+          <span style="background: #e8f0fe; color: #1a73e8; font-size: 0.7rem; font-weight: 800; padding: 0.25rem 0.75rem; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">Operations</span>
         </div>
-        <h3 style="font-size: 1.25rem; margin-bottom: 0.4rem; color: #1e293b;">Staff</h3>
-        <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 1.75rem;">Handle tasks, bookings, and operations for your assigned zoo.</p>
-        <a href="{{ url_for('auth.login', module_name='zoo_staff') }}" class="btn" style="width: 100%; background: #0ea5e9; color: white; padding: 0.85rem; border-radius: 8px; font-weight: 900; font-size: 0.95rem; text-decoration: none; border: 1px solid #0ea5e9;">Sign in as Staff</a>
+        <h3 style="font-size: 1.35rem; font-weight: 800; margin: 0 0 0.75rem 0; color: #1e293b;">Staff</h3>
+        <p style="font-size: 0.925rem; color: #64748b; margin: 0 0 2rem 0; line-height: 1.6; min-height: 4.5rem;">Handle tasks, bookings, and operations for your assigned zoo.</p>
+        <div style="width: 100%; margin-top: auto;">
+          <a href="{{ url_for('auth.login', module_name='zoo_staff') }}" class="btn btn-staff-solid" style="display: block; background: #2563eb; color: white; padding: 0.8rem; border-radius: 8px; font-weight: 800; font-size: 0.9rem; text-decoration: none; border: 1.5px solid #2563eb; text-align: center; transition: all 0.2s;">Sign in as Staff</a>
+        </div>
       </div>
 
     </div>
 
-    <div style="text-align:center; margin-top: 2.5rem; display:flex; justify-content:center; gap: 1.25rem; flex-wrap: wrap;">
-      <a href="{{ url_for('auth.register_selection') }}" style="color: #1a4f32; font-weight: 800; text-decoration: none; display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-user-plus"></i> Create an account</a>
-      <a href="/" style="color: #64748b; font-weight: 700; text-decoration: none; display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-arrow-left"></i> Back to Landing</a>
+    <div style="text-align:center; margin-top: 3.5rem; display:flex; justify-content:center; gap: 1.5rem; flex-wrap: wrap;">
+      <a href="{{ url_for('auth.register_selection') }}" style="color: #1a4f32; font-weight: 800; text-decoration: none; display:inline-flex; align-items:center; gap:8px; font-size: 0.95rem; transition: all 0.2s;" class="bottom-link-visitor"><i class="fa-solid fa-user-plus"></i> Create an account</a>
+      <a href="/" style="color: #64748b; font-weight: 700; text-decoration: none; display:inline-flex; align-items:center; gap:8px; font-size: 0.95rem; transition: all 0.2s;" class="bottom-link-back"><i class="fa-solid fa-arrow-left"></i> Back to Landing</a>
     </div>
 
   </div>
 </div>
+
+<style>
+.portal-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+.btn-visitor-solid:hover { background: #133a25 !important; border-color: #133a25 !important; }
+.btn-admin-solid:hover { background: #d48600 !important; border-color: #d48600 !important; }
+.btn-staff-solid:hover { background: #1d4ed8 !important; border-color: #1d4ed8 !important; }
+.bottom-link-visitor:hover { color: #133a25 !important; }
+.bottom-link-back:hover { color: #334155 !important; }
+</style>
 {% endblock %}

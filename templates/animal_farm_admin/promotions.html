@@ -1,28 +1,11 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Promotions Management | Animal Farm Admin{% endblock %}
 {% block page_title %}Promotions Management{% endblock %}
 
 {% block content %}
 {% set selected_tab = request.args.get('tab', 'all') %}
-<div style="margin-bottom: 16px;">
-    <div class="nav-dropdown" style="position: relative; width: fit-content;">
-        <button class="nav-dropdown-trigger" onclick="toggleDropdown(event, 'promotions-page-dropdown')" style="padding: 10px 14px; background: white; border: 1px solid var(--border); border-radius: 8px; width: auto;">
-            <span><i class="fa-solid fa-tags"></i> Promotions</span>
-            <i class="fa-solid fa-chevron-down"></i>
-        </button>
-        <div class="nav-dropdown-menu" id="promotions-page-dropdown" style="position: absolute; top: 100%; left: 0; background: white; border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; width: auto; min-width: 200px; margin-top: -8px;">
-            <a href="{{ url_for('animal_farm_admin.promotions_management') }}?tab=add"
-               class="nav-dropdown-item {% if selected_tab == 'add' %}active{% endif %}">
-                <i class="fa-solid fa-plus-circle"></i> Add/Edit Promotion
-            </a>
-            <a href="{{ url_for('animal_farm_admin.promotions_management') }}?tab=list"
-               class="nav-dropdown-item {% if selected_tab == 'list' %}active{% endif %}">
-                <i class="fa-solid fa-list"></i> Promotion List
-            </a>
-        </div>
-    </div>
-</div>
+
 
 <div class="card-panel">
     <div class="card-header">

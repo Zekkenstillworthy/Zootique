@@ -3,8 +3,9 @@
 {% block page_title %}Events Management{% endblock %}
 
 {% block content %}
-<div style="display:grid; gap:2rem;">
 
+<!-- ===== ADD EVENT ===== -->
+<div id="se-tab-add" class="se-section" style="display:none;">
     <div class="card-panel">
         <div class="card-header-bar">
             <h2>Add Event — {{ zoo.name }}</h2>
@@ -26,10 +27,15 @@
                 <label style="display:block; font-size:0.75rem; color:var(--text-muted); font-weight:700; margin-bottom:0.25rem;">Location</label>
                 <input type="text" name="location" placeholder="Main Stage">
             </div>
-            <button class="btn btn-primary" type="submit">Add</button>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-primary" type="submit">Add</button>
+            </div>
         </form>
     </div>
+</div>
 
+<!-- ===== SCHEDULED EVENTS ===== -->
+<div id="se-tab-list" class="se-section" style="display:none;">
     <div class="card-panel">
         <div class="card-header-bar">
             <h2>Scheduled Events — {{ zoo.name }}</h2>
@@ -70,6 +76,6 @@
             </table>
         </div>
     </div>
-
 </div>
+
 {% endblock %}

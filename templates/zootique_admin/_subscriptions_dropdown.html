@@ -1,23 +1,20 @@
 <div class="nav-dropdown">
-    <button class="nav-dropdown-trigger {% if request.endpoint == 'zootique_admin.manage_subscriptions' %}active{% endif %}" onclick="toggleDropdown(event, 'subscriptions-dropdown')">
-        <span><i class="fa-regular fa-credit-card"></i> Subscriptions</span>
-        <i class="fa-solid fa-chevron-down"></i>
+    <button
+        class="nav-dropdown-trigger {% if request.endpoint in ['zootique_admin.manage_subscriptions', 'zootique_admin.subscription_pricing_tiers', 'zootique_admin.subscription_plan_manager'] %}active{% endif %}"
+        onclick="toggleDropdown(event, 'subscriptions-dropdown')">
+        <span class="trigger-label"><i class="fa-regular fa-credit-card"></i> Subscriptions</span>
+        <i class="fa-solid fa-chevron-down chevron"></i>
     </button>
-    <div class="nav-dropdown-menu {% if request.endpoint == 'zootique_admin.manage_subscriptions' %}open{% endif %}" id="subscriptions-dropdown">
-        <a href="{{ url_for('zootique_admin.manage_subscriptions') }}"
-           data-sa-soft-nav="subscriptions"
-           class="nav-dropdown-item {% if request.endpoint == 'zootique_admin.manage_subscriptions' and not request.args.get('edit_plan') %}active{% endif %}">
+    <div class="nav-dropdown-menu {% if request.endpoint in ['zootique_admin.manage_subscriptions', 'zootique_admin.subscription_pricing_tiers', 'zootique_admin.subscription_plan_manager'] %}open{% endif %}"
+        id="subscriptions-dropdown">
+        <a href="{{ url_for('zootique_admin.manage_subscriptions') }}" data-sa-soft-nav="subscriptions"
+            class="nav-dropdown-item {% if request.endpoint == 'zootique_admin.manage_subscriptions' and not request.args.get('edit_plan') %}active{% endif %}">
             <i class="fa-solid fa-clipboard-list"></i> Zoo Subscriptions
         </a>
-        <a href="{{ url_for('zootique_admin.subscription_pricing_tiers') }}"
-           data-sa-soft-nav="subscriptions"
-           class="nav-dropdown-item {% if request.endpoint == 'zootique_admin.subscription_pricing_tiers' %}active{% endif %}">
-            <i class="fa-solid fa-tags"></i> Global Pricing Tiers
+        <a href="{{ url_for('zootique_admin.subscription_pricing_tiers') }}" data-sa-soft-nav="subscriptions"
+            class="nav-dropdown-item {% if request.endpoint == 'zootique_admin.subscription_pricing_tiers' and not request.args.get('open_plan_manager') %}active{% endif %}">
+            <i class="fa-solid fa-tags"></i> Subscription Plan
         </a>
-        <a href="{{ url_for('zootique_admin.subscription_plan_manager') }}"
-           data-sa-soft-nav="subscriptions"
-           class="nav-dropdown-item {% if request.endpoint == 'zootique_admin.subscription_plan_manager' %}active{% endif %}">
-            <i class="fa-solid fa-plus-circle"></i> Plan Manager
-        </a>
+
     </div>
 </div>

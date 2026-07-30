@@ -35,7 +35,40 @@ def _current_zoo() -> Zoo | None:
 
 @zoo_staff_bp.route('/')
 def dashboard():
-    return render_template('animal_farm_staff/dashboard.html')
+    user = _current_user()
+    zoo = _current_zoo()
+    tasks_pending = 0
+    tasks_done = 0
+    recent_tasks = []
+    animals_count = 0
+    if user:
+        from models import StaffTask, Animal
+        tasks_pending = StaffTask.query.filter_by(
+            zoo_id=user.zoo_id, assigned_to_user_id=user.id
+        ).filter(StaffTask.status != 'done').count()
+        tasks_done = StaffTask.query.filter_by(
+            zoo_id=user.zoo_id, assigned_to_user_id=user.id, status='done'
+        ).count()
+        recent_tasks = (
+            StaffTask.query
+            .filter_by(zoo_id=user.zoo_id, assigned_to_user_id=user.id)
+            .filter(StaffTask.status != 'done')
+            .order_by(StaffTask.due_date.asc().nullslast(), StaffTask.created_at.desc())
+            .limit(5)
+            .all()
+        )
+        if zoo:
+            animals_count = Animal.query.filter_by(zoo_id=zoo.id).count()
+    return render_template(
+        'animal_farm_staff/dashboard.html',
+        user=user,
+        zoo=zoo,
+        tasks_pending=tasks_pending,
+        tasks_done=tasks_done,
+        recent_tasks=recent_tasks,
+        animals_count=animals_count,
+        today=datetime.utcnow().date(),
+    )
 
 
 @zoo_staff_bp.route('/dashboard')

@@ -1,79 +1,51 @@
-<div id="plan-manager" class="two-col" style="--two-col-template: 1fr 1.1fr; scroll-margin-top:96px;">
+<div id="plan-manager" style="max-width: 650px; margin: 0 auto; scroll-margin-top:96px;">
   <div class="card-panel" style="margin-bottom:0;">
     <div class="card-header">
       <h2>PLAN MANAGER — {% if edit_plan %}Edit{% else %}Add{% endif %}</h2>
     </div>
     <div class="card-body">
-      <form method="post" action="{{ url_for('zootique_admin.save_subscription_plan') }}" style="display:flex; flex-direction:column; gap:12px;">
+      <form method="post" action="{{ url_for('zootique_admin.save_subscription_plan') }}"
+        style="display:flex; flex-direction:column; gap:12px;">
         {% if edit_plan %}
-          <input type="hidden" name="plan_id" value="{{ edit_plan.id }}">
+        <input type="hidden" name="plan_id" value="{{ edit_plan.id }}">
         {% endif %}
 
         <div>
           <label>Plan Name</label>
-          <input type="text" name="name" value="{{ edit_plan.name if edit_plan else '' }}" placeholder="Basic Field, Habitat Pro, ..." required>
+          <input type="text" name="name" value="{{ edit_plan.name if edit_plan else '' }}"
+            placeholder="Basic Field, Habitat Pro, ..." required>
         </div>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
           <div>
             <label>Price</label>
-            <input type="number" name="price" step="0.01" value="{{ edit_plan.price if edit_plan else '' }}" placeholder="0.00" required>
+            <input type="number" name="price" step="0.01" value="{{ edit_plan.price if edit_plan else '' }}"
+              placeholder="0.00" required>
           </div>
           <div>
             <label>Duration</label>
             <select name="duration" required>
-              <option value="monthly" {% if edit_plan and edit_plan.duration == 'monthly' %}selected{% endif %}>Monthly</option>
-              <option value="yearly" {% if edit_plan and edit_plan.duration == 'yearly' %}selected{% endif %}>Yearly</option>
+              <option value="monthly" {% if edit_plan and edit_plan.duration=='monthly' %}selected{% endif %}>Monthly
+              </option>
+              <option value="yearly" {% if edit_plan and edit_plan.duration=='yearly' %}selected{% endif %}>Yearly
+              </option>
             </select>
           </div>
         </div>
 
         <div>
           <label>Features (one per line)</label>
-          <textarea name="features" rows="7" placeholder="Up to 500 Animals\n3 Admin Users\nBasic Reporting">{{ edit_plan.features if edit_plan and edit_plan.features else '' }}</textarea>
+          <textarea name="features" rows="7"
+            placeholder="Up to 500 Animals\n3 Admin Users\nBasic Reporting">{{ edit_plan.features if edit_plan and edit_plan.features else '' }}</textarea>
         </div>
 
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Plan</button>
           {% if edit_plan %}
-            <a class="btn btn-ghost" href="{{ url_for('zootique_admin.subscription_plan_manager') }}">Discard</a>
+          <a class="btn btn-ghost" href="{{ url_for('zootique_admin.subscription_plan_manager') }}">Discard</a>
           {% endif %}
         </div>
       </form>
-    </div>
-  </div>
-
-  <div class="card-panel" style="margin-bottom:0;">
-    <div class="card-header">
-      <h2>GLOBAL PRICING TIERS</h2>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>PLAN</th>
-            <th style="text-align:right;">PRICE</th>
-            <th>DURATION</th>
-            <th>FEATURES</th>
-            <th style="text-align:right;">ACTIONS</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for p in plans %}
-          <tr>
-            <td class="fw-600">{{ p.name }}</td>
-            <td style="text-align:right; font-weight:900;">₱{{ "{:,.2f}".format(p.price) }}</td>
-            <td style="text-transform:capitalize;">{{ p.duration }}</td>
-            <td style="color:var(--text-muted); font-size:12px;">{{ (p.features or '—')|replace('\n', ', ') }}</td>
-            <td style="text-align:right;">
-              <a class="btn btn-ghost btn-sm" href="{{ url_for('zootique_admin.subscription_plan_manager', edit_plan=p.id) }}"><i class="fa-regular fa-pen-to-square"></i> Edit</a>
-            </td>
-          </tr>
-          {% else %}
-          <tr><td colspan="5" class="empty-state">No plans available.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
     </div>
   </div>
 </div>

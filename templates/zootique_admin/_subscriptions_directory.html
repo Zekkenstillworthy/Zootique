@@ -86,23 +86,13 @@
             <td style="color:var(--text-muted); font-size:12px;">{{ sub.end_date }}</td>
             <td style="text-align:right; font-weight:800; color:var(--primary);">₱{{ "{:,.2f}".format(sub.latest_payment_amount or 0) }}</td>
             <td style="text-align:right;">
-              <div style="display:grid; gap:8px; justify-items:end; min-width:220px;">
-                <form method="post" action="{{ url_for('zootique_admin.renew_subscription', subscription_id=sub.subscription_id) }}" style="display:flex; gap:6px; align-items:center; justify-content:flex-end;">
-                  <input type="number" name="months" min="1" value="1" style="max-width:70px;">
-                  <button class="btn btn-outline btn-sm" type="submit">Renew</button>
+              <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center;">
+                <form method="post" action="{{ url_for('zootique_admin.renew_subscription', subscription_id=sub.subscription_id) }}" style="display:inline;">
+                  <input type="hidden" name="months" value="1">
+                  <button class="btn btn-outline btn-sm" type="submit"><i class="fa-solid fa-check"></i> Confirm</button>
                 </form>
-
-                <form method="post" action="{{ url_for('zootique_admin.change_subscription_plan', subscription_id=sub.subscription_id) }}" style="display:flex; gap:6px; align-items:center; justify-content:flex-end;">
-                  <select name="plan_id" style="min-width:120px;">
-                    {% for p in plans %}
-                    <option value="{{ p.id }}" {% if p.id == sub.plan_id %}selected{% endif %}>{{ p.name }}</option>
-                    {% endfor %}
-                  </select>
-                  <button class="btn btn-ghost btn-sm" type="submit">Change</button>
-                </form>
-
-                <form method="post" action="{{ url_for('zootique_admin.cancel_subscription', subscription_id=sub.subscription_id) }}">
-                  <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger);">Cancel</button>
+                <form method="post" action="{{ url_for('zootique_admin.cancel_subscription', subscription_id=sub.subscription_id) }}" style="display:inline;" onsubmit="return confirm('Cancel this subscription?');">
+                  <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger);"><i class="fa-solid fa-xmark"></i> Cancel</button>
                 </form>
               </div>
             </td>
