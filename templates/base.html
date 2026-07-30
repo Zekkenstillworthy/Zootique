@@ -632,11 +632,9 @@
         </a>
 
         <nav class="visitor-nav-links">
-            {#
-               Visitor navbar should reflect "signed in as Visitor" even if another
-               role is currently active (e.g. user last visited an admin module).
-               We store multi-role logins in session['auth_by_role'].
-            #}
+            {% if request.blueprint == 'auth' %}
+            <a href="/" class="visitor-nav-link"><i class="fa-solid fa-arrow-left" style="margin-right: 6px;"></i> Back to Landing</a>
+            {% else %}
             {% set _auth_by_role = session.get('auth_by_role') %}
             {% set _visitor_role_state = (_auth_by_role.get('visitor') if _auth_by_role is mapping else None) %}
             {% set _has_visitor_role = _visitor_role_state is mapping and _visitor_role_state.get('user_id') %}
@@ -660,21 +658,32 @@
             <a href="{{ url_for('visitor.feedback') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.feedback' %}active{% endif %}">Feedback</a>
             <a href="{{ url_for('visitor.park_info') }}" class="visitor-nav-link {% if request.endpoint == 'visitor.park_info' %}active{% endif %}">Park Info</a>
             {% endif %}
+            {% endif %}
         </nav>
 
         <div class="visitor-nav-actions">
-            {% if _is_visitor_authed %}
-                <a href="{{ url_for('visitor.profile') }}" title="Profile">
-                    <img src="https://ui-avatars.com/api/?name={{ session.get('full_name', 'Visitor') }}&background=e2e8f0&color=1a4f32" alt="Avatar" class="visitor-avatar">
+            {% if request.blueprint == 'auth' %}
+                {% if 'register' in (request.endpoint or '') %}
+                <a href="{{ url_for('auth.login_selection') }}" class="visitor-nav-link" style="height:auto; color:#1a4f32; font-weight:800;">
+                    <i class="fa-solid fa-right-to-bracket" style="margin-right: 6px;"></i> Sign in
                 </a>
-                <a href="{{ url_for('auth.logout') }}" class="visitor-nav-link" style="height:auto; color:#ef4444; font-weight:800;">
-                    <i class="fa-solid fa-right-from-bracket" style="margin-right: 8px;"></i> Logout
+                {% else %}
+                <a href="{{ url_for('auth.register_selection') }}" class="visitor-nav-link" style="height:auto; color:#1a4f32; font-weight:800;">
+                    <i class="fa-solid fa-user-plus" style="margin-right: 6px;"></i> Register
                 </a>
+                {% endif %}
             {% else %}
-                {% if request.blueprint != 'auth' %}
-                <a href="{{ url_for('auth.login', module_name='visitor') }}" class="visitor-nav-link" style="height:auto; color:#1a4f32; font-weight:800;">
-                    <i class="fa-solid fa-right-to-bracket" style="margin-right: 8px;"></i> Sign in
-                </a>
+                {% if _is_visitor_authed %}
+                    <a href="{{ url_for('visitor.profile') }}" title="Profile">
+                        <img src="https://ui-avatars.com/api/?name={{ session.get('full_name', 'Visitor') }}&background=e2e8f0&color=1a4f32" alt="Avatar" class="visitor-avatar">
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}" class="visitor-nav-link" style="height:auto; color:#ef4444; font-weight:800;">
+                        <i class="fa-solid fa-right-from-bracket" style="margin-right: 8px;"></i> Logout
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('auth.login', module_name='visitor') }}" class="visitor-nav-link" style="height:auto; color:#1a4f32; font-weight:800;">
+                        <i class="fa-solid fa-right-to-bracket" style="margin-right: 8px;"></i> Sign in
+                    </a>
                 {% endif %}
             {% endif %}
         </div>
