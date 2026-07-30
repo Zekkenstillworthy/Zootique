@@ -1054,11 +1054,14 @@ def establishment_types():
     return render_template('zootique_admin/establishment_types.html', establishment_types=types, user=user)
 
 
-@admin_bp.post('/establishment-types/save')
+@admin_bp.route('/establishment-types/save', methods=['GET', 'POST'])
 def save_establishment_type():
     user = _current_user()
     if not user:
         return redirect(url_for('auth.login', module_name='zootique_admin'))
+
+    if request.method == 'GET':
+        return redirect(url_for('zootique_admin.establishment_types'))
 
     type_id = request.form.get('type_id')
     name = (request.form.get('name') or '').strip()
@@ -1100,11 +1103,14 @@ def save_establishment_type():
     return redirect(url_for('zootique_admin.establishment_types'))
 
 
-@admin_bp.post('/establishment-types/<int:type_id>/toggle-status')
+@admin_bp.route('/establishment-types/<int:type_id>/toggle-status', methods=['GET', 'POST'])
 def toggle_establishment_type_status(type_id: int):
     user = _current_user()
     if not user:
         return redirect(url_for('auth.login', module_name='zootique_admin'))
+
+    if request.method == 'GET':
+        return redirect(url_for('zootique_admin.establishment_types'))
 
     et = db.session.get(EstablishmentType, type_id)
     if not et:
@@ -1118,11 +1124,14 @@ def toggle_establishment_type_status(type_id: int):
     return redirect(url_for('zootique_admin.establishment_types'))
 
 
-@admin_bp.post('/establishment-types/<int:type_id>/delete')
+@admin_bp.route('/establishment-types/<int:type_id>/delete', methods=['GET', 'POST'])
 def delete_establishment_type(type_id: int):
     user = _current_user()
     if not user:
         return redirect(url_for('auth.login', module_name='zootique_admin'))
+
+    if request.method == 'GET':
+        return redirect(url_for('zootique_admin.establishment_types'))
 
     et = db.session.get(EstablishmentType, type_id)
     if not et:
