@@ -2,7 +2,7 @@ from urllib.parse import urlparse
 
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
-from models import Zoo, User, db
+from models import Zoo, User, EstablishmentType, db
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -247,7 +247,8 @@ def register_admin_step1():
         session['reg_zoo_location'] = zoo_location
         return redirect(url_for('auth.register_admin_step2'))
 
-    return render_template('auth/register_admin_step1.html')
+    types = EstablishmentType.query.filter_by(is_active=True).order_by(EstablishmentType.name.asc()).all()
+    return render_template('auth/register_admin_step1.html', establishment_types=types)
 
 
 @auth_bp.route('/register-step-2', methods=['GET', 'POST'])

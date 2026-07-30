@@ -66,29 +66,20 @@
 
         <div>
           <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Establishment Type</label>
-          <div style="display: flex; gap: 16px;">
-            <label style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; cursor: pointer; text-align: center; position: relative;">
-              <input type="radio" name="zoo_type" value="Zoo Park" checked style="display: none;">
-              <i class="fa-solid fa-mountain-sun" style="font-size: 20px; color: #1e3a2b; margin-bottom: 8px; display:block;"></i>
-              <span style="font-size: 13px; font-weight: 800; color: #1e3a2b; display:block;">Zoo Park</span>
-            </label>
-            <label style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; cursor: pointer; text-align: center; position: relative;">
-              <input type="radio" name="zoo_type" value="Wildlife Park" style="display: none;">
-              <i class="fa-solid fa-tree" style="font-size: 20px; color: #1e3a2b; margin-bottom: 8px; display:block;"></i>
-              <span style="font-size: 13px; font-weight: 800; color: #1e3a2b; display:block;">Wildlife Park</span>
-            </label>
-            <label style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; cursor: pointer; text-align: center; position: relative;">
-              <input type="radio" name="zoo_type" value="Farm Attraction" style="display: none;">
-              <i class="fa-solid fa-tractor" style="font-size: 20px; color: #1e3a2b; margin-bottom: 8px; display:block;"></i>
-              <span style="font-size: 13px; font-weight: 800; color: #1e3a2b; display:block;">Farm Attraction</span>
-            </label>
-          </div>
-          <style>
-            input[type="radio"]:checked + i + span { color: #166453; }
-            input[type="radio"]:checked ~ * { color: #166453 !important; }
-            input[type="radio"]:checked { content: ""; }
-            label:has(input[type="radio"]:checked) { border-color: #166453; box-shadow: 0 0 0 1px #166453; background: #f0fdf4; }
-          </style>
+          <select name="zoo_type" required style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px 16px; font-family: inherit; font-size: 14px; background: white; color: #1e293b; font-weight: 600; cursor: pointer; outline: none;">
+            <option value="" disabled {% if not session.get('reg_zoo_type') %}selected{% endif %}>Select Establishment Type...</option>
+            {% if establishment_types %}
+              {% for et in establishment_types %}
+              <option value="{{ et.name }}" {% if session.get('reg_zoo_type') == et.name or (loop.first and not session.get('reg_zoo_type')) %}selected{% endif %}>{{ et.name }}{% if et.description %} ({{ et.description }}){% endif %}</option>
+              {% endfor %}
+            {% else %}
+              <option value="Zoo Park" selected>Zoo Park</option>
+              <option value="Aquarium">Aquarium</option>
+              <option value="Safari Park">Safari Park</option>
+              <option value="Bird Sanctuary">Bird Sanctuary</option>
+              <option value="Farm Attraction">Farm Attraction</option>
+            {% endif %}
+          </select>
         </div>
 
         <div>

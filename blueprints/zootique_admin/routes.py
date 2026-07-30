@@ -19,6 +19,7 @@ from models import (
     SubscriptionPayment,
     ZooAdminFeedback,
     ZooAdminFeedbackReply,
+    EstablishmentType,
 )
 from services import (
     SubscriptionValidationError,
@@ -1037,3 +1038,103 @@ def update_security():
     db.session.commit()
     flash('Security settings updated.', 'success')
     return redirect(url_for('zootique_admin.settings'))
+
+
+# =========================================================================
+# ESTABLISHMENT TYPES MANAGEMENT
+# =========================================================================
+
+@admin_bp.get('/establishment-types')
+def establishment_types():
+    user = _current_user()
+    if not user:
+        return redirect(url_for('auth.login', module_name='zootique_admin'))
+
+    types = EstablishmentType.query.order_by(EstablishmentType.created_at.desc()).all()
+    return render_template('zootique_admin/establishment_types.html', establishment_types=types, user=user)
+
+
+@admin_bp.post('/establishment-types/save')
+def save_establishment_type():
+    user = _current_user()
+    if not user:
+        return redirect(url_for('auth.login', module_name='zootique_admin'))
+
+    type_id = request.form.get('type_id')
+    name = (request.form.get('name') or '').strip()
+    description = (request.form.get('description') or '').strip() or None
+    icon_class = (request.form.get('icon_class') or '').strip() or 'fa-solid fa-tree'
+    is_active = request.form.get('is_active') == '1'
+
+    if not name:
+        flash('Establishment type name is required.', 'error')
+        return redirect(url_for('zootique_admin.establishment_types'))
+
+    if type_id and type_id.isdigit():
+        et = db.session.get(EstablishmentType, int(type_id))
+        if not et:
+            flash('Establishment type not found.', 'error')
+            return redirect(url_for('zootique_admin.establishment_types'))
+
+        existing = EstablishmentType.query.filter(EstablishmentType.name == name, EstablishmentType.id != et.id).first()
+        if existing:
+            flash(f'An establishment type named "{name}" already exists.', 'error')
+            return redirect(url_for('zootique_admin.establishment_types'))
+
+        et.name = name
+        et.description = description
+        et.icon_class = icon_class
+        et.is_active = is_active
+        flash(f'Establishment type "{name}" updated successfully.', 'success')
+    else:
+        existing = EstablishmentType.query.filter_by(name=name).first()
+        if existing:
+            flash(f'An establishment type named "{name}" already exists.', 'error')
+            return redirect(url_for('zootique_admin.establishment_types'))
+
+        et = EstablishmentType(name=name, description=description, icon_class=icon_class, is_active=is_active)
+        db.session.add(et)
+        flash(f'Establishment type "{name}" created successfully.', 'success')
+
+    db.session.commit()
+    return redirect(url_for('zootique_admin.establishment_types'))
+
+
+@admin_bp.post('/establishment-types/<int:type_id>/toggle-status')
+def toggle_establishment_type_status(type_id: int):
+    user = _current_user()
+    if not user:
+        return redirect(url_for('auth.login', module_name='zootique_admin'))
+
+    et = db.session.get(EstablishmentType, type_id)
+    if not et:
+        flash('Establishment type not found.', 'error')
+        return redirect(url_for('zootique_admin.establishment_types'))
+
+    et.is_active = not et.is_active
+    db.session.commit()
+    status_label = "activated" if et.is_active else "deactivated"
+    flash(f'Establishment type "{et.name}" {status_label}.', 'success')
+    return redirect(url_for('zootique_admin.establishment_types'))
+
+
+@admin_bp.post('/establishment-types/<int:type_id>/delete')
+def delete_establishment_type(type_id: int):
+    user = _current_user()
+    if not user:
+        return redirect(url_for('auth.login', module_name='zootique_admin'))
+
+    et = db.session.get(EstablishmentType, type_id)
+    if not et:
+        flash('Establishment type not found.', 'error')
+        return redirect(url_for('zootique_admin.establishment_types'))
+
+    zoos_using_type = Zoo.query.filter(Zoo.type.ilike(et.name)).count()
+    if zoos_using_type > 0:
+        flash(f'Cannot delete "{et.name}" because it is currently assigned to {zoos_using_type} establishment(s). Deactivate it instead.', 'error')
+        return redirect(url_for('zootique_admin.establishment_types'))
+
+    db.session.delete(et)
+    db.session.commit()
+    flash(f'Establishment type "{et.name}" deleted successfully.', 'success')
+    return redirect(url_for('zootique_admin.establishment_types'))

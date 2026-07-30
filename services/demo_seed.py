@@ -26,6 +26,7 @@ import data
 from models import (
     Animal,
     Booking,
+    EstablishmentType,
     Event,
     Feedback,
     Promotion,
@@ -40,6 +41,34 @@ from models import (
     ZooZone,
     db,
 )
+
+
+def _ensure_establishment_types(now: datetime) -> SeedSummary:
+    summary = SeedSummary()
+    if not _table_exists("establishment_types"):
+        return summary
+
+    default_types = [
+        ("Zoo Park", "Traditional zoological gardens displaying diverse animal species.", "fa-solid fa-mountain-sun"),
+        ("Aquarium", "Marine and freshwater aquatic animal exhibitions.", "fa-solid fa-fish-fins"),
+        ("Safari Park", "Drive-through or open-roam wildlife habitats.", "fa-solid fa-binoculars"),
+        ("Bird Sanctuary", "Dedicated aviaries and protected bird conservation parks.", "fa-solid fa-dove"),
+        ("Marine Park", "Ocean life habitats and interactive marine exhibits.", "fa-solid fa-water"),
+        ("Wildlife Rescue Center", "Rehabilitation and rescue facilities for wild fauna.", "fa-solid fa-suitcase-medical"),
+        ("Farm Attraction", "Petting farms, agricultural learning, and domesticated animal parks.", "fa-solid fa-tractor"),
+    ]
+
+    for name, desc, icon in default_types:
+        existing = EstablishmentType.query.filter_by(name=name).first()
+        if existing:
+            if not getattr(existing, 'icon_class', None):
+                existing.icon_class = icon
+            summary.bump_skipped()
+            continue
+        db.session.add(EstablishmentType(name=name, description=desc, icon_class=icon, is_active=True, created_at=now))
+        summary.bump_created()
+
+    return summary
 
 
 @dataclass
@@ -438,7 +467,7 @@ def _ensure_bookings(*, zoo: Zoo, now: datetime, visitors: list[User], staff: li
         return d.strftime("%Y-%m-%d")
 
     for i in range(0, min(6, len(services))):
-        booking_id = f"BK-{next_suffix + i}"  # BK-1001 style (numeric sequence)
+        booking_id = f"BK-Z{zoo.id}-{1001 + i}"  # Unique per zoo
         service = services[i % len(services)]
         visitor = visitors[i % len(visitors)] if visitors else None
 
@@ -627,6 +656,7 @@ def ensure_demo_data(*, allow_create_tables: bool = True) -> dict[str, SeedSumma
         "zoo_zones",
         "staff_tasks",
         "subscription_plans",
+        "establishment_types",
         "zoo_subscriptions",
         "subscription_payments",
         "zoo_admin_feedback",
@@ -635,6 +665,7 @@ def ensure_demo_data(*, allow_create_tables: bool = True) -> dict[str, SeedSumma
 
     summary: dict[str, SeedSummary] = {}
     with db.session.no_autoflush:
+        summary["establishment_types"] = _ensure_establishment_types(now)
         summary["subscription_plans"] = _ensure_subscription_plans(now)
         summary["zoos"] = _ensure_zoos(now)
 

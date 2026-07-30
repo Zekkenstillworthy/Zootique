@@ -530,6 +530,10 @@
                class="nav-item {% if request.endpoint == 'zootique_admin.user_management' %}active{% endif %}">
                 <i class="fa-solid fa-users"></i> User Management
             </a>
+            <a href="{{ url_for('zootique_admin.establishment_types') }}"
+               class="nav-item {% if request.endpoint == 'zootique_admin.establishment_types' %}active{% endif %}">
+                <i class="fa-solid fa-layer-group"></i> Establishment Types
+            </a>
             <!-- Settings Dropdown -->
             <div class="nav-dropdown">
                 <button class="nav-dropdown-trigger {% if request.endpoint == 'zootique_admin.settings' %}active{% endif %}" onclick="toggleDropdown(event, 'settings-dropdown')">

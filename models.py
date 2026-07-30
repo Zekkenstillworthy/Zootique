@@ -55,6 +55,16 @@ class Zoo(db.Model):
     staff_tasks = db.relationship('StaffTask', back_populates='zoo', lazy=True)
 
 
+class EstablishmentType(db.Model):
+    __tablename__ = 'establishment_types'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    description = db.Column(db.String(255), nullable=True)
+    icon_class = db.Column(db.String(100), nullable=True, default='fa-solid fa-tree')
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+
 class ZooLayoutConfig(db.Model):
     __tablename__ = 'zoo_layout_configs'
     id = db.Column(db.Integer, primary_key=True)
