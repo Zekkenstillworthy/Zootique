@@ -43,7 +43,7 @@
     align-items: center;
     gap: 16px;
     flex-wrap: wrap;
-    box-shadow: 0 4px 18px rgba(15,109,60,0.22);
+    box-shadow: 0 4px 18px rgba(15, 109, 60, 0.22);
   }
 
   .lc-hero-text h2 {
@@ -55,7 +55,7 @@
 
   .lc-hero-text p {
     margin: 0;
-    color: rgba(255,255,255,0.80);
+    color: rgba(255, 255, 255, 0.80);
     font-size: 13px;
     max-width: 55ch;
   }
@@ -66,8 +66,8 @@
     gap: 6px;
     padding: 6px 14px;
     border-radius: 999px;
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.20);
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.20);
     color: #ffffff;
     font-size: 13px;
     font-weight: 800;
@@ -82,7 +82,9 @@
   }
 
   @media (max-width: 1024px) {
-    .lc-grid { grid-template-columns: 1fr; }
+    .lc-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   /* ── Panels ── */
@@ -123,7 +125,9 @@
   }
 
   @media (max-width: 640px) {
-    .lc-options-row { grid-template-columns: 1fr; }
+    .lc-options-row {
+      grid-template-columns: 1fr;
+    }
   }
 
   .lc-options-row .form-group {
@@ -264,7 +268,7 @@
 
   .lc-preview-hero p {
     margin: 0;
-    color: rgba(255,255,255,0.80);
+    color: rgba(255, 255, 255, 0.80);
     font-size: 12px;
   }
 
@@ -277,8 +281,8 @@
   .lc-preview-stat {
     padding: 10px 12px;
     border-radius: 10px;
-    background: rgba(255,255,255,0.13);
-    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255, 255, 255, 0.13);
+    border: 1px solid rgba(255, 255, 255, 0.18);
   }
 
   .lc-preview-stat .lc-stat-label {
@@ -286,7 +290,7 @@
     font-weight: 800;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.76);
+    color: rgba(255, 255, 255, 0.76);
   }
 
   .lc-preview-stat .lc-stat-value {
@@ -314,8 +318,11 @@
   }
 
   @media (max-width: 720px) {
+
     .lc-preview-grid.lc-style-grid,
-    .lc-preview-grid.lc-style-compact { grid-template-columns: 1fr; }
+    .lc-preview-grid.lc-style-compact {
+      grid-template-columns: 1fr;
+    }
   }
 
   .lc-preview-widget {
@@ -374,11 +381,10 @@
 {% block content %}
 <div class="lc-shell">
 
-  <!-- ── MVP Notice ── -->
   <div class="lc-notice">
     <i class="fa-solid fa-circle-info"></i>
     <span>
-      <strong>MVP — Layout Changer:</strong> Customize which widgets appear on your dashboard and in what order.
+      <strong>Layout Changer:</strong> Customize which widgets appear on your dashboard and in what order.
       The Zootique Admin can override these settings at any time from the central Layout Manager.
     </span>
   </div>
@@ -412,7 +418,8 @@
               <label class="form-label" for="lc_layout_style">Layout style</label>
               <select id="lc_layout_style" name="layout_style">
                 {% for opt in layout_styles %}
-                  <option value="{{ opt.value }}" {% if layout_config.layout_style == opt.value %}selected{% endif %}>{{ opt.label }}</option>
+                <option value="{{ opt.value }}" {% if layout_config.layout_style==opt.value %}selected{% endif %}>{{
+                  opt.label }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -420,7 +427,8 @@
               <label class="form-label" for="lc_theme_variant">Theme</label>
               <select id="lc_theme_variant" name="theme_variant">
                 {% for opt in theme_variants %}
-                  <option value="{{ opt.value }}" {% if layout_config.theme_variant == opt.value %}selected{% endif %}>{{ opt.label }}</option>
+                <option value="{{ opt.value }}" {% if layout_config.theme_variant==opt.value %}selected{% endif %}>{{
+                  opt.label }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -428,10 +436,12 @@
 
           <!-- Widget rows -->
           <div style="margin-bottom:12px;">
-            <div class="form-label" style="margin-bottom:8px;">Widgets <span style="font-weight:500; color:var(--text-muted);">— check to show, use arrows to reorder</span></div>
+            <div class="form-label" style="margin-bottom:8px;">Widgets <span
+                style="font-weight:500; color:var(--text-muted);">— check to show, use arrows to reorder</span></div>
             <div id="lc_widget_rows" class="lc-widget-list">
               {% for widget in dashboard_widgets %}
-              <article class="lc-widget-row{% if not widget.visible %} is-hidden{% endif %}" data-widget-id="{{ widget.id }}">
+              <article class="lc-widget-row{% if not widget.visible %} is-hidden{% endif %}"
+                data-widget-id="{{ widget.id }}">
                 <div class="lc-widget-handle" aria-hidden="true" title="Widget position">
                   <i class="fa-solid fa-grip-vertical"></i>
                 </div>
@@ -444,11 +454,14 @@
                 </div>
                 <div class="lc-widget-actions">
                   <label class="lc-widget-toggle">
-                    <input type="checkbox" name="visible_widgets" value="{{ widget.id }}" {% if widget.visible %}checked{% endif %}>
+                    <input type="checkbox" name="visible_widgets" value="{{ widget.id }}" {% if widget.visible
+                      %}checked{% endif %}>
                     <span>Show</span>
                   </label>
-                  <button type="button" class="btn btn-ghost btn-sm" data-move="up" title="Move up"><i class="fa-solid fa-arrow-up"></i></button>
-                  <button type="button" class="btn btn-ghost btn-sm" data-move="down" title="Move down"><i class="fa-solid fa-arrow-down"></i></button>
+                  <button type="button" class="btn btn-ghost btn-sm" data-move="up" title="Move up"><i
+                      class="fa-solid fa-arrow-up"></i></button>
+                  <button type="button" class="btn btn-ghost btn-sm" data-move="down" title="Move down"><i
+                      class="fa-solid fa-arrow-down"></i></button>
                 </div>
               </article>
               {% endfor %}
@@ -473,14 +486,14 @@
           <span class="sa-pill sa-pill--ok">Updates instantly</span>
         </div>
         <div class="lc-panel-body">
-          <div id="lc_preview_frame" class="lc-preview-frame"
-               data-layout-style="{{ layout_config.layout_style }}"
-               data-theme-variant="{{ layout_config.theme_variant }}">
+          <div id="lc_preview_frame" class="lc-preview-frame" data-layout-style="{{ layout_config.layout_style }}"
+            data-theme-variant="{{ layout_config.theme_variant }}">
 
             <div class="lc-preview-hero">
               <div>
                 <h4>{{ zoo.name }}</h4>
-                <p id="lc_pv_style_label">{{ layout_config.layout_style|title }} layout · {{ layout_config.theme_variant.replace('_', ' ')|title }} theme</p>
+                <p id="lc_pv_style_label">{{ layout_config.layout_style|title }} layout · {{
+                  layout_config.theme_variant.replace('_', ' ')|title }} theme</p>
               </div>
               <div class="lc-preview-stats">
                 <div class="lc-preview-stat">
@@ -489,47 +502,63 @@
                 </div>
                 <div class="lc-preview-stat">
                   <div class="lc-stat-label">Style</div>
-                  <div class="lc-stat-value" id="lc_pv_style" style="font-size:13px; margin-top:6px;">{{ layout_config.layout_style|title }}</div>
+                  <div class="lc-stat-value" id="lc_pv_style" style="font-size:13px; margin-top:6px;">{{
+                    layout_config.layout_style|title }}</div>
                 </div>
                 <div class="lc-preview-stat">
                   <div class="lc-stat-label">Theme</div>
-                  <div class="lc-stat-value" id="lc_pv_theme" style="font-size:13px; margin-top:6px;">{{ layout_config.theme_variant.replace('_', ' ')|title }}</div>
+                  <div class="lc-stat-value" id="lc_pv_theme" style="font-size:13px; margin-top:6px;">{{
+                    layout_config.theme_variant.replace('_', ' ')|title }}</div>
                 </div>
               </div>
             </div>
 
             <div id="lc_preview_grid" class="lc-preview-grid lc-style-{{ layout_config.layout_style }}">
               {% for widget in dashboard_widgets %}
-              <article class="lc-preview-widget{% if not widget.visible %} is-hidden{% endif %}" data-preview-widget="{{ widget.id }}">
+              <article class="lc-preview-widget{% if not widget.visible %} is-hidden{% endif %}"
+                data-preview-widget="{{ widget.id }}">
                 <div class="lc-preview-widget-header">
                   <h5><i class="{{ widget.icon }}"></i> {{ widget.label }}</h5>
-                  <span class="sa-pill" style="background:rgba(255,255,255,0.13); color:#fff; border-color:rgba(255,255,255,0.18);">Preview</span>
+                  <span class="sa-pill"
+                    style="background:rgba(255,255,255,0.13); color:#fff; border-color:rgba(255,255,255,0.18);">Preview</span>
                 </div>
                 <div class="lc-preview-widget-body">
                   {% if widget.id == 'revenue_summary' %}
-                    <div class="lc-preview-metric"><span class="lc-m-label">Monthly revenue</span><span class="lc-m-value">₱{{ '{:,.0f}'.format(widget.monthly_revenue or 0) }}</span></div>
-                    <div class="lc-preview-metric"><span class="lc-m-label">Goal</span><span class="lc-m-value">{{ widget.revenue_goal_pct }}%</span></div>
-                    <div class="lc-preview-metric"><span class="lc-m-label">Bookings</span><span class="lc-m-value">{{ widget.booking_count }}</span></div>
+                  <div class="lc-preview-metric"><span class="lc-m-label">Monthly revenue</span><span
+                      class="lc-m-value">₱{{ '{:,.0f}'.format(widget.monthly_revenue or 0) }}</span></div>
+                  <div class="lc-preview-metric"><span class="lc-m-label">Goal</span><span class="lc-m-value">{{
+                      widget.revenue_goal_pct }}%</span></div>
+                  <div class="lc-preview-metric"><span class="lc-m-label">Bookings</span><span class="lc-m-value">{{
+                      widget.booking_count }}</span></div>
                   {% elif widget.id == 'membership_stats' %}
-                    <div class="lc-preview-metric"><span class="lc-m-label">Status</span><span class="lc-m-value" style="font-size:13px;">{{ widget.status }}</span></div>
-                    <div class="lc-preview-metric"><span class="lc-m-label">Days left</span><span class="lc-m-value">{{ widget.days_remaining if widget.days_remaining is not none else '—' }}</span></div>
-                    <div class="lc-preview-metric"><span class="lc-m-label">Open tasks</span><span class="lc-m-value">{{ widget.open_tasks }}</span></div>
+                  <div class="lc-preview-metric"><span class="lc-m-label">Status</span><span class="lc-m-value"
+                      style="font-size:13px;">{{ widget.status }}</span></div>
+                  <div class="lc-preview-metric"><span class="lc-m-label">Days left</span><span class="lc-m-value">{{
+                      widget.days_remaining if widget.days_remaining is not none else '—' }}</span></div>
+                  <div class="lc-preview-metric"><span class="lc-m-label">Open tasks</span><span class="lc-m-value">{{
+                      widget.open_tasks }}</span></div>
                   {% elif widget.id == 'recent_feedback' %}
-                    {% if widget['items'] %}
-                      <div style="font-size:12px; color:var(--text-muted); font-weight:700;">{{ widget['items']|length }} recent feedback entries</div>
-                      {% for item in widget['items'][:2] %}
-                        <div style="padding:8px; border-radius:8px; background:#f8fafc; margin-top:6px; font-size:12px;">
-                          <strong>{{ item.visitor_name }}</strong> <span style="color:var(--warning);">{{ '★' * item.rating }}</span>
-                          <div style="color:var(--text-secondary); margin-top:3px;">{{ item.comment[:60] }}{% if item.comment|length > 60 %}…{% endif %}</div>
-                        </div>
-                      {% endfor %}
-                    {% else %}
-                      <div style="color:var(--text-muted); font-size:12px;">No feedback yet.</div>
-                    {% endif %}
+                  {% if widget['items'] %}
+                  <div style="font-size:12px; color:var(--text-muted); font-weight:700;">{{ widget['items']|length }}
+                    recent feedback entries</div>
+                  {% for item in widget['items'][:2] %}
+                  <div style="padding:8px; border-radius:8px; background:#f8fafc; margin-top:6px; font-size:12px;">
+                    <strong>{{ item.visitor_name }}</strong> <span style="color:var(--warning);">{{ '★' * item.rating
+                      }}</span>
+                    <div style="color:var(--text-secondary); margin-top:3px;">{{ item.comment[:60] }}{% if
+                      item.comment|length > 60 %}…{% endif %}</div>
+                  </div>
+                  {% endfor %}
+                  {% else %}
+                  <div style="color:var(--text-muted); font-size:12px;">No feedback yet.</div>
+                  {% endif %}
                   {% elif widget.id == 'upcoming_renewals' %}
-                    <div class="lc-preview-metric"><span class="lc-m-label">Next renewal</span><span class="lc-m-value" style="font-size:13px;">{{ widget.next_due_date or '—' }}</span></div>
-                    <div class="lc-preview-metric"><span class="lc-m-label">Status</span><span class="lc-m-value" style="font-size:13px;">{{ widget.status }}</span></div>
-                    <div class="lc-preview-metric"><span class="lc-m-label">Days left</span><span class="lc-m-value">{{ widget.days_remaining if widget.days_remaining is not none else '—' }}</span></div>
+                  <div class="lc-preview-metric"><span class="lc-m-label">Next renewal</span><span class="lc-m-value"
+                      style="font-size:13px;">{{ widget.next_due_date or '—' }}</span></div>
+                  <div class="lc-preview-metric"><span class="lc-m-label">Status</span><span class="lc-m-value"
+                      style="font-size:13px;">{{ widget.status }}</span></div>
+                  <div class="lc-preview-metric"><span class="lc-m-label">Days left</span><span class="lc-m-value">{{
+                      widget.days_remaining if widget.days_remaining is not none else '—' }}</span></div>
                   {% endif %}
                 </div>
               </article>
@@ -548,105 +577,105 @@
 
 {% block extra_js %}
 <script>
-(() => {
-  const form = document.getElementById('lc-form');
-  const rowsContainer = document.getElementById('lc_widget_rows');
-  const previewGrid = document.getElementById('lc_preview_grid');
-  const previewFrame = document.getElementById('lc_preview_frame');
-  const orderInput = document.getElementById('lc_widget_order');
-  const layoutStyle = document.getElementById('lc_layout_style');
-  const themeVariant = document.getElementById('lc_theme_variant');
-  const pvCount = document.getElementById('lc_pv_count');
-  const pvStyle = document.getElementById('lc_pv_style');
-  const pvTheme = document.getElementById('lc_pv_theme');
-  const pvStyleLabel = document.getElementById('lc_pv_style_label');
+  (() => {
+    const form = document.getElementById('lc-form');
+    const rowsContainer = document.getElementById('lc_widget_rows');
+    const previewGrid = document.getElementById('lc_preview_grid');
+    const previewFrame = document.getElementById('lc_preview_frame');
+    const orderInput = document.getElementById('lc_widget_order');
+    const layoutStyle = document.getElementById('lc_layout_style');
+    const themeVariant = document.getElementById('lc_theme_variant');
+    const pvCount = document.getElementById('lc_pv_count');
+    const pvStyle = document.getElementById('lc_pv_style');
+    const pvTheme = document.getElementById('lc_pv_theme');
+    const pvStyleLabel = document.getElementById('lc_pv_style_label');
 
-  if (!form || !rowsContainer || !previewGrid || !previewFrame || !orderInput) return;
+    if (!form || !rowsContainer || !previewGrid || !previewFrame || !orderInput) return;
 
-  const getRows = () => Array.from(rowsContainer.querySelectorAll('.lc-widget-row'));
-  const getPreviews = () => Array.from(previewGrid.querySelectorAll('[data-preview-widget]'));
+    const getRows = () => Array.from(rowsContainer.querySelectorAll('.lc-widget-row'));
+    const getPreviews = () => Array.from(previewGrid.querySelectorAll('[data-preview-widget]'));
 
-  const updateOrderBadges = () => {
-    getRows().forEach((row, i) => {
-      const badge = row.querySelector('.lc-order-badge');
-      if (badge) badge.textContent = '#' + (i + 1);
-    });
-  };
+    const updateOrderBadges = () => {
+      getRows().forEach((row, i) => {
+        const badge = row.querySelector('.lc-order-badge');
+        if (badge) badge.textContent = '#' + (i + 1);
+      });
+    };
 
-  const syncHiddenField = () => {
-    orderInput.value = JSON.stringify(getRows().map(r => r.dataset.widgetId));
-  };
+    const syncHiddenField = () => {
+      orderInput.value = JSON.stringify(getRows().map(r => r.dataset.widgetId));
+    };
 
-  const syncPreview = () => {
-    const rowIds = getRows().map(r => r.dataset.widgetId);
+    const syncPreview = () => {
+      const rowIds = getRows().map(r => r.dataset.widgetId);
 
-    rowIds.forEach(id => {
-      const row = rowsContainer.querySelector('[data-widget-id="' + id + '"]');
-      const preview = previewGrid.querySelector('[data-preview-widget="' + id + '"]');
-      if (!row || !preview) return;
+      rowIds.forEach(id => {
+        const row = rowsContainer.querySelector('[data-widget-id="' + id + '"]');
+        const preview = previewGrid.querySelector('[data-preview-widget="' + id + '"]');
+        if (!row || !preview) return;
+        const cb = row.querySelector('input[type="checkbox"]');
+        const visible = !!(cb && cb.checked);
+        row.classList.toggle('is-hidden', !visible);
+        preview.classList.toggle('is-hidden', !visible);
+      });
+
+      // Reorder previews to match rows
+      rowIds.forEach(id => {
+        const preview = previewGrid.querySelector('[data-preview-widget="' + id + '"]');
+        if (preview) previewGrid.appendChild(preview);
+      });
+
+      // Counts
+      if (pvCount) {
+        pvCount.textContent = getRows().filter(r => {
+          const cb = r.querySelector('input[type="checkbox"]');
+          return cb && cb.checked;
+        }).length;
+      }
+
+      // Style
+      const styleVal = layoutStyle ? layoutStyle.value : 'grid';
+      const styleText = layoutStyle ? (layoutStyle.options[layoutStyle.selectedIndex]?.textContent || styleVal) : styleVal;
+      if (pvStyle) pvStyle.textContent = styleText;
+      previewGrid.className = 'lc-preview-grid lc-style-' + styleVal;
+      if (previewFrame) previewFrame.dataset.layoutStyle = styleVal;
+
+      // Theme
+      const themeVal = themeVariant ? themeVariant.value : 'light';
+      const themeText = themeVariant ? (themeVariant.options[themeVariant.selectedIndex]?.textContent || themeVal) : themeVal;
+      if (pvTheme) pvTheme.textContent = themeText;
+      if (previewFrame) previewFrame.dataset.themeVariant = themeVal;
+
+      // Combined label
+      if (pvStyleLabel) pvStyleLabel.textContent = styleText + ' layout · ' + themeText + ' theme';
+
+      updateOrderBadges();
+      syncHiddenField();
+    };
+
+    const moveRow = (row, direction) => {
+      const sibling = direction === 'up' ? row.previousElementSibling : row.nextElementSibling;
+      if (!sibling) return;
+      if (direction === 'up') rowsContainer.insertBefore(row, sibling);
+      else rowsContainer.insertBefore(sibling, row);
+      syncPreview();
+    };
+
+    // Bind widget row controls
+    getRows().forEach(row => {
       const cb = row.querySelector('input[type="checkbox"]');
-      const visible = !!(cb && cb.checked);
-      row.classList.toggle('is-hidden', !visible);
-      preview.classList.toggle('is-hidden', !visible);
+      const up = row.querySelector('[data-move="up"]');
+      const dn = row.querySelector('[data-move="down"]');
+      if (cb) cb.addEventListener('change', syncPreview);
+      if (up) up.addEventListener('click', () => moveRow(row, 'up'));
+      if (dn) dn.addEventListener('click', () => moveRow(row, 'down'));
     });
 
-    // Reorder previews to match rows
-    rowIds.forEach(id => {
-      const preview = previewGrid.querySelector('[data-preview-widget="' + id + '"]');
-      if (preview) previewGrid.appendChild(preview);
-    });
+    if (layoutStyle) layoutStyle.addEventListener('change', syncPreview);
+    if (themeVariant) themeVariant.addEventListener('change', syncPreview);
+    form.addEventListener('submit', syncHiddenField);
 
-    // Counts
-    if (pvCount) {
-      pvCount.textContent = getRows().filter(r => {
-        const cb = r.querySelector('input[type="checkbox"]');
-        return cb && cb.checked;
-      }).length;
-    }
-
-    // Style
-    const styleVal = layoutStyle ? layoutStyle.value : 'grid';
-    const styleText = layoutStyle ? (layoutStyle.options[layoutStyle.selectedIndex]?.textContent || styleVal) : styleVal;
-    if (pvStyle) pvStyle.textContent = styleText;
-    previewGrid.className = 'lc-preview-grid lc-style-' + styleVal;
-    if (previewFrame) previewFrame.dataset.layoutStyle = styleVal;
-
-    // Theme
-    const themeVal = themeVariant ? themeVariant.value : 'light';
-    const themeText = themeVariant ? (themeVariant.options[themeVariant.selectedIndex]?.textContent || themeVal) : themeVal;
-    if (pvTheme) pvTheme.textContent = themeText;
-    if (previewFrame) previewFrame.dataset.themeVariant = themeVal;
-
-    // Combined label
-    if (pvStyleLabel) pvStyleLabel.textContent = styleText + ' layout · ' + themeText + ' theme';
-
-    updateOrderBadges();
-    syncHiddenField();
-  };
-
-  const moveRow = (row, direction) => {
-    const sibling = direction === 'up' ? row.previousElementSibling : row.nextElementSibling;
-    if (!sibling) return;
-    if (direction === 'up') rowsContainer.insertBefore(row, sibling);
-    else rowsContainer.insertBefore(sibling, row);
-    syncPreview();
-  };
-
-  // Bind widget row controls
-  getRows().forEach(row => {
-    const cb = row.querySelector('input[type="checkbox"]');
-    const up = row.querySelector('[data-move="up"]');
-    const dn = row.querySelector('[data-move="down"]');
-    if (cb) cb.addEventListener('change', syncPreview);
-    if (up) up.addEventListener('click', () => moveRow(row, 'up'));
-    if (dn) dn.addEventListener('click', () => moveRow(row, 'down'));
-  });
-
-  if (layoutStyle) layoutStyle.addEventListener('change', syncPreview);
-  if (themeVariant) themeVariant.addEventListener('change', syncPreview);
-  form.addEventListener('submit', syncHiddenField);
-
-  syncPreview(); // Initial state
-})();
+    syncPreview(); // Initial state
+  })();
 </script>
 {% endblock %}

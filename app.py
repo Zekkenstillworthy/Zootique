@@ -190,7 +190,7 @@ def create_app() -> Flask:
     app.register_blueprint(zoo_staff_bp, url_prefix="/animal-farm-staff")
     app.register_blueprint(api_bp, url_prefix="/api")
 
-    # --- Friendly URL aliases (MVP flow expects these paths) ---
+    # --- Friendly URL aliases---
     @app.get("/zoo_admin")
     @app.get("/zoo_admin/")
     @app.get("/zoo_admin/dashboard")

@@ -1,210 +1,331 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Booking Management | Animal Farm Admin{% endblock %}
 {% block page_title %}Booking Management{% endblock %}
 
+{% block extra_head %}
+<style>
+  /* ── Modal overlay ── */
+  #booking-modal-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(15,25,19,0.55);
+    backdrop-filter: blur(3px);
+    align-items: center;
+    justify-content: center;
+  }
+  #booking-modal-overlay.open { display: flex; }
+
+  #booking-modal {
+    background: #fff;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 660px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.22);
+    animation: modalIn .18s ease;
+    overflow: hidden;
+  }
+  @keyframes modalIn {
+    from { opacity:0; transform: translateY(-18px) scale(.97); }
+    to   { opacity:1; transform: none; }
+  }
+
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 22px;
+    background: #1a4f32;
+    color: #fff;
+  }
+  .modal-header h3 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: .3px; }
+  .modal-close {
+    background: none; border: none; color: rgba(255,255,255,.7);
+    font-size: 20px; cursor: pointer; line-height: 1;
+    transition: color .15s;
+  }
+  .modal-close:hover { color: #fff; }
+
+  .modal-body { padding: 24px 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .modal-body .full { grid-column: span 2; }
+
+  .modal-body label {
+    display: block; font-size: 11px; font-weight: 700;
+    color: var(--text-secondary, #64748b);
+    text-transform: uppercase; letter-spacing: .7px; margin-bottom: 5px;
+  }
+  .modal-body input,
+  .modal-body select {
+    width: 100%; padding: 9px 12px;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 8px; font-size: 14px;
+    font-family: inherit;
+    transition: border-color .15s;
+  }
+  .modal-body input:focus,
+  .modal-body select:focus { outline: none; border-color: #1a4f32; }
+
+  .modal-footer {
+    display: flex; justify-content: flex-end; gap: 10px;
+    padding: 14px 22px;
+    border-top: 1px solid var(--border, #e2e8f0);
+    background: #f8fafc;
+  }
+
+  /* badge extras */
+  .badge-finished { background: #e0f2fe; color: #0369a1; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="card-panel">
-    <div class="card-header">
-        <h2>Bookings</h2>
-        <div class="card-header-actions">
-            <a class="btn btn-outline btn-sm" href="{{ url_for('animal_farm_admin.booking_management') }}">Reset</a>
-        </div>
+  <div class="card-header">
+    <h2>Bookings</h2>
+    <div class="card-header-actions">
+      <a class="btn btn-outline btn-sm" href="{{ url_for('animal_farm_admin.booking_management') }}">Reset</a>
     </div>
+  </div>
 
-    <form class="filter-bar" method="get" action="{{ url_for('animal_farm_admin.booking_management') }}">
-        <select name="status">
-            <option value="" {% if not selected_status %}selected{% endif %}>All statuses</option>
-            <option value="Pending" {% if selected_status=='Pending' %}selected{% endif %}>Pending</option>
-            <option value="Confirmed" {% if selected_status=='Confirmed' %}selected{% endif %}>Confirmed</option>
-            <option value="Cancelled" {% if selected_status=='Cancelled' %}selected{% endif %}>Cancelled</option>
-        </select>
-        <select name="assigned_to">
-            <option value="" {% if not selected_assigned_to %}selected{% endif %}>All staff</option>
-            {% for s in staff_members %}
-            <option value="{{ s.id }}" {% if selected_assigned_to == (s.id|string) %}selected{% endif %}>{{ s.full_name }}</option>
-            {% endfor %}
-        </select>
-        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-filter"></i> Filter</button>
+  {# ── Filters + Add button ── #}
+  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding: 14px 20px; border-bottom:1px solid var(--border,#e2e8f0);">
+    <form class="filter-bar" method="get" action="{{ url_for('animal_farm_admin.booking_management') }}"
+          style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:0;">
+      <select name="status">
+        <option value=""          {% if not selected_status         %}selected{% endif %}>All statuses</option>
+        <option value="Pending"   {% if selected_status=='Pending'  %}selected{% endif %}>Pending</option>
+        <option value="Confirmed" {% if selected_status=='Confirmed'%}selected{% endif %}>Confirmed</option>
+        <option value="Cancelled" {% if selected_status=='Cancelled'%}selected{% endif %}>Cancelled</option>
+        <option value="Finished"  {% if selected_status=='Finished' %}selected{% endif %}>Finished</option>
+      </select>
+      <select name="assigned_to">
+        <option value="" {% if not selected_assigned_to %}selected{% endif %}>All staff</option>
+        {% for s in staff_members %}
+        <option value="{{ s.id }}" {% if selected_assigned_to == (s.id|string) %}selected{% endif %}>{{ s.full_name }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-primary" type="submit"><i class="fa-solid fa-filter"></i> Filter</button>
     </form>
 
-    <div class="card-body" style="padding-bottom:0;">
-        <div style="padding:12px; border:1px solid var(--border); border-radius:12px; background:#fafafa;">
-            <div style="display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:10px;">
-                <strong>Edit Booking</strong>
-                <button class="btn btn-ghost btn-sm" type="button" onclick="resetBookingForm()">Clear</button>
-            </div>
-            <form id="booking-edit-form" method="post" enctype="multipart/form-data"
-                  data-action-template="{{ url_for('animal_farm_admin.update_booking', booking_id='BOOKING_ID') }}"
-                  action="{{ url_for('animal_farm_admin.update_booking', booking_id='BOOKING_ID') }}"
-                  style="display:grid; grid-template-columns: repeat(6, 1fr); gap:10px; align-items:end;">
-                <input type="hidden" name="booking_id" value="">
+    <button class="btn btn-primary" type="button" style="margin-left:auto;" onclick="openBookingModal()">
+      <i class="fa-solid fa-plus"></i> Add Booking
+    </button>
+  </div>
 
-                <div style="grid-column: span 2;">
-                    <label style="font-weight:600; color:var(--text-secondary);">Booking</label>
-                    <input type="text" name="booking_id_display" readonly placeholder="Select a booking" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%; background:white;" />
-                </div>
+  {# ── Table ── #}
+  <div class="card-body">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px;">Image</th>
+            <th>Visitor</th>
+            <th>Service</th>
+            <th>Date</th>
+            <th>Guests</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Assigned Staff</th>
+            <th style="width:230px;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in bookings %}
+          <tr>
+            <td>
+              {% set bimg = (b.image_url or (b.service.image_url if b.service else None)) %}
+              {% if bimg %}
+                <img src="{{ bimg }}" alt="" style="width:54px;height:38px;object-fit:cover;border-radius:8px;border:1px solid var(--border);">
+              {% else %}
+                <span style="color:var(--text-muted);">-</span>
+              {% endif %}
+            </td>
+            <td>{{ b.visitor_name }}</td>
+            <td>{{ b.service_name or (b.service.name if b.service else '-') }}</td>
+            <td>{{ b.date }} {{ b.time or '' }}</td>
+            <td>{{ b.guests or '-' }}</td>
+            <td>₱{{ '%.2f'|format(b.amount or 0) }}</td>
+            <td>
+              {% set st = (b.status or 'Pending')|lower %}
+              <span class="badge badge-{{ 'confirmed' if st=='confirmed' else ('cancelled' if st=='cancelled' else ('finished' if st=='finished' else 'pending')) }}">
+                {{ b.status or 'Pending' }}
+              </span>
+            </td>
+            <td>{{ b.assigned_staff_user.full_name if b.assigned_staff_user else 'Unassigned' }}</td>
+            <td>
+              <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+                {# Edit #}
+                <button class="btn btn-outline btn-sm" type="button" title="Edit booking"
+                  onclick="openBookingModal({
+                    id:      {{ b.id|tojson }},
+                    date:    {{ (b.date|string)|tojson }},
+                    time:    {{ (b.time or '')|tojson }},
+                    guests:  {{ (b.guests or 1)|tojson }},
+                    amount:  {{ (b.amount or 0)|tojson }},
+                    service: {{ (b.service_id or '')|tojson }},
+                    staff:   {{ (b.assigned_staff_user_id or '')|tojson }},
+                    status:  {{ (b.status or 'Pending')|tojson }}
+                  })">
+                  <i class="fa-solid fa-pen"></i> Edit
+                </button>
+                {# Accept #}
+                <form method="post" action="{{ url_for('animal_farm_admin.update_booking_status', booking_id=b.id) }}">
+                  <input type="hidden" name="status" value="Confirmed">
+                  <button class="btn btn-sm" type="submit" style="background:#16a34a;color:white;border:none;" title="Accept">
+                    <i class="fa-solid fa-check"></i>
+                  </button>
+                </form>
+                {# Decline #}
+                <form method="post" action="{{ url_for('animal_farm_admin.update_booking_status', booking_id=b.id) }}">
+                  <input type="hidden" name="status" value="Cancelled">
+                  <button class="btn btn-sm" type="submit" style="background:#dc2626;color:white;border:none;" title="Decline">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </form>
+                {# Remove #}
+                <form method="post" action="{{ url_for('animal_farm_admin.delete_booking', booking_id=b.id) }}"
+                      onsubmit="return confirm('Remove this booking permanently?');">
+                  <button class="btn btn-outline btn-sm" type="submit" style="color:#64748b;" title="Remove">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" style="color:var(--text-muted);">No bookings found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
-                <div>
-                    <label style="font-weight:600; color:var(--text-secondary);">Date</label>
-                    <input type="date" name="date" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-                </div>
-                <div>
-                    <label style="font-weight:600; color:var(--text-secondary);">Time</label>
-                    <input type="text" name="time" required placeholder="e.g., 2:00 PM" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-                </div>
-                <div>
-                    <label style="font-weight:600; color:var(--text-secondary);">Guests</label>
-                    <input type="number" name="guests" min="1" value="1" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-                </div>
-                <div>
-                    <label style="font-weight:600; color:var(--text-secondary);">Amount</label>
-                    <input type="number" step="0.01" name="amount" placeholder="" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-                </div>
+{# ══════════════════════════════════════
+   BOOKING MODAL
+══════════════════════════════════════ #}
+<div id="booking-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title"
+     onclick="if(event.target===this) closeBookingModal()">
+  <div id="booking-modal">
 
-                <div style="grid-column: span 2;">
-                    <label style="font-weight:600; color:var(--text-secondary);">Service</label>
-                    <select name="service_id" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;">
-                        <option value="">(keep current)</option>
-                        {% for s in services %}
-                        <option value="{{ s.id }}">{{ s.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div style="grid-column: span 2;">
-                    <label style="font-weight:600; color:var(--text-secondary);">Assigned Staff</label>
-                    <select name="assigned_staff_user_id" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;">
-                        <option value="">Unassigned</option>
-                        {% for s in staff_members %}
-                        <option value="{{ s.id }}">{{ s.full_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label style="font-weight:600; color:var(--text-secondary);">Status</label>
-                    <select name="status" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;">
-                        <option value="Pending">Pending</option>
-                        <option value="Confirmed">Confirmed</option>
-                        <option value="Cancelled">Cancelled</option>
-                    </select>
-                </div>
-                <div>
-                    <label style="font-weight:600; color:var(--text-secondary);">Image</label>
-                    <input type="file" name="image_file" accept="image/*" style="width:100%;" />
-                </div>
-                <div style="grid-column: span 6; display:flex; gap:10px; align-items:center;">
-                    <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Booking</button>
-                    <span id="booking-edit-hint" style="color: var(--text-muted); font-size:12px;">Click “Edit” on a row to populate this form.</span>
-                </div>
-            </form>
-        </div>
+    <div class="modal-header">
+      <h3 id="modal-title"><i class="fa-solid fa-calendar-check" style="margin-right:8px;"></i><span id="modal-mode-label">Add Booking</span></h3>
+      <button class="modal-close" type="button" onclick="closeBookingModal()" title="Close">&times;</button>
     </div>
 
-    <div class="card-body">
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width:70px;">Image</th>
-                        <th>Visitor</th>
-                        <th>Service</th>
-                        <th>Date</th>
-                        <th>Guests</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                        <th>Assigned Staff</th>
-                        <th style="width: 360px;">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for b in bookings %}
-                    <tr>
-                        <td>
-                            {% set booking_img = (b.image_url or (b.service.image_url if b.service else None)) %}
-                            {% if booking_img %}
-                                <img src="{{ booking_img }}" alt="" style="width:54px; height:38px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
-                            {% else %}
-                                <span style="color: var(--text-muted);">-</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ b.visitor_name }}</td>
-                        <td>{{ b.service_name or (b.service.name if b.service else '-') }}</td>
-                        <td>{{ b.date }} {{ b.time or '' }}</td>
-                        <td>{{ b.guests or '-' }}</td>
-                        <td>₱{{ '%.2f'|format(b.amount or 0) }}</td>
-                        <td>
-                            {% set st = (b.status or 'Pending')|lower %}
-                            <span class="badge badge-{{ 'confirmed' if st=='confirmed' else ('cancelled' if st=='cancelled' else 'pending') }}">{{ b.status or 'Pending' }}</span>
-                        </td>
-                        <td>{{ b.assigned_staff_user.full_name if b.assigned_staff_user else 'Unassigned' }}</td>
-                        <td>
-                            <div style="display:grid; gap:8px;">
-                                <button class="btn btn-outline btn-sm" type="button"
-                                        onclick='fillBookingForm({{ b.id|tojson }}, {{ (b.date or "")|tojson }}, {{ (b.time or "")|tojson }}, {{ (b.guests or 1)|tojson }}, {{ (b.amount or 0)|tojson }}, {{ (b.service_id or "")|tojson }}, {{ (b.assigned_staff_user_id or "")|tojson }}, {{ (b.status or "Pending")|tojson }})'>
-                                    <i class="fa-solid fa-pen"></i> Edit Booking
-                                </button>
-                                <form method="post" action="{{ url_for('animal_farm_admin.assign_booking', booking_id=b.id) }}" style="display:flex; gap:8px; align-items:center;">
-                                    <select name="staff_user_id" style="padding:6px 10px; border:1px solid var(--border); border-radius:8px; min-width: 170px;">
-                                        <option value="">Unassigned</option>
-                                        {% for s in staff_members %}
-                                        <option value="{{ s.id }}" {% if b.assigned_staff_user_id == s.id %}selected{% endif %}>{{ s.full_name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <button class="btn btn-outline btn-sm" type="submit">Assign</button>
-                                </form>
-                                <form method="post" action="{{ url_for('animal_farm_admin.update_booking_status', booking_id=b.id) }}" style="display:flex; gap:8px; align-items:center;">
-                                    <select name="status" style="padding:6px 10px; border:1px solid var(--border); border-radius:8px; min-width: 170px;">
-                                        <option value="Pending" {% if (b.status or 'Pending')=='Pending' %}selected{% endif %}>Pending</option>
-                                        <option value="Confirmed" {% if b.status=='Confirmed' %}selected{% endif %}>Confirmed</option>
-                                        <option value="Cancelled" {% if b.status=='Cancelled' %}selected{% endif %}>Cancelled</option>
-                                    </select>
-                                    <button class="btn btn-primary btn-sm" type="submit">Update Status</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="9" style="color: var(--text-muted);">No bookings found.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <form id="booking-modal-form"
+          method="post"
+          enctype="multipart/form-data"
+          data-add-action="{{ url_for('animal_farm_admin.booking_management') }}"
+          data-edit-template="{{ url_for('animal_farm_admin.update_booking', booking_id='BOOKING_ID') }}"
+          action="{{ url_for('animal_farm_admin.booking_management') }}">
+
+      <input type="hidden" name="booking_id" id="modal-booking-id" value="">
+
+      <div class="modal-body">
+        <div>
+          <label>Date</label>
+          <input type="date" name="date" id="modal-date" required>
         </div>
-    </div>
+        <div>
+          <label>Time</label>
+          <input type="text" name="time" id="modal-time" placeholder="e.g. 2:00 PM" required>
+        </div>
+        <div>
+          <label>Guests</label>
+          <input type="number" name="guests" id="modal-guests" min="1" value="1">
+        </div>
+        <div>
+          <label>Amount (₱)</label>
+          <input type="number" step="0.01" name="amount" id="modal-amount" placeholder="0.00">
+        </div>
+
+        <div class="full">
+          <label>Service</label>
+          <select name="service_id" id="modal-service">
+            <option value="">(keep current)</option>
+            {% for s in services %}
+            <option value="{{ s.id }}">{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="full">
+          <label>Assigned Staff</label>
+          <select name="assigned_staff_user_id" id="modal-staff">
+            <option value="">Unassigned</option>
+            {% for s in staff_members %}
+            <option value="{{ s.id }}">{{ s.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label>Status</label>
+          <select name="status" id="modal-status">
+            <option value="Pending">Pending</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Cancelled">Cancelled</option>
+            <option value="Finished">Finished</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Image</label>
+          <input type="file" name="image_file" id="modal-image" accept="image/*">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeBookingModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i> Save Booking
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script>
-    function fillBookingForm(id, date, time, guests, amount, serviceId, assignedStaffUserId, status) {
-        const form = document.getElementById('booking-edit-form');
-        if (!form) return;
-        const tpl = form.getAttribute('data-action-template') || '';
-        const action = tpl.replace('BOOKING_ID', encodeURIComponent(String(id || '')));
-        form.action = action;
-        form.querySelector('input[name="booking_id"]').value = id || '';
-        form.querySelector('input[name="booking_id_display"]').value = id || '';
-        form.querySelector('input[name="date"]').value = date || '';
-        form.querySelector('input[name="time"]').value = time || '';
-        form.querySelector('input[name="guests"]').value = guests || 1;
-        form.querySelector('input[name="amount"]').value = amount || '';
-        form.querySelector('select[name="service_id"]').value = serviceId || '';
-        form.querySelector('select[name="assigned_staff_user_id"]').value = assignedStaffUserId || '';
-        form.querySelector('select[name="status"]').value = status || 'Pending';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+  const overlay  = document.getElementById('booking-modal-overlay');
+  const form     = document.getElementById('booking-modal-form');
+  const modeLabel = document.getElementById('modal-mode-label');
+
+  function resetBookingModal() {
+    form.reset();
+    form.action = form.dataset.addAction || '';
+    document.getElementById('modal-booking-id').value = '';
+    modeLabel.textContent = 'Add Booking';
+  }
+
+  function openBookingModal(data) {
+    const isEdit = data && data.id;
+    modeLabel.textContent = isEdit ? 'Edit Booking' : 'Add Booking';
+
+    if (isEdit) {
+      const tpl = form.dataset.editTemplate || '';
+      form.action = tpl.replace('BOOKING_ID', encodeURIComponent(String(data.id)));
+      document.getElementById('modal-booking-id').value = data.id;
+      document.getElementById('modal-date').value        = data.date   || '';
+      document.getElementById('modal-time').value        = data.time   || '';
+      document.getElementById('modal-guests').value      = data.guests || 1;
+      document.getElementById('modal-amount').value      = (data.amount ?? '');
+      document.getElementById('modal-service').value     = data.service|| '';
+      document.getElementById('modal-staff').value       = data.staff  || '';
+      document.getElementById('modal-status').value      = data.status || 'Pending';
+    } else {
+      resetBookingModal();
     }
 
-    function resetBookingForm() {
-        const form = document.getElementById('booking-edit-form');
-        if (!form) return;
-        form.querySelector('input[name="booking_id"]').value = '';
-        form.querySelector('input[name="booking_id_display"]').value = '';
-        form.querySelector('input[name="date"]').value = '';
-        form.querySelector('input[name="time"]').value = '';
-        form.querySelector('input[name="guests"]').value = 1;
-        form.querySelector('input[name="amount"]').value = '';
-        form.querySelector('select[name="service_id"]').value = '';
-        form.querySelector('select[name="assigned_staff_user_id"]').value = '';
-        form.querySelector('select[name="status"]').value = 'Pending';
-        const fileInput = form.querySelector('input[name="image_file"]');
-        if (fileInput) fileInput.value = '';
-    }
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeBookingModal() {
+    overlay.classList.remove('open');
+    resetBookingModal();
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeBookingModal();
+  });
 </script>
 {% endblock %}

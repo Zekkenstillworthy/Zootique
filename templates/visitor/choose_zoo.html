@@ -4,120 +4,250 @@
 
 {% block content %}
 <div style="max-width: 1100px; margin: 0 auto; padding: 2.25rem 2rem 4rem 2rem;">
+
+  {% if not selected_type %}
   <div style="display:flex; align-items:flex-end; justify-content:space-between; gap: 1rem; flex-wrap: wrap;">
     <div>
-      <h1 style="margin: 0.25rem 0 0.5rem 0; font-size: 2rem; font-weight: 900; color: #132a1c; letter-spacing: -1px;">Choose a Zoo to Explore</h1>
-      <p style="margin: 0; color: #64748b; max-width: 72ch; line-height: 1.6;">Select an existing/registered zoo. You can change this anytime using the “Change Zoo” button.</p>
+      <h1 style="margin: 0.25rem 0 0.5rem 0; font-size: 2rem; font-weight: 900; color: #132a1c; letter-spacing: -1px;">
+        Choose a Zoo to Explore</h1>
+      <p style="margin: 0; color: #64748b; max-width: 72ch; line-height: 1.6;">Select an existing/registered zoo. You
+        can change this anytime using the “Change Zoo” button.</p>
     </div>
     {% if selected_zoo %}
-      <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.9rem 1rem;">
-        <div style="font-size: 0.8rem; color: #64748b; font-weight: 700;">Current selection</div>
-        <div style="font-size: 1rem; font-weight: 900; color: #132a1c;">{{ selected_zoo.name if selected_zoo.name is defined else selected_zoo.get('name') }}</div>
-      </div>
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.9rem 1rem;">
+      <div style="font-size: 0.8rem; color: #64748b; font-weight: 700;">Current selection</div>
+      <div style="font-size: 1rem; font-weight: 900; color: #132a1c;">{{ selected_zoo.name if selected_zoo.name is
+        defined else selected_zoo.get('name') }}</div>
+    </div>
     {% endif %}
   </div>
 
-  <div style="margin-top: 1.75rem;">
-    <div style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; flex-wrap: wrap;">
-      <div style="font-weight: 900; color: #132a1c;">Categories</div>
-      {% if selected_type %}
-        <a href="{{ url_for('visitor.choose_zoo', next=next_url) }}" style="color:#1a4f32; font-weight: 900; text-decoration:none;">Change category</a>
-      {% endif %}
-    </div>
+  <div style="margin-top: 2.25rem;">
+    <div style="font-weight: 900; color: #132a1c; font-size: 1.15rem; margin-bottom: 1rem;">Categories</div>
 
-    <div style="margin-top: 0.9rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem;">
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem;">
       {% for cat in zoo_categories %}
-        {% set icon = (category_icon_map.get(cat) if category_icon_map is defined else None) %}
-        <a href="{{ url_for('visitor.choose_zoo', type=cat, next=next_url) }}"
-           class="zoo-category-card{% if selected_type == cat %} zoo-category-card--selected{% endif %}"
-           style="display:block; background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1rem; text-decoration:none; box-shadow: 0 3px 14px rgba(19,42,28,0.06);">
-          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap: 0.75rem;">
-            <div style="display:flex; gap: 0.75rem; align-items:center;">
-              <div style="width: 42px; height: 42px; border-radius: 12px; background: #f1f5f9; display:flex; align-items:center; justify-content:center; border: 1px solid #e2e8f0;">
-                <i class="fa-solid {{ icon if icon else 'fa-map' }}" style="color:#1a4f32;"></i>
-              </div>
-              <div>
-                <div style="font-weight: 900; color: #132a1c;">{{ cat }}</div>
-                <div style="margin-top: 0.15rem; color: #64748b; font-size: 0.9rem;">{{ category_counts.get(cat, 0) }} available</div>
-              </div>
+      {% set icon = (category_icon_map.get(cat) if category_icon_map is defined else None) %}
+      <a href="{{ url_for('visitor.choose_zoo', category_name=cat, next=next_url) }}" class="zoo-category-card"
+        style="display:block; background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.25rem; text-decoration:none; box-shadow: 0 3px 14px rgba(19,42,28,0.06); transition: all 0.2s;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap: 0.75rem;">
+          <div style="display:flex; gap: 0.75rem; align-items:center;">
+            <div
+              style="width: 48px; height: 48px; border-radius: 12px; background: #f1f5f9; display:flex; align-items:center; justify-content:center; border: 1px solid #e2e8f0;">
+              <i class="fa-solid {{ icon if icon else 'fa-map' }}" style="color:#1a4f32; font-size: 1.15rem;"></i>
             </div>
-            <div style="color:#64748b;"><i class="fa-solid fa-chevron-right"></i></div>
+            <div>
+              <div style="font-weight: 900; color: #132a1c;">{{ cat }}</div>
+              <div style="margin-top: 0.15rem; color: #64748b; font-size: 0.9rem;">{{ category_counts.get(cat, 0) }}
+                available</div>
+            </div>
           </div>
-        </a>
-      {% else %}
-        <div style="grid-column: 1 / -1; text-align: center; padding: 2rem 1.5rem; border: 2px dashed #cbd5e1; border-radius: 14px; color: #64748b; background: #ffffff;">
-          <div style="font-size: 2rem; margin-bottom: 0.75rem;"><i class="fa-solid fa-layer-group"></i></div>
-          <div style="font-weight: 900; color: #1e293b;">No categories available</div>
-          <div style="margin-top: 0.25rem;">Ask an admin to register an establishment first.</div>
+          <div style="color:#64748b;"><i class="fa-solid fa-chevron-right"></i></div>
         </div>
+      </a>
+      {% else %}
+      <div
+        style="grid-column: 1 / -1; text-align: center; padding: 3rem 1.5rem; border: 2px dashed #cbd5e1; border-radius: 14px; color: #64748b; background: #ffffff;">
+        <div style="font-size: 2rem; margin-bottom: 0.75rem;"><i class="fa-solid fa-layer-group"></i></div>
+        <div style="font-weight: 900; color: #1e293b;">No categories available</div>
+        <div style="margin-top: 0.25rem;">Ask an admin to register an establishment first.</div>
+      </div>
       {% endfor %}
     </div>
   </div>
 
-  {% if selected_type %}
-    <div style="margin-top: 1.5rem;">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; flex-wrap: wrap;">
-        <div style="font-weight: 900; color: #132a1c;">{{ selected_type }}</div>
-        <div style="color: #64748b; font-weight: 800; font-size: 0.9rem;">Select a zoo to continue</div>
+  {% else %}
+  <!-- ================= DEDICATED CATEGORY PAGE ================= -->
+  <div
+    style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1.5rem;">
+    <div>
+      <h1 style="margin: 0; font-size: 2.25rem; font-weight: 900; color: #132a1c; letter-spacing: -1px;">{{
+        selected_type }}</h1>
+      <p style="margin: 0.25rem 0 0 0; color: #64748b;">Showing all registered establishments under this category.</p>
+    </div>
+    <a href="{{ url_for('visitor.choose_zoo', next=next_url) }}"
+      style="color:#1a4f32; font-weight: 800; text-decoration:none; display: inline-flex; align-items: center; gap: 0.5rem; border: 1px solid #cbd5e1; padding: 0.6rem 1.2rem; border-radius: 10px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s;">
+      <i class="fa-solid fa-arrow-left"></i> Change category
+    </a>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem;">
+    {% for z in zoos %}
+    <div onclick="selectZoo({{ z.id if z.id is defined else z.get('id') }})" class="zoo-card"
+      style="background: white; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; box-shadow: 0 3px 14px rgba(19,42,28,0.06); display:flex; flex-direction:column; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;">
+      <div style="height: 150px; background: #f1f5f9; position: relative;">
+        {% set img = (z.image_url if z.image_url is defined else z.get('image_url')) %}
+        {% if img %}
+        <img src="{{ img }}" alt="{{ z.name if z.name is defined else z.get('name') }}"
+          style="width:100%; height:100%; object-fit: cover; display:block;" onerror="this.style.display='none'">
+        {% endif %}
       </div>
+      <div style="padding: 1rem 1rem 1.1rem 1rem; display:flex; flex-direction:column; gap: 0.4rem;">
+        <div style="font-weight: 900; color: #132a1c; font-size: 1.05rem;">{{ z.name if z.name is defined else
+          z.get('name') }}</div>
+        <div style="color: #64748b; font-size: 0.9rem; display:flex; align-items:center; gap: 0.4rem;">
+          <i class="fa-solid fa-location-dot" style="color:#0d9b82;"></i>
+          <span>{{ z.location if z.location is defined else z.get('location') }}</span>
+        </div>
+        <div style="color: #64748b; font-size: 0.9rem;">{{ z.type if z.type is defined else z.get('type') }}</div>
 
-      <div style="margin-top: 0.9rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem;">
-        {% for z in zoos %}
-          <div style="background: white; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; box-shadow: 0 3px 14px rgba(19,42,28,0.06); display:flex; flex-direction:column;">
-            <div style="height: 150px; background: #f1f5f9; position: relative;">
-              {% set img = (z.image_url if z.image_url is defined else z.get('image_url')) %}
-              {% if img %}
-                <img src="{{ img }}" alt="{{ z.name if z.name is defined else z.get('name') }}" style="width:100%; height:100%; object-fit: cover; display:block;" onerror="this.style.display='none'">
-              {% endif %}
-            </div>
-            <div style="padding: 1rem 1rem 1.1rem 1rem; display:flex; flex-direction:column; gap: 0.4rem;">
-              <div style="font-weight: 900; color: #132a1c; font-size: 1.05rem;">{{ z.name if z.name is defined else z.get('name') }}</div>
-              <div style="color: #64748b; font-size: 0.9rem; display:flex; align-items:center; gap: 0.4rem;">
-                <i class="fa-solid fa-location-dot" style="color:#0d9b82;"></i>
-                <span>{{ z.location if z.location is defined else z.get('location') }}</span>
-              </div>
-              <div style="color: #64748b; font-size: 0.9rem;">{{ z.type if z.type is defined else z.get('type') }}</div>
+        <div style="margin-top: 0.75rem; display:flex; flex-wrap:wrap; gap: 0.6rem;">
+          <button type="button" onclick="event.stopPropagation(); showZooInfoModal(this)"
+            data-name="{{ z.name if z.name is defined else z.get('name') }}"
+            data-location="{{ z.location if z.location is defined else z.get('location') }}"
+            data-type="{{ z.type if z.type is defined else z.get('type') }}"
+            data-description="{{ z.description if z.description is defined else z.get('description') or 'Discover curated wildlife experiences.' }}"
+            style="flex: 1; min-width: 110px; display:inline-flex; align-items:center; justify-content:center; gap: 0.4rem; padding: 0.75rem 0.9rem; border-radius: 10px; font-weight: 900; text-decoration:none; border: 1px solid #cbd5e1; background:white; color:#1a4f32; cursor:pointer;">
+            <i class="fa-solid fa-circle-info"></i> Info
+          </button>
 
-              <div style="margin-top: 0.75rem; display:flex; flex-wrap:wrap; gap: 0.6rem;">
-                <a href="{{ url_for('visitor.park_info', zoo_id=(z.id if z.id is defined else z.get('id'))) }}"
-                   style="flex: 1; min-width: 110px; display:inline-flex; align-items:center; justify-content:center; gap: 0.4rem; padding: 0.75rem 0.9rem; border-radius: 10px; font-weight: 900; text-decoration:none; border: 1px solid #cbd5e1; background:white; color:#1a4f32;">
-                  <i class="fa-solid fa-circle-info"></i> Info
-                </a>
-
-                <form method="post" action="{{ url_for('visitor.choose_zoo') }}" style="flex: 1; min-width: 140px;">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <input type="hidden" name="zoo_id" value="{{ z.id if z.id is defined else z.get('id') }}">
-                  {% if next_url %}
-                    <input type="hidden" name="next" value="{{ next_url }}">
-                  {% else %}
-                    <input type="hidden" name="next" value="{{ url_for('visitor.my_bookings') }}">
-                  {% endif %}
-                  <button type="submit" class="btn" style="width:100%; background:#1a4f32; border: 1px solid #1a4f32; color:white; padding: 0.75rem 0.9rem; border-radius: 10px; font-weight: 900; cursor:pointer;">Book Now</button>
-                </form>
-              </div>
-            </div>
-          </div>
-        {% else %}
-          <div style="grid-column: 1 / -1; text-align: center; padding: 3rem 1.5rem; border: 2px dashed #cbd5e1; border-radius: 14px; color: #64748b; background: #ffffff;">
-            <div style="font-size: 2rem; margin-bottom: 0.75rem;"><i class="fa-solid fa-mountain-sun"></i></div>
-            <div style="font-weight: 900; color: #1e293b;">No zoos available in this category</div>
-            <div style="margin-top: 0.25rem;">Try a different category.</div>
-          </div>
-        {% endfor %}
+          <form method="post" action="{{ url_for('visitor.choose_zoo') }}" style="flex: 1; min-width: 140px;"
+            onclick="event.stopPropagation();">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="zoo_id" value="{{ z.id if z.id is defined else z.get('id') }}">
+            {% if next_url %}
+            <input type="hidden" name="next" value="{{ next_url }}">
+            {% else %}
+            <input type="hidden" name="next" value="{{ url_for('visitor.my_bookings') }}">
+            {% endif %}
+            <button type="submit" class="btn"
+              style="width:100%; background:#1a4f32; border: 1px solid #1a4f32; color:white; padding: 0.75rem 0.9rem; border-radius: 10px; font-weight: 900; cursor:pointer;">Book
+              Now</button>
+          </form>
+        </div>
       </div>
     </div>
+    {% else %}
+    <div
+      style="grid-column: 1 / -1; text-align: center; padding: 4rem 1.5rem; border: 2px dashed #cbd5e1; border-radius: 14px; color: #64748b; background: #ffffff;">
+      <div style="font-size: 2.5rem; margin-bottom: 0.75rem;"><i class="fa-solid fa-mountain-sun"></i></div>
+      <div style="font-weight: 900; color: #1e293b; font-size: 1.15rem;">No establishments available in this category
+      </div>
+      <div style="margin-top: 0.25rem;">Try a different category.</div>
+    </div>
+    {% endfor %}
+  </div>
   {% endif %}
 </div>
 
 <style>
-  .zoo-category-card--selected {
+  .zoo-category-card:hover {
     border-color: #1a4f32 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(19, 42, 28, 0.1) !important;
   }
+
+  .zoo-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(19, 42, 28, 0.12) !important;
+  }
+
   @media (max-width: 980px) {
-    div[style*="grid-template-columns: repeat(3"] { grid-template-columns: repeat(2, 1fr) !important; }
+    div[style*="grid-template-columns: repeat(3"] {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
   }
+
   @media (max-width: 640px) {
-    div[style*="grid-template-columns: repeat(3"] { grid-template-columns: 1fr !important; }
+    div[style*="grid-template-columns: repeat(3"] {
+      grid-template-columns: 1fr !important;
+    }
   }
 </style>
+
+<!-- Modal for Zoo Info -->
+<div id="zooInfoModal"
+  style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 1.5rem; transition: all 0.2s ease;">
+  <div
+    style="background: white; border-radius: 16px; max-width: 500px; width: 100%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); border: 1px solid #e2e8f0; overflow: hidden; transform: translateY(20px); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); display: flex; flex-direction: column;">
+    <div style="border-top: 4px solid #1a4f32; padding: 2rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <div
+          style="background: #e8f5e9; color: #1a4f32; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+          <i class="fa-solid fa-tree"></i>
+        </div>
+        <h3 id="modalZooName" style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #1e293b;">Zoo Name</h3>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; font-size: 0.95rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; color: #64748b;">
+          <i class="fa-solid fa-location-dot" style="width: 16px; text-align: center; color: #0d9b82;"></i>
+          <span id="modalZooLocation">Location</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; color: #64748b;">
+          <i class="fa-solid fa-layer-group" style="width: 16px; text-align: center; color: #1a4f32;"></i>
+          <span id="modalZooType">Category</span>
+        </div>
+      </div>
+
+      <p id="modalZooDescription"
+        style="color: #475569; font-size: 0.95rem; line-height: 1.6; margin: 0; text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; max-height: 150px; overflow-y: auto;">
+        Description
+      </p>
+    </div>
+    <div
+      style="background: #f8fafc; padding: 1rem 2rem; display: flex; justify-content: flex-end; border-top: 1px solid #e2e8f0;">
+      <button onclick="closeZooInfoModal()"
+        style="background: #1a4f32; color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showZooInfoModal(button) {
+    const name = button.getAttribute('data-name');
+    const location = button.getAttribute('data-location');
+    const type = button.getAttribute('data-type');
+    const description = button.getAttribute('data-description');
+
+    document.getElementById('modalZooName').textContent = name;
+    document.getElementById('modalZooLocation').textContent = location;
+    document.getElementById('modalZooType').textContent = type;
+    document.getElementById('modalZooDescription').textContent = description;
+
+    const modal = document.getElementById('zooInfoModal');
+    modal.style.display = 'flex';
+  }
+
+  function closeZooInfoModal() {
+    const modal = document.getElementById('zooInfoModal');
+    modal.style.display = 'none';
+  }
+
+  function selectZoo(zooId) {
+    // Create a form dynamically and submit it
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = "{{ url_for('visitor.choose_zoo') }}";
+
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrf_token';
+    csrfInput.value = "{{ csrf_token() }}";
+    form.appendChild(csrfInput);
+
+    const idInput = document.createElement('input');
+    idInput.type = 'hidden';
+    idInput.name = 'zoo_id';
+    idInput.value = zooId;
+    form.appendChild(idInput);
+
+    const nextInput = document.createElement('input');
+    nextInput.type = 'hidden';
+    nextInput.name = 'next';
+    nextInput.value = "{{ url_for('visitor.home') }}";
+    form.appendChild(nextInput);
+
+    document.body.appendChild(form);
+    form.submit();
+  }
+
+  // Close modal when clicking outside of it
+  window.addEventListener('click', function (e) {
+    const modal = document.getElementById('zooInfoModal');
+    if (e.target === modal) {
+      closeZooInfoModal();
+    }
+  });
+</script>
 {% endblock %}

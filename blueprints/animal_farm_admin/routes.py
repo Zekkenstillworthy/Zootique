@@ -174,7 +174,7 @@ def subscriptions():
 
 @animal_farm_admin_bp.get('/layout-changer')
 def layout_changer():
-    """Zoo Admin MVP: Let zoo admins customise their own dashboard layout."""
+    """Zoo Admin: Let zoo admins customise their own dashboard layout."""
     zoo = _current_zoo()
     if not zoo:
         flash('Your account is not linked to a zoo.', 'error')
@@ -206,7 +206,7 @@ import json as _json
 
 @animal_farm_admin_bp.post('/layout-changer/save')
 def save_layout():
-    """MVP: Persist the zoo admin's chosen dashboard layout."""
+    """Persist the zoo admin's chosen dashboard layout."""
     zoo = _current_zoo()
     if not zoo:
         flash('Your account is not linked to a zoo.', 'error')
@@ -250,7 +250,8 @@ def booking_management():
     status = request.args.get('status')
     assigned_to = (request.args.get('assigned_to') or '').strip()
     query = Booking.query.filter_by(zoo_id=zoo.id)
-    if status:
+    valid_statuses = {'Pending', 'Confirmed', 'Cancelled', 'Finished'}
+    if status and status in valid_statuses:
         query = query.filter_by(status=status)
     if assigned_to.isdigit():
         query = query.filter_by(assigned_staff_user_id=int(assigned_to))
@@ -279,6 +280,71 @@ def booking_management():
         services=services,
         selected_assigned_to=assigned_to,
     )
+
+
+
+@animal_farm_admin_bp.post('/bookings/create')
+def create_booking():
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_admin.booking_management'))
+
+    service_id_raw = (request.form.get('service_id') or '').strip()
+    date = (request.form.get('date') or '').strip()
+    time = (request.form.get('time') or '').strip()
+    guests = request.form.get('guests', type=int) or 1
+    amount_raw = (request.form.get('amount') or '').strip()
+    status = (request.form.get('status') or 'Pending').strip()
+    staff_user_id_raw = (request.form.get('assigned_staff_user_id') or '').strip()
+    image_file = request.files.get('image_file')
+
+    if not date or not time:
+        flash('Date and time are required.', 'error')
+        return redirect(url_for('animal_farm_admin.booking_management'))
+
+    service = None
+    if service_id_raw and service_id_raw.isdigit():
+        service = Service.query.filter_by(id=int(service_id_raw), zoo_id=zoo.id).first()
+
+    amount = None
+    if amount_raw:
+        try:
+            amount = float(amount_raw)
+        except Exception:
+            pass
+    if amount is None and service:
+        amount = float(service.price or 0)
+
+    assigned_staff_user_id = None
+    if staff_user_id_raw and staff_user_id_raw.isdigit():
+        staff_user = User.query.filter_by(id=int(staff_user_id_raw), role='zoo_staff', zoo_id=zoo.id).first()
+        if staff_user:
+            assigned_staff_user_id = staff_user.id
+
+    import secrets
+    booking = Booking(
+        id=secrets.token_hex(8),
+        zoo_id=zoo.id,
+        service_id=service.id if service else None,
+        service_name=service.name if service else None,
+        date=date,
+        time=time,
+        guests=guests,
+        amount=amount or 0,
+        status=status if status in {'Pending', 'Confirmed', 'Cancelled', 'Finished'} else 'Pending',
+        assigned_staff_user_id=assigned_staff_user_id,
+    )
+    db.session.add(booking)
+
+    if image_file and image_file.filename:
+        uploaded_url = _save_uploaded_image(image_file, 'booking_images')
+        if uploaded_url:
+            booking.image_url = uploaded_url
+
+    db.session.commit()
+    flash('Booking created.', 'success')
+    return redirect(url_for('animal_farm_admin.booking_management'))
 
 
 @animal_farm_admin_bp.post('/bookings/<booking_id>/update')
@@ -383,7 +449,7 @@ def update_booking_status(booking_id: str):
         return redirect(url_for('animal_farm_admin.booking_management'))
 
     new_status = request.form.get('status')
-    if new_status not in {'Pending', 'Confirmed', 'Cancelled'}:
+    if new_status not in {'Pending', 'Confirmed', 'Cancelled', 'Finished'}:
         flash('Invalid status.', 'error')
         return redirect(url_for('animal_farm_admin.booking_management'))
 
@@ -437,6 +503,22 @@ def assign_booking(booking_id: str):
 @animal_farm_admin_bp.route('/booking-management')
 def booking_management_legacy_redirect():
     return redirect(url_for('animal_farm_admin.booking_management'), code=301)
+
+
+@animal_farm_admin_bp.post('/bookings/<booking_id>/delete')
+def delete_booking(booking_id: str):
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_admin.booking_management'))
+    booking = Booking.query.filter_by(id=booking_id, zoo_id=zoo.id).first()
+    if not booking:
+        flash('Booking not found.', 'error')
+        return redirect(url_for('animal_farm_admin.booking_management'))
+    db.session.delete(booking)
+    db.session.commit()
+    flash('Booking removed.', 'success')
+    return redirect(url_for('animal_farm_admin.booking_management'))
 
 @animal_farm_admin_bp.route('/profile')
 def establishment_profile():

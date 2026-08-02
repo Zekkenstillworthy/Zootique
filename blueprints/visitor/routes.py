@@ -12,7 +12,7 @@ from flask import Blueprint, current_app, render_template, abort, request, redir
 from sqlalchemy import func, or_, inspect
 from werkzeug.utils import secure_filename
 
-from models import db, Zoo, Animal, Service, Booking, BookingPayment, Event, Promotion, Feedback, User, ZooZone
+from models import db, Zoo, Animal, Service, Booking, BookingPayment, Event, Promotion, Feedback, User, ZooZone, EstablishmentType
 from services import (
     BookingAuthorizationError,
     BookingValidationError,
@@ -184,8 +184,12 @@ def _safe_relative_redirect(target: str | None):
 
 
 @visitor_bp.route("/choose-zoo", methods=["GET", "POST"])
+@visitor_bp.route("/choose-zoo/<string:category_name>", methods=["GET", "POST"])
 @visitor_login_required
-def choose_zoo():
+def choose_zoo(category_name=None):
+    if request.method == "GET":
+        session.pop("selected_zoo_id", None)
+
     all_zoos = Zoo.query.order_by(Zoo.id.asc()).all()
 
     def _zoo_field(zoo_obj, field: str):
@@ -204,16 +208,40 @@ def choose_zoo():
         value = str(raw).strip()
         return value or None
 
-    # Build the list of available categories from data.
-    category_counts: dict[str, int] = {}
-    for zoo in all_zoos:
-        t = _zoo_type(zoo)
-        if not t:
-            continue
-        category_counts[t] = category_counts.get(t, 0) + 1
-    categories = sorted(category_counts.keys())
+    # Build the list of available categories from active EstablishmentTypes
+    active_types = EstablishmentType.query.filter_by(is_active=True).order_by(EstablishmentType.name.asc()).all()
+    categories = [et.name for et in active_types]
 
-    selected_type = (request.args.get("type") or "").strip() or None
+    category_counts: dict[str, int] = {}
+    icon_map: dict[str, str] = {}
+
+    if categories:
+        for name in categories:
+            category_counts[name] = 0
+        for zoo in all_zoos:
+            t = _zoo_type(zoo)
+            if t in category_counts:
+                category_counts[t] += 1
+        for et in active_types:
+            icon = et.icon_class or "fa-tree"
+            if " " in icon:
+                icon = icon.split()[-1]
+            icon_map[et.name] = icon
+    else:
+        # Fallback if no establishment types are seeded yet
+        for zoo in all_zoos:
+            t = _zoo_type(zoo)
+            if not t:
+                continue
+            category_counts[t] = category_counts.get(t, 0) + 1
+        categories = sorted(category_counts.keys())
+        icon_map = {
+            "Zoo Park": "fa-paw",
+            "Farm Animal Attraction": "fa-cow",
+            "Farm Attraction": "fa-tractor",
+        }
+
+    selected_type = category_name or (request.args.get("type") or "").strip() or None
     if selected_type and selected_type not in category_counts:
         selected_type = None
 
@@ -256,11 +284,6 @@ def choose_zoo():
             selected_zoo = db.session.get(Zoo, int(selected_id))
 
     next_url = (request.args.get("next") or "").strip() or None
-    icon_map = {
-        "Zoo Park": "fa-paw",
-        "Farm Animal Attraction": "fa-cow",
-        "Farm Attraction": "fa-tractor",
-    }
     return render_template(
         "visitor/choose_zoo.html",
         zoos=filtered_zoos,

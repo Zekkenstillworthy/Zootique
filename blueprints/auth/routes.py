@@ -74,13 +74,13 @@ def portal():
 
 @auth_bp.get('/register-selection')
 def register_selection():
-    """MVP: registration selection (Visitor vs Zoo Admin only)."""
+    """registration selection (Visitor vs Zoo Admin only)."""
     return render_template('auth/register_selection.html')
 
 
 @auth_bp.get('/login-selection')
 def login_selection():
-    """MVP: login selection (Visitor, Zoo Admin, Staff, Super Admin)."""
+    """login selection (Visitor, Zoo Admin, Staff, Super Admin)."""
     return render_template('auth/login_selection.html')
 
 @auth_bp.route('/admin-login', defaults={'module_name': None}, methods=['GET', 'POST'])
@@ -130,7 +130,7 @@ def login(module_name):
 
             _set_auth_session(user)
 
-            # MVP: Visitors must pick a Zoo after login.
+            # Visitors must pick a Zoo after login.
             if module_name == 'visitor':
                 if next_url:
                     parsed = urlparse(next_url)
@@ -301,7 +301,7 @@ def register_admin_step2():
 
 @auth_bp.get('/establishment-selection')
 def establishment_selection():
-    # MVP: Staff should not self-register. Keep this page non-public.
+    # Staff should not self-register. Keep this page non-public.
     if session.get('role') != 'zoo_admin':
         flash('Staff accounts are created by Zoo Admins.', 'error')
         return redirect(url_for('auth.login_selection'))

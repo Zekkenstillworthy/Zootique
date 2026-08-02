@@ -363,7 +363,11 @@
         </div>
 
         <div class="form-actions">
+          {% if module_name != 'zootique_admin' %}
           <a href="{{ url_for('auth.portal') }}" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Change Module</a>
+          {% else %}
+          <span></span>
+          {% endif %}
           <button type="submit" class="btn-continue">Sign In <i class="fa-solid fa-arrow-right"></i></button>
         </div>
       </form>
