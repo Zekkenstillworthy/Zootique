@@ -258,43 +258,37 @@ def choose_zoo(category_name=None):
 
     # Build the list of available categories from active EstablishmentTypes
     active_types = EstablishmentType.query.filter_by(is_active=True).order_by(EstablishmentType.name.asc()).all()
-    categories = [et.name for et in active_types]
 
     category_counts: dict[str, int] = {}
-    icon_map: dict[str, str] = {}
+    icon_map: dict[str, str] = {
+        "Zoo Park": "fa-paw",
+        "Farm Animal Attraction": "fa-cow",
+        "Farm Attraction": "fa-tractor",
+    }
 
-    if categories:
-        for name in categories:
-            category_counts[name] = 0
-        for zoo in all_zoos:
-            t = _zoo_type(zoo)
-            if t in category_counts:
-                category_counts[t] += 1
-        for et in active_types:
-            icon = et.icon_class or "fa-tree"
-            if " " in icon:
-                icon = icon.split()[-1]
-            icon_map[et.name] = icon
-    else:
-        # Fallback if no establishment types are seeded yet
-        for zoo in all_zoos:
-            t = _zoo_type(zoo)
-            if not t:
-                continue
+    for et in active_types:
+        category_counts[et.name] = 0
+        icon = et.icon_class or "fa-tree"
+        if " " in icon:
+            icon = icon.split()[-1]
+        icon_map[et.name] = icon
+
+    for zoo in all_zoos:
+        t = _zoo_type(zoo)
+        if t:
             category_counts[t] = category_counts.get(t, 0) + 1
-        categories = sorted(category_counts.keys())
-        icon_map = {
-            "Zoo Park": "fa-paw",
-            "Farm Animal Attraction": "fa-cow",
-            "Farm Attraction": "fa-tractor",
-        }
 
-    selected_type = category_name or (request.args.get("type") or "").strip() or None
-    if selected_type and selected_type not in category_counts:
-        selected_type = None
+    categories = list(category_counts.keys())
+
+    raw_selected = (category_name or request.args.get("type") or "").strip() or None
+    selected_type = None
+    if raw_selected:
+        # Match case-insensitively against known categories or raw string
+        matched = next((c for c in category_counts if c.lower().strip() == raw_selected.lower().strip()), raw_selected)
+        selected_type = matched
 
     filtered_zoos = (
-        [z for z in all_zoos if _zoo_type(z) == selected_type]
+        [z for z in all_zoos if _zoo_type(z) and _zoo_type(z).lower().strip() == selected_type.lower().strip()]
         if selected_type
         else []
     )
