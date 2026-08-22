@@ -6,7 +6,7 @@ import math
 import os
 import re
 import secrets
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 
 from flask import Blueprint, render_template, abort, request, redirect, url_for, flash, session
 from sqlalchemy import func, or_, inspect
@@ -283,6 +283,7 @@ def choose_zoo(category_name=None):
     raw_selected = (category_name or request.args.get("type") or "").strip() or None
     selected_type = None
     if raw_selected:
+        raw_selected = unquote(raw_selected).strip()
         # Match case-insensitively against known categories or raw string
         matched = next((c for c in category_counts if c.lower().strip() == raw_selected.lower().strip()), raw_selected)
         selected_type = matched
