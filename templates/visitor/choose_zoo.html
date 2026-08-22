@@ -73,8 +73,8 @@
 
   <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem;">
     {% for z in zoos %}
-    <div onclick="selectZoo({{ z.id if z.id is defined else z.get('id') }})" class="zoo-card"
-      style="background: white; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; box-shadow: 0 3px 14px rgba(19,42,28,0.06); display:flex; flex-direction:column; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;">
+    <div class="zoo-card"
+      style="background: white; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; box-shadow: 0 3px 14px rgba(19,42,28,0.06); display:flex; flex-direction:column; transition: transform 0.2s, box-shadow 0.2s;">
       <div style="height: 150px; background: #f1f5f9; position: relative;">
         {% set img = (z.image_url if z.image_url is defined else z.get('image_url')) %}
         {% if img %}
@@ -92,27 +92,27 @@
         <div style="color: #64748b; font-size: 0.9rem;">{{ z.type if z.type is defined else z.get('type') }}</div>
 
         <div style="margin-top: 0.75rem; display:flex; flex-wrap:wrap; gap: 0.6rem;">
-          <button type="button" onclick="event.stopPropagation(); showZooInfoModal(this)"
+          <button type="button" onclick="showZooInfoModal(this)"
             data-name="{{ z.name if z.name is defined else z.get('name') }}"
             data-location="{{ z.location if z.location is defined else z.get('location') }}"
             data-type="{{ z.type if z.type is defined else z.get('type') }}"
             data-description="{{ z.description if z.description is defined else z.get('description') or 'Discover curated wildlife experiences.' }}"
-            style="flex: 1; min-width: 110px; display:inline-flex; align-items:center; justify-content:center; gap: 0.4rem; padding: 0.75rem 0.9rem; border-radius: 10px; font-weight: 900; text-decoration:none; border: 1px solid #cbd5e1; background:white; color:#1a4f32; cursor:pointer;">
+            style="flex: 1; min-width: 100px; display:inline-flex; align-items:center; justify-content:center; gap: 0.4rem; padding: 0.75rem 0.9rem; border-radius: 10px; font-weight: 900; text-decoration:none; border: 1px solid #cbd5e1; background:white; color:#1a4f32; cursor:pointer;">
             <i class="fa-solid fa-circle-info"></i> Info
           </button>
 
-          <form method="post" action="{{ url_for('visitor.choose_zoo') }}" style="flex: 1; min-width: 140px;"
-            onclick="event.stopPropagation();">
+          <form method="post" action="{{ url_for('visitor.choose_zoo') }}" style="flex: 1; min-width: 140px;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="zoo_id" value="{{ z.id if z.id is defined else z.get('id') }}">
             {% if next_url %}
             <input type="hidden" name="next" value="{{ next_url }}">
             {% else %}
-            <input type="hidden" name="next" value="{{ url_for('visitor.my_bookings') }}">
+            <input type="hidden" name="next" value="{{ url_for('visitor.home') }}">
             {% endif %}
             <button type="submit" class="btn"
-              style="width:100%; background:#1a4f32; border: 1px solid #1a4f32; color:white; padding: 0.75rem 0.9rem; border-radius: 10px; font-weight: 900; cursor:pointer;">Book
-              Now</button>
+              style="width:100%; background:#1a4f32; border: 1px solid #1a4f32; color:white; padding: 0.75rem 0.9rem; border-radius: 10px; font-weight: 900; cursor:pointer;">
+              Select Zoo
+            </button>
           </form>
         </div>
       </div>
@@ -212,34 +212,6 @@
   function closeZooInfoModal() {
     const modal = document.getElementById('zooInfoModal');
     modal.style.display = 'none';
-  }
-
-  function selectZoo(zooId) {
-    // Create a form dynamically and submit it
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = "{{ url_for('visitor.choose_zoo') }}";
-
-    const csrfInput = document.createElement('input');
-    csrfInput.type = 'hidden';
-    csrfInput.name = 'csrf_token';
-    csrfInput.value = "{{ csrf_token() }}";
-    form.appendChild(csrfInput);
-
-    const idInput = document.createElement('input');
-    idInput.type = 'hidden';
-    idInput.name = 'zoo_id';
-    idInput.value = zooId;
-    form.appendChild(idInput);
-
-    const nextInput = document.createElement('input');
-    nextInput.type = 'hidden';
-    nextInput.name = 'next';
-    nextInput.value = "{{ url_for('visitor.home') }}";
-    form.appendChild(nextInput);
-
-    document.body.appendChild(form);
-    form.submit();
   }
 
   // Close modal when clicking outside of it
