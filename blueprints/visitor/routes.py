@@ -185,8 +185,54 @@ def _safe_relative_redirect(target: str | None):
     return None
 
 
-@visitor_bp.route("/choose-zoo", methods=["GET", "POST"])
-@visitor_bp.route("/choose-zoo/<string:category_name>", methods=["GET", "POST"])
+@visitor_bp.post("/select-zoo")
+def select_zoo():
+    """Dedicated POST handler for zoo selection. Separated from the GET so the
+    @visitor_login_required decorator doesn't block a cold-start serverless POST.
+    We manually re-hydrate the session here from auth_by_role if needed.
+    """
+    # Re-hydrate session from stored role state (handles Vercel cold-starts)
+    auth_by_role = session.get("auth_by_role")
+    if isinstance(auth_by_role, dict):
+        role_state = auth_by_role.get("visitor")
+        if isinstance(role_state, dict) and role_state.get("user_id"):
+            if not (session.get("user_id") and session.get("role") == "visitor"):
+                session["user_id"] = int(role_state["user_id"])
+                session["role"] = "visitor"
+                session["full_name"] = role_state.get("full_name", "")
+                session.permanent = True
+                session.modified = True
+
+    # Must be logged in as visitor to select a zoo
+    if not (session.get("user_id") and session.get("role") == "visitor"):
+        flash("Please sign in as a Visitor to continue.", "error")
+        return redirect(url_for("auth.login", module_name="visitor"))
+
+    zoo_id_raw = (request.form.get("zoo_id") or "").strip()
+    next_raw = (request.form.get("next") or "").strip() or None
+
+    if zoo_id_raw.isdigit():
+        zoo_id = int(zoo_id_raw)
+        if Zoo.query.count() > 0:
+            zoo = db.session.get(Zoo, zoo_id)
+            if not zoo:
+                flash("Selected zoo was not found.", "error")
+                return redirect(url_for("visitor.choose_zoo"))
+
+        session["selected_zoo_id"] = zoo_id
+        session.modified = True
+        stored_next = (session.pop("post_login_next", None) or "").strip() or None
+        maybe_next = _safe_relative_redirect(stored_next) or _safe_relative_redirect(next_raw)
+        if maybe_next:
+            return maybe_next
+        return redirect(url_for("visitor.home"))
+
+    flash("Please select a zoo.", "error")
+    return redirect(url_for("visitor.choose_zoo"))
+
+
+@visitor_bp.route("/choose-zoo", methods=["GET"])
+@visitor_bp.route("/choose-zoo/<string:category_name>", methods=["GET"])
 @visitor_login_required
 def choose_zoo(category_name=None):
     if request.method == "GET":
@@ -252,30 +298,6 @@ def choose_zoo(category_name=None):
         if selected_type
         else []
     )
-
-    if request.method == "POST":
-        zoo_id_raw = (request.form.get("zoo_id") or "").strip()
-        next_raw = (request.form.get("next") or "").strip() or None
-
-        if zoo_id_raw.isdigit():
-            zoo_id = int(zoo_id_raw)
-            # Validate selection exists in DB if DB has zoos; otherwise allow mock IDs.
-            if Zoo.query.count() > 0:
-                zoo = db.session.get(Zoo, zoo_id)
-                if not zoo:
-                    flash("Selected zoo was not found.", "error")
-                    return redirect(url_for("visitor.choose_zoo"))
-
-            session["selected_zoo_id"] = zoo_id
-            # If login stored a post-login destination, prefer it.
-            stored_next = (session.pop("post_login_next", None) or "").strip() or None
-            maybe_next = _safe_relative_redirect(stored_next) or _safe_relative_redirect(next_raw)
-            if maybe_next:
-                return maybe_next
-            return redirect(url_for("visitor.home"))
-
-        flash("Please select a zoo.", "error")
-        return redirect(url_for("visitor.choose_zoo"))
 
     selected_zoo = None
     selected_id = session.get("selected_zoo_id")

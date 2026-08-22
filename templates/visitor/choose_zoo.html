@@ -101,7 +101,7 @@
             <i class="fa-solid fa-circle-info"></i> Info
           </button>
 
-          <form method="post" action="{{ url_for('visitor.choose_zoo') }}" style="flex: 1; min-width: 140px;">
+          <form method="post" action="{{ url_for('visitor.select_zoo') }}" style="flex: 1; min-width: 140px;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="zoo_id" value="{{ z.id if z.id is defined else z.get('id') }}">
             {% if next_url %}
