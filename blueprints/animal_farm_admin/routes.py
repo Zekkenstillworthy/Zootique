@@ -3,11 +3,10 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 
 import os
-import uuid
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
-from werkzeug.utils import secure_filename
+from services.storage import save_uploaded_image as _save_uploaded_image
 
 from models import (
     Animal,
@@ -39,33 +38,6 @@ from services.auth_guard import require_role_guard
 
 animal_farm_admin_bp = Blueprint('animal_farm_admin', __name__)
 
-
-_ALLOWED_IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.webp'}
-
-
-def _save_uploaded_image(file_storage, subfolder: str) -> str | None:
-    """Save an uploaded image under uploads/<subfolder>/ and return a /uploads/... URL."""
-    if not file_storage or not getattr(file_storage, "filename", ""):
-        return None
-
-    original_name = secure_filename(file_storage.filename)
-    if not original_name:
-        return None
-
-    _, ext = os.path.splitext(original_name)
-    ext = (ext or '').lower()
-    if ext not in _ALLOWED_IMAGE_EXTENSIONS:
-        flash('Unsupported image type. Please upload PNG, JPG, JPEG, GIF, or WEBP.', 'error')
-        return None
-
-    parts = [p for p in (subfolder or '').replace('\\', '/').split('/') if p]
-    folder = os.path.join(current_app.config['UPLOAD_FOLDER'], *parts)
-    os.makedirs(folder, exist_ok=True)
-
-    stored_name = f"{uuid.uuid4().hex}{ext}"
-    file_storage.save(os.path.join(folder, stored_name))
-    rel_path = '/'.join(parts + [stored_name])
-    return f"/uploads/{rel_path}"
 
 
 @animal_farm_admin_bp.before_request

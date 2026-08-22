@@ -4,8 +4,10 @@ import os
 import secrets
 from datetime import datetime, timedelta
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from werkzeug.utils import secure_filename
+
+from services.storage import save_uploaded_image as _save_uploaded_image
 
 from models import Animal, Booking, Event, Feedback, StaffTask, User, Zoo, ZooZone, db
 from services.auth_guard import require_role_guard
@@ -297,17 +299,9 @@ def profile():
 
             file = request.files.get('profile_picture')
             if file and file.filename:
-                filename = secure_filename(file.filename)
-                ext = os.path.splitext(filename)[1].lower()
-                if ext not in ('.png', '.jpg', '.jpeg', '.webp', '.gif'):
-                    flash('Unsupported image type. Use png/jpg/webp/gif.', 'error')
-                    return redirect(url_for('animal_farm_staff.profile'))
-
-                folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'profile_pictures')
-                os.makedirs(folder, exist_ok=True)
-                stored_name = f"staff_{user.id}_{secrets.token_hex(6)}{ext}"
-                file.save(os.path.join(folder, stored_name))
-                user.profile_image = f"profile_pictures/{stored_name}"
+                uploaded_url = _save_uploaded_image(file, 'profile_pictures')
+                if uploaded_url:
+                    user.profile_image = uploaded_url
 
             db.session.commit()
             session['full_name'] = user.full_name

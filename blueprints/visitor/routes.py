@@ -8,9 +8,11 @@ import re
 import secrets
 from urllib.parse import urlparse
 
-from flask import Blueprint, current_app, render_template, abort, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, abort, request, redirect, url_for, flash, session
 from sqlalchemy import func, or_, inspect
 from werkzeug.utils import secure_filename
+
+from services.storage import save_uploaded_image as _save_uploaded_image
 
 from models import db, Zoo, Animal, Service, Booking, BookingPayment, Event, Promotion, Feedback, User, ZooZone, EstablishmentType
 from services import (
@@ -950,17 +952,9 @@ def profile():
 
             profile_picture = request.files.get("profile_picture")
             if profile_picture and profile_picture.filename:
-                filename = secure_filename(profile_picture.filename)
-                ext = os.path.splitext(filename)[1].lower()
-                if ext not in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
-                    flash("Unsupported image type. Use png/jpg/webp/gif.", "error")
-                    return redirect(url_for("visitor.profile", tab="profile", edit=1))
-
-                profile_folder = os.path.join(current_app.config["UPLOAD_FOLDER"], "profile_pictures")
-                os.makedirs(profile_folder, exist_ok=True)
-                stored_name = f"visitor_{user.id}_{secrets.token_hex(6)}{ext}"
-                profile_picture.save(os.path.join(profile_folder, stored_name))
-                user.profile_image = f"profile_pictures/{stored_name}"
+                uploaded_url = _save_uploaded_image(profile_picture, 'profile_pictures')
+                if uploaded_url:
+                    user.profile_image = uploaded_url
 
             user.full_name = full_name
             db.session.commit()

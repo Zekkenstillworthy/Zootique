@@ -118,9 +118,20 @@ def create_app() -> Flask:
 
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
+    # pool_pre_ping recycles dead connections; pool_size/max_overflow kept small
+    # because Vercel serverless functions are short-lived.
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,
+        "pool_size": 1,
+        "max_overflow": 0,
+    }
     app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "uploads")
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
+    # Supabase Storage credentials (used by services/storage.py)
+    app.config["SUPABASE_URL"] = os.environ.get("SUPABASE_URL", "").strip()
+    app.config["SUPABASE_KEY"] = os.environ.get("SUPABASE_KEY", "").strip()
+    app.config["SUPABASE_STORAGE_BUCKET"] = os.environ.get("SUPABASE_STORAGE_BUCKET", "zootique-images").strip()
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -130,25 +141,29 @@ def create_app() -> Flask:
         if backend != "postgresql":
             raise RuntimeError(f"Unsupported database backend '{backend}'. Zootique is configured for Postgres only.")
 
-        # Fail fast if Postgres is unreachable or credentials are invalid.
-        try:
-            with db.engine.connect() as conn:
-                conn.execute(db.text("SELECT 1"))
-        except Exception as ex:
-            safe_url = db.engine.url.render_as_string(hide_password=True)
-            lower_msg = str(ex).lower()
-            missing_db_hint = ""
-            if "does not exist" in lower_msg and "database" in lower_msg:
-                missing_db_hint = (
-                    " The target database does not exist yet. "
-                    "Create it first (example: in psql: CREATE DATABASE zootique;)."
-                )
-            raise RuntimeError(
-                "Unable to connect to Postgres using DATABASE_URL. "
-                f"Resolved URL: {safe_url}. "
-                "Verify the server is running and the username/password/database are correct."
-                + missing_db_hint
-            ) from ex
+        # In production (Vercel) skip the eager connection probe.
+        # Supabase validates the connection on first use via pool_pre_ping.
+        # In development we keep the fast-fail check so bad credentials are
+        # caught immediately at startup.
+        if env_name in {"development", "dev", "testing", "test"}:
+            try:
+                with db.engine.connect() as conn:
+                    conn.execute(db.text("SELECT 1"))
+            except Exception as ex:
+                safe_url = db.engine.url.render_as_string(hide_password=True)
+                lower_msg = str(ex).lower()
+                missing_db_hint = ""
+                if "does not exist" in lower_msg and "database" in lower_msg:
+                    missing_db_hint = (
+                        " The target database does not exist yet. "
+                        "Create it first (example: in psql: CREATE DATABASE zootique;)."
+                    )
+                raise RuntimeError(
+                    "Unable to connect to Postgres using DATABASE_URL. "
+                    f"Resolved URL: {safe_url}. "
+                    "Verify the server is running and the username/password/database are correct."
+                    + missing_db_hint
+                ) from ex
 
         # Auto-seed demo data in development/testing so pages don't render empty states.
         # Idempotent: only inserts when the relevant tables/sections are empty.
@@ -246,7 +261,10 @@ def create_app() -> Flask:
 
     return app
 
+# Expose the WSGI app at module level so Vercel's Python runtime can discover
+# it automatically (it looks for a variable named ``app``).
+app = create_app()
+
 if __name__ == "__main__":
-    flask_app = create_app()
-    flask_app.run(debug=True)
+    app.run(debug=True)
 
