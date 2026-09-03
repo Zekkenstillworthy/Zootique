@@ -273,6 +273,103 @@
             font-weight: 600;
             border-left-color: var(--accent, #e67e22);
         }
+
+        /* ===== RESPONSIVE OVERRIDES for inline-styled visitor templates ===== */
+        @media (max-width: 900px) {
+            /* Visitor bookings stat cards */
+            [style*="grid-template-columns: repeat(4, 1fr)"] {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            /* Visitor bookings form */
+            [style*="grid-template-columns: 2fr 1fr 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+            /* Visitor profile sidebar + content */
+            [style*="grid-template-columns: 250px 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+            /* Visitor feedback write-review form */
+            [style*="grid-template-columns: 1.5fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+            /* Visitor feedback community sentiment */
+            [style*="grid-template-columns: 1.5fr 2fr 1.5fr"] {
+                grid-template-columns: 1fr !important;
+            }
+            /* Visitor feedback review grid */
+            [style*="grid-template-columns: 1fr 1fr"][style*="gap: 2rem"] {
+                grid-template-columns: 1fr !important;
+            }
+            /* Park info main + sidebar */
+            [style*="grid-template-columns: 1fr 300px"] {
+                grid-template-columns: 1fr !important;
+            }
+            /* Park rules 2-col grid */
+            [style*="grid-template-columns: 1fr 1fr"][style*="gap: 1rem"],
+            [style*="grid-template-columns: 1fr 1fr"][style*="gap: 1.5rem"] {
+                grid-template-columns: 1fr !important;
+            }
+            /* Visitor profile edit form 2-col */
+            form[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+            /* Auth portal 3 card grid */
+            [style*="grid-template-columns: repeat(3, minmax(0, 1fr))"] {
+                grid-template-columns: 1fr !important;
+            }
+            /* Feedback hero floating card */
+            [style*="width: 320px"][style*="background: white"][style*="border-radius: 12px"] {
+                width: 100% !important;
+            }
+            /* Park info floating card */
+            [style*="width: 320px"][style*="background: white"][style*="border-radius: 12px"][style*="color: #1e293b"] {
+                width: 100% !important;
+            }
+            /* Hero sections padding */
+            [style*="padding: 4rem 4rem"] {
+                padding: 2rem 1.25rem !important;
+            }
+            [style*="padding: 56px 48px"] {
+                padding: 2rem 1.25rem !important;
+            }
+            /* Next booking card horizontal split */
+            [style*="display: flex"][style*="box-shadow: 0 10px 30px"] {
+                flex-direction: column !important;
+            }
+            /* Staff form 2-col grid */
+            form[style*="grid-template-columns: 1fr 1fr"][style*="gap:10px"] {
+                grid-template-columns: 1fr !important;
+            }
+            [style*="grid-column: span 2"] {
+                grid-column: 1 / -1 !important;
+            }
+            /* Hero h1 font-size */
+            h1[style*="font-size: 3.5rem"] {
+                font-size: 2rem !important;
+            }
+            h1[style*="font-size: 2rem"] {
+                font-size: 1.5rem !important;
+            }
+            /* Stats strip */
+            .stats-strip {
+                flex-wrap: wrap !important;
+                justify-content: center !important;
+                padding: 16px !important;
+            }
+            .stat-item {
+                border-right: none !important;
+                padding: 12px 20px !important;
+            }
+        }
+        @media (max-width: 640px) {
+            [style*="grid-template-columns: repeat(4, 1fr)"],
+            [style*="grid-template-columns: repeat(2, 1fr)"] {
+                grid-template-columns: 1fr !important;
+            }
+            .newsletter-input {
+                width: 100% !important;
+            }
+        }
     </style>
 </head>
 
@@ -594,6 +691,8 @@
             </nav>
 
         </aside>
+        <!-- Mobile sidebar overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
         <!-- =================== MAIN =================== -->
         <main class="main-content">
@@ -608,7 +707,10 @@
                 (url_for('animal_farm_staff.dashboard') if request.blueprint == 'animal_farm_staff' else '#')) %}
 
                 {% if request.blueprint == 'zootique_admin' %}
-                <div class="header-title" style="margin-bottom:0;">
+                <div class="header-title" style="margin-bottom:0; display:flex; align-items:center;">
+                    <button class="icon-btn mobile-toggle" type="button" onclick="toggleSidebar()" style="margin-right:12px; border:none; background:transparent;">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
                     <span class="page-heading">{% block page_title %}{% endblock %}</span>
                 </div>
                 <div class="header-actions">
@@ -626,13 +728,18 @@
                     </a>
                 </div>
                 {% else %}
-                <div class="header-title">
-                    <div class="breadcrumbs" aria-label="Breadcrumb">
-                        <a href="{{ _home_url }}">{{ _app_label }}</a>
-                        <span class="crumb-sep">/</span>
-                        <span class="crumb-current" aria-current="page">{{ self.page_title() }}</span>
+                <div class="header-title" style="display:flex; align-items:center;">
+                    <button class="icon-btn mobile-toggle" type="button" onclick="toggleSidebar()" style="margin-right:12px; margin-top:2px; border:none; background:transparent;">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div>
+                        <div class="breadcrumbs" aria-label="Breadcrumb">
+                            <a href="{{ _home_url }}">{{ _app_label }}</a>
+                            <span class="crumb-sep">/</span>
+                            <span class="crumb-current" aria-current="page">{{ self.page_title() }}</span>
+                        </div>
+                        <span class="page-heading">{{ self.page_title() }}</span>
                     </div>
-                    <span class="page-heading">{{ self.page_title() }}</span>
                 </div>
                 <div class="header-actions">
                     {% if request.blueprint != 'animal_farm_staff' %}
@@ -681,9 +788,14 @@
                         style="background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000;">
                         <div class="container visitor-navbar"
                             style="padding: 0 2rem; box-shadow: none; position: static;">
-                            <a href="{{ url_for('visitor.home') }}" class="visitor-logo">
-                                <i class="fa-solid fa-paw"></i> Zootique
-                            </a>
+                            <div style="display:flex; align-items:center;">
+                                <button class="visitor-mobile-toggle" type="button" onclick="document.querySelector('.visitor-nav-links').classList.toggle('show')">
+                                    <i class="fa-solid fa-bars"></i>
+                                </button>
+                                <a href="{{ url_for('visitor.home') }}" class="visitor-logo">
+                                    <i class="fa-solid fa-paw"></i> Zootique
+                                </a>
+                            </div>
 
                             <nav class="visitor-nav-links">
                                 {% if request.blueprint == 'auth' %}
@@ -966,6 +1078,28 @@
                     });
                 }
             });
+
+            /* ===== SIDEBAR TOGGLE + OVERLAY ===== */
+            function toggleSidebar() {
+                const sidebar = document.querySelector('.sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                if (!sidebar) return;
+                const willOpen = !sidebar.classList.contains('open');
+                sidebar.classList.toggle('open');
+                if (overlay) overlay.classList.toggle('active', willOpen);
+                document.body.style.overflow = willOpen ? 'hidden' : '';
+            }
+            (function() {
+                const overlay = document.getElementById('sidebarOverlay');
+                if (overlay) {
+                    overlay.addEventListener('click', function() {
+                        const sidebar = document.querySelector('.sidebar');
+                        if (sidebar) sidebar.classList.remove('open');
+                        overlay.classList.remove('active');
+                        document.body.style.overflow = '';
+                    });
+                }
+            })();
         </script>
         {% block extra_js %}{% endblock %}
 </body>
