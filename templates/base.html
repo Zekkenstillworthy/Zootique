@@ -28,18 +28,6 @@
             z-index: 1000;
         }
 
-        @media (max-width: 768px) {
-            .visitor-navbar {
-                padding: 0 1rem;
-            }
-
-            .visitor-nav-links {
-                display: none;
-            }
-
-            /* Missing mobile menu logic covered by default bootstrap nav if merged */
-        }
-
         .visitor-logo {
             font-size: 1.5rem;
             font-weight: 800;
@@ -56,6 +44,26 @@
             gap: 1.25rem;
             height: 100%;
             flex-wrap: nowrap;
+        }
+
+        @media (max-width: 900px) {
+            .visitor-navbar {
+                padding: 0 1rem;
+                height: 60px;
+                overflow: visible;
+            }
+
+            .visitor-nav-links {
+                display: none !important;
+            }
+
+            .visitor-nav-links.show {
+                display: flex !important;
+            }
+
+            .visitor-mobile-toggle {
+                display: inline-flex;
+            }
         }
 
         .visitor-nav-link {
