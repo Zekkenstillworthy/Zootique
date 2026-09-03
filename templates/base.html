@@ -51,14 +51,42 @@
                 padding: 0 1rem;
                 height: 60px;
                 overflow: visible;
+                position: relative !important;
             }
 
             .visitor-nav-links {
                 display: none !important;
+                flex-direction: column;
+                align-items: stretch;
+                position: absolute;
+                top: 60px;
+                left: 0;
+                width: 100%;
+                height: auto;
+                max-height: calc(100vh - 60px);
+                overflow-y: auto;
+                background-color: #ffffff;
+                padding: 0.5rem 1rem 1rem;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.14);
+                border-top: 1px solid #e2e8f0;
+                z-index: 999;
+                gap: 0;
             }
 
             .visitor-nav-links.show {
                 display: flex !important;
+            }
+
+            .visitor-nav-links .visitor-nav-link {
+                min-height: 44px;
+                height: auto;
+                width: 100%;
+                padding: 0.75rem 0.5rem;
+                border-bottom: 1px solid #f1f5f9;
+            }
+
+            .visitor-nav-links .visitor-nav-link:last-child {
+                border-bottom: none;
             }
 
             .visitor-mobile-toggle {
@@ -792,7 +820,7 @@
 
                     {% else %}
                     <!-- =================== VISITOR TOP NAVBAR LAYOUT =================== -->
-                    <header style="background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000;">
+                    <header style="background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; overflow: visible;">
                         <div class="container visitor-navbar" style="padding: 0 1.5rem; box-shadow: none; position: static; display:flex; align-items:center; height:60px; gap:0;">
 
                             <!-- Logo (always visible) -->
@@ -1115,25 +1143,42 @@
             })();
 
             /* ===== VISITOR MOBILE NAV TOGGLE ===== */
+            function closeVisitorNav() {
+                const nav = document.getElementById('visitorNavLinks');
+                const btn = document.getElementById('visitorHamburger');
+                const icon = document.getElementById('visitorHamburgerIcon');
+                if (!nav) return;
+                nav.classList.remove('show');
+                if (btn) {
+                    btn.setAttribute('aria-expanded', 'false');
+                    btn.setAttribute('aria-label', 'Open navigation');
+                }
+                if (icon) icon.className = 'fa-solid fa-bars';
+            }
+
             function toggleVisitorNav() {
                 const nav = document.getElementById('visitorNavLinks');
                 const btn = document.getElementById('visitorHamburger');
                 const icon = document.getElementById('visitorHamburgerIcon');
                 if (!nav) return;
                 const isOpen = nav.classList.toggle('show');
-                if (btn) btn.setAttribute('aria-expanded', isOpen);
+                if (btn) {
+                    btn.setAttribute('aria-expanded', isOpen);
+                    btn.setAttribute('aria-label', isOpen ? 'Close navigation' : 'Open navigation');
+                }
                 if (icon) icon.className = isOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
             }
+
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('#visitorNavLinks a')) closeVisitorNav();
+            });
 
             // Close visitor menu when clicking outside
             document.addEventListener('click', function(e) {
                 const nav = document.getElementById('visitorNavLinks');
                 const btn = document.getElementById('visitorHamburger');
                 if (nav && nav.classList.contains('show') && !nav.contains(e.target) && (!btn || !btn.contains(e.target))) {
-                    nav.classList.remove('show');
-                    if (btn) btn.setAttribute('aria-expanded', 'false');
-                    const icon = document.getElementById('visitorHamburgerIcon');
-                    if (icon) icon.className = 'fa-solid fa-bars';
+                    closeVisitorNav();
                 }
             });
 
