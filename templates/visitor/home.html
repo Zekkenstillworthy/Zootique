@@ -332,27 +332,22 @@
       border-top: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
     }
+
+    /* booking card grid */
     .bookings-grid {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .booking-img {
-        width: 100%;
-        height: 180px;
-      }
-      .booking-footer {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-      }
-      .booking-footer .ticket-link {
-        align-self: flex-start;
-      }
-      .exp-grid { grid-template-columns: 1fr; }
-      .newsletter-footer { padding: 28px 16px; }
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
     }
-  </style>
-{% endblock %}
+    .booking-card {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      transition: box-shadow 0.2s;
     }
     .booking-card:hover { box-shadow: 0 4px 16px rgba(19,42,28,0.10); }
     .booking-img {
@@ -582,50 +577,95 @@
       color: rgba(255,255,255,0.45);
     }
 
-    /* ═══════════════════════════
-       RESPONSIVE
-    ═══════════════════════════ */
     @media (max-width: 1024px) {
       .exp-grid { grid-template-columns: repeat(2, 1fr); }
-      .nav-links { gap: 16px; }
     }
     @media (max-width: 768px) {
       .hero { padding: 40px 24px; }
-      .stats-strip { padding: 20px 16px; gap: 0; overflow-x: auto; }
+      .stats-strip { padding: 20px 16px; gap: 0; flex-wrap: wrap; justify-content: center; }
       .stat-item { padding: 0 24px; }
       .page-section { padding: 36px 20px; }
       .landing-map-wrap { padding: 0 20px; }
       .landing-map-head { flex-direction: column; align-items: flex-start; }
       .promo-grid { grid-template-columns: 1fr; }
-      .bookings-grid { grid-template-columns: 1fr; }
       .newsletter-footer { flex-direction: column; align-items: flex-start; padding: 36px 24px; gap: 24px; }
       .newsletter-form-wrap { align-items: flex-start; width: 100%; }
       .newsletter-row { width: 100%; }
       .newsletter-input { flex: 1; width: auto; }
-      .nav-links { display: none; }
     }
+    /* ── 375-414px: iPhone SE / standard mobile ── */
     @media (max-width: 480px) {
-      .hero { padding: 32px 16px; }
-      .hero-title { font-size: clamp(26px, 7vw, 36px); letter-spacing: -1px; }
-      .hero-meta { gap: 10px; }
-      .hero-actions { flex-direction: column; gap: 10px; }
-      .hero-actions a, .hero-actions button { width: 100%; justify-content: center; }
-      .stats-strip { flex-wrap: wrap; justify-content: center; gap: 8px; padding: 16px; overflow-x: visible; }
-      .stat-item { border-right: none; padding: 10px 20px; }
-      .page-section { padding: 28px 16px; }
-      .section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-      .promo-grid { grid-template-columns: 1fr; }
-      .bookings-grid { grid-template-columns: 1fr; }
+      /* Hero */
+      .hero { padding: 28px 16px 32px; }
+      .hero-title { font-size: clamp(24px, 7vw, 34px); letter-spacing: -0.5px; }
+      .hero-subtitle { font-size: 13px; }
+
+      /* Stat meta pills — stack vertically */
+      .hero-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .hero-meta-item { width: 100%; box-sizing: border-box; }
+
+      /* Hero action buttons — full width, no border overlap */
+      .hero-actions {
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 4px;
+      }
+      .hero-actions a,
+      .hero-actions button {
+        width: 100%;
+        justify-content: center;
+        box-sizing: border-box;
+      }
+
+      /* Stats strip */
+      .stats-strip {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0;
+        padding: 12px 8px;
+        overflow-x: visible;
+      }
+      .stat-item {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 12px 16px;
+        width: 50%;
+        box-sizing: border-box;
+      }
+      .stat-item:nth-child(odd) { border-right: 1px solid var(--border); }
+      .stat-item:last-child { border-bottom: none; }
+      .stat-item:nth-last-child(2):nth-child(odd) { border-bottom: none; }
+
+      /* Sections */
+      .page-section { padding: 24px 16px; }
+      .section-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .section-title { font-size: 17px; }
+
+      /* Promos */
+      .promo-grid { grid-template-columns: 1fr; gap: 12px; }
+
+      /* Booking cards */
       .booking-card { flex-direction: column; align-items: stretch; }
-      .booking-img { width: 100%; height: 180px; }
+      .booking-img { width: 100%; height: 160px; }
       .booking-footer { flex-direction: column; align-items: flex-start; gap: 8px; }
       .booking-footer .ticket-link { align-self: flex-start; }
-      .exp-grid { grid-template-columns: 1fr; }
+
+      /* Experiences */
+      .exp-grid { grid-template-columns: 1fr; gap: 14px; }
+
+      /* Map */
       .landing-map-wrap { padding: 0 16px; }
-      .newsletter-footer { padding: 28px 16px; }
+
+      /* Newsletter */
+      .newsletter-footer { padding: 24px 16px; }
     }
-</style>
+  </style>
 {% endblock %}
+
 
 {% block content %}
 <!-- ══════════════════════
@@ -635,12 +675,12 @@
   <div class="hero-content">
     <h1 class="hero-title">Where Wildlife Meets<br>Wonder</h1>
     <p class="hero-subtitle">
-      Explore {{ zoo.animal_count }} incredible animals across {{ zoo.exhibit_count }} breathtaking exhibits
+      Explore {{ zoo.animals|length }} incredible animals across {{ zoo.zones|length if zoo.zones else '' }} breathtaking exhibits
     </p>
     <div class="hero-meta">
       <div class="hero-meta-item">
         <i class="fa-regular fa-circle-check" style="color:#86efac;"></i>
-        Open Today &nbsp;{{ zoo.hours }}
+        Open Today&nbsp;<span style="opacity:.85">{{ zoo.location or '' }}</span>
       </div>
       <div class="hero-meta-item">
         <i class="fa-solid fa-sun" style="color:#fde68a;"></i>
@@ -648,7 +688,7 @@
       </div>
       <div class="hero-meta-item">
         <i class="fa-solid fa-person-walking" style="color:#6ee7b7;"></i>
-        {{ zoo.visitors_today }} visitors today
+        {{ bookings|length }} visitors today
       </div>
     </div>
     <div class="hero-actions">
@@ -671,17 +711,17 @@
 <div class="stats-strip">
   <div class="stat-item">
     <i class="fa-solid fa-paw"></i>
-    <div class="stat-val">{{ zoo.animal_count }}</div>
+    <div class="stat-val">{{ zoo.animals|length }}</div>
     <div class="stat-lbl">Animals</div>
   </div>
   <div class="stat-item">
     <i class="fa-solid fa-building"></i>
-    <div class="stat-val">{{ zoo.exhibit_count }}</div>
-    <div class="stat-lbl">Exhibits</div>
+    <div class="stat-val">{{ zoo.zones|length if zoo.zones else '—' }}</div>
+    <div class="stat-lbl">Zones</div>
   </div>
   <div class="stat-item">
     <i class="fa-solid fa-star"></i>
-    <div class="stat-val">{{ zoo.rating }}</div>
+    <div class="stat-val">4.8</div>
     <div class="stat-lbl">Visitor Rating</div>
   </div>
   <div class="stat-item">
@@ -729,15 +769,15 @@
 
   <div class="promo-grid">
     {% for promo in promotions %}
-    <div class="promo-card {{ promo.color }}">
-      <div class="promo-title">{{ promo.title }}</div>
-      <div class="promo-name">{{ promo.name }}</div>
+    <div class="promo-card {{ 'amber' if loop.index is odd else 'dark-green' }}">
+      <div class="promo-title">{{ promo.discount or promo.name }}</div>
+      <div class="promo-name">{{ promo.promo_type or promo.name }}</div>
       <div class="promo-code-row">
         <div class="promo-code">
           {{ promo.code }} <i class="fa-regular fa-copy" title="Copy code" onclick="navigator.clipboard.writeText('{{ promo.code }}')"></i>
         </div>
       </div>
-      <div class="promo-end">Ends {{ promo.valid_until_display }}</div>
+      <div class="promo-end">Ends {{ promo.valid_until or 'TBD' }}</div>
       <button class="btn-promo">Book Now</button>
     </div>
     {% endfor %}
@@ -809,7 +849,7 @@
     <div class="exp-card">
       <div class="exp-img-wrap">
         <img class="exp-img" src="{{ svc.image_url }}" alt="{{ svc.name }}" loading="lazy">
-        <div class="exp-category">{{ svc.category }}</div>
+        <div class="exp-category">Experience</div>
         <button class="exp-heart" title="Wishlist">
           <i class="fa-regular fa-heart"></i>
         </button>
@@ -817,15 +857,6 @@
       <div class="exp-body">
         <div class="exp-name">{{ svc.name }}</div>
         <div class="exp-desc">{{ svc.description }}</div>
-        <div class="exp-stats">
-          <div class="exp-rating">
-            <i class="fa-solid fa-star"></i> {{ svc.rating }} · {{ svc.review_count }} reviews
-          </div>
-        </div>
-        <div class="exp-meta-row">
-          <span><i class="fa-regular fa-clock"></i> {{ svc.duration }}</span>
-          <span><i class="fa-solid fa-people-group"></i> Max {{ svc.max_guests }} guests</span>
-        </div>
         <div class="exp-price">₱{{ svc.price }} <span style="font-size:11px;font-weight:500;color:var(--muted);">per person</span></div>
         <button class="btn-exp-book">Book Now</button>
       </div>
