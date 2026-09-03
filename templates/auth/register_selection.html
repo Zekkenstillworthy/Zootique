@@ -11,7 +11,20 @@
       <p style="color: #64748b; font-size: 1.05rem; max-width: 640px; margin: 0 auto;">Choose what you want to register. Staff accounts are created by Zoo Admins.</p>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; align-items: stretch;">
+    <style>
+      .register-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        align-items: stretch;
+      }
+      @media (max-width: 900px) {
+        .register-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+    <div class="register-grid">
 
       <!-- Operator (Zoo Admin) -->
       <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2.25rem; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.02); height: 100%; box-sizing: border-box;">

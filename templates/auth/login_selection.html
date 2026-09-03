@@ -14,7 +14,20 @@
         want to sign in. Staff can sign in, but they don't self-register.</p>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; align-items: stretch;">
+    <style>
+      .portal-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 2rem;
+        align-items: stretch;
+      }
+      @media (max-width: 900px) {
+        .portal-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+    <div class="portal-grid">
 
       <!-- Visitor -->
       <div
