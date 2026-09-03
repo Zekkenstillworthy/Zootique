@@ -2,6 +2,53 @@
 
 {% block title %}Animals & Exhibits | Zootique{% endblock %}
 
+{% block extra_head %}
+<style>
+    .visitor-animals-hero-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 1.5rem;
+    }
+
+    .visitor-animals-decor {
+        position: relative;
+        width: 450px;
+        display: none;
+    }
+
+    .visitor-animals-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1.5rem;
+    }
+
+    @media (min-width: 1000px) {
+        .visitor-animals-decor {
+            display: flex;
+            gap: 1rem;
+        }
+    }
+
+    @media (max-width: 1100px) {
+        .visitor-animals-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 900px) {
+        .visitor-animals-hero-row {
+            flex-direction: column;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .visitor-animals-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- FULL WIDTH HERO -->
 <div style="background: linear-gradient(135deg, #6c805a 0%, #4a5c3e 100%); color: white; padding: 4rem 4rem 6rem 4rem; position: relative; overflow: hidden;">
@@ -9,7 +56,7 @@
         <span style="font-weight: 600; color: white;">Animals & Exhibits</span>
     </div>
 
-    <div style="display: flex; justify-content: space-between;">
+    <div class="visitor-animals-hero-row">
         <div style="max-width: 600px;">
             <h1 style="font-size: 3.5rem; margin-bottom: 1rem; line-height: 1.1; font-weight: 800; font-family: 'Playfair Display', serif;">Animals & Exhibits</h1>
             <p style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 2.5rem; max-width: 500px;">Browse animals available for your selected zoo.</p>
@@ -27,7 +74,7 @@
         </div>
         
         <!-- Floating Cards Decoration -->
-        <div style="position: relative; width: 450px; display: none; @media (min-width: 1000px) { display: flex; gap: 1rem; }">
+        <div class="visitor-animals-decor">
             <div style="background: white; border-radius: 12px; padding: 1.5rem; width: 150px; height: 180px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: flex-end; align-self: flex-end;">
                 <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem;">Savanna Zone</div>
                 <div style="color: #64748b; font-size: 0.8rem; margin-bottom: 1rem;">14 Animals</div>
@@ -50,7 +97,7 @@
 <div class="container" style="padding: 2rem 0;">
     <!-- ANIMALS DIRECTORY -->
     <h2 id="browse" style="font-size: 1.5rem; color: #1a4f32; margin: 1rem 0 1.5rem;">Browse Animals</h2>
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;">
+    <div class="visitor-animals-grid">
         {% for animal in animals %}
         <a href="{{ url_for('visitor.animal_detail', animal_id=animal.id) }}" style="text-decoration: none; color: inherit;">
             <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column; height: 100%;">

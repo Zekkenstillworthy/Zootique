@@ -2,6 +2,96 @@
 
 {% block title %}My Bookings{% endblock %}
 
+{% block extra_head %}
+<style>
+    .visitor-bookings-stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .visitor-bookings-form {
+        margin-top: 1rem;
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        gap: 1rem;
+        align-items: end;
+    }
+
+    .visitor-bookings-feature {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        display: flex;
+        flex-wrap: wrap;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        border: 1px solid var(--border);
+        margin-bottom: 2rem;
+    }
+
+    .visitor-bookings-feature-body {
+        padding: 2rem;
+        flex: 1 1 320px;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .visitor-bookings-feature-media {
+        flex: 0 0 280px;
+        min-height: 220px;
+        position: relative;
+        background: var(--primary-dark);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .visitor-bookings-reschedule {
+        margin-top: 0.75rem;
+        background: var(--border-light);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 0.9rem;
+        width: min(320px, 100%);
+    }
+
+    @media (max-width: 1100px) {
+        .visitor-bookings-stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 900px) {
+        .visitor-bookings-form {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .visitor-bookings-feature {
+            flex-direction: column;
+        }
+
+        .visitor-bookings-feature-media {
+            flex-basis: auto;
+            width: 100%;
+            min-height: 160px;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .visitor-bookings-stats,
+        .visitor-bookings-form {
+            grid-template-columns: 1fr;
+        }
+
+        .visitor-bookings-reschedule {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <section style="background: var(--primary-light);">
 <div class="container" style="padding: 3rem 0;">
@@ -21,7 +111,7 @@
     </div>
 
     <!-- STAT CARDS -->
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+    <div class="visitor-bookings-stats">
         <div style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); border-top: 3px solid var(--primary);">
             <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary); font-weight: bold; font-size: 1.3rem; margin-bottom: 0.5rem;">
                 <i class="fa-regular fa-calendar-check"></i> {{ total_bookings or 0 }}
@@ -61,7 +151,7 @@
             <h3 style="margin:0; color:var(--primary);">Book a New Experience</h3>
             <div style="color:var(--text-light); font-size: 0.85rem;">Creates a real DB booking row</div>
         </div>
-        <form method="post" action="{{ url_for('visitor.my_bookings') }}" style="margin-top: 1rem; display:grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 1rem; align-items: end;">
+        <form method="post" action="{{ url_for('visitor.my_bookings') }}" class="visitor-bookings-form">
             <div>
                 <label style="display:block; font-size:0.8rem; font-weight:700; color:#475569; margin-bottom:0.4rem;">Service</label>
                 <select name="service_id" required style="width:100%; padding:0.8rem 1rem; border: 1px solid var(--border); border-radius: 8px; background: white; font-family: 'Inter', sans-serif;">
@@ -95,8 +185,8 @@
     </div>
 
     <!-- NEXT BOOKING CARD -->
-    <div style="background: white; border-radius: 16px; overflow: hidden; display: flex; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid var(--border); margin-bottom: 2rem;">
-        <div style="padding: 2rem; flex: 1; display: flex; flex-direction: column;">
+    <div class="visitor-bookings-feature">
+        <div class="visitor-bookings-feature-body">
             <div style="color: var(--text-muted); font-weight: bold; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 1rem;">Your Next Booking</div>
             {% if next_booking %}
             <h2 style="margin: 0 0 1rem 0; font-size: 2rem; color: var(--primary);">{{ next_booking.service_name }}</h2>
@@ -118,7 +208,7 @@
             {% endif %}
         </div>
 
-        <div style="flex: 0.8; position: relative; background: var(--primary-dark); display:flex; align-items:center; justify-content:center;">
+        <div class="visitor-bookings-feature-media">
             <div style="text-align:center; color:white; padding: 2rem;">
                 <i class="fa-solid fa-qrcode" style="font-size: 3rem; opacity: 0.7;"></i>
                 <div style="margin-top: 0.75rem; font-weight: 800;">Tickets</div>
@@ -180,7 +270,7 @@
                                 <summary class="btn" style="list-style:none; cursor:pointer; background: transparent; color: var(--primary); border: 1px solid var(--primary); padding: 0.45rem 0.8rem; border-radius: 8px; font-weight: 900;">
                                     Reschedule
                                 </summary>
-                                <div style="margin-top: 0.75rem; background:var(--border-light); border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem; width: 320px;">
+                                <div class="visitor-bookings-reschedule">
                                     <form method="post" action="{{ url_for('visitor.reschedule_booking', booking_id=b.id) }}" style="display:grid; gap: 0.6rem; margin:0;">
                                         {% set date_val = b.date if b.date and '-' in b.date and b.date|length >= 10 else '' %}
                                         {% set time_val = b.time if b.time and ':' in b.time else '' %}
