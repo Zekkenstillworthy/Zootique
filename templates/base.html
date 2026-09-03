@@ -784,20 +784,16 @@
 
                     {% else %}
                     <!-- =================== VISITOR TOP NAVBAR LAYOUT =================== -->
-                    <header
-                        style="background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000;">
-                        <div class="container visitor-navbar"
-                            style="padding: 0 2rem; box-shadow: none; position: static;">
-                            <div style="display:flex; align-items:center;">
-                                <button class="visitor-mobile-toggle" type="button" onclick="document.querySelector('.visitor-nav-links').classList.toggle('show')">
-                                    <i class="fa-solid fa-bars"></i>
-                                </button>
-                                <a href="{{ url_for('visitor.home') }}" class="visitor-logo">
-                                    <i class="fa-solid fa-paw"></i> Zootique
-                                </a>
-                            </div>
+                    <header style="background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000;">
+                        <div class="container visitor-navbar" style="padding: 0 1.5rem; box-shadow: none; position: static; display:flex; align-items:center; height:60px; gap:0;">
 
-                            <nav class="visitor-nav-links">
+                            <!-- Logo (always visible) -->
+                            <a href="{{ url_for('visitor.home') }}" class="visitor-logo" style="flex-shrink:0; margin-right: auto;">
+                                <i class="fa-solid fa-paw"></i> Zootique
+                            </a>
+
+                            <!-- Desktop nav links -->
+                            <nav class="visitor-nav-links" id="visitorNavLinks">
                                 {% if request.blueprint == 'auth' %}
                                 {% if request.endpoint not in ['auth.login_selection', 'auth.portal',
                                 'auth.register_admin_step1', 'auth.register_admin_step2'] %}
@@ -830,15 +826,15 @@
                                 <a href="{{ url_for('visitor.feedback') }}"
                                     class="visitor-nav-link {% if request.endpoint == 'visitor.feedback' %}active{% endif %}">Feedback</a>
                                 <a href="{{ url_for('visitor.park_info') }}"
-                                    class="visitor-nav-link {% if request.endpoint == 'visitor.park_info' %}active{% endif %}">Park
-                                    Info</a>
+                                    class="visitor-nav-link {% if request.endpoint == 'visitor.park_info' %}active{% endif %}">Park Info</a>
                                 {% else %}
                                 <a href="/" class="visitor-nav-link">Back to Landing</a>
                                 {% endif %}
                                 {% endif %}
                             </nav>
 
-                            <div class="visitor-nav-actions">
+                            <!-- Desktop actions (avatar/logout) — always visible -->
+                            <div class="visitor-nav-actions" style="flex-shrink:0;">
                                 {% if request.blueprint == 'auth' %}
                                 {% if request.endpoint not in ['auth.login_selection', 'auth.portal',
                                 'auth.register_admin_step1', 'auth.register_admin_step2'] %}
@@ -872,8 +868,17 @@
                                 {% endif %}
                                 {% endif %}
                             </div>
+
+                            <!-- Mobile hamburger toggle (right side, only shown on mobile via CSS) -->
+                            <button class="visitor-mobile-toggle" id="visitorHamburger"
+                                    type="button" aria-label="Open navigation" aria-expanded="false"
+                                    onclick="toggleVisitorNav()">
+                                <i class="fa-solid fa-bars" id="visitorHamburgerIcon"></i>
+                            </button>
+
                         </div>
                     </header>
+
 
                     <main class="visitor-main animate">
                         {% endif %}
@@ -1100,6 +1105,30 @@
                     });
                 }
             })();
+
+            /* ===== VISITOR MOBILE NAV TOGGLE ===== */
+            function toggleVisitorNav() {
+                const nav = document.getElementById('visitorNavLinks');
+                const btn = document.getElementById('visitorHamburger');
+                const icon = document.getElementById('visitorHamburgerIcon');
+                if (!nav) return;
+                const isOpen = nav.classList.toggle('show');
+                if (btn) btn.setAttribute('aria-expanded', isOpen);
+                if (icon) icon.className = isOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+            }
+
+            // Close visitor menu when clicking outside
+            document.addEventListener('click', function(e) {
+                const nav = document.getElementById('visitorNavLinks');
+                const btn = document.getElementById('visitorHamburger');
+                if (nav && nav.classList.contains('show') && !nav.contains(e.target) && (!btn || !btn.contains(e.target))) {
+                    nav.classList.remove('show');
+                    if (btn) btn.setAttribute('aria-expanded', 'false');
+                    const icon = document.getElementById('visitorHamburgerIcon');
+                    if (icon) icon.className = 'fa-solid fa-bars';
+                }
+            });
+
         </script>
         {% block extra_js %}{% endblock %}
 </body>
