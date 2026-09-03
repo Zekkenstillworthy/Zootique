@@ -119,10 +119,19 @@ def login(module_name):
 
     if request.method == 'POST':
         email = (request.form.get('email') or '').strip().lower()
-        password = request.form.get('password')
+        password = request.form.get('password') or ''
 
-        # We explicitly enforce that you are logging into your specific module
-        user = User.query.filter_by(email=email, role=module_name).first()
+        try:
+            from sqlalchemy.exc import SQLAlchemyError
+            # We explicitly enforce that you are logging into your specific module
+            user = User.query.filter_by(email=email, role=module_name).first()
+        except SQLAlchemyError as e:
+            flash(f'Database connection error. Please verify your Vercel DATABASE_URL connection string.', 'error')
+            return render_template('auth/login_module.html', module_name=module_name, module_title=ROLES[module_name])
+        except Exception as e:
+            flash(f'An unexpected error occurred during login. Please try again.', 'error')
+            return render_template('auth/login_module.html', module_name=module_name, module_title=ROLES[module_name])
+
         if user and user.check_password(password):
             if (getattr(user, 'status', 'active') or 'active').strip().lower() != 'active':
                 flash('Your account is suspended. Please contact an administrator.', 'error')
