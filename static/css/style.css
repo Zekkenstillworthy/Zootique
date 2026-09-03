@@ -1673,6 +1673,7 @@ tbody tr:hover td { background: #fafef9; }
     top: 60px;
     left: 0;
     width: 100%;
+    height: auto !important;
     background: white;
     padding: 1rem 1.5rem;
     box-shadow: 0 10px 25px rgba(0,0,0,0.08);
