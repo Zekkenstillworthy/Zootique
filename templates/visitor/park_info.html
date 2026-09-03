@@ -2,6 +2,16 @@
 
 {% block title %}Park Information{% endblock %}
 
+{% block extra_head %}
+<style>
+    .park-info-subnav { flex-wrap: wrap; }
+    @media (max-width: 600px) {
+        .park-info-subnav { gap: 0.75rem 1rem !important; padding: 0.75rem 1rem !important; }
+        .park-info-subnav a { min-height: 44px; display: inline-flex; align-items: center; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- FULL WIDTH HERO -->
 <div
@@ -34,6 +44,7 @@
         </div>
 
         <div
+            class="visitor-floating-card park-info-floating-card"
             style="background: white; border-radius: 12px; width: 320px; color: #1e293b; padding: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 10;">
             <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
                 <div
@@ -73,7 +84,7 @@
 
 <!-- SUB NAVIGATION -->
 <div style="background: white; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 50;">
-    <div class="container" style="display: flex; gap: 2rem; padding: 1rem 0;">
+    <div class="container park-info-subnav" style="display: flex; gap: 2rem; padding: 1rem 0;">
         <a href="#getting-here"
             style="color: #1a4f32; font-weight: bold; text-decoration: none; border-bottom: 2px solid #1a4f32; padding-bottom: 0.5rem;">Getting
             Here</a>

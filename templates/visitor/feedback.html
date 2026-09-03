@@ -30,7 +30,7 @@
         </div>
         
         <!-- Floating Rating Card -->
-        <div style="background: white; border-radius: 12px; width: 320px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 10; overflow: hidden; display: flex; flex-direction: column;">
+        <div class="visitor-floating-card feedback-floating-card" style="background: white; border-radius: 12px; width: 320px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 10; overflow: hidden; display: flex; flex-direction: column;">
             <div style="background: #1a4f32; color: white; padding: 0.8rem 1rem; font-size: 0.85rem; font-weight: bold;">Overall Rating (DB)</div>
             <div style="padding: 1.5rem; text-align: center;">
                 <div style="font-size: 3.5rem; font-weight: 800; color: #1a4f32; margin-bottom: 0.2rem;">{{ "%.1f"|format(avg_rating or 0) }}</div>

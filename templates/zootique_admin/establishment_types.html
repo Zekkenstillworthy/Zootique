@@ -155,5 +155,8 @@ window.editTypeModal = function(btn) {
 window.closeTypeModal = function() {
     document.getElementById('typeModal').style.display = 'none';
 };
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeTypeModal();
+});
 </script>
 {% endblock %}

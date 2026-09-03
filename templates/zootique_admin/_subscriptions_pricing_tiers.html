@@ -210,5 +210,8 @@ document.addEventListener('DOMContentLoaded', function() {
   if (urlParams.get('open_plan_manager') === '1') {
     openPlanModal();
   }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closePlanModal();
+  });
 });
 </script>

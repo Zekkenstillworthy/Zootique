@@ -1102,7 +1102,27 @@ def park_info():
     zoo = db.session.get(Zoo, zoo_id)
     if not zoo:
         abort(404)
-    return render_template("visitor/park_info.html", zoo=zoo)
+    services = Service.query.filter_by(zoo_id=zoo.id).order_by(Service.id.asc()).all()
+    animals = Animal.query.filter_by(zoo_id=zoo.id).order_by(Animal.id.asc()).all()
+    return render_template(
+        "visitor/park_info.html",
+        zoo=zoo,
+        zoo_type=zoo.type or "Zoo Park",
+        zoo_location=zoo.location or "Location unavailable",
+        service_count=len(services),
+        animal_count=len(animals),
+        featured_animals=[animal.name for animal in animals[:5]],
+        featured_services=[service.name for service in services[:5]],
+        park_rules=[
+            {"title": "Respect the animals", "text": "Keep a safe distance and follow staff guidance."},
+            {"title": "Leave no trace", "text": "Use marked paths and dispose of waste responsibly."},
+        ],
+        facilities=[
+            {"icon": "fa-ticket", "label": "Visitor ticketing"},
+            {"icon": "fa-map", "label": "Park visitor map"},
+            {"icon": "fa-wheelchair", "label": "Accessible visitor routes"},
+        ],
+    )
 
 
 @visitor_bp.get("/landing")

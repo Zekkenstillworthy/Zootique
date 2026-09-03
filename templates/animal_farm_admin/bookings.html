@@ -23,7 +23,9 @@
     max-width: 660px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.22);
     animation: modalIn .18s ease;
-    overflow: hidden;
+    max-height: 90vh;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
   @keyframes modalIn {
     from { opacity:0; transform: translateY(-18px) scale(.97); }
@@ -68,6 +70,13 @@
     padding: 14px 22px;
     border-top: 1px solid var(--border, #e2e8f0);
     background: #f8fafc;
+  }
+
+  @media (max-width: 600px) {
+    #booking-modal-overlay { padding: 12px; align-items: flex-start; }
+    #booking-modal { max-height: 90vh; }
+    .modal-body { grid-template-columns: 1fr; }
+    .modal-body .full { grid-column: auto; }
   }
 
   /* badge extras */

@@ -19,7 +19,7 @@
             </a>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem;">
+        <div class="visitor-card-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem;">
             {% for service in services %}
             <div style="background: white; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; display:flex; flex-direction:column;">
                 <div style="height: 200px; background: var(--border-light);">

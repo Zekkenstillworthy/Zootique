@@ -58,6 +58,18 @@
       gap: 32px;
       align-items: center;
     }
+    .nav-toggle {
+      display: none;
+      min-width: 44px;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: 0;
+      color: var(--green-dark);
+      font-size: 20px;
+      cursor: pointer;
+    }
     .nav-links a {
       text-decoration: none;
       font-size: 14px;
@@ -136,6 +148,7 @@
     }
     .filter-pill {
       padding: 8px 20px;
+      min-height: 44px;
       border-radius: 999px;
       font-size: 13px;
       font-weight: 600;
@@ -387,7 +400,27 @@
       .zoo-card-img { width: 100%; min-width: unset; height: 200px; }
       .footer-inner { grid-template-columns: 1fr; gap: 32px; }
       .navbar { padding: 0 16px; }
-      .nav-links { gap: 16px; }
+      .nav-links {
+        display: none;
+        position: absolute;
+        top: 60px;
+        left: 0;
+        width: 100%;
+        height: auto;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        padding: 8px 16px 16px;
+        background: var(--white);
+        border-top: 1px solid var(--border);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.14);
+        z-index: 999;
+      }
+      .nav-links.show { display: flex; }
+      .nav-links a { min-height: 44px; display: flex; align-items: center; padding: 10px 4px; }
+      .nav-actions { display: none; }
+      .nav-toggle { display: inline-flex; }
+      .navbar { position: relative; }
     }
   </style>
 </head>
@@ -396,7 +429,7 @@
 <!-- ── NAVBAR ── -->
 <nav class="navbar">
   <div class="nav-brand">Zootique</div>
-  <div class="nav-links">
+  <div class="nav-links" id="zooNavLinks">
     <a href="/">Back to Landing</a>
     <a href="{{ url_for('visitor.my_bookings') }}">Bookings</a>
     <a href="{{ url_for('visitor.list_zoos') }}" class="active">Account</a>
@@ -412,6 +445,9 @@
       {% endif %}
     </div>
   </div>
+  <button class="nav-toggle" id="zooNavToggle" type="button" aria-label="Open navigation" aria-expanded="false">
+    <i class="fa-solid fa-bars" id="zooNavToggleIcon"></i>
+  </button>
 </nav>
 
 <!-- ── MAIN CONTENT ── -->
@@ -518,6 +554,32 @@
 </footer>
 
 <script>
+  const zooNavToggle = document.getElementById('zooNavToggle');
+  const zooNavLinks = document.getElementById('zooNavLinks');
+  const zooNavToggleIcon = document.getElementById('zooNavToggleIcon');
+  function closeZooNav() {
+    zooNavLinks.classList.remove('show');
+    zooNavToggle.setAttribute('aria-expanded', 'false');
+    zooNavToggle.setAttribute('aria-label', 'Open navigation');
+    zooNavToggleIcon.className = 'fa-solid fa-bars';
+  }
+  zooNavToggle.addEventListener('click', (event) => {
+    event.stopPropagation();
+    const isOpen = zooNavLinks.classList.toggle('show');
+    zooNavToggle.setAttribute('aria-expanded', isOpen);
+    zooNavToggle.setAttribute('aria-label', isOpen ? 'Close navigation' : 'Open navigation');
+    zooNavToggleIcon.className = isOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+  });
+  zooNavLinks.addEventListener('click', (event) => {
+    if (event.target.closest('a')) closeZooNav();
+  });
+  document.addEventListener('click', (event) => {
+    if (zooNavLinks.classList.contains('show') && !zooNavLinks.contains(event.target) && !zooNavToggle.contains(event.target)) closeZooNav();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeZooNav();
+  });
+
   // Filter pill logic
   const pills = document.querySelectorAll('.filter-pill');
   const cards = document.querySelectorAll('.zoo-card');

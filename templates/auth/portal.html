@@ -158,7 +158,7 @@
         <div
             style="background: #f8fafc; padding: 1rem 2.25rem; display: flex; justify-content: flex-end; border-top: 1px solid #e2e8f0;">
             <button onclick="closeStaffInfoModal()"
-                style="background: #2563eb; color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;">Got
+                style="background: #2563eb; color: white; border: none; min-width: 44px; min-height: 44px; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;">Got
                 it</button>
         </div>
     </div>
@@ -231,6 +231,9 @@
         if (e.target === this) {
             closeStaffInfoModal();
         }
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeStaffInfoModal();
     });
 </script>
 {% endblock %}

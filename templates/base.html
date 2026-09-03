@@ -209,6 +209,7 @@
             justify-content: space-between;
             gap: 8px;
             padding: 10px 18px;
+            min-height: 44px;
             color: rgba(255, 255, 255, 0.65);
             font-size: 13px;
             font-weight: 500;
@@ -354,11 +355,11 @@
                 grid-template-columns: 1fr !important;
             }
             /* Feedback hero floating card */
-            [style*="width: 320px"][style*="background: white"][style*="border-radius: 12px"] {
+            .visitor-floating-card {
                 width: 100% !important;
             }
             /* Park info floating card */
-            [style*="width: 320px"][style*="background: white"][style*="border-radius: 12px"][style*="color: #1e293b"] {
+            .park-info-floating-card {
                 width: 100% !important;
             }
             /* Hero sections padding */
@@ -980,6 +981,21 @@
                     trigger.classList.add('active');
                 }
             }
+
+            function closeSidebarDropdowns() {
+                document.querySelectorAll('.nav-dropdown-menu.open').forEach(menu => {
+                    menu.classList.remove('open');
+                    const trigger = menu.previousElementSibling;
+                    if (trigger) trigger.classList.remove('active');
+                });
+            }
+
+            document.addEventListener('click', function(event) {
+                if (!event.target.closest('.nav-dropdown')) closeSidebarDropdowns();
+            });
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') closeSidebarDropdowns();
+            });
 
             // Auto-open sidebar dropdown based on current URL tab param
             document.addEventListener('DOMContentLoaded', function () {

@@ -2,9 +2,20 @@
 
 {% block title %}Deals & Promotions{% endblock %}
 
+{% block extra_head %}
+<style>
+    @media (max-width: 600px) {
+        .promotions-hero { padding: 2rem 1rem 3rem !important; }
+        .promotions-hero h1 { font-size: clamp(2rem, 10vw, 3rem) !important; }
+        .promotions-hero p { font-size: 1rem !important; }
+        .promotions-hero > div:last-child { gap: 0.75rem !important; flex-wrap: wrap; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- FULL WIDTH HERO -->
-<div style="background: linear-gradient(135deg, #718873 0%, #516d56 100%); color: white; padding: 4rem 4rem 6rem 4rem; position: relative;">
+<div class="promotions-hero" style="background: linear-gradient(135deg, #718873 0%, #516d56 100%); color: white; padding: 4rem 4rem 6rem 4rem; position: relative;">
     <div style="margin-bottom: 1.5rem; color: rgba(255,255,255,0.7); font-size: 0.85rem;">
         <span style="font-weight: 600; color: white;">Promotions</span>
     </div>
@@ -25,7 +36,7 @@
 
 <div class="container" style="padding: 3rem 0;">
     <h2 style="font-size: 1.5rem; color: #1a4f32; margin-bottom: 1.5rem;">All Promotions</h2>
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;">
+    <div class="visitor-card-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 2rem;">
         {% for promo in promotions %}
         {% set promo_name = (promo.name if promo.name is defined else promo.get('name')) %}
         {% set promo_code = (promo.code if promo.code is defined else promo.get('code')) %}
