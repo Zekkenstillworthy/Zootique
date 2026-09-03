@@ -126,20 +126,56 @@
         }
 
         @media (max-width: 900px) {
+            /* Hide desktop nav links (will appear in dropdown) */
             .lp-links { display: none; }
-            .lp-links.show { display: flex; flex-direction: column; position: absolute; top: 72px; left: 0; width: 100%; background: #ffffff; border-top: 1px solid #e2e8f0; padding: 1rem 2rem; box-shadow: 0 10px 15px rgba(0,0,0,0.05); z-index: 999; gap: 0.75rem; }
-            .lp-hero-inner { grid-template-columns: 1fr; padding: 2.5rem 1.5rem 2rem; }
-            .lp-nav-inner { padding: 0 1.25rem; position: relative; }
+            /* Dropdown nav shown when toggled */
+            .lp-links.show {
+                display: flex;
+                flex-direction: column;
+                position: absolute;
+                top: 64px;
+                left: 0;
+                width: 100%;
+                background: #ffffff;
+                border-top: 1px solid #e2e8f0;
+                padding: 1rem 1.5rem;
+                box-shadow: 0 10px 20px rgba(0,0,0,0.07);
+                z-index: 999;
+                gap: 0.25rem;
+            }
+            /* Show mobile action links inside the dropdown */
+            .lp-links .lp-mobile-action {
+                display: flex;
+            }
+            /* Shrink nav height */
+            .lp-nav-inner { height: 64px; padding: 0 1.25rem; position: relative; }
+            /* Hide desktop CTA buttons from header */
+            .lp-actions { display: none; }
+            /* Show the hamburger */
+            .lp-mobile-toggle {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: none;
+                border: none;
+                color: #1a4f32;
+                font-size: 1.3rem;
+                cursor: pointer;
+                padding: 6px;
+                margin-left: auto;
+            }
             .lp-section { padding: 2rem 1.25rem; }
-            .lp-mobile-toggle { display: inline-flex; align-items: center; justify-content: center; background: none; border: none; color: #1a4f32; font-size: 1.3rem; cursor: pointer; padding: 4px; }
+            .lp-hero-inner { grid-template-columns: 1fr; padding: 2.5rem 1.5rem 2rem; }
         }
         @media (min-width: 901px) {
+            /* Hide hamburger on desktop */
             .lp-mobile-toggle { display: none; }
+            /* Hide mobile-only action links that live in dropdown */
+            .lp-links .lp-mobile-action { display: none; }
         }
         @media (max-width: 480px) {
-            .lp-actions { flex-direction: column; gap: 0.5rem; width: 100%; }
-            .lp-btn { width: 100%; justify-content: center; }
             .lp-hero h1 { font-size: 1.8rem; }
+            .lp-hero-card .lp-btn { display: block; text-align: center; }
         }
     </style>
 </head>
@@ -151,16 +187,23 @@
             <i class="fa-solid fa-paw"></i> Zootique
         </a>
 
-        <button class="lp-mobile-toggle" onclick="document.querySelector('.lp-links').classList.toggle('show')">
-            <i class="fa-solid fa-bars"></i>
-        </button>
-
-        <nav class="lp-links" aria-label="Landing navigation">
+        <!-- Desktop nav links (hidden on mobile) -->
+        <nav class="lp-links" id="lpMobileNav" aria-label="Landing navigation">
             <a class="lp-link" href="#home">Home</a>
             <a class="lp-link" href="#about">About Us</a>
             <a class="lp-link" href="#contact">Contact</a>
+            <!-- These are only visible in the mobile dropdown -->
+            <div class="lp-mobile-action" style="border-top: 1px solid #e2e8f0; padding-top: 0.75rem; margin-top: 0.5rem; gap: 0.75rem;">
+                <a class="lp-btn lp-btn-login" href="{{ url_for('auth.login_selection') }}" style="flex:1; text-align:center;">
+                    <i class="fa-solid fa-right-to-bracket"></i> Login
+                </a>
+                <a class="lp-btn lp-btn-start" href="{{ url_for('auth.register_selection') }}" style="flex:1; text-align:center;">
+                    <i class="fa-solid fa-rocket"></i> Get Started
+                </a>
+            </div>
         </nav>
 
+        <!-- Desktop-only CTA buttons -->
         <div class="lp-actions" aria-label="Side actions">
             <a class="lp-btn lp-btn-login" href="{{ url_for('auth.login_selection') }}">
                 <i class="fa-solid fa-right-to-bracket"></i> LOGIN
@@ -169,6 +212,12 @@
                 <i class="fa-solid fa-rocket"></i> GET STARTED
             </a>
         </div>
+
+        <!-- Mobile hamburger toggle -->
+        <button class="lp-mobile-toggle" id="lpHamburger" aria-label="Open menu" aria-expanded="false"
+                onclick="toggleLpNav()">
+            <i class="fa-solid fa-bars" id="lpHamburgerIcon"></i>
+        </button>
     </div>
 </header>
 
@@ -207,6 +256,40 @@
         </div>
     </section>
 </main>
+
+<script>
+    function toggleLpNav() {
+        const nav = document.getElementById('lpMobileNav');
+        const btn = document.getElementById('lpHamburger');
+        const icon = document.getElementById('lpHamburgerIcon');
+        const isOpen = nav.classList.toggle('show');
+        btn.setAttribute('aria-expanded', isOpen);
+        icon.className = isOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function(e) {
+        const nav = document.getElementById('lpMobileNav');
+        const btn = document.getElementById('lpHamburger');
+        if (nav && nav.classList.contains('show') && !nav.contains(e.target) && !btn.contains(e.target)) {
+            nav.classList.remove('show');
+            btn.setAttribute('aria-expanded', 'false');
+            document.getElementById('lpHamburgerIcon').className = 'fa-solid fa-bars';
+        }
+    });
+
+    // Close menu when a nav link is clicked (smooth scroll targets)
+    document.querySelectorAll('.lp-link').forEach(function(link) {
+        link.addEventListener('click', function() {
+            const nav = document.getElementById('lpMobileNav');
+            const btn = document.getElementById('lpHamburger');
+            if (nav) nav.classList.remove('show');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+            const icon = document.getElementById('lpHamburgerIcon');
+            if (icon) icon.className = 'fa-solid fa-bars';
+        });
+    });
+</script>
 
 </body>
 </html>

@@ -592,8 +592,28 @@
       .promo-grid { grid-template-columns: 1fr; }
       .bookings-grid { grid-template-columns: 1fr; }
       .exp-grid { grid-template-columns: repeat(2, 1fr); }
-      .newsletter-footer { flex-direction: column; align-items: flex-start; padding: 36px 24px; }
+      .newsletter-footer { flex-direction: column; align-items: flex-start; padding: 36px 24px; gap: 24px; }
+      .newsletter-form-wrap { align-items: flex-start; width: 100%; }
+      .newsletter-row { width: 100%; }
+      .newsletter-input { flex: 1; width: auto; }
       .nav-links { display: none; }
+    }
+    @media (max-width: 480px) {
+      .hero { padding: 32px 16px; }
+      .hero-title { font-size: clamp(26px, 7vw, 36px); letter-spacing: -1px; }
+      .hero-meta { gap: 10px; }
+      .hero-actions { flex-direction: column; gap: 10px; }
+      .hero-actions a, .hero-actions button { width: 100%; justify-content: center; }
+      .stats-strip { flex-wrap: wrap; justify-content: center; gap: 8px; padding: 16px; overflow-x: visible; }
+      .stat-item { border-right: none; padding: 10px 20px; }
+      .page-section { padding: 28px 16px; }
+      .section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .promo-grid { grid-template-columns: 1fr; }
+      .bookings-grid { grid-template-columns: 1fr; }
+      .exp-grid { grid-template-columns: 1fr; }
+      .landing-map-wrap { padding: 0 16px; }
+      .newsletter-footer { padding: 28px 16px; }
+    }
 </style>
 {% endblock %}
 
