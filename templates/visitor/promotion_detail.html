@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}{{ promotion.name if not unavailable else 'Promotion unavailable' }}{% endblock %}
+
+{% if not unavailable %}
+{% block extra_head %}
+<meta name="description" content="{{ share_description }} - {{ promotion.name }}">
+<meta property="og:title" content="{{ promotion.name }}">
+<meta property="og:description" content="{{ share_description }} - {{ promotion.name }}">
+<meta property="og:image" content="{{ promotion_image_url }}">
+<meta property="og:url" content="{{ promotion_url }}">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ promotion.name }}">
+<meta name="twitter:description" content="{{ share_description }} - {{ promotion.name }}">
+<meta name="twitter:image" content="{{ promotion_image_url }}">
+{% endblock %}
+{% endif %}
+
+{% block content %}
+<main class="promotion-detail container" style="max-width:860px; padding:3rem 1rem;">
+    {% if unavailable %}
+        <section class="promotion-unavailable">
+            <div class="promotion-unavailable-icon"><i class="fa-solid fa-ticket" aria-hidden="true"></i></div>
+            <span class="promotion-status-label">Offer ended</span>
+            <h1>This promotion is no longer available</h1>
+            <p>The offer has expired, but there are more ways to save on your next visit.</p>
+            <a class="promotion-primary" href="{{ url_for('visitor.promotions') }}"><i class="fa-solid fa-tags"></i> View current promotions</a>
+        </section>
+    {% else %}
+        <article class="promotion-detail-card" data-promotion-expiry="{{ promotion.valid_until or '' }}">
+            {% if promotion_image_url %}<div class="promotion-detail-banner"><img src="{{ promotion_image_url }}" alt="{{ promotion.name }}"></div>{% endif %}
+            <div class="promotion-detail-body">
+                <div class="promotion-detail-kicker">{{ zoo.name }}{% if promotion.promo_type %} <span aria-hidden="true">·</span> {{ promotion.promo_type }}{% endif %}</div>
+                <h1>{{ promotion.name }}</h1>
+                <div class="promotion-detail-discount">{{ promotion.discount or 'Special offer' }}</div>
+                <div class="promotion-detail-meta"><i class="fa-regular fa-calendar"></i> <span data-expiry-label>{{ promotion.valid_until or 'No expiry' }}</span><span class="promotion-expiry-badge" data-expiry-badge></span></div>
+                <p class="promotion-detail-copy">Use promo code</p>
+                <div class="promotion-coupon" aria-label="Promo code {{ promotion.code }}">
+                    <span>{{ promotion.code }}</span>
+                    <button type="button" class="promotion-copy-code" data-code="{{ promotion.code }}" aria-label="Copy promo code {{ promotion.code }}" title="Copy promo code" onclick="copyPromotionCode(this, event)"><i class="fa-regular fa-copy" aria-hidden="true"></i></button>
+                </div>
+                <div class="promotion-detail-actions">
+                    <a class="promotion-primary" href="{{ zoo_detail_url }}"><i class="fa-solid fa-ticket"></i> Explore &amp; book at {{ zoo.name }}</a>
+                    <div class="promotion-share-wrap">
+                        <button type="button" class="promotion-secondary promotion-share-button" aria-label="Share {{ promotion.name }}" aria-haspopup="menu" aria-expanded="false" data-share-url="{{ promotion_url }}" data-share-title="{{ promotion.name }}" data-share-text="{{ share_description }} - {{ promotion.name }}" onclick="handlePromotionShare(this, event)"><i class="fa-solid fa-share-nodes"></i> Share</button>
+                        <div class="promotion-share-menu" role="menu" aria-label="Share {{ promotion.name }}" hidden>
+                            <a href="#" role="menuitem" data-share-network="facebook" data-share-url="{{ promotion_url }}" data-share-title="{{ promotion.name }}" data-share-text="{{ share_description }} - {{ promotion.name }}" onclick="handlePromotionShare(this, event)"><i class="fa-brands fa-facebook" aria-hidden="true"></i> Facebook</a>
+                            <a href="#" role="menuitem" data-share-network="x" data-share-url="{{ promotion_url }}" data-share-title="{{ promotion.name }}" data-share-text="{{ share_description }} - {{ promotion.name }}" onclick="handlePromotionShare(this, event)"><i class="fa-brands fa-x-twitter" aria-hidden="true"></i> X</a>
+                            <a href="#" role="menuitem" data-share-network="whatsapp" data-share-url="{{ promotion_url }}" data-share-title="{{ promotion.name }}" data-share-text="{{ share_description }} - {{ promotion.name }}" onclick="handlePromotionShare(this, event)"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i> WhatsApp</a>
+                            <a href="#" role="menuitem" data-share-network="copy" data-share-url="{{ promotion_url }}" onclick="handlePromotionShare(this, event)"><i class="fa-regular fa-copy" aria-hidden="true"></i> Copy link</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </article>
+    {% endif %}
+</main>
+{% endblock %}

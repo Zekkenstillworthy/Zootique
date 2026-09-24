@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, date, timedelta
+import calendar
 from functools import wraps
 import math
 import os
@@ -8,13 +9,14 @@ import re
 import secrets
 from urllib.parse import urlparse, unquote
 
-from flask import Blueprint, render_template, abort, request, redirect, url_for, flash, session
-from sqlalchemy import func, or_, inspect
+from flask import Blueprint, render_template, abort, request, redirect, url_for, flash, session, jsonify
+from sqlalchemy import func, or_
+from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
 from services.storage import save_uploaded_image as _save_uploaded_image
 
-from models import db, Zoo, Animal, Service, Booking, BookingPayment, Event, Promotion, Feedback, User, ZooZone, EstablishmentType
+from models import db, Zoo, Animal, Service, Booking, BookingPayment, Event, Promotion, Feedback, ParkRule, User, ZooZone, EstablishmentType, Notification
 from services import (
     BookingAuthorizationError,
     BookingValidationError,
@@ -27,6 +29,7 @@ from services import (
     is_feedback_owned_by_user,
     update_visitor_feedback,
 )
+from services.visitor_notifications import ensure_visitor_notifications
 
 visitor_bp = Blueprint("visitor", __name__)
 
@@ -166,7 +169,7 @@ def visitor_login_required(view_func):
 
         # MVP: require Zoo selection before accessing protected visitor pages.
         if session.get("role") == "visitor":
-            if request.endpoint not in {"visitor.choose_zoo", "visitor.profile"} and not session.get("selected_zoo_id"):
+            if request.endpoint not in {"visitor.choose_zoo", "visitor.profile", "visitor.visitor_availability"} and not session.get("selected_zoo_id"):
                 next_url = request.full_path
                 if next_url.endswith("?"):
                     next_url = next_url[:-1]
@@ -325,15 +328,8 @@ def _generate_booking_id() -> str:
 
 
 def _booking_supports_user_id() -> bool:
-    """Detect if the live DB schema has the `bookings.user_id` column.
-
-    Must work across backends (SQLite/Postgres/etc). We can't assume PRAGMA.
-    """
-    try:
-        columns = inspect(db.engine).get_columns("bookings")
-        return any((c.get("name") or "").lower() == "user_id" for c in columns)
-    except Exception:
-        return False
+    """Use the migrated Booking model without blocking on schema reflection."""
+    return "user_id" in Booking.__table__.columns
 
 
 def _booking_owner_aliases(user: User) -> list[str]:
@@ -414,15 +410,6 @@ def home():
                 }
         else:
             image_url = (getattr(selected_zoo, "landing_map_image_url", None) or "").strip()
-            if not image_url:
-                fallback_zone = (
-                    ZooZone.query
-                    .filter(ZooZone.zoo_id == selected_zoo.id, ZooZone.map_image_url.isnot(None))
-                    .order_by(ZooZone.created_at.desc())
-                    .first()
-                )
-                if fallback_zone and (fallback_zone.map_image_url or "").strip():
-                    image_url = fallback_zone.map_image_url.strip()
 
             if image_url:
                 landing_map = {
@@ -535,7 +522,7 @@ def my_bookings():
     if request.method == "POST":
         selected_zoo_id = _selected_zoo_id()
         service_id = request.form.get("service_id", type=int)
-        date = (request.form.get("date") or "").strip()
+        booking_date = (request.form.get("date") or "").strip()
         time = (request.form.get("time") or "").strip()
         guests = request.form.get("guests", type=int) or 1
 
@@ -550,7 +537,7 @@ def my_bookings():
         if selected_zoo_id and int(getattr(service, "zoo_id", 0) or 0) != selected_zoo_id:
             flash("Selected service is not available for your chosen zoo.", "error")
             return redirect(url_for("visitor.my_bookings"))
-        if not date:
+        if not booking_date:
             flash("Please choose a date.", "error")
             return redirect(url_for("visitor.my_bookings"))
         if not time:
@@ -566,7 +553,7 @@ def my_bookings():
             service_id=service.id,
             zoo_id=service.zoo_id,
             service_name=service.name,
-            date=date,
+            date=booking_date,
             time=time,
             guests=guests,
             status="Pending",
@@ -578,29 +565,50 @@ def my_bookings():
         flash("Booking created. Check your bookings list below.", "success")
         return redirect(url_for("visitor.my_bookings"))
 
-    bookings = (
-        Booking.query.filter(_booking_owner_filter(user))
-        .order_by(Booking.created_at.desc())
-        .all()
-    )
     selected_zoo_id = _selected_zoo_id()
+    bookings_page = max(request.args.get("page", 1, type=int) or 1, 1)
+    bookings_page_size = 20
+    booking_query = Booking.query.filter(_booking_owner_filter(user))
     if selected_zoo_id:
-        bookings = [b for b in bookings if int(getattr(b, "zoo_id", 0) or 0) == selected_zoo_id]
-    services = _maybe_filter_by_selected_zoo(Service.query, Service).order_by(Service.name.asc()).all()
+        booking_query = booking_query.filter(Booking.zoo_id == selected_zoo_id)
 
-    total_bookings = len(bookings)
-    total_spent = sum((b.amount or 0) for b in bookings)
-    points = total_bookings * 40
-
+    total_bookings = booking_query.count()
+    total_spent = booking_query.with_entities(
+        func.coalesce(func.sum(Booking.amount), 0)
+    ).scalar() or 0
+    status_rows = booking_query.with_entities(
+        Booking.status, func.count(Booking.id)
+    ).group_by(Booking.status).all()
     status_counts: dict[str, int] = {"Confirmed": 0, "Pending": 0, "Cancelled": 0, "Other": 0}
-    for b in bookings:
-        key = (b.status or "Other").title()
+    for status, count in status_rows:
+        key = (status or "Other").title()
         if key not in status_counts:
             key = "Other"
-        status_counts[key] += 1
+        status_counts[key] += int(count)
 
-    upcoming = [b for b in bookings if (b.status or "").lower() in {"confirmed", "pending"}]
-    next_booking = upcoming[0] if upcoming else None
+    total_pages = max(1, math.ceil(total_bookings / bookings_page_size))
+    bookings_page = min(bookings_page, total_pages)
+    bookings = (
+        booking_query.options(joinedload(Booking.zoo), joinedload(Booking.service))
+        .order_by(Booking.created_at.desc())
+        .offset((bookings_page - 1) * bookings_page_size)
+        .limit(bookings_page_size)
+        .all()
+    )
+    notification_bookings = booking_query.all()
+    services = _maybe_filter_by_selected_zoo(Service.query, Service).order_by(Service.name.asc()).all()
+
+    points = total_bookings * 40
+    ensure_visitor_notifications(user.id, notification_bookings)
+    visitor_notifications = Notification.query.filter_by(user_id=user.id).order_by(Notification.created_at.desc()).limit(10).all()
+    visitor_unread_count = Notification.query.filter_by(user_id=user.id, read_at=None).count()
+    next_booking = (
+        booking_query.filter(db.func.lower(Booking.status) == "confirmed")
+        .filter(Booking.date >= date.today().isoformat())
+        .options(joinedload(Booking.zoo), joinedload(Booking.service))
+        .order_by(Booking.date.asc(), Booking.time.asc(), Booking.created_at.desc())
+        .first()
+    )
 
     return render_template(
         "visitor/bookings.html",
@@ -611,7 +619,241 @@ def my_bookings():
         total_spent=total_spent,
         points=points,
         status_counts=status_counts,
+        bookings_page=bookings_page,
+        total_pages=total_pages,
+        visitor_notifications=visitor_notifications,
+        visitor_unread_count=visitor_unread_count,
     )
+
+
+@visitor_bp.post("/notifications/<int:notification_id>/read")
+@visitor_login_required
+def mark_notification_read(notification_id: int):
+    user = _current_user()
+    if not user:
+        return jsonify({"success": False}), 401
+
+    notification = Notification.query.filter_by(id=notification_id, user_id=user.id).first()
+    if not notification:
+        return jsonify({"success": False}), 404
+
+    if notification.read_at is None:
+        notification.read_at = datetime.utcnow()
+        db.session.commit()
+    unread_count = Notification.query.filter_by(user_id=user.id, read_at=None).count()
+    return jsonify({"success": True, "unread_count": unread_count})
+
+
+def _normalize_booking_date(date_val: str | None) -> str | None:
+    if not date_val:
+        return None
+    s = str(date_val).strip()
+    if re.match(r"^\d{4}-\d{2}-\d{2}$", s):
+        return s
+    for fmt in ["%B %d, %Y", "%b %d, %Y", "%Y/%m/%d", "%d/%m/%Y", "%m/%d/%Y"]:
+        try:
+            return datetime.strptime(s, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+    return None
+
+
+@visitor_bp.get("/api/availability")
+@visitor_login_required
+def visitor_availability():
+    """Returns calendar availability and time slots for a given month and service.
+
+    Combines real bookings from the database with standard park operating schedules
+    and capacity rules.
+    """
+    user = _current_user()
+    if not user:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    service_id = request.args.get("service_id", type=int)
+    month_arg = (request.args.get("month") or "").strip()
+
+    now = datetime.now()
+    year = now.year
+    month = now.month
+
+    if month_arg:
+        try:
+            parts = month_arg.split("-")
+            if len(parts) == 2:
+                parsed_y = int(parts[0])
+                parsed_m = int(parts[1])
+                if 2020 <= parsed_y <= 2040 and 1 <= parsed_m <= 12:
+                    year = parsed_y
+                    month = parsed_m
+        except Exception:
+            pass
+
+    service = db.session.get(Service, service_id) if service_id else None
+    selected_zoo_id = _selected_zoo_id()
+    target_zoo_id = (service.zoo_id if service and service.zoo_id else selected_zoo_id)
+
+    # Determine default schedule & slot capacity based on service characteristics
+    if service and any(k in (service.name or "").lower() for k in ["tour", "feeding", "vip", "encounter"]):
+        slots = ["10:00 AM", "02:00 PM"]
+        slot_capacity = 15
+    else:
+        slots = ["09:00 AM", "10:00 AM", "11:00 AM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM"]
+        slot_capacity = 12
+
+    day_capacity = slot_capacity * len(slots)
+    limited_threshold = 0.20
+
+    # Query active bookings for this month, service, and zoo from the database.
+    month_prefix = f"{year:04d}-{month:02d}"
+    booking_query = Booking.query.filter(
+        Booking.status.in_(["Confirmed", "Pending", "confirmed", "pending"]),
+        Booking.date.like(f"{month_prefix}-%"),
+    )
+    if service_id:
+        booking_query = booking_query.filter(Booking.service_id == service_id)
+    elif target_zoo_id:
+        booking_query = booking_query.filter(Booking.zoo_id == target_zoo_id)
+
+    all_candidate_bookings = booking_query.all()
+
+    booked_by_date: dict[str, int] = {}
+    booked_by_slot: dict[tuple[str, str], int] = {}
+
+    for b in all_candidate_bookings:
+        raw_d = str(b.date or "").strip()
+        parsed_d = _normalize_booking_date(raw_d)
+        if not parsed_d:
+            continue
+        t_str = str(b.time or "").strip().lower()
+        pax = int(b.guests or 1)
+        booked_by_date[parsed_d] = booked_by_date.get(parsed_d, 0) + pax
+        booked_by_slot[(parsed_d, t_str)] = booked_by_slot.get((parsed_d, t_str), 0) + pax
+
+    _, num_days = calendar.monthrange(year, month)
+    today = date.today()
+    max_advance_date = today + timedelta(days=90)
+
+    days: dict[str, dict] = {}
+    for d in range(1, num_days + 1):
+        day_date = date(year, month, d)
+        date_key = day_date.strftime("%Y-%m-%d")
+        weekday = day_date.weekday()  # 0 = Monday
+        is_maintenance_day = (weekday == 0)
+        is_today = (day_date == today)
+
+        if day_date < today:
+            days[date_key] = {
+                "date": date_key,
+                "day": d,
+                "weekday": weekday,
+                "status": "past",
+                "status_label": "Past Date",
+                "hours": "09:00 AM - 05:00 PM",
+                "is_selectable": False,
+                "is_today": False,
+                "total_capacity": day_capacity,
+                "remaining_capacity": 0,
+                "slots": [],
+            }
+        elif is_maintenance_day:
+            days[date_key] = {
+                "date": date_key,
+                "day": d,
+                "weekday": weekday,
+                "status": "closed",
+                "status_label": "Closed",
+                "reason": "Weekly Habitat Maintenance & Animal Rest",
+                "hours": "Closed",
+                "is_selectable": False,
+                "is_today": is_today,
+                "total_capacity": 0,
+                "remaining_capacity": 0,
+                "slots": [],
+            }
+        elif day_date > max_advance_date:
+            days[date_key] = {
+                "date": date_key,
+                "day": d,
+                "weekday": weekday,
+                "status": "unavailable",
+                "status_label": "Beyond Booking Window",
+                "hours": "09:00 AM - 05:00 PM",
+                "is_selectable": False,
+                "is_today": False,
+                "total_capacity": day_capacity,
+                "remaining_capacity": 0,
+                "slots": [],
+            }
+        else:
+            day_slots = []
+            day_booked = booked_by_date.get(date_key, 0)
+            day_remaining = max(0, day_capacity - day_booked)
+
+            for s_time in slots:
+                s_key = s_time.strip().lower()
+                slot_booked = booked_by_slot.get((date_key, s_key), 0)
+                # Also check normalized version without spaces
+                for (b_d, b_t), b_pax in booked_by_slot.items():
+                    if b_d == date_key and b_t.replace(" ", "") == s_key.replace(" ", ""):
+                        if (date_key, s_key) not in booked_by_slot:
+                            slot_booked += b_pax
+
+                slot_rem = max(0, slot_capacity - slot_booked)
+                slot_status = "full" if slot_rem <= 0 else ("limited" if slot_rem <= max(1, int(slot_capacity * 0.25)) else "available")
+                day_slots.append({
+                    "time": s_time,
+                    "capacity": slot_capacity,
+                    "booked": slot_booked,
+                    "remaining": slot_rem,
+                    "status": slot_status,
+                    "is_available": (slot_rem > 0),
+                })
+
+            if day_remaining <= 0 or all(not s["is_available"] for s in day_slots):
+                status = "fully_booked"
+                status_label = "Fully Booked"
+                is_selectable = False
+            elif day_remaining < day_capacity * limited_threshold:
+                status = "limited"
+                status_label = "Limited Slots"
+                is_selectable = True
+            else:
+                status = "open"
+                status_label = "Good Availability"
+                is_selectable = True
+
+            days[date_key] = {
+                "date": date_key,
+                "day": d,
+                "weekday": weekday,
+                "status": status,
+                "status_label": status_label,
+                "hours": "09:00 AM - 05:00 PM",
+                "is_selectable": is_selectable,
+                "is_today": is_today,
+                "total_capacity": day_capacity,
+                "booked_capacity": day_booked,
+                "remaining_capacity": day_remaining,
+                "slots": day_slots,
+            }
+
+    return jsonify({
+        "success": True,
+        "month": f"{year:04d}-{month:02d}",
+        "year": year,
+        "month_number": month,
+        "month_name": calendar.month_name[month],
+        "operating_hours": "09:00 AM - 05:00 PM",
+        "limited_threshold": limited_threshold,
+        "service": {
+            "id": service.id,
+            "name": service.name,
+            "price": service.price,
+        } if service else None,
+        "days": days,
+        "data_source_note": "Capacity computed from active database bookings for the selected service and zoo.",
+    })
 
 
 @visitor_bp.post("/bookings/<booking_id>/cancel")
@@ -766,6 +1008,40 @@ def promotions():
         promotions=promos,
         ending_soon_count=ending_soon_count,
     )
+
+
+@visitor_bp.get("/promotions/<int:promotion_id>")
+def promotion_detail(promotion_id: int):
+    promotion = Promotion.query.filter_by(id=promotion_id).first()
+    if not promotion or not promotion.zoo:
+        abort(404)
+
+    valid_until = (promotion.valid_until or "").strip()
+    expired = False
+    if valid_until:
+        try:
+            expired = date.fromisoformat(valid_until) < date.today()
+        except ValueError:
+            pass
+
+    promotion_url = url_for("visitor.promotion_detail", promotion_id=promotion.id, _external=True)
+    image_url = (promotion.image_url or "").strip()
+    if image_url.startswith("/"):
+        image_url = request.host_url.rstrip("/") + image_url
+
+    share_description = " - ".join(
+        value for value in [promotion.discount, promotion.promo_type, promotion.zoo.name] if value
+    ) or "A special offer from Zootique"
+    context = {
+        "promotion": promotion,
+        "zoo": promotion.zoo,
+        "promotion_url": promotion_url,
+        "promotion_image_url": image_url,
+        "share_description": share_description,
+        "zoo_detail_url": url_for("visitor.zoo_detail", zoo_id=promotion.zoo_id, _external=True),
+        "unavailable": expired,
+    }
+    return render_template("visitor/promotion_detail.html", **context), 410 if expired else 200
 
 @visitor_bp.route("/feedback", methods=["GET", "POST"])
 def feedback():
@@ -1104,6 +1380,7 @@ def park_info():
         abort(404)
     services = Service.query.filter_by(zoo_id=zoo.id).order_by(Service.id.asc()).all()
     animals = Animal.query.filter_by(zoo_id=zoo.id).order_by(Animal.id.asc()).all()
+    park_rules = ParkRule.query.filter_by(zoo_id=zoo.id).order_by(ParkRule.display_order.asc(), ParkRule.id.asc()).all()
     return render_template(
         "visitor/park_info.html",
         zoo=zoo,
@@ -1113,10 +1390,7 @@ def park_info():
         animal_count=len(animals),
         featured_animals=[animal.name for animal in animals[:5]],
         featured_services=[service.name for service in services[:5]],
-        park_rules=[
-            {"title": "Respect the animals", "text": "Keep a safe distance and follow staff guidance."},
-            {"title": "Leave no trace", "text": "Use marked paths and dispose of waste responsibly."},
-        ],
+        park_rules=park_rules,
         facilities=[
             {"icon": "fa-ticket", "label": "Visitor ticketing"},
             {"icon": "fa-map", "label": "Park visitor map"},
