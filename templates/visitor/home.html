@@ -39,6 +39,7 @@
       pointer-events: none;
     }
     .hero-content { position: relative; z-index: 2; max-width: 600px; }
+    .hero-kicker { margin-bottom: 12px; color: #b8e3c4; font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
     .hero-title {
       font-size: clamp(32px, 4vw, 48px);
       font-weight: 900;
@@ -234,6 +235,29 @@
       object-fit: cover;
       display: block;
     }
+    .landing-map-canvas { position: relative; overflow: hidden; }
+    .visitor-map-pin {
+      position: absolute;
+      transform: translate(-50%, -100%) rotate(-45deg);
+      width: 34px;
+      height: 34px;
+      border: 3px solid white;
+      border-radius: 50% 50% 50% 0;
+      background: #f08b3e;
+      color: white;
+      box-shadow: 0 3px 10px rgba(19,42,28,.35);
+      cursor: pointer;
+      z-index: 2;
+    }
+    .visitor-map-pin i { transform: rotate(45deg); font-size: 14px; }
+    .visitor-map-modal { display: none; position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.55); align-items: center; justify-content: center; padding: 20px; }
+    .visitor-map-modal.open { display: flex; }
+    .visitor-map-modal-card { width: min(420px, 100%); background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.25); }
+    .visitor-map-modal-card img { display: block; width: 100%; max-height: 250px; object-fit: cover; }
+    .visitor-map-modal-body { padding: 18px 20px 20px; }
+    .visitor-map-modal-title { margin: 0 0 8px; color: var(--green-dark); font-size: 21px; font-weight: 900; }
+    .visitor-map-modal-description { margin: 0 0 16px; color: var(--muted); line-height: 1.5; font-size: 14px; }
+    .visitor-map-modal-close { float: right; border: 0; background: transparent; color: var(--muted); font-size: 22px; cursor: pointer; }
     .landing-map-placeholder {
       padding: 44px 18px;
       text-align: center;
@@ -252,18 +276,20 @@
     ═══════════════════════════ */
     .promo-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 18px;
     }
     .promo-card {
       border-radius: 12px;
-      padding: 28px 24px;
+      padding: 0;
       color: white;
       position: relative;
       overflow: hidden;
+      min-height: 100%;
     }
     .promo-card.dark-green { background: #1a3d2b; }
     .promo-card.amber      { background: #c07000; }
+    .page-section > .promo-grid > .promo-card:not(.promotion-card) { padding: 22px 20px; }
 
     .promo-card::before {
       content: '';
@@ -323,6 +349,17 @@
       transition: background 0.2s;
     }
     .btn-promo:hover { background: rgba(255,255,255,0.1); }
+    .promo-card .promotion-card-media { aspect-ratio: 16 / 6; background: rgba(255,255,255,.12); }
+    .promo-card .promotion-card-body { position:relative; z-index:1; padding:22px 20px 20px; }
+    .promo-card .promotion-discount { color:#fff; font-size:30px; }
+    .promo-card .promotion-card-name { color:#fff; }
+    .promo-card .promotion-card-meta { color:rgba(255,255,255,.78); }
+    .promo-card .promotion-coupon { border-color:rgba(255,255,255,.42); background:rgba(255,255,255,.14); color:#fff; }
+    .promo-card .promotion-copy-code { background:rgba(255,255,255,.2); color:#fff; }
+    .promo-card .promotion-copy-code:hover, .promo-card .promotion-copy-code:focus-visible { background:rgba(255,255,255,.32); }
+    .promo-card .promotion-primary { border-color:#fff; background:#fff; color:#1a3d2b; }
+    .promo-card .promotion-secondary { border-color:rgba(255,255,255,.65); background:transparent; color:#fff; }
+    .promo-card .promotion-expiry-badge { background:#ffe3a0; color:#6d4300; }
 
     /* ═══════════════════════════
        UPCOMING VISITS
@@ -420,6 +457,8 @@
       overflow: hidden;
       box-shadow: 0 1px 4px rgba(0,0,0,0.06);
       transition: box-shadow 0.25s, transform 0.25s;
+      display: flex;
+      flex-direction: column;
     }
     .exp-card:hover {
       box-shadow: 0 8px 24px rgba(19,42,28,0.12);
@@ -465,7 +504,7 @@
       transition: color 0.2s;
     }
     .exp-heart:hover { color: #ef4444; }
-    .exp-body { padding: 14px; }
+    .exp-body { padding: 14px; display: flex; flex-direction: column; flex: 1; }
     .exp-name {
       font-size: 13px;
       font-weight: 700;
@@ -513,6 +552,7 @@
       cursor: pointer;
       font-family: 'Inter', sans-serif;
       transition: background 0.2s;
+      margin-top: auto;
     }
     .btn-exp-book:hover { background: var(--green-dark); }
 
@@ -664,46 +704,43 @@
       .newsletter-footer { padding: 24px 16px; }
     }
   </style>
-{% endblock %}
+  {% endblock %}
 
-
-{% block content %}
-<!-- ══════════════════════
-     HERO
-══════════════════════ -->
-<section class="hero">
-  <div class="hero-content">
-    <h1 class="hero-title">Where Wildlife Meets<br>Wonder</h1>
-    <p class="hero-subtitle">
-      Explore {{ zoo.animals|length }} incredible animals across {{ zoo.zones|length if zoo.zones else '' }} breathtaking exhibits
-    </p>
-    <div class="hero-meta">
-      <div class="hero-meta-item">
-        <i class="fa-regular fa-circle-check" style="color:#86efac;"></i>
-        Open Today&nbsp;<span style="opacity:.85">{{ zoo.location or '' }}</span>
+  {% block content %}
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-kicker">{{ zoo.name }}</div>
+      <h1 class="hero-title">Where Wildlife Meets<br>Wonder</h1>
+      <p class="hero-subtitle">
+        Explore {{ zoo.animals|length }} incredible animals across {{ zoo.zones|length if zoo.zones else '' }} breathtaking exhibits
+      </p>
+      <div class="hero-meta">
+        <div class="hero-meta-item">
+          <i class="fa-regular fa-circle-check" style="color:#86efac;"></i>
+          Open Today&nbsp;<span style="opacity:.85">{{ zoo.location or '' }}</span>
+        </div>
+        <div class="hero-meta-item">
+          <i class="fa-solid fa-sun" style="color:#fde68a;"></i>
+          28°C
+        </div>
+        <div class="hero-meta-item">
+          <i class="fa-solid fa-person-walking" style="color:#6ee7b7;"></i>
+          {{ bookings|length }} visitors today
+        </div>
       </div>
-      <div class="hero-meta-item">
-        <i class="fa-solid fa-sun" style="color:#fde68a;"></i>
-        28°C
-      </div>
-      <div class="hero-meta-item">
-        <i class="fa-solid fa-person-walking" style="color:#6ee7b7;"></i>
-        {{ bookings|length }} visitors today
+      <div class="hero-actions">
+        <a href="{{ url_for('visitor.services') }}" class="btn-hero-primary">
+          Book a Tour
+        </a>
+        <a href="{{ url_for('visitor.list_zoos') }}" class="btn-hero-outline">
+          Explore the Park
+        </a>
+        <a href="{{ url_for('visitor.choose_zoo') }}" class="btn-hero-outline" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.35);">
+          <i class="fa-solid fa-arrow-left"></i> Back to zoo selection
+        </a>
       </div>
     </div>
-    <div class="hero-actions">
-      <a href="{{ url_for('visitor.services') }}" class="btn-hero-primary">
-        Book a Tour
-      </a>
-      <a href="{{ url_for('visitor.list_zoos') }}" class="btn-hero-outline">
-        Explore the Park
-      </a>
-      <a href="{{ url_for('visitor.choose_zoo') }}" class="btn-hero-outline" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.35);">
-        <i class="fa-solid fa-arrow-left"></i> Back to zoo selection
-      </a>
-    </div>
-  </div>
-</section>
+  </section>
 
 <!-- ══════════════════════
      STATS STRIP
@@ -744,7 +781,14 @@
     </div>
 
     {% if landing_map and landing_map.image_url %}
-      <img class="landing-map-image" src="{{ landing_map.image_url }}" alt="{{ landing_map.title or 'Zoo visitor map' }}">
+      <div class="landing-map-canvas" id="visitorMapCanvas">
+        <img class="landing-map-image" src="{{ landing_map.image_url }}" alt="{{ landing_map.title or 'Zoo visitor map' }}">
+        {% for zone in zoo.zones if zone.position_x is not none and zone.position_y is not none %}
+          <button type="button" class="visitor-map-pin" data-zone-id="{{ zone.id }}" style="left:{{ zone.position_x }}%; top:{{ zone.position_y }}%;" aria-label="Open {{ zone.name }}">
+            <i class="fa-solid fa-location-dot"></i>
+          </button>
+        {% endfor %}
+      </div>
     {% else %}
       <div class="landing-map-placeholder">
         <i class="fa-regular fa-map"></i>
@@ -753,6 +797,21 @@
     {% endif %}
   </div>
 </div>
+
+{% if zoo.zones %}
+<div class="page-section" style="padding-top:28px;">
+  <div class="section-header"><div class="section-title"><i class="fa-solid fa-layer-group"></i> Zoo Zones</div></div>
+  <div class="promo-grid">
+    {% for zone in zoo.zones %}
+      <div class="promo-card dark-green">
+        <div class="promo-title">{{ zone.name }}</div>
+        <div class="promo-name">{{ zone.description or 'Explore this zoo zone.' }}</div>
+        {% if zone.panorama_360_url %}<a class="btn-promo" href="{{ zone.panorama_360_url }}" target="_blank" rel="noopener">View 360°</a>{% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 
 <!-- ══════════════════════
      DEALS & PROMOTIONS
@@ -769,16 +828,34 @@
 
   <div class="promo-grid">
     {% for promo in promotions %}
-    <div class="promo-card {{ 'amber' if loop.index is odd else 'dark-green' }}">
-      <div class="promo-title">{{ promo.discount or promo.name }}</div>
-      <div class="promo-name">{{ promo.promo_type or promo.name }}</div>
-      <div class="promo-code-row">
-        <div class="promo-code">
-          {{ promo.code }} <i class="fa-regular fa-copy" title="Copy code" onclick="navigator.clipboard.writeText('{{ promo.code }}')"></i>
+    <div class="promo-card promotion-card {{ 'amber' if loop.index is odd else 'dark-green' }}" data-promotion-expiry="{{ promo.valid_until or '' }}">
+      <div class="promotion-card-media">
+        {% if promo.image_url %}<img src="{{ promo.image_url }}" alt="{{ promo.name }}" loading="lazy">{% else %}<i class="fa-solid fa-ticket" aria-hidden="true"></i>{% endif %}
+      </div>
+      <div class="promotion-card-body">
+        <div class="promotion-discount">{{ promo.discount or 'Special offer' }}</div>
+        <h3 class="promotion-card-name">{{ promo.name }}</h3>
+        <div class="promotion-card-meta">
+          <span class="promotion-type">{{ promo.promo_type or 'Zootique deal' }}</span>
+          <span class="promotion-expiry"><i class="fa-regular fa-calendar"></i><span data-expiry-label>{{ promo.valid_until or 'No expiry' }}</span><span class="promotion-expiry-badge" data-expiry-badge></span></span>
+        </div>
+        <div class="promotion-coupon" aria-label="Promo code {{ promo.code }}">
+          <span>{{ promo.code }}</span>
+          <button type="button" class="promotion-copy-code" data-code="{{ promo.code }}" aria-label="Copy promo code {{ promo.code }}" title="Copy promo code" onclick="copyPromotionCode(this, event)"><i class="fa-regular fa-copy" aria-hidden="true"></i></button>
+        </div>
+        <div class="promotion-actions">
+          <a class="promotion-primary" href="{{ url_for('visitor.promotion_detail', promotion_id=promo.id) }}"><i class="fa-solid fa-ticket"></i> View Deal</a>
+          <div class="promotion-share-wrap">
+            <button type="button" class="promotion-secondary promotion-share-button" aria-label="Share {{ promo.name }}" aria-haspopup="menu" aria-expanded="false" data-share-url="{{ url_for('visitor.promotion_detail', promotion_id=promo.id, _external=True) }}" data-share-title="{{ promo.name }}" data-share-text="{{ promo.discount or 'Special offer' }} - {{ promo.name }}" onclick="handlePromotionShare(this, event)"><i class="fa-solid fa-share-nodes"></i> Share</button>
+            <div class="promotion-share-menu" role="menu" aria-label="Share {{ promo.name }}" hidden>
+              <a href="#" role="menuitem" data-share-network="facebook" data-share-url="{{ url_for('visitor.promotion_detail', promotion_id=promo.id, _external=True) }}" data-share-title="{{ promo.name }}" data-share-text="{{ promo.discount or 'Special offer' }} - {{ promo.name }}" onclick="handlePromotionShare(this, event)"><i class="fa-brands fa-facebook" aria-hidden="true"></i> Facebook</a>
+              <a href="#" role="menuitem" data-share-network="x" data-share-url="{{ url_for('visitor.promotion_detail', promotion_id=promo.id, _external=True) }}" data-share-title="{{ promo.name }}" data-share-text="{{ promo.discount or 'Special offer' }} - {{ promo.name }}" onclick="handlePromotionShare(this, event)"><i class="fa-brands fa-x-twitter" aria-hidden="true"></i> X</a>
+              <a href="#" role="menuitem" data-share-network="whatsapp" data-share-url="{{ url_for('visitor.promotion_detail', promotion_id=promo.id, _external=True) }}" data-share-title="{{ promo.name }}" data-share-text="{{ promo.discount or 'Special offer' }} - {{ promo.name }}" onclick="handlePromotionShare(this, event)"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i> WhatsApp</a>
+              <a href="#" role="menuitem" data-share-network="copy" data-share-url="{{ url_for('visitor.promotion_detail', promotion_id=promo.id, _external=True) }}" onclick="handlePromotionShare(this, event)"><i class="fa-regular fa-copy" aria-hidden="true"></i> Copy link</a>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="promo-end">Ends {{ promo.valid_until or 'TBD' }}</div>
-      <button class="btn-promo">Book Now</button>
     </div>
     {% endfor %}
   </div>
@@ -801,9 +878,10 @@
     <div class="bookings-grid">
       {% for booking in bookings[:2] %}
       <div class="booking-card">
-        <img class="booking-img"
-             src="{{ booking.image_url }}"
-             alt="{{ booking.service_name }}">
+           <img class="booking-img"
+             src="{{ booking.image_url or url_for('static', filename='img/dashboard_elephant.png') }}"
+             alt="{{ booking.service_name }}"
+             onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/dashboard_elephant.png') }}';">
         <div class="booking-body">
           <div class="booking-name">{{ booking.service_name }}</div>
           <div class="booking-meta">
@@ -848,7 +926,7 @@
     {% for svc in services[:4] %}
     <div class="exp-card">
       <div class="exp-img-wrap">
-        <img class="exp-img" src="{{ svc.image_url }}" alt="{{ svc.name }}" loading="lazy">
+        <img class="exp-img" src="{{ svc.image_url if svc.image_url and not svc.image_url.startswith('https://images.unsplash.com/') else url_for('static', filename='img/dashboard_elephant.png') }}" alt="{{ svc.name }}" loading="lazy" onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/dashboard_elephant.png') }}';">
         <div class="exp-category">Experience</div>
         <button class="exp-heart" title="Wishlist">
           <i class="fa-regular fa-heart"></i>
@@ -883,7 +961,63 @@
   </div>
 </section>
 
+<!-- Map modal - moved to document.body to escape transform stacking context -->
+<div class="visitor-map-modal" id="visitorMapModal" role="dialog" aria-modal="true" aria-label="Zone details">
+  <div class="visitor-map-modal-card">
+    <button type="button" class="visitor-map-modal-close" id="visitorMapModalClose" aria-label="Close">&times;</button>
+    <img id="visitorMapModalImage" src="" alt="">
+    <div class="visitor-map-modal-body">
+      <h2 class="visitor-map-modal-title" id="visitorMapModalTitle"></h2>
+      <p class="visitor-map-modal-description" id="visitorMapModalDescription"></p>
+      <a id="visitorMapModalPanorama" class="btn-hero-primary" href="" target="_blank" rel="noopener" style="display:none;"><i class="fa-solid fa-vr-cardboard"></i> View 360°</a>
+    </div>
+  </div>
+</div>
+
 <script>
+const visitorMapZones = {
+{% for zone in zoo.zones %}
+  "{{ zone.id }}": {{ {'name': zone.name, 'description': zone.description or 'Explore this zoo zone.', 'image_url': zone.map_image_url or '', 'panorama_360_url': zone.panorama_360_url or ''}|tojson }},
+{% endfor %}
+};
+const visitorMapModal = document.getElementById('visitorMapModal');
+const visitorMapModalImage = document.getElementById('visitorMapModalImage');
+const visitorMapModalTitle = document.getElementById('visitorMapModalTitle');
+const visitorMapModalDescription = document.getElementById('visitorMapModalDescription');
+const visitorMapModalPanorama = document.getElementById('visitorMapModalPanorama');
+
+// Move modal to document.body to escape transform stacking context of .animate parent
+// Use requestAnimationFrame to ensure it happens after DOM is fully ready
+if (visitorMapModal) {
+  requestAnimationFrame(() => {
+    if (visitorMapModal.parentElement !== document.body) {
+      document.body.appendChild(visitorMapModal);
+    }
+  });
+}
+function openVisitorMapZone(zoneId) {
+  const zone = visitorMapZones[zoneId];
+  if (!zone) return;
+  visitorMapModalImage.src = zone.image_url || '';
+  visitorMapModalImage.alt = zone.name;
+  visitorMapModalImage.style.display = zone.image_url ? 'block' : 'none';
+  visitorMapModalTitle.textContent = zone.name;
+  visitorMapModalDescription.textContent = zone.description;
+  visitorMapModalPanorama.style.display = zone.panorama_360_url ? 'inline-flex' : 'none';
+  visitorMapModalPanorama.href = zone.panorama_360_url || '#';
+  visitorMapModal.classList.add('open');
+}
+document.querySelectorAll('.visitor-map-pin').forEach(function(pin) {
+  pin.addEventListener('click', function() { openVisitorMapZone(this.dataset.zoneId); });
+});
+document.getElementById('visitorMapModalClose')?.addEventListener('click', function() { visitorMapModal.classList.remove('open'); });
+visitorMapModal?.addEventListener('click', function(event) { if (event.target === visitorMapModal) visitorMapModal.classList.remove('open'); });
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape' && visitorMapModal?.classList.contains('open')) {
+    visitorMapModal.classList.remove('open');
+  }
+});
+
   // Wishlist heart toggle
   document.querySelectorAll('.exp-heart').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -907,5 +1041,4 @@
     });
   });
 </script>
-
 {% endblock %}
