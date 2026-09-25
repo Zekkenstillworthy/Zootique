@@ -1,737 +1,329 @@
-"""Demo data seeding helpers.
-
-Goal
-----
-Populate the database with *real, queryable rows* when tables/sections are empty,
-so dashboards and module pages don't render empty states.
-
-Constraints
------------
-- Must be idempotent (safe to run repeatedly).
-- Must not overwrite existing customer data.
-- Must not depend on Flask app creation (can be called from app startup or scripts).
-"""
+"""Transactional, fixture-backed sample data seeder."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
+from pathlib import Path
 import os
 import re
 
-import sqlalchemy as sa
 from sqlalchemy import inspect
 
-import data
 from models import (
-    Animal,
-    Booking,
-    EstablishmentType,
-    Event,
-    Feedback,
-    Promotion,
-    Service,
-    StaffTask,
-    SubscriptionPayment,
-    SubscriptionPlan,
-    User,
-    Zoo,
-    ZooAdminFeedback,
-    ZooSubscription,
-    ZooZone,
-    db,
+    Animal, Booking, BookingPayment, EstablishmentRegistration, Event, Feedback,
+    Notification, Promotion, Service, StaffTask, SubscriptionPayment,
+    SubscriptionPlan, User, Zoo, ZooAdminFeedback, ZooAdminFeedbackReply,
+    ZooSubscription, ZooZone, db,
 )
+from scripts.sample_data.fixture import SAMPLE_MARKER, SAMPLE_ZOOS, SPECIES_HABITAT_TYPES
 
-
-def _ensure_establishment_types(now: datetime) -> SeedSummary:
-    summary = SeedSummary()
-    if not _table_exists("establishment_types"):
-        return summary
-
-    default_types = [
-        ("Zoo Park", "Traditional zoological gardens displaying diverse animal species.", "fa-solid fa-mountain-sun"),
-        ("Aquarium", "Marine and freshwater aquatic animal exhibitions.", "fa-solid fa-fish-fins"),
-        ("Safari Park", "Drive-through or open-roam wildlife habitats.", "fa-solid fa-binoculars"),
-        ("Bird Sanctuary", "Dedicated aviaries and protected bird conservation parks.", "fa-solid fa-dove"),
-        ("Marine Park", "Ocean life habitats and interactive marine exhibits.", "fa-solid fa-water"),
-        ("Wildlife Rescue Center", "Rehabilitation and rescue facilities for wild fauna.", "fa-solid fa-suitcase-medical"),
-        ("Farm Attraction", "Petting farms, agricultural learning, and domesticated animal parks.", "fa-solid fa-tractor"),
-    ]
-
-    for name, desc, icon in default_types:
-        existing = EstablishmentType.query.filter_by(name=name).first()
-        if existing:
-            if not getattr(existing, 'icon_class', None):
-                existing.icon_class = icon
-            summary.bump_skipped()
-            continue
-        db.session.add(EstablishmentType(name=name, description=desc, icon_class=icon, is_active=True, created_at=now))
-        summary.bump_created()
-
-    return summary
+REPO_ROOT = Path(__file__).resolve().parents[1]
+KNOWN_SAMPLE_NAMES = {zoo["name"] for zoo in SAMPLE_ZOOS} | {"Live Pipeline Test Sanctuary"}
+LEGACY_MARKERS = ("[zootique-full-demo-v1]", SAMPLE_MARKER)
 
 
 @dataclass
 class SeedSummary:
     created: int = 0
+    updated: int = 0
+    deleted: int = 0
     skipped: int = 0
 
-    def bump_created(self, n: int = 1) -> None:
-        self.created += n
 
-    def bump_skipped(self, n: int = 1) -> None:
-        self.skipped += n
-
-
-def _truthy_env(name: str, default: str = "") -> bool:
-    raw = os.environ.get(name, default)
-    return str(raw).strip().lower() in {"1", "true", "yes", "y", "on"}
-
-
-def _slug(value: str) -> str:
-    value = (value or "").strip().lower()
-    value = re.sub(r"[^a-z0-9]+", "_", value)
-    value = re.sub(r"_+", "_", value).strip("_")
-    return value or "zoo"
+@dataclass
+class Plan:
+    table: str
+    zoo: str
+    create: int = 0
+    update: int = 0
+    delete: int = 0
+    rows: tuple[str, ...] = ()
 
 
-def _table_exists(table_name: str) -> bool:
-    try:
-        return inspect(db.engine).has_table(table_name)
-    except Exception:
-        return False
+def slug(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
 
 
-def _repair_id_sequence(table_name: str) -> None:
-    """Repair Postgres serial/identity sequence for `<table_name>.id` if present."""
-    if not _table_exists(table_name):
-        return
-
-    stmt = sa.text(
-        """
-        SELECT setval(
-            pg_get_serial_sequence(:table_name, 'id'),
-            GREATEST(COALESCE((SELECT MAX(id) FROM """ + table_name + """), 1), 1),
-            true
-        )
-        """
-    )
-    try:
-        db.session.execute(stmt, {"table_name": table_name})
-        db.session.flush()
-    except Exception:
-        db.session.rollback()
+def site_today(now: datetime | None = None):
+    return (now or datetime.utcnow()).date()
 
 
-def _booking_supports_user_id() -> bool:
-    try:
-        columns = inspect(db.engine).get_columns("bookings")
-        return any((c.get("name") or "").lower() == "user_id" for c in columns)
-    except Exception:
-        return False
+def local_image(zoo_slug: str, record_type: str, record_slug: str, requested: str | None) -> str | None:
+    if not requested:
+        return None
+    path = REPO_ROOT / "static" / "img" / "seed" / zoo_slug / requested
+    if path.is_file():
+        return f"/static/img/seed/{zoo_slug}/{requested}"
+    return None
 
 
-def _ensure_user(*, email: str, role: str, full_name: str, password: str, zoo_id: int | None = None) -> tuple[User, bool]:
-    email = (email or "").strip().lower()
-    user = User.query.filter_by(email=email).first()
-    created = False
-    if not user:
-        user = User(email=email)
-        created = True
-        db.session.add(user)
+def _table_exists(name: str) -> bool:
+    return inspect(db.engine).has_table(name)
 
-    # Do not change role/zoo linkage for existing users; only fill missing safe fields.
-    if created:
-        user.role = role
-        user.zoo_id = zoo_id
-        user.status = "active"
-        user.full_name = full_name
-        user.set_password(password)
+
+def _sample_zoos() -> list[Zoo]:
+    return Zoo.query.filter(
+        (Zoo.name.in_(KNOWN_SAMPLE_NAMES))
+        | Zoo.description.ilike("%[zootique-full-demo-v1]%")
+        | Zoo.description.ilike("%[zootique-sample-v2]%")
+    ).order_by(Zoo.id).all()
+
+
+def _fixture_by_name() -> dict[str, dict]:
+    return {row["name"]: row for row in SAMPLE_ZOOS}
+
+
+def _desired_dates(now: datetime, row: dict) -> str:
+    return (now + timedelta(days=int(row["day_offset"]))).date().isoformat()
+
+
+def _print_plan(plans: list[Plan], deleted: list[str]) -> None:
+    print("DRY RUN: no database writes")
+    for plan in plans:
+        print(f"{plan.table:24} {plan.zoo:42} create={plan.create:2d} update={plan.update:2d} delete={plan.delete:2d}")
+        for row in plan.rows:
+            print(f"  DELETE {row}")
+    if deleted:
+        print("EXACT DELETIONS")
+        for row in deleted:
+            print(f"- {row}")
+
+
+def _keyed_rows(query, key):
+    return {key(row): row for row in query.all()}
+
+
+def _plan(now: datetime, reset: bool) -> tuple[list[Plan], list[str]]:
+    fixtures = _fixture_by_name()
+    existing = {z.name: z for z in _sample_zoos() if z.name != "Live Pipeline Test Sanctuary"}
+    plans: list[Plan] = []
+    exact: list[str] = []
+    for name, fixture in fixtures.items():
+        if name == "Live Pipeline Test Sanctuary":
+            continue
+        zoo = existing.get(name)
+        zoo_values = {
+            "type": fixture["type"],
+            "location": fixture["location"],
+            "description": fixture["description"],
+            "image_url": None,
+        }
+        zoo_update = int(bool(zoo and any(getattr(zoo, key, None) != value for key, value in zoo_values.items())))
+        plans.append(Plan("zoos", name, create=0 if zoo else 1, update=zoo_update))
+        keyed = {
+            "zoo_zones": (_keyed_rows(ZooZone.query.filter_by(zoo_id=zoo.id), lambda row: row.name) if zoo else {}, {row["name"] for row in fixture["zones"]}),
+            "animals": (_keyed_rows(Animal.query.filter_by(zoo_id=zoo.id), lambda row: row.name) if zoo else {}, {row["name"] for row in fixture["animals"]}),
+            "services": (_keyed_rows(Service.query.filter_by(zoo_id=zoo.id), lambda row: row.name) if zoo else {}, {row["name"] for row in fixture["services"]}),
+            "events": (_keyed_rows(Event.query.filter_by(zoo_id=zoo.id), lambda row: row.name) if zoo else {}, {row["name"] for row in fixture["events"]}),
+            "promotions": (_keyed_rows(Promotion.query.filter_by(zoo_id=zoo.id), lambda row: row.code) if zoo else {}, {row["code"] for row in fixture["promotions"]}),
+            "bookings": (_keyed_rows(Booking.query.filter_by(zoo_id=zoo.id), lambda row: row.id) if zoo else {}, {row["code"] for row in fixture["bookings"]}),
+            "feedbacks": (_keyed_rows(Feedback.query.filter_by(zoo_id=zoo.id), lambda row: row.visitor_name) if zoo else {}, {f"Sample Reviewer {index + 1}" for index in range(3)}),
+            "staff_tasks": (_keyed_rows(StaffTask.query.filter_by(zoo_id=zoo.id), lambda row: row.title) if zoo else {}, {f"Sample task {index + 1}" for index in range(3)}),
+            "registrations": (_keyed_rows(EstablishmentRegistration.query.filter_by(establishment_name=name), lambda row: row.establishment_name) if zoo else {}, {name}),
+            "subscriptions": (_keyed_rows(ZooSubscription.query.filter_by(zoo_id=zoo.id), lambda row: row.zoo_id) if zoo else {}, {zoo.id} if zoo else {None}),
+        }
+        for table, (current, desired_keys) in keyed.items():
+            stale = [row for key, row in current.items() if key not in desired_keys]
+            plan = Plan(table, name, create=len(desired_keys - current.keys()), update=0, delete=len(stale) if reset else 0)
+            plans.append(plan)
+            if reset:
+                plan.rows = tuple(f"{row.id}:{getattr(row, 'name', getattr(row, 'code', getattr(row, 'title', getattr(row, 'visitor_name', ''))))}" for row in stale)
+                exact.extend(f"{table}:{name}:{row}" for row in plan.rows)
+    if reset:
+        orphan_events = Event.query.filter(Event.zoo_id.is_(None)).all()
+        for row in orphan_events:
+            plan = Plan("events", "orphan", delete=1, rows=(f"{row.id}:{row.name}",))
+            plans.append(plan)
+            exact.append(f"events:orphan:{row.id}:{row.name}")
+        legacy_booking = Booking.query.get("BK-1002")
+        orphan_bookings = Booking.query.filter(Booking.zoo_id.is_(None)).all()
+        for row in orphan_bookings:
+            plans.append(Plan("bookings", "orphan", delete=1, rows=(f"{row.id}:{row.visitor_name}",)))
+            exact.append(f"bookings:orphan:{row.id}:{row.visitor_name}")
+        if legacy_booking and not any(row.id == legacy_booking.id for row in orphan_bookings):
+            plan = Plan("bookings", "orphan", delete=1, rows=(f"{legacy_booking.id}:{legacy_booking.visitor_name}",))
+            plans.append(plan)
+            exact.append(f"bookings:orphan:{legacy_booking.id}:{legacy_booking.visitor_name}")
+    return plans, exact
+
+
+def fixture_summary() -> None:
+    for zoo in SAMPLE_ZOOS:
+        print(f"\n{zoo['name']} ({zoo['slug']})")
+        print("  zones:", ", ".join(f"{z['name']} [{z['kind']}]" for z in zoo["zones"]))
+        print("  animals:", ", ".join(f"{a['name']} ({a['species']} -> {a['zone']})" for a in zoo["animals"]))
+        print("  services:", ", ".join(s["name"] for s in zoo["services"]))
+        print("  events:", ", ".join(f"{e['name']} ({e['zone']}, +{e['day_offset']}d)" for e in zoo["events"]))
+
+
+def dry_run(*, reset: bool = False, now: datetime | None = None) -> None:
+    plans, exact = _plan(now or datetime.utcnow(), reset)
+    fixture_summary()
+    _print_plan(plans, exact)
+
+
+def _upsert(model, filters: dict, values: dict, summary: SeedSummary):
+    row = model.query.filter_by(**filters).first()
+    if row is None:
+        row = model(**filters, **values)
+        db.session.add(row)
+        summary.created += 1
     else:
-        user.status = (getattr(user, "status", "active") or "active")
-        if not user.full_name:
-            user.full_name = full_name
+        changed = False
+        for key, value in values.items():
+            if getattr(row, key, None) != value:
+                setattr(row, key, value)
+                changed = True
+        summary.updated += int(changed)
+    return row
+
+
+def _seed_zoo(fixture: dict, now: datetime, summary: SeedSummary, visitors: list[User], staff: list[User], plans: list[SubscriptionPlan], booking_has_user_id: bool) -> Zoo:
+    zoo = _upsert(Zoo, {"name": fixture["name"]}, {"type": fixture["type"], "location": fixture["location"], "description": fixture["description"], "image_url": None}, summary)
+    db.session.flush()
+    zones = {}
+    for zone in fixture["zones"]:
+        zones[zone["name"]] = _upsert(ZooZone, {"zoo_id": zoo.id, "name": zone["name"]}, {"description": zone["description"], "position_x": zone["position_x"], "position_y": zone["position_y"], "map_image_url": None, "panorama_360_url": None, "created_at": now}, summary)
+    services = []
+    for service in fixture["services"]:
+        services.append(_upsert(Service, {"zoo_id": zoo.id, "name": service["name"]}, {"price": service["price"], "description": service["description"], "image_url": local_image(fixture["slug"], "service", slug(service["name"]), service.get("image"))}, summary))
+    for animal in fixture["animals"]:
+        _upsert(Animal, {"zoo_id": zoo.id, "name": animal["name"]}, {"species": animal["species"], "habitat": animal["zone"], "status": animal["status"], "description": f"Species-appropriate care for {animal['name']}.", "image_url": local_image(fixture["slug"], "animal", slug(animal["name"]), animal.get("image"))}, summary)
+    for event in fixture["events"]:
+        _upsert(Event, {"zoo_id": zoo.id, "name": event["name"]}, {"type": event["type"], "time": f"{_desired_dates(now, event)} {event['time']}", "location": event["zone"], "image_url": None}, summary)
+    for promo in fixture["promotions"]:
+        _upsert(Promotion, {"code": promo["code"]}, {"zoo_id": zoo.id, "name": promo["name"], "promo_type": promo["promo_type"], "country": "Philippines", "discount": promo["discount"], "valid_until": (now + timedelta(days=promo["days"])).date().isoformat(), "image_url": local_image(fixture["slug"], "promotion", slug(promo["code"]), promo.get("image"))}, summary)
+    service_by_index = services
+    for booking_data in fixture["bookings"]:
+        service = service_by_index[booking_data["service_index"]]
+        booking_date = _desired_dates(now, booking_data)
+        status = booking_data["status"]
+        payment_status = "paid" if status in {"Completed", "Confirmed"} else ("refunded" if status == "Cancelled" else "unpaid")
+        amount = float(service.price or 0) * booking_data["guests"]
+        booking = _upsert(Booking, {"id": booking_data["code"]}, {"zoo_id": zoo.id, "service_id": service.id, "user_id": visitors[booking_data["visitor_index"]].id if booking_has_user_id else None, "visitor_name": visitors[booking_data["visitor_index"]].full_name, "service_name": service.name, "date": booking_date, "time": "10:00 AM", "guests": booking_data["guests"], "status": status, "amount": amount, "payment_status": payment_status, "payment_reference": f"SAMPLE-PAY-{booking_data['code']}", "paid_at": now if payment_status in {"paid", "refunded"} else None, "created_at": now - timedelta(days=abs(booking_data["day_offset"]) + 2)}, summary)
+        db.session.flush()
+        if payment_status in {"paid", "refunded"}:
+            _upsert(BookingPayment, {"booking_id": booking.id}, {"payer_user_id": booking.user_id, "amount": amount, "method": "card", "status": payment_status, "reference": f"SAMPLE-PAY-{booking.id}", "provider": "sample", "created_at": now, "paid_at": now}, summary)
+        if status == "Confirmed":
+            _upsert(Notification, {"dedupe_key": f"sample-confirmed:{booking.id}"}, {"user_id": booking.user_id, "booking_id": booking.id, "notification_type": "booking_confirmation", "message": f"Booking confirmed: {booking.service_name} on {booking.date} for PHP {booking.amount:.2f}.", "created_at": now}, summary)
+    for index in range(3):
+        feedback = _upsert(Feedback, {"zoo_id": zoo.id, "visitor_name": f"Sample Reviewer {index + 1}"}, {"user_id": visitors[index].id, "rating": 5 - index, "comment": f"A thoughtful {fixture['name']} visit.", "date": (now - timedelta(days=index + 2)).date().isoformat(), "created_at": now - timedelta(days=index + 2)}, summary)
+        if index < 2:
+            _upsert(ZooAdminFeedback, {"zoo_id": zoo.id, "category": "Features" if index == 0 else "Support", "comment": f"Sample feedback for {fixture['name']}"}, {"user_id": None, "rating": 5 - index, "created_at": now}, summary)
+    for index, status in enumerate(("pending", "in_progress", "done")):
+        _upsert(StaffTask, {"zoo_id": zoo.id, "title": f"Sample task {index + 1}"}, {"assigned_to_user_id": staff[0].id if staff else None, "description": f"Fixture task for {fixture['name']}", "due_date": now.date() + timedelta(days=index), "status": status, "created_at": now}, summary)
+    plan = plans[0 if zoo.id % 2 else 1]
+    sub = _upsert(ZooSubscription, {"zoo_id": zoo.id}, {"plan_id": plan.id, "start_date": now - timedelta(days=30), "end_date": now + timedelta(days=90 if zoo.id % 3 else -2), "status": "active" if zoo.id % 3 else "expired", "created_at": now}, summary)
+    db.session.flush()
+    _upsert(SubscriptionPayment, {"subscription_id": sub.id, "reference": f"SAMPLE-SUB-{zoo.id}"}, {"amount": plan.price, "paid_at": now, "period_start": now - timedelta(days=30), "period_end": now, "status": "paid"}, summary)
+    _upsert(EstablishmentRegistration, {"establishment_name": fixture["name"]}, {"establishment_type": fixture["type"], "location": fixture["location"], "status": ("approved" if zoo.id % 3 == 1 else "pending" if zoo.id % 3 == 2 else "rejected"), "zoo_id": zoo.id, "created_at": now, "updated_at": now}, summary)
+    return zoo
+
+
+def _booking_has_user_id() -> bool:
+    return any(c["name"] == "user_id" for c in inspect(db.engine).get_columns("bookings"))
+
+
+def seed(*, dry_run: bool = False, reset: bool = False, now: datetime | None = None) -> dict[str, SeedSummary]:
+    now = now or datetime.utcnow()
+    if dry_run:
+        dry_run_plan = globals()["dry_run"]
+        dry_run_plan(reset=reset, now=now)
+        return {}
+    if not reset:
+        raise ValueError("Applying the sample rebuild requires --reset; use --dry-run to inspect it first.")
+    db.session.rollback()
+    booking_has_user_id = _booking_has_user_id()
+    with db.session.begin():
+        sample = _sample_zoos()
+        fixture_names = {z["name"] for z in SAMPLE_ZOOS}
+        deletable = [z for z in sample if z.name in fixture_names or any(marker in (z.description or "") for marker in LEGACY_MARKERS)]
+        for zoo in deletable:
+            if zoo.name in fixture_names:
+                fixture = _fixture_by_name()[zoo.name]
+                desired = {
+                    "zones": {row["name"] for row in fixture["zones"]},
+                    "animals": {row["name"] for row in fixture["animals"]},
+                    "services": {row["name"] for row in fixture["services"]},
+                    "events": {row["name"] for row in fixture["events"]},
+                    "promotions": {row["code"] for row in fixture["promotions"]},
+                    "bookings": {row["code"] for row in fixture["bookings"]},
+                    "feedbacks": {f"Sample Reviewer {index + 1}" for index in range(3)},
+                    "staff_tasks": {f"Sample task {index + 1}" for index in range(3)},
+                }
+                for booking in Booking.query.filter_by(zoo_id=zoo.id).all():
+                    if booking.id not in desired["bookings"]:
+                        Notification.query.filter_by(booking_id=booking.id).delete(synchronize_session=False)
+                        BookingPayment.query.filter_by(booking_id=booking.id).delete(synchronize_session=False)
+                        db.session.delete(booking)
+                for model, query, key, bucket in (
+                    (Event, Event.query.filter_by(zoo_id=zoo.id), lambda row: row.name, "events"),
+                    (Promotion, Promotion.query.filter_by(zoo_id=zoo.id), lambda row: row.code, "promotions"),
+                    (Service, Service.query.filter_by(zoo_id=zoo.id), lambda row: row.name, "services"),
+                    (Animal, Animal.query.filter_by(zoo_id=zoo.id), lambda row: row.name, "animals"),
+                    (ZooZone, ZooZone.query.filter_by(zoo_id=zoo.id), lambda row: row.name, "zones"),
+                    (Feedback, Feedback.query.filter_by(zoo_id=zoo.id), lambda row: row.visitor_name, "feedbacks"),
+                    (StaffTask, StaffTask.query.filter_by(zoo_id=zoo.id), lambda row: row.title, "staff_tasks"),
+                ):
+                    for row in query.all():
+                        if key(row) not in desired[bucket]:
+                            if model is Feedback:
+                                ZooAdminFeedbackReply.query.filter(ZooAdminFeedbackReply.feedback_id == row.id).delete(synchronize_session=False)
+                            db.session.delete(row)
+                continue
+            booking_ids = [b.id for b in Booking.query.filter_by(zoo_id=zoo.id).all()]
+            if booking_ids:
+                Notification.query.filter(Notification.booking_id.in_(booking_ids)).delete(synchronize_session=False)
+                BookingPayment.query.filter(BookingPayment.booking_id.in_(booking_ids)).delete(synchronize_session=False)
+            ZooAdminFeedbackReply.query.filter(ZooAdminFeedbackReply.feedback_id.in_(db.session.query(ZooAdminFeedback.id).filter_by(zoo_id=zoo.id))).delete(synchronize_session=False)
+            Booking.query.filter_by(zoo_id=zoo.id).delete(synchronize_session=False)
+            Event.query.filter_by(zoo_id=zoo.id).delete(synchronize_session=False)
+            Promotion.query.filter_by(zoo_id=zoo.id).delete(synchronize_session=False)
+            Service.query.filter_by(zoo_id=zoo.id).delete(synchronize_session=False)
+            Animal.query.filter_by(zoo_id=zoo.id).delete(synchronize_session=False)
+            ZooZone.query.filter_by(zoo_id=zoo.id).delete(synchronize_session=False)
+            Feedback.query.filter_by(zoo_id=zoo.id).delete(synchronize_session=False)
+            StaffTask.query.filter_by(zoo_id=zoo.id).delete(synchronize_session=False)
+            EstablishmentRegistration.query.filter_by(zoo_id=zoo.id).delete(synchronize_session=False)
+            ZooSubscription.query.filter_by(zoo_id=zoo.id).delete(synchronize_session=False)
+            ZooAdminFeedback.query.filter_by(zoo_id=zoo.id).delete(synchronize_session=False)
+            db.session.delete(zoo)
+        orphan_events = Event.query.filter(Event.zoo_id.is_(None)).all()
+        if orphan_events:
+            db.session.delete(orphan_events[0])
+            for event in orphan_events[1:]: db.session.delete(event)
+        orphan_bookings = Booking.query.filter(Booking.zoo_id.is_(None)).all()
+        for booking in orphan_bookings:
+            Notification.query.filter_by(booking_id=booking.id).delete(synchronize_session=False)
+            BookingPayment.query.filter_by(booking_id=booking.id).delete(synchronize_session=False)
+            db.session.delete(booking)
+        plans = [SubscriptionPlan.query.filter_by(name="Basic").first(), SubscriptionPlan.query.filter_by(name="Premium").first()]
+        if not all(plans): raise RuntimeError("Subscription plans are required")
+        visitors = []
+        staff = []
+        for index in range(4):
+            visitor, _ = _ensure_sample_user(f"sample.visitor.{index + 1}@example.com", "visitor", f"Sample Visitor {index + 1}", None)
+            visitors.append(visitor)
+        for fixture in SAMPLE_ZOOS:
+            admin, _ = _ensure_sample_user(f"sample.admin.{fixture['slug']}@example.com", "zoo_admin", f"{fixture['name']} Admin", None)
+            staff.append(admin)
+        summaries = {}
+        for fixture in SAMPLE_ZOOS:
+            summaries[fixture["name"]] = SeedSummary()
+            _seed_zoo(fixture, now, summaries[fixture["name"]], visitors, staff, plans, booking_has_user_id)
+    return summaries
+
+
+def _ensure_sample_user(email: str, role: str, name: str, zoo_id: int | None):
+    user = User.query.filter_by(email=email).first()
+    created = user is None
+    if created:
+        user = User(email=email, role=role, full_name=name, zoo_id=zoo_id, status="active")
+        user.set_password(os.environ.get("DEMO_PASSWORD", "Password123!"))
+        db.session.add(user)
     return user, created
 
 
-def _ensure_subscription_plans(now: datetime) -> SeedSummary:
-    summary = SeedSummary()
-    if not _table_exists("subscription_plans"):
-        return summary
-
-    plans = [
-        {
-            "name": "Basic",
-            "price": 4999.0,
-            "duration": "monthly",
-            "duration_months": 1,
-            "features": "Bookings, services, basic analytics",
-        },
-        {
-            "name": "Premium",
-            "price": 9999.0,
-            "duration": "monthly",
-            "duration_months": 1,
-            "features": "Everything in Basic + advanced analytics + priority support",
-        },
-    ]
-
-    for payload in plans:
-        existing = SubscriptionPlan.query.filter_by(name=payload["name"]).first()
-        if existing:
-            # Keep existing pricing if already set; only ensure it's active.
-            if existing.is_active is False:
-                existing.is_active = True
-            summary.bump_skipped()
-            continue
-
-        plan = SubscriptionPlan(
-            name=payload["name"],
-            price=float(payload["price"]),
-            duration=payload["duration"],
-            duration_months=int(payload["duration_months"]),
-            features=payload.get("features"),
-            is_active=True,
-            created_at=now,
-        )
-        db.session.add(plan)
-        summary.bump_created()
-
-    return summary
-
-
-def _ensure_zoos(now: datetime) -> SeedSummary:
-    summary = SeedSummary()
-    if not _table_exists("zoos"):
-        return summary
-
-    if Zoo.query.first():
-        summary.bump_skipped()
-        return summary
-
-    for payload in data.ZOOS:
-        zoo = Zoo(
-            name=(payload.get("name") or "Unnamed Zoo").strip(),
-            type=(payload.get("type") or "Zoo Park").strip(),
-            location=(payload.get("location") or "").strip() or None,
-            description=(payload.get("description") or "").strip() or None,
-            image_url=(payload.get("image_url") or "").strip() or None,
-            created_at=now,
-        )
-        db.session.add(zoo)
-        summary.bump_created()
-
-    return summary
-
-
-def _ensure_animals(zoo: Zoo) -> SeedSummary:
-    summary = SeedSummary()
-    if not _table_exists("animals"):
-        return summary
-
-    if Animal.query.filter_by(zoo_id=zoo.id).first():
-        summary.bump_skipped()
-        return summary
-
-    for payload in data.ANIMALS:
-        if int(payload.get("zoo_id") or 0) != int(zoo.id):
-            continue
-        animal = Animal(
-            zoo_id=zoo.id,
-            name=payload.get("name") or "Unnamed",
-            species=payload.get("species"),
-            habitat=payload.get("habitat"),
-            status=payload.get("status"),
-            description=payload.get("description"),
-            image_url=payload.get("image_url"),
-        )
-        db.session.add(animal)
-        summary.bump_created()
-
-    # Fallback if data.py doesn't include animals for this zoo.
-    if summary.created == 0:
-        db.session.add(
-            Animal(
-                zoo_id=zoo.id,
-                name="Demo Animal",
-                species="Species",
-                habitat="Main Habitat",
-                status="Healthy",
-                description="Auto-seeded demo animal.",
-                image_url=None,
-            )
-        )
-        summary.bump_created()
-
-    return summary
-
-
-def _ensure_services(zoo: Zoo) -> SeedSummary:
-    summary = SeedSummary()
-    if not _table_exists("services"):
-        return summary
-
-    if Service.query.filter_by(zoo_id=zoo.id).first():
-        summary.bump_skipped()
-        return summary
-
-    for payload in data.SERVICES:
-        if int(payload.get("zoo_id") or 0) != int(zoo.id):
-            continue
-        try:
-            price = float(payload.get("price") or 0)
-        except Exception:
-            price = 0.0
-        service = Service(
-            zoo_id=zoo.id,
-            name=payload.get("name") or "Unnamed Service",
-            price=price,
-            description=payload.get("description"),
-            image_url=payload.get("image_url"),
-        )
-        db.session.add(service)
-        summary.bump_created()
-
-    if summary.created == 0:
-        db.session.add(
-            Service(
-                zoo_id=zoo.id,
-                name="General Admission",
-                price=350.0,
-                description="Auto-seeded admission ticket.",
-                image_url=None,
-            )
-        )
-        summary.bump_created()
-    return summary
-
-
-def _ensure_zones(zoo: Zoo, now: datetime) -> SeedSummary:
-    summary = SeedSummary()
-    if not _table_exists("zoo_zones"):
-        return summary
-
-    if ZooZone.query.filter_by(zoo_id=zoo.id).first():
-        summary.bump_skipped()
-        return summary
-
-    zones = [
-        ("Entrance Plaza", "Main entry point and guest services"),
-        ("Savannah Zone", "Open habitat exhibits and viewing decks"),
-        ("Learning Pavilion", "Education area, talks, and workshops"),
-    ]
-    for name, desc in zones:
-        db.session.add(
-            ZooZone(
-                zoo_id=zoo.id,
-                name=name,
-                description=desc,
-                map_image_url=None,
-                panorama_360_url=None,
-                created_at=now,
-            )
-        )
-        summary.bump_created()
-    return summary
-
-
-def _ensure_events(zoo: Zoo) -> SeedSummary:
-    summary = SeedSummary()
-    if not _table_exists("events"):
-        return summary
-
-    if Event.query.filter_by(zoo_id=zoo.id).first():
-        summary.bump_skipped()
-        return summary
-
-    rows = [
-        ("Animal Feeding Time", "Feeding", "10:00 AM", "Main Habitat"),
-        ("Keeper Talk", "Talk", "3:00 PM", "Learning Pavilion"),
-    ]
-    for name, typ, time_value, location in rows:
-        db.session.add(Event(zoo_id=zoo.id, name=name, type=typ, time=time_value, location=location))
-        summary.bump_created()
-    return summary
-
-
-def _ensure_promotions(zoo: Zoo, now: datetime) -> SeedSummary:
-    summary = SeedSummary()
-    if not _table_exists("promotions"):
-        return summary
-
-    if Promotion.query.filter_by(zoo_id=zoo.id).first():
-        summary.bump_skipped()
-        return summary
-
-    valid_until = (now + timedelta(days=45)).strftime("%Y-%m-%d")
-    code1 = f"Z{zoo.id}SAVE10"
-    code2 = f"Z{zoo.id}FAM15"
-
-    db.session.add(
-        Promotion(
-            zoo_id=zoo.id,
-            name="Season Pass Promo",
-            code=code1,
-            promo_type="Seasonal",
-            country="Philippines",
-            discount="10%",
-            valid_until=valid_until,
-        )
-    )
-    db.session.add(
-        Promotion(
-            zoo_id=zoo.id,
-            name="Family Bundle",
-            code=code2,
-            promo_type="Family",
-            country="Philippines",
-            discount="15%",
-            valid_until=valid_until,
-        )
-    )
-    summary.bump_created(2)
-    return summary
-
-
-def _ensure_feedback(zoo: Zoo, now: datetime) -> SeedSummary:
-    summary = SeedSummary()
-    if not _table_exists("feedbacks"):
-        return summary
-
-    if Feedback.query.filter_by(zoo_id=zoo.id).first():
-        summary.bump_skipped()
-        return summary
-
-    entries = [
-        ("Elena Torres", 5, "Amazing experience — clean and well organized."),
-        ("Ricardo Gomez", 4, "Great exhibits, a bit crowded at peak hours."),
-        ("Alyssa Reyes", 5, "Staff were friendly and helpful."),
-        ("Martin Santos", 3, "Some areas could use more shade."),
-    ]
-    for i, (name, rating, comment) in enumerate(entries):
-        day = (now - timedelta(days=i + 2)).strftime("%Y-%m-%d")
-        db.session.add(
-            Feedback(
-                zoo_id=zoo.id,
-                user_id=None,
-                visitor_name=name,
-                rating=int(rating),
-                comment=comment,
-                date=day,
-                created_at=now - timedelta(days=i + 2),
-            )
-        )
-        summary.bump_created()
-    return summary
-
-
-def _ensure_bookings(*, zoo: Zoo, now: datetime, visitors: list[User], staff: list[User]) -> SeedSummary:
-    summary = SeedSummary()
-    if not _table_exists("bookings"):
-        return summary
-
-    existing = Booking.query.filter_by(zoo_id=zoo.id).all()
-    if existing:
-        # Revenue/analytics pages aggregate by YYYY-MM prefix of Booking.date.
-        # If the zoo already has at least one recent ISO-ish booking, do nothing.
-        recent_prefixes = {(now - timedelta(days=30 * i)).strftime('%Y-%m') for i in range(0, 6)}
-        has_recent_iso = any((str(b.date or '')[:7] in recent_prefixes) for b in existing)
-        if has_recent_iso:
-            summary.bump_skipped()
-            return summary
-
-    services = Service.query.filter_by(zoo_id=zoo.id).order_by(Service.id.asc()).all()
-    if not services:
-        summary.bump_skipped()
-        return summary
-
-    use_user_id = _booking_supports_user_id()
-    assigned_staff = staff[0] if staff else None
-    base_month = datetime.utcnow().replace(day=1)
-
-    # Generate a BK-#### sequence that won't collide with existing rows.
-    # (Booking IDs are global PKs, not scoped per-zoo.)
-    last_id = (
-        db.session.query(sa.func.max(Booking.id))
-        .filter(Booking.id.like("BK-%"))
-        .scalar()
-    )
-    next_suffix = 1001
-    if last_id:
-        try:
-            next_suffix = int(str(last_id).split("BK-", 1)[1]) + 1
-        except Exception:
-            next_suffix = int(datetime.utcnow().timestamp())
-
-    def _iso(d: datetime) -> str:
-        return d.strftime("%Y-%m-%d")
-
-    for i in range(0, min(6, len(services))):
-        booking_id = f"BK-Z{zoo.id}-{1001 + i}"  # Unique per zoo
-        service = services[i % len(services)]
-        visitor = visitors[i % len(visitors)] if visitors else None
-
-        when = base_month - timedelta(days=30 * (5 - (i + 1)))
-        guests = 2 + ((i + 1) % 4)
-        amount = float(service.price or 0.0) * float(guests)
-        status = "Confirmed" if (i + 1) % 3 != 0 else "Pending"
-        payment_status = "paid" if status == "Confirmed" else "unpaid"
-
-        b = Booking(
-            id=booking_id,
-            zoo_id=zoo.id,
-            service_id=service.id,
-            visitor_name=(visitor.full_name if visitor else "Walk-in Visitor"),
-            service_name=service.name,
-            date=_iso(when),
-            time="10:00 AM",
-            guests=int(guests),
-            status=status,
-            amount=float(amount),
-            payment_status=payment_status,
-            payment_reference=(f"PAY-{booking_id}" if payment_status == "paid" else None),
-            paid_at=(now - timedelta(days=1) if payment_status == "paid" else None),
-            created_at=now - timedelta(days=(i + 1) * 2),
-        )
-        if assigned_staff:
-            b.assigned_staff_user_id = int(assigned_staff.id)
-        if use_user_id and visitor:
-            b.user_id = int(visitor.id)
-
-        db.session.add(b)
-        summary.bump_created()
-
-    return summary
-
-
-def _ensure_staff_tasks(*, zoo: Zoo, now: datetime, staff: list[User]) -> SeedSummary:
-    summary = SeedSummary()
-    if not _table_exists("staff_tasks"):
-        return summary
-
-    if StaffTask.query.filter_by(zoo_id=zoo.id).first():
-        summary.bump_skipped()
-        return summary
-
-    assignee = staff[0] if staff else None
-    tasks = [
-        ("Morning enclosure check", "Inspect enclosures and report issues", "pending", 2),
-        ("Prepare feeding supplies", "Stock and prep feed for scheduled sessions", "in_progress", 1),
-        ("Close-of-day log", "Record daily operations and incidents", "pending", 0),
-    ]
-    for title, desc, status, due_in_days in tasks:
-        db.session.add(
-            StaffTask(
-                zoo_id=zoo.id,
-                assigned_to_user_id=(int(assignee.id) if assignee else None),
-                title=title,
-                description=desc,
-                due_date=(date.today() + timedelta(days=due_in_days)),
-                status=status,
-                created_at=now,
-            )
-        )
-        summary.bump_created()
-    return summary
-
-
-def _ensure_zoo_subscription(*, zoo: Zoo, now: datetime) -> SeedSummary:
-    summary = SeedSummary()
-    if not (_table_exists("zoo_subscriptions") and _table_exists("subscription_plans") and _table_exists("subscription_payments")):
-        return summary
-
-    sub = (
-        ZooSubscription.query.filter_by(zoo_id=zoo.id)
-        .order_by(ZooSubscription.end_date.desc())
-        .first()
-    )
-
-    if not sub:
-        plan = SubscriptionPlan.query.filter_by(name="Premium").first() or SubscriptionPlan.query.filter_by(is_active=True).first()
-        if not plan:
-            summary.bump_skipped()
-            return summary
-
-        start = now - timedelta(days=60)
-        end = now + timedelta(days=60)
-        sub = ZooSubscription(
-            zoo_id=zoo.id,
-            plan_id=plan.id,
-            start_date=start,
-            end_date=end,
-            status="active",
-            created_at=now,
-        )
-        db.session.add(sub)
-        db.session.flush()
-        summary.bump_created()
-
-    # Ensure we have payment history (last 6 months) for dashboards/reports.
-    plan = sub.plan or db.session.get(SubscriptionPlan, sub.plan_id)
-    if not plan:
-        summary.bump_skipped()
-        return summary
-
-    existing_refs = {
-        (p.reference or "")
-        for p in SubscriptionPayment.query.filter_by(subscription_id=sub.id).all()
-    }
-
-    cursor = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0) - timedelta(days=30 * 5)
-    for i in range(6):
-        period_start = cursor + timedelta(days=30 * i)
-        period_end = period_start + timedelta(days=30)
-        ref = f"SEED-SUB-{sub.id}-{period_start.strftime('%Y%m')}"
-        if ref in existing_refs:
-            summary.bump_skipped()
-            continue
-        db.session.add(
-            SubscriptionPayment(
-                subscription_id=sub.id,
-                amount=float(plan.price or 0.0),
-                paid_at=period_start + timedelta(days=2),
-                period_start=period_start,
-                period_end=period_end,
-                reference=ref,
-                status="paid",
-            )
-        )
-        summary.bump_created()
-
-    return summary
-
-
-def _ensure_system_feedback(*, zoo: Zoo, now: datetime) -> SeedSummary:
-    summary = SeedSummary()
-    if not _table_exists("zoo_admin_feedback"):
-        return summary
-    if ZooAdminFeedback.query.filter_by(zoo_id=zoo.id).first():
-        summary.bump_skipped()
-        return summary
-
-    rows = [
-        ("Features", 5, "Would love an easier way to export monthly booking reports."),
-        ("Support", 4, "Great experience overall — faster response times would be helpful."),
-    ]
-    for category, rating, comment in rows:
-        db.session.add(
-            ZooAdminFeedback(
-                zoo_id=zoo.id,
-                user_id=None,
-                category=category,
-                rating=int(rating),
-                comment=comment,
-                created_at=now - timedelta(days=7),
-            )
-        )
-        summary.bump_created()
-    return summary
-
-
-def ensure_demo_data(*, allow_create_tables: bool = True) -> dict[str, SeedSummary]:
-    """Seed demo data into the current DB session.
-
-    Call this inside an app context.
-
-    Returns a map of section -> SeedSummary.
-    """
-    now = datetime.utcnow()
-
-    # Best-effort: create tables in local/dev if schema is missing.
-    if allow_create_tables and _truthy_env("AUTO_CREATE_TABLES", "1"):
-        try:
-            db.create_all()
-        except Exception:
-            db.session.rollback()
-
-    # Repair sequences that commonly drift in dev.
-    for table in (
-        "zoos",
-        "users",
-        "animals",
-        "services",
-        "events",
-        "promotions",
-        "feedbacks",
-        "zoo_zones",
-        "staff_tasks",
-        "subscription_plans",
-        "establishment_types",
-        "zoo_subscriptions",
-        "subscription_payments",
-        "zoo_admin_feedback",
-    ):
-        _repair_id_sequence(table)
-
-    summary: dict[str, SeedSummary] = {}
-    with db.session.no_autoflush:
-        summary["establishment_types"] = _ensure_establishment_types(now)
-        summary["subscription_plans"] = _ensure_subscription_plans(now)
-        summary["zoos"] = _ensure_zoos(now)
-
-        demo_password = os.environ.get("DEMO_PASSWORD", "Password123!")
-        if len(demo_password) < 8:
-            demo_password = "Password123!"
-
-        # Global demo users
-        visitors: list[User] = []
-        if _table_exists("users"):
-            # Ensure a super admin exists for the Zootique Admin module.
-            if User.query.filter_by(role="zootique_admin").first() is None:
-                _ensure_user(
-                    email="superadmin@zootique.local",
-                    role="zootique_admin",
-                    full_name="Zootique Super Admin",
-                    password=demo_password,
-                    zoo_id=None,
-                )
-
-            v1, c1 = _ensure_user(email="visitor1@example.com", role="visitor", full_name="Visitor One", password=demo_password)
-            v2, c2 = _ensure_user(email="visitor2@example.com", role="visitor", full_name="Visitor Two", password=demo_password)
-            visitors = [v1, v2]
-            summary["visitor_users"] = SeedSummary(created=int(c1) + int(c2), skipped=2 - (int(c1) + int(c2)))
-        else:
-            summary["visitor_users"] = SeedSummary()
-
-    # Per-zoo data
-        zoos = Zoo.query.order_by(Zoo.id.asc()).all() if _table_exists("zoos") else []
-
-        for zoo in zoos:
-            zoo_key = f"zoo_{zoo.id}"
-
-            # Demo module accounts
-            staff_members: list[User] = []
-            if _table_exists("users"):
-                admin_email = f"{_slug(zoo.name)}_admin@example.com"
-                _ensure_user(
-                    email=admin_email,
-                    role="zoo_admin",
-                    full_name=f"{zoo.name} Admin",
-                    password=demo_password,
-                    zoo_id=int(zoo.id),
-                )
-
-                for idx in range(1, 3):
-                    staff_email = f"{_slug(zoo.name)}_staff{idx}@example.com"
-                    staff_user, _ = _ensure_user(
-                        email=staff_email,
-                        role="zoo_staff",
-                        full_name=f"{zoo.name} Staff {idx}",
-                        password=demo_password,
-                        zoo_id=int(zoo.id),
-                    )
-                    staff_members.append(staff_user)
-
-            summary[f"{zoo_key}_animals"] = _ensure_animals(zoo)
-            summary[f"{zoo_key}_services"] = _ensure_services(zoo)
-            summary[f"{zoo_key}_zones"] = _ensure_zones(zoo, now)
-            summary[f"{zoo_key}_events"] = _ensure_events(zoo)
-            summary[f"{zoo_key}_promotions"] = _ensure_promotions(zoo, now)
-            summary[f"{zoo_key}_feedback"] = _ensure_feedback(zoo, now)
-            summary[f"{zoo_key}_bookings"] = _ensure_bookings(zoo=zoo, now=now, visitors=visitors, staff=staff_members)
-            summary[f"{zoo_key}_staff_tasks"] = _ensure_staff_tasks(zoo=zoo, now=now, staff=staff_members)
-            summary[f"{zoo_key}_subscription"] = _ensure_zoo_subscription(zoo=zoo, now=now)
-            summary[f"{zoo_key}_system_feedback"] = _ensure_system_feedback(zoo=zoo, now=now)
-
-    db.session.commit()
-    return summary
+def ensure_demo_data(*, allow_create_tables: bool = True, dry_run: bool = False, reset: bool = False):
+    return seed(dry_run=dry_run, reset=reset)
