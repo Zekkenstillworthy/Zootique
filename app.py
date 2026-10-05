@@ -2,7 +2,6 @@ from datetime import timedelta
 
 from flask import Flask, jsonify, redirect, render_template, request, send_from_directory, session, url_for
 from blueprints.visitor.routes import visitor_bp
-import data
 import importlib
 import os
 import secrets
@@ -165,15 +164,6 @@ def create_app() -> Flask:
                     "Verify the server is running and the username/password/database are correct."
                     + missing_db_hint
                 ) from ex
-
-    # Inject mock data into application config
-    app.config["ANIMALS"]    = data.ANIMALS
-    app.config["ZOOS"]       = data.ZOOS
-    app.config["SERVICES"]   = data.SERVICES
-    app.config["BOOKINGS"]   = data.BOOKINGS
-    app.config["EVENTS"]     = data.EVENTS
-    app.config["PROMOTIONS"] = data.PROMOTIONS
-    app.config["FEEDBACKS"]  = data.FEEDBACKS
 
     # Register Blueprints
     @app.get("/")

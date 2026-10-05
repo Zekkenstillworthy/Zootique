@@ -1,1 +1,0 @@
-# Verification helper (benign)

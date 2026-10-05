@@ -24,3 +24,10 @@ Thumbs.db
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Backup, dump and log files
+*.dump
+*.stdout.txt
+dry_run_*
+Zootique_backup
+
