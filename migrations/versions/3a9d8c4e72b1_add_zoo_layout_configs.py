@@ -17,6 +17,8 @@ depends_on = None
 
 
 def upgrade():
+    if sa.inspect(op.get_bind()).has_table('zoo_layout_configs'):
+        return
     op.create_table(
         'zoo_layout_configs',
         sa.Column('id', sa.Integer(), nullable=False),
@@ -34,4 +36,5 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_table('zoo_layout_configs')
+    if sa.inspect(op.get_bind()).has_table('zoo_layout_configs'):
+        op.drop_table('zoo_layout_configs')

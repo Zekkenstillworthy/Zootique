@@ -1,65 +1,79 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
-{% block title %}User Management{% endblock %}
+{% block title %}User Management | Super Admin{% endblock %}
 {% block page_title %}User Management{% endblock %}
 
 {% block content %}
-
-<div class="sa-section-head" style="margin-top:0;">
-  <div>
-    <h2>Personnel Directory</h2>
-    <div class="sa-section-sub">Manage global access and staff permissions across all botanical sectors.</div>
-  </div>
-  <a class="btn btn-primary" href="#sa_user_form"><i class="fa-solid fa-user-plus"></i> Invite User</a>
-</div>
 
 {% set ns = namespace(active=0, suspended=0) %}
 {% for u in users %}
   {% if u.status == 'Active' %}{% set ns.active = ns.active + 1 %}{% else %}{% set ns.suspended = ns.suspended + 1 %}{% endif %}
 {% endfor %}
 
-<div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
-  <div class="sa-tabs">
-    <button class="sa-tab is-active" type="button">Active Staff</button>
-    <button class="sa-tab" type="button">Pending Invites</button>
-    <button class="sa-tab" type="button">Archived</button>
+<div class="zf-page-header">
+  <div class="zf-page-title-group">
+    <h2 class="zf-page-title">Personnel &amp; Administrator Directory</h2>
+    <p class="zf-page-subtitle">Manage global access and establishment permissions across all accredited wildlife facilities.</p>
   </div>
-  <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-    <div style="position:relative;">
-      <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-light); font-size:12px;"></i>
-      <input type="text" placeholder="Search by name, email or zoo..." style="padding-left:32px; width:260px;">
-    </div>
-    <select>
-      <option>All Roles</option>
-    </select>
-    <select>
-      <option>All Status</option>
-    </select>
+  <a class="btn btn-primary" href="#sa_user_form"><i class="fa-solid fa-user-plus"></i> Add Administrator</a>
+</div>
+
+<!-- Stats Strip -->
+<div class="stats-grid" style="--stats-cols: 3; margin-bottom: 20px;">
+  <div class="stat-card">
+    <div class="stat-icon icon-green"><i class="fa-solid fa-user-check"></i></div>
+    <span class="value">{{ ns.active }}</span>
+    <h3>Active Administrators</h3>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon icon-amber"><i class="fa-solid fa-user-clock"></i></div>
+    <span class="value">{{ ns.suspended }}</span>
+    <h3>Suspended Accounts</h3>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon icon-blue"><i class="fa-solid fa-building"></i></div>
+    <span class="value">{{ zoos|length }}</span>
+    <h3>Assigned Facilities</h3>
   </div>
 </div>
 
+<!-- Table Card -->
 <div class="card-panel" style="margin-bottom:24px;">
   <div class="card-header">
-    <h2>ACTIVE PERSONNEL ROSTER</h2>
+    <h2><i class="fa-solid fa-users" style="margin-right:8px;"></i> Administrator Roster</h2>
+    <div class="card-header-actions">
+      <span class="badge badge-role">{{ users|length }} Total</span>
+    </div>
   </div>
-  <div class="table-wrap">
-    <table>
-      <thead>
+
+  <div class="zf-filter-bar">
+    <div class="zf-filter-group" style="flex:1;">
+      <div style="position:relative; flex:1; max-width:320px;">
+        <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:12px;"></i>
+        <input type="text" id="saUserSearch" placeholder="Search by name, email, or zoo..." class="zf-control" style="padding-left:34px; height:38px; width:100%;">
+      </div>
+    </div>
+  </div>
+
+  <div class="card-body" style="padding:0;">
+    <div class="zf-table-wrap">
+      <table class="table-striped" id="saUserTable">
+        <thead>
           <tr>
-            <th>NAME</th>
-            <th>EMAIL</th>
-            <th>ROLE</th>
-            <th>ASSIGNED ZOO</th>
-            <th>STATUS</th>
-            <th>ACTIONS</th>
+            <th style="padding-left:16px;">Administrator</th>
+            <th>Email Address</th>
+            <th>Role</th>
+            <th>Assigned Facility</th>
+            <th>Account Status</th>
+            <th style="width:160px; text-align:right; padding-right:16px;">Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for u in users %}
           <tr>
-            <td class="fw-600">{{ u.full_name }}</td>
-            <td style="color:var(--text-muted); font-size:12px;">{{ u.email }}</td>
-            <td style="text-transform:capitalize;">{{ u.role|replace('_',' ') }}</td>
+            <td style="padding-left:16px; font-weight:700; color:var(--text);">{{ u.full_name }}</td>
+            <td style="color:var(--text-muted); font-size:13px;">{{ u.email }}</td>
+            <td><span class="badge badge-routine">{{ u.role|replace('_',' ') }}</span></td>
             <td>{{ u.assigned_zoo }}</td>
             <td>
               {% if u.status == 'Active' %}
@@ -68,115 +82,122 @@
                 <span class="badge badge-cancelled">Suspended</span>
               {% endif %}
             </td>
-            <td>
-              <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                <a class="btn btn-ghost btn-sm" href="{{ url_for('zootique_admin.user_management', edit_user=u.id) }}#sa_user_form"><i class="fa-regular fa-pen-to-square"></i> Edit</a>
+            <td style="text-align:right; padding-right:16px;">
+              <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
+                <a class="zf-icon-btn" href="{{ url_for('zootique_admin.user_management', edit_user=u.id) }}#sa_user_form" title="Edit Administrator">
+                  <i class="fa-solid fa-pen"></i>
+                </a>
 
-                <form method="post" action="{{ url_for('zootique_admin.reset_user_password', user_id=u.id) }}">
-                  <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-key"></i> Reset</button>
+                <form method="post" action="{{ url_for('zootique_admin.reset_user_password', user_id=u.id) }}" style="display:inline;" onsubmit="return confirm('Generate a temporary password reset?');">
+                  <button class="zf-icon-btn" type="submit" title="Reset Password"><i class="fa-solid fa-key"></i></button>
                 </form>
 
-                <form method="post" action="{{ url_for('zootique_admin.toggle_user_status', user_id=u.id) }}">
-                  <button class="btn btn-ghost btn-sm" type="submit">
-                    {% if u.status == 'Active' %}<i class="fa-solid fa-user-slash"></i> Deactivate{% else %}<i class="fa-solid fa-user-check"></i> Activate{% endif %}
+                <form method="post" action="{{ url_for('zootique_admin.toggle_user_status', user_id=u.id) }}" style="display:inline;">
+                  <button class="zf-icon-btn" type="submit" title="{% if u.status == 'Active' %}Suspend User{% else %}Activate User{% endif %}">
+                    {% if u.status == 'Active' %}<i class="fa-solid fa-user-slash" style="color:#d97706;"></i>{% else %}<i class="fa-solid fa-user-check" style="color:#16a34a;"></i>{% endif %}
                   </button>
                 </form>
 
-                <form method="post" action="{{ url_for('zootique_admin.delete_user', user_id=u.id) }}" onsubmit="return confirm('Delete this user?');">
-                  <button class="btn btn-ghost btn-sm" type="submit" style="color:#ef4444;"><i class="fa-solid fa-trash"></i> Delete</button>
+                <form method="post" action="{{ url_for('zootique_admin.delete_user', user_id=u.id) }}" onsubmit="return confirm('Delete this user?');" style="display:inline;">
+                  <button class="zf-icon-btn danger" type="submit" title="Delete User"><i class="fa-solid fa-trash"></i></button>
                 </form>
               </div>
             </td>
           </tr>
           {% else %}
-          <tr><td colspan="6" class="empty-state">No zoo admin users found.</td></tr>
+          <tr>
+            <td colspan="6">
+              <div class="zf-empty-state">
+                <i class="fa-solid fa-users-slash zf-empty-icon"></i>
+                <div class="zf-empty-title">No Administrators Found</div>
+                <div class="zf-empty-desc">Invite or add Zoo Administrators below to delegate park operations.</div>
+              </div>
+            </td>
+          </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-    <div style="padding:12px 16px; border-top:1px solid var(--border-light); font-size:12px; color:var(--text-muted);">
-      Resetting a password generates a temporary credential (shown in a flash message).
-    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Admin Form Card -->
+<div class="zf-form-card" id="sa_user_form" style="scroll-margin-top: 90px; max-width: 860px;">
+  <div class="zf-form-header">
+    <h2 class="zf-form-title">
+      <i class="fa-solid fa-user-shield"></i>
+      <span>{% if edit_user %}Edit Zoo Administrator{% else %}Add New Zoo Administrator{% endif %}</span>
+    </h2>
+    <span class="zf-form-badge">{% if edit_user %}Edit{% else %}New{% endif %}</span>
   </div>
 
-  <div class="card-panel" id="sa_user_form" style="scroll-margin-top: 90px;">
-    <div class="card-header"><h2>{% if edit_user %}EDIT{% else %}ADD{% endif %} ZOO ADMIN</h2></div>
-    <div class="card-body">
-      <form method="post" action="{{ url_for('zootique_admin.save_user') }}" style="display:flex; flex-direction:column; gap:12px;">
-        {% if edit_user %}
-          <input type="hidden" name="user_id" value="{{ edit_user.id }}">
-        {% endif %}
+  <form method="post" action="{{ url_for('zootique_admin.save_user') }}">
+    <div class="zf-form-body">
+      {% if edit_user %}
+        <input type="hidden" name="user_id" value="{{ edit_user.id }}">
+      {% endif %}
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-          <div>
-            <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Full Name</label>
-            <input type="text" name="full_name" value="{{ edit_user.full_name if edit_user else '' }}" placeholder="Full name">
-          </div>
-          <div>
-            <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Email</label>
-            <input type="email" name="email" value="{{ edit_user.email if edit_user else '' }}" placeholder="email@domain.com" required>
-          </div>
+      <div class="zf-section">
+        <div class="zf-section-label">
+          <i class="fa-solid fa-id-card"></i> Administrator Credentials
         </div>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
-          <div>
-            <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Assigned Zoo</label>
-            <select name="zoo_id">
-              <option value="">—</option>
+        <div class="zf-grid-2">
+          <div class="zf-field">
+            <label class="zf-label" for="sa_usr_fullname">Full Name <span class="zf-req">*</span></label>
+            <input type="text" id="sa_usr_fullname" name="full_name" class="zf-control" value="{{ edit_user.full_name if edit_user else '' }}" placeholder="e.g. Roberto Silva" required>
+          </div>
+          <div class="zf-field">
+            <label class="zf-label" for="sa_usr_email">Email Address <span class="zf-req">*</span></label>
+            <input type="email" id="sa_usr_email" name="email" class="zf-control" value="{{ edit_user.email if edit_user else '' }}" placeholder="admin@park.ph" required>
+          </div>
+          <div class="zf-field">
+            <label class="zf-label" for="sa_usr_zoo">Assigned Zoo Facility <span class="zf-req">*</span></label>
+            <select id="sa_usr_zoo" name="zoo_id" class="zf-control" required>
+              <option value="">Select Zoo Facility...</option>
               {% for z in zoos %}
                 <option value="{{ z.id }}" {% if edit_user and edit_user.zoo_id == z.id %}selected{% endif %}>{{ z.name }}</option>
               {% endfor %}
             </select>
           </div>
-          <div>
-            <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Status</label>
-            <select name="status">
+          <div class="zf-field">
+            <label class="zf-label" for="sa_usr_status">Account Status</label>
+            <select id="sa_usr_status" name="status" class="zf-control">
               <option value="active" {% if not edit_user or (edit_user.status or '')|lower == 'active' %}selected{% endif %}>Active</option>
               <option value="suspended" {% if edit_user and (edit_user.status or '')|lower == 'suspended' %}selected{% endif %}>Suspended</option>
             </select>
           </div>
-          <div>
-            <label style="display:block; font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">Password {% if edit_user %}(optional){% endif %}</label>
-            <input type="password" name="password" placeholder="{% if edit_user %}Leave blank to keep{% else %}Set initial password{% endif %}" {% if not edit_user %}required{% endif %}>
+          <div class="zf-field zf-full">
+            <label class="zf-label" for="sa_usr_pwd">Password {% if edit_user %}(Optional){% else %}<span class="zf-req">*</span>{% endif %}</label>
+            <input type="password" id="sa_usr_pwd" name="password" class="zf-control" placeholder="{% if edit_user %}Leave blank to preserve existing password{% else %}Set initial secure password{% endif %}" {% if not edit_user %}required{% endif %}>
           </div>
         </div>
-
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save</button>
-          {% if edit_user %}
-            <a class="btn btn-ghost" href="{{ url_for('zootique_admin.user_management') }}">Cancel</a>
-          {% endif %}
-        </div>
-      </form>
+      </div>
     </div>
-  </div>
+
+    <div class="zf-form-footer">
+      {% if edit_user %}
+        <a class="zf-btn-cancel" href="{{ url_for('zootique_admin.user_management') }}" style="text-decoration:none;">Cancel</a>
+      {% endif %}
+      <button class="zf-btn-primary" type="submit">
+        <i class="fa-solid fa-floppy-disk"></i> {% if edit_user %}Update Administrator{% else %}Create Administrator{% endif %}
+      </button>
+    </div>
+  </form>
 </div>
 
-<div class="stats-grid" style="--stats-cols: 3; margin-top:24px;">
-  <div class="stat-card" style="border-left:4px solid #14b8a6; padding: 16px 20px;">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-      <div class="stat-label" style="font-size:10px; color:#64748b; font-weight:700;">ACTIVE SESSIONS</div>
-      <i class="fa-solid fa-network-wired" style="color:#14b8a6;"></i>
-    </div>
-    <div class="stat-value" style="font-size: 32px; font-weight: 800; margin-top:12px; margin-bottom:8px;">{{ ns.active }}</div>
-    <p style="font-size:12px; color:#64748b; margin:0; line-height:1.4;">Currently managing park operations across multiple zones.</p>
-  </div>
-  <div class="stat-card" style="border-left:4px solid #0f766e; padding: 16px 20px;">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-      <div class="stat-label" style="font-size:10px; color:#64748b; font-weight:700;">PENDING INVITES</div>
-      <i class="fa-regular fa-envelope" style="color:#0f766e;"></i>
-    </div>
-    <div class="stat-value" style="font-size: 32px; font-weight: 800; margin-top:12px; margin-bottom:8px;">{{ ns.suspended }}</div>
-    <p style="font-size:12px; color:#64748b; margin:0; line-height:1.4;">Staff members awaiting activation for their assigned sector.</p>
-  </div>
-  <div class="stat-card" style="border-left:4px solid #b45309; padding: 16px 20px;">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-      <div class="stat-label" style="font-size:10px; color:#64748b; font-weight:700;">ACCESS LEVEL SHIFTS</div>
-      <i class="fa-solid fa-shield-halved" style="color:#b45309;"></i>
-    </div>
-    <div class="stat-value" style="font-size: 32px; font-weight: 800; margin-top:12px; margin-bottom:8px;">+5</div>
-    <p style="font-size:12px; color:#64748b; margin:0; line-height:1.4;">Recent role upgrades recorded in the last 24 hours.</p>
-  </div>
-</div>
-
+<script>
+// Client-side search filtering
+const searchInput = document.getElementById('saUserSearch');
+const userTable = document.getElementById('saUserTable');
+if (searchInput && userTable) {
+  searchInput.addEventListener('input', function() {
+    const q = this.value.toLowerCase().trim();
+    const rows = userTable.querySelectorAll('tbody tr');
+    rows.forEach(r => {
+      const text = r.textContent.toLowerCase();
+      r.style.display = text.includes(q) ? '' : 'none';
+    });
+  });
+}
+</script>
 {% endblock %}

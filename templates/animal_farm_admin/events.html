@@ -1,88 +1,204 @@
 {% extends "base.html" %}
 
-{% block title %}Events Management | Animal Farm Admin{% endblock %}
-{% block page_title %}Events Management{% endblock %}
+{% block title %}Events | Animal Farm Admin{% endblock %}
+{% block page_title %}Events{% endblock %}
+
+{% block breadcrumb %}
+<span class="crumb-current" aria-current="page">Events</span>
+{% endblock %}
+
+{% block page_heading %}
+{% set selected_tab = request.args.get('tab', 'all') %}
+{% if selected_tab == 'list' %}Event List{% else %}Add Event{% endif %}
+{% endblock %}
 
 {% block content %}
 {% set selected_tab = request.args.get('tab', 'all') %}
 
+<!-- Success toast -->
+<div class="zf-toast" id="zfToast" role="status" aria-live="polite">
+  <i class="fa-solid fa-circle-check"></i>
+  <span id="zfToastMsg">Event saved successfully.</span>
+</div>
 
 <div class="two-col" style="--two-col-template: 1fr 1fr; {% if selected_tab == 'list' %}--two-col-template: 1fr;{% elif selected_tab == 'add' %}--two-col-template: 1fr;{% endif %}">
     
     {% if selected_tab in ['add', 'all'] %}
-    <div class="card-panel">
-        <div class="card-header">
-            <h2>Add / Edit Event</h2>
+    <div class="zf-form-card" id="eventFormCard" style="max-width: 800px; margin: 0 auto 24px auto;">
+        <div class="zf-form-header">
+            <h2 class="zf-form-title">
+                <i class="fa-solid fa-calendar-days"></i>
+                <span id="eventFormTitleText">Add Event</span>
+            </h2>
         </div>
-        <div class="card-body">
-            <form method="post" enctype="multipart/form-data" action="{{ url_for('animal_farm_admin.save_event') }}" style="display:flex; flex-direction:column; gap:10px;">
-                <input type="hidden" name="event_id" value="">
 
-                <label style="font-weight:600; color:var(--text-secondary);">Name</label>
-                <input type="text" name="name" placeholder="Event name" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+        <form id="eventForm" method="post" enctype="multipart/form-data" action="{{ url_for('animal_farm_admin.save_event') }}" novalidate>
+            <input type="hidden" name="event_id" id="event_id" value="">
+            <input type="hidden" name="time" id="event_time" value="">
 
-                <label style="font-weight:600; color:var(--text-secondary);">Type (optional)</label>
-                <input type="text" name="type" placeholder="e.g., Workshop" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+            <div class="zf-form-body">
+                <div class="zf-section">
+                    <div class="zf-section-label">
+                        <i class="fa-solid fa-circle-info"></i> Event Details
+                    </div>
+                    <div class="zf-grid-2">
+                        <div class="zf-field zf-full">
+                            <label class="zf-label" for="event_name">Event Name <span class="zf-req" aria-hidden="true">*</span></label>
+                            <input type="text" id="event_name" name="name" class="zf-control" placeholder="e.g., Morning Safari Tour" required autocomplete="off" aria-required="true" aria-describedby="event_name_error">
+                            <span class="zf-error" id="event_name_error" role="alert"><i class="fa-solid fa-triangle-exclamation"></i> Event name is required.</span>
+                        </div>
 
-                <label style="font-weight:600; color:var(--text-secondary);">Time (optional)</label>
-                <input type="text" name="time" placeholder="e.g., 2:00 PM" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+                        <div class="zf-field">
+                            <label class="zf-label" for="event_type">Type</label>
+                            <select id="event_type" name="type" class="zf-control">
+                                <option value="">Select event type...</option>
+                                <option value="Workshop">Workshop</option>
+                                <option value="Feeding">Feeding</option>
+                                <option value="Tour">Tour</option>
+                                <option value="Show">Show</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
 
-                <label style="font-weight:600; color:var(--text-secondary);">Location (optional)</label>
-                <input type="text" name="location" placeholder="e.g., Main Pavilion" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+                        <div class="zf-field">
+                            <label class="zf-label" for="event_location">Location / Venue</label>
+                            <input type="text" id="event_location" name="location" class="zf-control" placeholder="e.g., Main Aviary / Pavilion A" autocomplete="off">
+                        </div>
 
-                <label style="font-weight:600; color:var(--text-secondary);">Image (optional)</label>
-                <input type="file" name="image_file" accept="image/*" style="width:100%;" />
+                        <div class="zf-field zf-full" style="margin-bottom:0;">
+                            <label class="zf-label">Time Schedule</label>
+                            <div class="zf-grid-3">
+                                <div class="zf-field">
+                                    <label class="zf-label" for="event_date" style="font-size:13px;">Date <span class="zf-req" aria-hidden="true">*</span></label>
+                                    <input type="date" id="event_date" class="zf-control" required aria-required="true" aria-describedby="event_date_error">
+                                    <span class="zf-error" id="event_date_error" role="alert"><i class="fa-solid fa-triangle-exclamation"></i> Date is required.</span>
+                                </div>
+                                <div class="zf-field">
+                                    <label class="zf-label" for="event_start_time" style="font-size:13px;">Start Time <span class="zf-req" aria-hidden="true">*</span></label>
+                                    <input type="time" id="event_start_time" class="zf-control" required aria-required="true" aria-describedby="event_start_time_error">
+                                    <span class="zf-error" id="event_start_time_error" role="alert"><i class="fa-solid fa-triangle-exclamation"></i> Start time is required.</span>
+                                </div>
+                                <div class="zf-field">
+                                    <label class="zf-label" for="event_end_time" style="font-size:13px;">End Time</label>
+                                    <input type="time" id="event_end_time" class="zf-control" aria-describedby="event_end_time_error">
+                                    <span class="zf-error" id="event_end_time_error" role="alert"><i class="fa-solid fa-triangle-exclamation"></i> End time must be after start time.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Event</button>
-            </form>
-        </div>
+                <div class="zf-section">
+                    <div class="zf-section-label">
+                        <i class="fa-solid fa-image"></i> Event Cover Image
+                    </div>
+                    <div class="zf-field zf-full">
+                        <div class="zf-upload-box" id="eventUploadBox" tabindex="0" role="button" aria-label="Upload event cover image">
+                            <input type="file" id="event_image_file" name="image_file" accept="image/png,image/jpeg,image/webp" aria-label="Choose file">
+                            <div class="zf-upload-idle" id="eventUploadIdle">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <p class="zf-upload-title"><span>Click to upload</span> or drag and drop</p>
+                                <p class="zf-upload-meta">PNG, JPG or WEBP - Max 5 MB</p>
+                            </div>
+                            <div class="zf-upload-preview" id="eventUploadPreview">
+                                <img class="zf-preview-img" id="eventPreviewImg" src="" alt="Preview">
+                                <div class="zf-preview-info">
+                                    <div class="zf-preview-name" id="eventPreviewName"></div>
+                                    <div class="zf-preview-size" id="eventPreviewSize"></div>
+                                </div>
+                                <button type="button" class="zf-preview-remove" id="eventRemoveImg" aria-label="Remove image">
+                                    <i class="fa-solid fa-xmark"></i> Remove
+                                </button>
+                            </div>
+                        </div>
+                        <span class="zf-error" id="event_image_error" role="alert">
+                            <i class="fa-solid fa-triangle-exclamation"></i> File exceeds 5 MB or is not a valid image.
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="zf-actions zf-form-footer">
+                <a href="?tab=list" class="zf-btn-cancel" id="eventCancelBtn" onclick="if(window.location.search.includes('tab=add')){resetEventForm();}">
+                    Cancel
+                </a>
+                <button type="submit" class="zf-btn-save zf-btn-primary" id="eventSubmitBtn">
+                    <span class="zf-spinner"></span>
+                    <i class="fa-solid fa-floppy-disk zf-save-label"></i>
+                    <span class="zf-save-label" id="eventBtnText">Save Event</span>
+                </button>
+            </div>
+        </form>
     </div>
     {% endif %}
 
     {% if selected_tab in ['list', 'all'] %}
     <div class="card-panel">
         <div class="card-header">
-            <h2>Event List</h2>
+            <h2><i class="fa-solid fa-list-check" style="margin-right:8px;"></i> Event List</h2>
+            <div class="card-header-actions">
+                <span class="badge badge-role">{{ events|length }} Total</span>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="table-wrap">
-                <table>
+        <div class="card-body" style="padding:0;">
+            <div class="zf-table-wrap">
+                <table class="table-striped">
                     <thead>
                         <tr>
-                            <th style="width:70px;">Image</th>
-                            <th>Name</th>
+                            <th style="width:72px; padding-left:16px;">Cover</th>
+                            <th>Event Name</th>
                             <th>Type</th>
                             <th>Time</th>
                             <th>Location</th>
-                            <th style="width:160px;">Actions</th>
+                            <th style="width:130px; text-align:right; padding-right:16px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for e in events %}
                             <tr>
-                                <td>
+                                <td style="padding-left:16px;">
                                     {% if e.image_url %}
-                                        <img src="{{ e.image_url }}" alt="" style="width:54px; height:38px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
+                                        <img src="{{ e.image_url }}" alt="" style="width:52px; height:38px; object-fit:cover; border-radius:6px; border:1px solid var(--border);" />
                                     {% else %}
-                                        <span style="color: var(--text-muted);">-</span>
+                                        <div style="width:52px; height:38px; background:#f1f5f9; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:14px;">
+                                            <i class="fa-regular fa-image"></i>
+                                        </div>
                                     {% endif %}
                                 </td>
-                                <td>{{ e.name }}</td>
-                                <td>{{ e.type or '-' }}</td>
+                                <td style="font-weight:600; color:var(--text);">{{ e.name }}</td>
+                                <td>
+                                    {% if e.type %}
+                                        <span class="badge badge-routine">{{ e.type }}</span>
+                                    {% else %}
+                                        <span style="color:var(--text-muted);">-</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ e.time or '-' }}</td>
                                 <td>{{ e.location or '-' }}</td>
-                                <td>
-                                    <button class="btn btn-outline btn-sm" type="button"
-                                                    onclick='fillEventForm({{ e.id|tojson }}, {{ e.name|tojson }}, {{ (e.type or "")|tojson }}, {{ (e.time or "")|tojson }}, {{ (e.location or "")|tojson }})'>
-                                        <i class="fa-solid fa-pen"></i> Edit
-                                    </button>
-                                    <form method="post" action="{{ url_for('animal_farm_admin.delete_event', event_id=e.id) }}" style="display:inline;" onsubmit="return confirm('Delete this event?');">
-                                        <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
-                                    </form>
+                                <td style="text-align:right; padding-right:16px;">
+                                    <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
+                                        <button class="zf-icon-btn" type="button" title="Edit Event"
+                                                onclick='fillEventForm({{ e.id|tojson }}, {{ e.name|tojson }}, {{ (e.type or "")|tojson }}, {{ (e.time or "")|tojson }}, {{ (e.location or "")|tojson }}, {{ (e.image_url or "")|tojson }})'>
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                        <form method="post" action="{{ url_for('animal_farm_admin.delete_event', event_id=e.id) }}" style="display:inline;" onsubmit="return confirm('Delete this event?');">
+                                            <button class="zf-icon-btn danger" type="submit" title="Delete Event">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         {% else %}
-                            <tr><td colspan="6" style="color: var(--text-muted);">No events yet.</td></tr>
+                            <tr>
+                                <td colspan="6">
+                                    <div class="zf-empty-state">
+                                        <i class="fa-regular fa-calendar-xmark zf-empty-icon"></i>
+                                        <div class="zf-empty-title">No Events Found</div>
+                                        <div class="zf-empty-desc">Create your first event using the form to schedule tours, shows, and activities.</div>
+                                    </div>
+                                </td>
+                            </tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -93,15 +209,368 @@
 </div>
 
 <script>
-    function fillEventForm(id, name, type, time, location) {
-        const form = document.querySelector('form[action$="/events/save"]');
-        if (!form) return;
-        form.querySelector('input[name="event_id"]').value = id;
-        form.querySelector('input[name="name"]').value = name || '';
-        form.querySelector('input[name="type"]').value = type || '';
-        form.querySelector('input[name="time"]').value = time || '';
-        form.querySelector('input[name="location"]').value = location || '';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+(function() {
+    const eventForm = document.getElementById('eventForm');
+    const fileInput = document.getElementById('event_image_file');
+    const uploadBox = document.getElementById('eventUploadBox');
+    const uploadIdle = document.getElementById('eventUploadIdle');
+    const uploadPreview = document.getElementById('eventUploadPreview');
+    const previewImg = document.getElementById('eventPreviewImg');
+    const previewName = document.getElementById('eventPreviewName');
+    const previewSize = document.getElementById('eventPreviewSize');
+    const removeImgBtn = document.getElementById('eventRemoveImg');
+    const imageError = document.getElementById('event_image_error');
+
+    function resetUpload() {
+        if (fileInput) fileInput.value = '';
+        if (previewImg) {
+            previewImg.src = '';
+            previewImg.removeAttribute('src');
+        }
+        if (uploadIdle) uploadIdle.classList.remove('hidden');
+        if (uploadPreview) uploadPreview.classList.remove('visible');
+        if (imageError) imageError.classList.remove('visible');
     }
+
+    function showPreview(file, customUrl, customName) {
+        if (!file && !customUrl) return;
+        if (imageError) imageError.classList.remove('visible');
+
+        if (file) {
+            previewImg.src = URL.createObjectURL(file);
+            if (previewName) previewName.textContent = file.name;
+            if (previewSize) previewSize.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+        } else if (customUrl) {
+            previewImg.src = customUrl;
+            if (previewName) previewName.textContent = customName || 'Event Cover Image';
+            if (previewSize) previewSize.textContent = '';
+        }
+
+        if (uploadIdle) uploadIdle.classList.add('hidden');
+        if (uploadPreview) uploadPreview.classList.add('visible');
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            if (imageError) imageError.classList.remove('visible');
+            const file = this.files[0];
+            if (!file) {
+                resetUpload();
+                return;
+            }
+            // Check file size (5MB max) and type
+            const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+            if (!validTypes.includes(file.type) || file.size > 5 * 1024 * 1024) {
+                if (imageError) {
+                    imageError.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ' +
+                        (file.size > 5 * 1024 * 1024 ? 'File exceeds the 5 MB limit.' : 'Please upload a PNG, JPG, or WEBP image.');
+                    imageError.classList.add('visible');
+                }
+                resetUpload();
+                return;
+            }
+            showPreview(file);
+        });
+    }
+
+    if (removeImgBtn) {
+        removeImgBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            resetUpload();
+        });
+    }
+
+    if (uploadBox) {
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadBox.addEventListener(eventName, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadBox.classList.add('drag-over');
+            });
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadBox.addEventListener(eventName, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadBox.classList.remove('drag-over');
+            });
+        });
+        uploadBox.addEventListener('drop', function(e) {
+            const dt = e.dataTransfer;
+            if (dt && dt.files && dt.files[0]) {
+                fileInput.files = dt.files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+        // Keyboard access for box
+        uploadBox.addEventListener('keydown', function(e) {
+            if ((e.key === 'Enter' || e.key === ' ') && e.target === uploadBox) {
+                e.preventDefault();
+                fileInput.click();
+            }
+        });
+    }
+
+    // Time schedule formatting helper functions
+    function formatTime12(time24) {
+        if (!time24) return '';
+        const parts = time24.split(':');
+        let h = parseInt(parts[0], 10);
+        const m = parts[1];
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12;
+        if (h === 0) h = 12;
+        return `${h}:${m} ${ampm}`;
+    }
+
+    function to24Hour(tStr) {
+        if (!tStr) return '';
+        const m = tStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+        if (!m) return '';
+        let h = parseInt(m[1], 10);
+        const min = m[2];
+        const ampm = m[3] ? m[3].toUpperCase() : null;
+        if (ampm === 'PM' && h < 12) h += 12;
+        if (ampm === 'AM' && h === 12) h = 0;
+        return `${String(h).padStart(2, '0')}:${min}`;
+    }
+
+    // Input validation helpers
+    function validateName() {
+        const el = document.getElementById('event_name');
+        const err = document.getElementById('event_name_error');
+        if (!el || !err) return true;
+        if (!el.value.trim()) {
+            el.classList.add('is-invalid');
+            err.classList.add('visible');
+            return false;
+        } else {
+            el.classList.remove('is-invalid');
+            err.classList.remove('visible');
+            return true;
+        }
+    }
+
+    function validateDate() {
+        const el = document.getElementById('event_date');
+        const err = document.getElementById('event_date_error');
+        if (!el || !err) return true;
+        if (!el.value) {
+            el.classList.add('is-invalid');
+            err.classList.add('visible');
+            return false;
+        } else {
+            el.classList.remove('is-invalid');
+            err.classList.remove('visible');
+            return true;
+        }
+    }
+
+    function validateStartTime() {
+        const el = document.getElementById('event_start_time');
+        const err = document.getElementById('event_start_time_error');
+        if (!el || !err) return true;
+        if (!el.value) {
+            el.classList.add('is-invalid');
+            err.classList.add('visible');
+            return false;
+        } else {
+            el.classList.remove('is-invalid');
+            err.classList.remove('visible');
+            return true;
+        }
+    }
+
+    function validateEndTime() {
+        const stEl = document.getElementById('event_start_time');
+        const etEl = document.getElementById('event_end_time');
+        const err = document.getElementById('event_end_time_error');
+        if (!etEl || !err) return true;
+        if (etEl.value && stEl && stEl.value) {
+            if (etEl.value <= stEl.value) {
+                etEl.classList.add('is-invalid');
+                err.classList.add('visible');
+                return false;
+            }
+        }
+        etEl.classList.remove('is-invalid');
+        err.classList.remove('visible');
+        return true;
+    }
+
+    const nameInput = document.getElementById('event_name');
+    if (nameInput) {
+        nameInput.addEventListener('blur', validateName);
+        nameInput.addEventListener('input', function() {
+            if (nameInput.classList.contains('is-invalid')) validateName();
+        });
+    }
+
+    const dateInput = document.getElementById('event_date');
+    if (dateInput) {
+        dateInput.addEventListener('blur', validateDate);
+        dateInput.addEventListener('change', function() {
+            if (dateInput.classList.contains('is-invalid')) validateDate();
+        });
+    }
+
+    const startTimeInput = document.getElementById('event_start_time');
+    if (startTimeInput) {
+        startTimeInput.addEventListener('blur', function() {
+            validateStartTime();
+            validateEndTime();
+        });
+        startTimeInput.addEventListener('change', function() {
+            if (startTimeInput.classList.contains('is-invalid')) validateStartTime();
+            validateEndTime();
+        });
+    }
+
+    const endTimeInput = document.getElementById('event_end_time');
+    if (endTimeInput) {
+        endTimeInput.addEventListener('blur', validateEndTime);
+        endTimeInput.addEventListener('change', validateEndTime);
+    }
+
+    // Global edit form filler
+    window.fillEventForm = function(id, name, type, timeStr, location, imageUrl) {
+        if (!eventForm) return;
+        document.getElementById('event_id').value = id || '';
+        document.getElementById('event_name').value = name || '';
+        
+        const typeSelect = document.getElementById('event_type');
+        if (typeSelect) {
+            typeSelect.value = type || '';
+            if (type && typeSelect.value !== type) {
+                const opt = document.createElement('option');
+                opt.value = type;
+                opt.text = type;
+                opt.selected = true;
+                typeSelect.prepend(opt);
+            }
+        }
+        
+        document.getElementById('event_location').value = location || '';
+
+        // Reset schedule inputs
+        document.getElementById('event_date').value = '';
+        document.getElementById('event_start_time').value = '';
+        document.getElementById('event_end_time').value = '';
+        document.getElementById('event_time').value = timeStr || '';
+
+        // Parse legacy/current time string
+        if (timeStr) {
+            const dateMatch = timeStr.match(/\b\d{4}-\d{2}-\d{2}\b/);
+            if (dateMatch) {
+                document.getElementById('event_date').value = dateMatch[0];
+                timeStr = timeStr.replace(dateMatch[0], '').trim();
+            }
+            const timeParts = timeStr.split(/[-–—to]+/).map(s => s.trim());
+            if (timeParts[0]) {
+                const t24 = to24Hour(timeParts[0]);
+                if (t24) document.getElementById('event_start_time').value = t24;
+            }
+            if (timeParts[1]) {
+                const t24 = to24Hour(timeParts[1]);
+                if (t24) document.getElementById('event_end_time').value = t24;
+            }
+        }
+
+        // Update form titles
+        const formTitle = document.getElementById('eventFormTitleText');
+        if (formTitle) formTitle.textContent = 'Edit Event';
+        const pageHeading = document.querySelector('.page-heading');
+        if (pageHeading) pageHeading.textContent = 'Edit Event';
+
+        const submitBtnText = document.getElementById('eventBtnText');
+        if (submitBtnText) submitBtnText.textContent = 'Update Event';
+
+        // Clear errors
+        document.querySelectorAll('#eventForm .zf-control').forEach(el => el.classList.remove('is-invalid'));
+        document.querySelectorAll('#eventForm .zf-error').forEach(el => el.classList.remove('visible'));
+
+        // Handle image preview
+        if (imageUrl) {
+            showPreview(null, imageUrl, name ? name + ' Cover' : 'Existing Cover');
+        } else {
+            resetUpload();
+        }
+
+        const card = document.getElementById('eventFormCard');
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    window.resetEventForm = function() {
+        if (!eventForm) return;
+        eventForm.reset();
+        document.getElementById('event_id').value = '';
+        document.getElementById('event_time').value = '';
+        const formTitle = document.getElementById('eventFormTitleText');
+        if (formTitle) formTitle.textContent = 'Add Event';
+        const pageHeading = document.querySelector('.page-heading');
+        if (pageHeading) pageHeading.textContent = 'Add Event';
+        const submitBtnText = document.getElementById('eventBtnText');
+        if (submitBtnText) submitBtnText.textContent = 'Save Event';
+
+        document.querySelectorAll('#eventForm .zf-control').forEach(el => el.classList.remove('is-invalid'));
+        document.querySelectorAll('#eventForm .zf-error').forEach(el => el.classList.remove('visible'));
+        resetUpload();
+    };
+
+    // Form submit validation & time concatenation
+    if (eventForm) {
+        eventForm.addEventListener('submit', function(e) {
+            const vName = validateName();
+            const vDate = validateDate();
+            const vStart = validateStartTime();
+            const vEnd = validateEndTime();
+
+            if (!vName || !vDate || !vStart || !vEnd) {
+                e.preventDefault();
+                const firstError = eventForm.querySelector('.is-invalid');
+                if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            // Combine Date, Start Time, and End Time into the 'time' parameter expected by backend
+            const dateVal = document.getElementById('event_date').value;
+            const startVal = document.getElementById('event_start_time').value;
+            const endVal = document.getElementById('event_end_time').value;
+
+            let combinedTime = '';
+            if (dateVal) combinedTime += dateVal;
+            if (startVal) {
+                const formattedStart = formatTime12(startVal);
+                combinedTime += (combinedTime ? ' ' : '') + formattedStart;
+                if (endVal) {
+                    const formattedEnd = formatTime12(endVal);
+                    combinedTime += ' - ' + formattedEnd;
+                }
+            }
+            document.getElementById('event_time').value = combinedTime.trim();
+
+            const btn = document.getElementById('eventSubmitBtn');
+            if (btn) {
+                btn.classList.add('is-loading');
+                btn.disabled = true;
+            }
+        });
+    }
+
+    // Success toast trigger if flashed
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('[style*="border-left:4px solid var(--success)"]').forEach(function(b) {
+            const d = b.querySelector('div');
+            const toast = document.getElementById('zfToast');
+            const msg = document.getElementById('zfToastMsg');
+            if (toast && msg) {
+                msg.textContent = d ? d.textContent.trim() : 'Event saved successfully.';
+                toast.classList.add('visible');
+                setTimeout(() => toast.classList.remove('visible'), 3500);
+            }
+        });
+    });
+})();
 </script>
 {% endblock %}

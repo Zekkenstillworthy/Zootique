@@ -52,7 +52,7 @@
         {% endif %}
       {% endwith %}
 
-      <form action="{{ url_for('auth.register_admin_step1') }}" method="POST" style="display: grid; gap: 1.5rem;">
+      <form action="{{ url_for('auth.register_admin_step1') }}" method="POST" enctype="multipart/form-data" style="display: grid; gap: 1.5rem;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <div style="background: #e2e8f0; color: #334155; padding: 12px 16px; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 10px; border-radius: 6px; margin-bottom: 0.5rem;">
@@ -60,7 +60,7 @@
         </div>
 
         <div>
-          <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Establishment Name</label>
+          <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Establishment Name <span style="color:#ef4444;">*</span></label>
           <input type="text" name="zoo_name" value="{{ session.get('reg_zoo_name', '') }}" placeholder="e.g. Serengeti Heritage Park" required style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px 16px; font-family: inherit; font-size: 14px; transition: all 0.2s;">
         </div>
 
@@ -83,9 +83,38 @@
         </div>
 
         <div>
-          <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Location</label>
+          <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Location <span style="color:#ef4444;">*</span></label>
           <input type="text" name="zoo_location" value="{{ session.get('reg_zoo_location', '') }}" placeholder="Full Address or Region" required style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px 16px; font-family: inherit; font-size: 14px;">
         </div>
+
+        <div style="background: #e2e8f0; color: #334155; padding: 12px 16px; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 10px; border-radius: 6px; margin-top: 0.5rem;">
+          <i class="fa-solid fa-file-shield"></i> REQUIRED DOCUMENTS
+        </div>
+        <p style="font-size: 12px; color: #64748b; margin: -0.75rem 0 0;">Upload one PDF, JPG, or PNG per document. Maximum file size: 8 MB.</p>
+
+        {% set document_fields = [
+          ('business_permit', 'Business/Establishment Permit', 'business_permit_url', 'fa-building-columns'),
+          ('wildlife_license', 'Zoo or Wildlife Exhibition License', 'wildlife_license_url', 'fa-paw'),
+          ('proof_of_address', 'Proof of Address', 'proof_of_address_url', 'fa-location-dot'),
+          ('representative_id', 'Authorized Representative ID', 'representative_id_url', 'fa-id-card')
+        ] %}
+        {% for field_name, field_label, url_field, icon in document_fields %}
+        <div>
+          <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">{{ field_label }} <span style="color:#ef4444;">*</span></label>
+          <div data-document-upload style="border: 1px dashed #9fb5aa; border-radius: 6px; background: #f8fafc; padding: 16px; display: flex; align-items: center; gap: 12px;">
+            <i class="fa-solid {{ icon }}" style="color: #166453; font-size: 18px;"></i>
+            <div style="flex: 1; min-width: 0;">
+              <input type="file" name="{{ field_name }}" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" data-document-input style="width: 100%; font-size: 13px; color: #475569;">
+              <div data-document-name style="font-size: 12px; color: #64748b; margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                {% if registration and registration|attr(url_field) %}Uploaded document{% else %}No file selected{% endif %}
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">PDF, JPG, or PNG · up to 8 MB</div>
+            </div>
+            <input type="hidden" name="remove_{{ field_name }}" value="0" data-document-remove>
+            <button type="button" data-document-clear style="display: {% if registration and registration|attr(url_field) %}inline-flex{% else %}none{% endif %}; border: 0; background: transparent; color: #64748b; font-size: 12px; font-weight: 700; cursor: pointer;">Remove</button>
+          </div>
+        </div>
+        {% endfor %}
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
           <a href="{{ url_for('auth.portal') }}" style="color: #64748b; font-size: 14px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-arrow-left"></i> Back to Portal</a>
@@ -96,4 +125,24 @@
     </div>
   </div>
 </div>
+<script>
+  document.querySelectorAll('[data-document-upload]').forEach(function (upload) {
+    const input = upload.querySelector('[data-document-input]');
+    const name = upload.querySelector('[data-document-name]');
+    const clear = upload.querySelector('[data-document-clear]');
+    const remove = upload.querySelector('[data-document-remove]');
+    input.addEventListener('change', function () {
+      if (!input.files.length) return;
+      name.textContent = input.files[0].name;
+      clear.style.display = 'inline-flex';
+      remove.value = '0';
+    });
+    clear.addEventListener('click', function () {
+      input.value = '';
+      name.textContent = 'No file selected';
+      clear.style.display = 'none';
+      remove.value = '1';
+    });
+  });
+</script>
 {% endblock %}

@@ -75,21 +75,13 @@
         
         <!-- Floating Cards Decoration -->
         <div class="visitor-animals-decor">
-            <div style="background: white; border-radius: 12px; padding: 1.5rem; width: 150px; height: 180px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: flex-end; align-self: flex-end;">
-                <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem;">Savanna Zone</div>
-                <div style="color: #64748b; font-size: 0.8rem; margin-bottom: 1rem;">14 Animals</div>
+            {% for zone in zoo_zones %}
+            <div style="background: white; border-radius: 12px; padding: 1.5rem; width: 170px; height: 210px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: flex-end; align-self: {% if loop.index is odd %}flex-end{% else %}center{% endif %};">
+                <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem;">{{ zone.name }}</div>
+                <div style="color: #64748b; font-size: 0.8rem; margin-bottom: 1rem;">{{ zone_counts.get(zone.name, 0) }} Animal{{ '' if zone_counts.get(zone.name, 0) == 1 else 's' }}</div>
                 <div><span style="background: #ecfdf5; color: #16a34a; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: bold;"><span style="display: inline-block; width: 6px; height: 6px; background: #16a34a; border-radius: 50%; margin-right: 4px;"></span> Open</span></div>
             </div>
-            <div style="background: white; border-radius: 12px; padding: 1.5rem; width: 170px; height: 210px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: flex-end; align-self: center;">
-                <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem;">Aquatic Zone</div>
-                <div style="color: #64748b; font-size: 0.8rem; margin-bottom: 1rem;">22 Animals</div>
-                <div><span style="background: #ecfdf5; color: #16a34a; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: bold;"><span style="display: inline-block; width: 6px; height: 6px; background: #16a34a; border-radius: 50%; margin-right: 4px;"></span> Open</span></div>
-            </div>
-            <div style="background: white; border-radius: 12px; padding: 1.5rem; width: 170px; height: 210px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: flex-end; align-self: flex-start;">
-                <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem;">Rainforest Zone</div>
-                <div style="color: #64748b; font-size: 0.8rem; margin-bottom: 1rem;">31 Animals</div>
-                <div><span style="background: #ecfdf5; color: #16a34a; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: bold;"><span style="display: inline-block; width: 6px; height: 6px; background: #16a34a; border-radius: 50%; margin-right: 4px;"></span> Open</span></div>
-            </div>
+            {% endfor %}
         </div>
     </div>
 </div>
@@ -102,7 +94,7 @@
         <a href="{{ url_for('visitor.animal_detail', animal_id=animal.id) }}" style="text-decoration: none; color: inherit;">
             <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column; height: 100%;">
                 <div style="height: 180px; background: #e2e8f0; width: 100%;">
-                    <img src="{{ animal.image_url|default('https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&q=80&w=600&h=400') }}" alt="{{ animal.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <img src="{{ animal.image_url|default('', true) }}" alt="{{ animal.name }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.style.display='none';">
                 </div>
                 <div style="padding: 1.1rem; display: flex; flex-direction: column; gap: 0.4rem; flex: 1;">
                     <div style="display:flex; justify-content: space-between; gap: 0.75rem; align-items: flex-start;">

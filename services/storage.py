@@ -31,6 +31,7 @@ from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
 _ALLOWED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
+_ALLOWED_DOCUMENT_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg"}
 
 
 def _get_supabase_client():
@@ -102,4 +103,47 @@ def save_uploaded_image(file_storage: FileStorage | None, subfolder: str) -> str
         return f"/uploads/{object_key}"
     except Exception as exc:
         current_app.logger.error("Local file save failed: %s", exc)
+        return None
+
+
+def save_uploaded_document(file_storage: FileStorage | None, subfolder: str) -> str | None:
+    """Save a registration document to Supabase Storage or local development storage."""
+    if not file_storage or not getattr(file_storage, "filename", ""):
+        return None
+
+    original_name = secure_filename(file_storage.filename)
+    if not original_name:
+        return None
+
+    _, ext = os.path.splitext(original_name)
+    ext = (ext or "").lower()
+    if ext not in _ALLOWED_DOCUMENT_EXTENSIONS:
+        return None
+
+    stored_name = f"{uuid.uuid4().hex}{ext}"
+    parts = [p for p in (subfolder or "").replace("\\", "/").split("/") if p]
+    object_key = "/".join(parts + [stored_name])
+    supabase = _get_supabase_client()
+    if supabase:
+        bucket = os.environ.get("SUPABASE_STORAGE_BUCKET", "zootique-images").strip()
+        try:
+            file_bytes = file_storage.read()
+            content_type = getattr(file_storage, "content_type", None) or "application/octet-stream"
+            supabase.storage.from_(bucket).upload(
+                path=object_key,
+                file=file_bytes,
+                file_options={"content-type": content_type},
+            )
+            return supabase.storage.from_(bucket).get_public_url(object_key)
+        except Exception as exc:
+            current_app.logger.error("Supabase document upload failed: %s", exc)
+            return None
+
+    try:
+        folder = os.path.join(current_app.config["UPLOAD_FOLDER"], *parts)
+        os.makedirs(folder, exist_ok=True)
+        file_storage.save(os.path.join(folder, stored_name))
+        return f"/uploads/{object_key}"
+    except Exception as exc:
+        current_app.logger.error("Local document save failed: %s", exc)
         return None

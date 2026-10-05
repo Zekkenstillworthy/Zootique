@@ -10,7 +10,7 @@
     <div class="stat-card sa-kpi" style="--kpi-accent: #14b8a6;">
       <div class="stat-label">TOTAL REVENUE (MRR)</div>
       <div class="sa-kpi-row">
-        <div class="stat-value">₱{{ "{:,.2f}".format(sub_stats.mrr or 0) }}</div>
+        <div class="stat-value">&#8369;{{ "{:,.2f}".format(sub_stats.mrr or 0) }}</div>
         <span class="sa-pill">Monthly</span>
       </div>
     </div>
@@ -21,11 +21,11 @@
         <span class="sa-pill {% if (sub_stats.pending_renewals or 0) > 0 %}sa-pill--warn{% endif %}">{% if (sub_stats.pending_renewals or 0) > 0 %}Review{% else %}All good{% endif %}</span>
       </div>
     </div>
-    <div class="stat-card sa-kpi" style="--kpi-accent: var(--danger);">
-      <div class="stat-label">CHURN RATE</div>
+    <div class="stat-card sa-kpi" style="--kpi-accent: #7c3aed;">
+      <div class="stat-label">PENDING APPROVALS</div>
       <div class="sa-kpi-row">
-        <div class="stat-value">{{ "{:.1f}".format(sub_stats.churn_rate or 0) }}%</div>
-        <span class="sa-pill">Rolling</span>
+        <div class="stat-value">{{ "{:,}".format(sub_stats.pending_approvals or 0) }}</div>
+        <span class="sa-pill {% if (sub_stats.pending_approvals or 0) > 0 %}sa-pill--warn{% endif %}">{% if (sub_stats.pending_approvals or 0) > 0 %}Action Required{% else %}None{% endif %}</span>
       </div>
     </div>
   </div>
@@ -78,22 +78,33 @@
             <td>
               {% if sub.status == 'Active' %}
               <span class="sa-pill sa-pill--ok">ACTIVE</span>
+              {% elif sub.status == 'Pending' %}
+              <span class="sa-pill" style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d;">PENDING</span>
               {% else %}
               <span class="sa-pill sa-pill--danger">EXPIRED</span>
               {% endif %}
             </td>
             <td style="color:var(--text-muted); font-size:12px;">{{ sub.start_date }}</td>
             <td style="color:var(--text-muted); font-size:12px;">{{ sub.end_date }}</td>
-            <td style="text-align:right; font-weight:800; color:var(--primary);">₱{{ "{:,.2f}".format(sub.latest_payment_amount or 0) }}</td>
+            <td style="text-align:right; font-weight:800; color:var(--primary);">&#8369;{{ "{:,.2f}".format(sub.latest_payment_amount or 0) }}</td>
             <td style="text-align:right;">
-              <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center;">
-                <form method="post" action="{{ url_for('zootique_admin.renew_subscription', subscription_id=sub.subscription_id) }}" style="display:inline;">
-                  <input type="hidden" name="months" value="1">
-                  <button class="btn btn-outline btn-sm" type="submit"><i class="fa-solid fa-check"></i> Confirm</button>
-                </form>
-                <form method="post" action="{{ url_for('zootique_admin.cancel_subscription', subscription_id=sub.subscription_id) }}" style="display:inline;" onsubmit="return confirm('Cancel this subscription?');">
-                  <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger);"><i class="fa-solid fa-xmark"></i> Cancel</button>
-                </form>
+              <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center; flex-wrap:wrap;">
+                {% if sub.status == 'Pending' %}
+                  <form method="post" action="{{ url_for('zootique_admin.approve_subscription', subscription_id=sub.subscription_id) }}" style="display:inline;" onsubmit="return confirm('Approve this subscription request?');">
+                    <button class="btn btn-primary btn-sm" type="submit"><i class="fa-solid fa-check-double"></i> Approve</button>
+                  </form>
+                  <form method="post" action="{{ url_for('zootique_admin.cancel_subscription', subscription_id=sub.subscription_id) }}" style="display:inline;" onsubmit="return confirm('Reject and cancel this subscription request?');">
+                    <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger);"><i class="fa-solid fa-xmark"></i> Reject</button>
+                  </form>
+                {% else %}
+                  <form method="post" action="{{ url_for('zootique_admin.renew_subscription', subscription_id=sub.subscription_id) }}" style="display:inline;">
+                    <input type="hidden" name="months" value="1">
+                    <button class="btn btn-outline btn-sm" type="submit"><i class="fa-solid fa-rotate-right"></i> Renew</button>
+                  </form>
+                  <form method="post" action="{{ url_for('zootique_admin.cancel_subscription', subscription_id=sub.subscription_id) }}" style="display:inline;" onsubmit="return confirm('Cancel this subscription?');">
+                    <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger);"><i class="fa-solid fa-xmark"></i> Cancel</button>
+                  </form>
+                {% endif %}
               </div>
             </td>
           </tr>

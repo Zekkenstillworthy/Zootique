@@ -1,115 +1,306 @@
 {% extends "base.html" %}
 
 {% block title %}Subscription | Zoo Admin{% endblock %}
-{% block page_title %}Subscription{% endblock %}
+{% block page_title %}Facility Subscription{% endblock %}
+
+{% block extra_head %}
+<style>
+.sub-plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 18px;
+    margin-top: 6px;
+}
+.sub-plan-card {
+    border-radius: 16px;
+    border: 2px solid var(--border-light, #e2e8f0);
+    background: var(--card-bg, #fff);
+    padding: 24px 22px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.sub-plan-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+}
+.sub-plan-card.is-current {
+    border-color: var(--primary);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 5%, white), var(--card-bg, #fff));
+}
+.sub-plan-card.is-popular { border-color: #7c3aed; }
+.sub-plan-badge {
+    position: absolute;
+    top: -11px;
+    right: 16px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    padding: 3px 10px;
+    border-radius: 99px;
+    text-transform: uppercase;
+}
+.badge-current { background: var(--primary); color: #fff; }
+.badge-popular  { background: #7c3aed; color: #fff; }
+.badge-pending  { background: #f59e0b; color: #fff; }
+.sub-plan-tier  { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
+.sub-plan-name  { font-size: 22px; font-weight: 900; color: var(--text); }
+.sub-plan-price { font-size: 28px; font-weight: 900; color: var(--primary); line-height: 1; }
+.sub-plan-price small { font-size: 13px; font-weight: 500; color: var(--text-muted); }
+.sub-plan-features { display: flex; flex-direction: column; gap: 7px; flex: 1; }
+.sub-plan-feature { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--text); }
+.sub-plan-feature i { color: #10b981; margin-top: 2px; flex-shrink: 0; }
+.sub-plan-cta { margin-top: auto; padding-top: 6px; }
+.paywall-banner {
+    border-radius: 14px;
+    padding: 18px 22px;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border: 1.5px solid #f59e0b;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.paywall-banner > i { font-size: 24px; color: #d97706; flex-shrink: 0; }
+.paywall-banner-body { flex: 1; min-width: 180px; }
+.paywall-banner-body strong { display: block; font-weight: 800; font-size: 15px; color: #92400e; }
+.paywall-banner-body span { font-size: 13px; color: #78350f; }
+.pending-notice {
+    border-radius: 12px;
+    padding: 14px 18px;
+    background: #fffbeb;
+    border: 1.5px solid #fcd34d;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13.5px;
+    color: #92400e;
+    font-weight: 600;
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="card-panel">
-  <div class="card-header">
-    <h2>Your Subscription</h2>
+{% if not zoo %}
+  <div class="card-panel">
+    <div class="zf-empty-state">
+      <i class="fa-solid fa-triangle-exclamation zf-empty-icon" style="color:#f59e0b;"></i>
+      <div class="zf-empty-title">No Facility Linked</div>
+      <div class="zf-empty-desc">No wildlife facility is currently linked to your administrator profile.</div>
+    </div>
   </div>
-  <div class="card-body">
-    {% if not zoo %}
-      <p style="color: var(--text-muted);">No zoo is linked to this account.</p>
-    {% else %}
-      <p style="color: var(--text-muted); margin-bottom: 12px;">Zoo: <strong>{{ zoo.name }}</strong></p>
+{% else %}
+<div style="display:grid; gap:22px;">
 
-      {% if subscription %}
-        <div class="stats-grid" style="--stats-cols: 4; margin-bottom: 16px;">
-          <div class="stat-card">
-            <div class="stat-icon-box green"><i class="fa-solid fa-crown"></i></div>
-            <div class="stat-value">{{ subscription.plan.name }}</div>
-            <div class="stat-label">Plan</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon-box blue"><i class="fa-solid fa-circle-info"></i></div>
-            <div class="stat-value"><span class="badge badge-{{ subscription.status }}">{{ subscription.status }}</span></div>
-            <div class="stat-label">Status</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon-box purple"><i class="fa-solid fa-calendar"></i></div>
-            <div class="stat-value">{{ subscription.start_date.strftime('%Y-%m-%d') }}</div>
-            <div class="stat-label">Start</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon-box orange"><i class="fa-solid fa-calendar-xmark"></i></div>
-            <div class="stat-value">{{ subscription.end_date.strftime('%Y-%m-%d') }}</div>
-            <div class="stat-label">End</div>
-          </div>
+  {# ── Status Banners ── #}
+  {% if not subscription %}
+    <div class="paywall-banner">
+      <i class="fa-solid fa-lock"></i>
+      <div class="paywall-banner-body">
+        <strong>No Active Subscription</strong>
+        <span>Select a plan below to unlock features for {{ zoo.name }}.
+          Your request will be reviewed by a Super Administrator.</span>
+      </div>
+    </div>
+  {% elif subscription.status == 'pending' %}
+    <div class="pending-notice">
+      <i class="fa-solid fa-hourglass-half" style="color:#f59e0b; font-size:18px;"></i>
+      <span>Your <strong>{{ subscription.plan.name }}</strong> subscription is
+        <strong>Pending Approval</strong>.
+        A Super Administrator will review it shortly. Features unlock once approved.</span>
+    </div>
+  {% elif subscription.status == 'expired' %}
+    <div class="paywall-banner">
+      <i class="fa-solid fa-circle-exclamation"></i>
+      <div class="paywall-banner-body">
+        <strong>Subscription Expired</strong>
+        <span>Your <strong>{{ subscription.plan.name }}</strong> plan expired on
+          {{ subscription.end_date.strftime('%b %d, %Y') }}.
+          Choose a new plan below to restore access.</span>
+      </div>
+    </div>
+  {% endif %}
+
+  {# ── Active Plan Stats ── #}
+  {% if subscription and subscription.status == 'active' %}
+    <div class="stats-grid" style="--stats-cols: 4;">
+      <div class="stat-card">
+        <div class="stat-icon icon-green"><i class="fa-solid fa-crown"></i></div>
+        <span class="value" style="font-size:20px;">{{ subscription.plan.name }}</span>
+        <h3>Current Plan</h3>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon icon-blue"><i class="fa-solid fa-shield-halved"></i></div>
+        <div style="margin-top:6px;">
+          <span class="badge badge-active" style="font-size:14px; padding:6px 12px;">Active</span>
         </div>
+        <h3 style="margin-top:8px;">License Status</h3>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon icon-purple"><i class="fa-solid fa-calendar-check"></i></div>
+        <span class="value" style="font-size:18px;">{{ subscription.start_date.strftime('%b %d, %Y') }}</span>
+        <h3>Effective Date</h3>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon icon-amber"><i class="fa-solid fa-calendar-xmark"></i></div>
+        <span class="value" style="font-size:18px;">{{ subscription.end_date.strftime('%b %d, %Y') }}</span>
+        <h3>Renewal Deadline</h3>
+      </div>
+    </div>
+  {% endif %}
+
+  {# ── Plan Selection Grid ── #}
+  <div class="card-panel" style="margin:0;">
+    <div class="card-header">
+      <h2>
+        <i class="fa-solid fa-cubes" style="margin-right:8px;"></i>
+        {% if subscription and subscription.status == 'active' %}Upgrade / Change Plan{% else %}Choose a Plan{% endif %}
+      </h2>
+      <div class="card-header-actions">
+        <span class="badge badge-role">{{ plans|length }} Available</span>
+      </div>
+    </div>
+    <div class="card-body">
+      {% if plans %}
+      <div class="sub-plans-grid">
+        {% for plan in plans %}
+          {% set is_current = (subscription and subscription.status == 'active' and subscription.plan_id == plan.id) %}
+          {% set is_pending_this = (subscription and subscription.status == 'pending' and subscription.plan_id == plan.id) %}
+          <div class="sub-plan-card {% if is_current %}is-current{% elif plan.tier_level == 2 %}is-popular{% endif %}">
+
+            {% if is_current %}
+              <span class="sub-plan-badge badge-current">&#10003; Current</span>
+            {% elif is_pending_this %}
+              <span class="sub-plan-badge badge-pending">&#8987; Pending</span>
+            {% elif plan.tier_level == 2 %}
+              <span class="sub-plan-badge badge-popular">&#11088; Pro</span>
+            {% endif %}
+
+            <div>
+              <div class="sub-plan-tier">
+                {% if plan.tier_level == 0 %}Free
+                {% elif plan.tier_level == 1 %}Standard Tier
+                {% elif plan.tier_level == 2 %}Pro Tier
+                {% else %}Tier {{ plan.tier_level }}{% endif %}
+              </div>
+              <div class="sub-plan-name">{{ plan.name }}</div>
+              <div class="sub-plan-price">
+                &#8369;{{ "{:,.0f}".format(plan.price) }}
+                <small>/ {{ plan.duration }}</small>
+              </div>
+            </div>
+
+            <div class="sub-plan-features">
+              {% if plan.features %}
+                {% for line in (plan.features or '').splitlines() %}
+                  {% if line.strip() %}
+                  <div class="sub-plan-feature">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>{{ line }}</span>
+                  </div>
+                  {% endif %}
+                {% endfor %}
+              {% else %}
+                <div class="sub-plan-feature">
+                  <i class="fa-solid fa-circle-check"></i>
+                  <span>{{ plan.duration|capitalize }} platform access</span>
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="sub-plan-cta">
+              {% if is_current %}
+                <button class="btn btn-ghost btn-sm" disabled
+                  style="width:100%; opacity:0.6; cursor:not-allowed;">
+                  <i class="fa-solid fa-check"></i> Active Plan
+                </button>
+              {% elif is_pending_this %}
+                <button class="btn btn-ghost btn-sm" disabled
+                  style="width:100%; opacity:0.6; cursor:not-allowed;">
+                  <i class="fa-solid fa-hourglass-half"></i> Awaiting Approval
+                </button>
+              {% else %}
+                <form method="post"
+                  action="{{ url_for('animal_farm_admin.self_subscribe') }}"
+                  onsubmit="return confirm('Subscribe to the {{ plan.name }} plan?');">
+                  <input type="hidden" name="plan_id" value="{{ plan.id }}">
+                  <button class="btn btn-primary btn-sm" type="submit" style="width:100%;">
+                    {% if subscription and subscription.status == 'active' %}
+                      <i class="fa-solid fa-arrow-up-right-dots"></i> Upgrade to {{ plan.name }}
+                    {% else %}
+                      <i class="fa-solid fa-rocket"></i> Subscribe Now
+                    {% endif %}
+                  </button>
+                </form>
+              {% endif %}
+            </div>
+
+          </div>
+        {% endfor %}
+      </div>
       {% else %}
-        <div style="padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: #fafafa;">
-          <strong>No active subscription found.</strong>
-          <p style="margin-top: 6px; color: var(--text-muted);">Contact Zootique Admin to activate a plan for your zoo.</p>
+        <div class="zf-empty-state" style="padding:32px;">
+          <i class="fa-solid fa-box-open zf-empty-icon"></i>
+          <div class="zf-empty-title">No Plans Available</div>
+          <div class="zf-empty-desc">No subscription plans have been configured yet. Contact a Super Administrator.</div>
         </div>
       {% endif %}
-
-      <div class="two-col" style="--two-col-template: 1fr 1fr;">
-        <div class="card-panel" style="margin: 0;">
-          <div class="card-header">
-            <h2>Available Plans</h2>
-          </div>
-          <div class="card-body">
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Duration</th>
-                    <th>Price</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for plan in plans %}
-                    <tr>
-                      <td>{{ plan.name }}</td>
-                      <td>{{ plan.duration }}</td>
-                      <td>₱{{ '%.2f'|format(plan.price) }}</td>
-                    </tr>
-                  {% else %}
-                    <tr><td colspan="3" style="color: var(--text-muted);">No plans available.</td></tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-            <p style="margin-top: 10px; color: var(--text-muted); font-size: 12px;">Plan changes are handled by Zootique Admin.</p>
-          </div>
-        </div>
-
-        <div class="card-panel" style="margin: 0;">
-          <div class="card-header">
-            <h2>Payment History</h2>
-          </div>
-          <div class="card-body">
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Amount</th>
-                    <th>Reference</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for p in payments %}
-                    <tr>
-                      <td>{{ p.paid_at.strftime('%Y-%m-%d') }}</td>
-                      <td>₱{{ '%.2f'|format(p.amount) }}</td>
-                      <td>{{ p.reference or '-' }}</td>
-                      <td><span class="badge badge-{{ p.status }}">{{ p.status }}</span></td>
-                    </tr>
-                  {% else %}
-                    <tr><td colspan="4" style="color: var(--text-muted);">No payments yet.</td></tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+      <div style="margin-top:14px; font-size:12px; color:var(--text-muted);">
+        <i class="fa-solid fa-circle-info" style="margin-right:4px;"></i>
+        Subscriptions are reviewed and activated by a Super Administrator.
+        Features unlock once your plan is marked active.
       </div>
-
-    {% endif %}
+    </div>
   </div>
+
+  {# ── Payment History ── #}
+  {% if payments %}
+  <div class="card-panel" style="margin:0;">
+    <div class="card-header">
+      <h2><i class="fa-solid fa-receipt" style="margin-right:8px;"></i> Subscription Invoices</h2>
+      <div class="card-header-actions">
+        <span class="badge badge-role">{{ payments|length }} Invoices</span>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0;">
+      <div class="zf-table-wrap">
+        <table class="table-striped">
+          <thead>
+            <tr>
+              <th style="padding-left:16px;">Date Paid</th>
+              <th>Amount</th>
+              <th>Reference</th>
+              <th>Period</th>
+              <th style="text-align:right; padding-right:16px;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in payments %}
+            <tr>
+              <td style="padding-left:16px; font-size:13px;">{{ p.paid_at.strftime('%b %d, %Y') }}</td>
+              <td style="font-weight:800; color:var(--primary);">&#8369;{{ '%.2f'|format(p.amount) }}</td>
+              <td style="font-size:12px; color:var(--text-muted); font-family:monospace;">{{ p.reference or '&mdash;' }}</td>
+              <td style="font-size:12px; color:var(--text-muted);">
+                {% if p.period_start and p.period_end %}
+                  {{ p.period_start.strftime('%b %d') }} &ndash; {{ p.period_end.strftime('%b %d, %Y') }}
+                {% else %}&mdash;{% endif %}
+              </td>
+              <td style="text-align:right; padding-right:16px;">
+                {% if p.status == 'paid' %}<span class="badge badge-active">Paid</span>
+                {% else %}<span class="badge badge-suspended">{{ p.status|capitalize }}</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
 </div>
+{% endif %}
 {% endblock %}

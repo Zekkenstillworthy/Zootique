@@ -36,34 +36,40 @@
 
 <div class="container" style="padding: 3rem 0;">
     <h2 style="font-size: 1.5rem; color: #1a4f32; margin-bottom: 1.5rem;">All Promotions</h2>
-    <div class="visitor-card-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 2rem;">
+    <div class="promotion-list" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1.25rem;">
         {% for promo in promotions %}
         {% set promo_name = (promo.name if promo.name is defined else promo.get('name')) %}
         {% set promo_code = (promo.code if promo.code is defined else promo.get('code')) %}
         {% set promo_discount = (promo.discount if promo.discount is defined else promo.get('discount')) %}
-        {% set promo_valid_until = (promo.valid_until_display if promo.valid_until_display is defined else (promo.valid_until if promo.valid_until is defined else promo.get('valid_until'))) %}
+        {% set promo_valid_until = (promo.valid_until if promo.valid_until is defined else promo.get('valid_until')) %}
         {% set promo_type = (promo.promo_type if promo.promo_type is defined else promo.get('promo_type')) %}
-        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column;">
-            <div style="padding: 1.5rem; flex: 1;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-                    {% if promo_discount %}
-                      <div style="background: #fef08a; color: #854d0e; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">{{ promo_discount }}</div>
-                    {% endif %}
-                    {% if promo_type %}
-                      <div style="font-size: 0.75rem; font-weight: 800; color: #64748b;">{{ promo_type }}</div>
-                    {% endif %}
-                </div>
-                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.2rem; color: #1a4f32;">{{ promo_name }}</h3>
-                {% if promo_valid_until %}
-                  <div style="color: #475569; font-size: 0.8rem; display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem;">
-                      <i class="fa-solid fa-clock" style="color: #f59e0b;"></i> Valid until {{ promo_valid_until }}
-                  </div>
-                {% endif %}
+        {% set promo_days_left = promo.days_left|default(None) %}
+        <div class="promotion-card{% if promo.is_expired|default(false) %} is-expired{% endif %}" data-promotion-expiry="{{ promo_valid_until or '' }}" data-promotion-days-left="{{ promo_days_left if promo_days_left is not none else '' }}">
+            <div class="promotion-card-media">
+                {% if promo.image_url %}<img src="{{ promo.image_url }}" alt="{{ promo_name }}" loading="lazy" onerror="this.onerror=null;this.style.display='none';">{% else %}<i class="fa-solid fa-ticket" aria-hidden="true"></i>{% endif %}
             </div>
-            <div style="background: #f8fafc; padding: 1rem 1.5rem; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; align-items: center;">
-                <div style="font-size: 0.8rem; color: #64748b;">Promo Code:</div>
-                <div style="font-weight: 800; color: #1a4f32; padding: 0.4rem 0.8rem; border: 1px dashed #1a4f32; border-radius: 4px; font-size: 0.9rem;">
-                    {{ promo_code }}
+            <div class="promotion-card-body">
+                <div class="promotion-discount">{{ promo_discount or 'Special offer' }}</div>
+                <h3 class="promotion-card-name">{{ promo_name }}</h3>
+                <div class="promotion-card-meta">
+                    <span class="promotion-type">{{ promo_type or 'Zootique deal' }}</span>
+                    <span class="promotion-expiry"><i class="fa-regular fa-calendar"></i><span data-expiry-label>{{ promo_valid_until or 'No expiry' }}</span><span class="promotion-expiry-badge{% if promo_days_left is not none and promo_days_left <= 3 %} visible{% endif %}{% if promo.is_expired|default(false) %} expired{% endif %}" data-expiry-badge>{% if promo.is_expired|default(false) %}Expired{% elif promo_days_left == 0 %}Last day{% elif promo_days_left is not none and promo_days_left <= 3 %}Ends soon{% endif %}</span></span>
+                </div>
+                <div class="promotion-coupon" aria-label="Promo code {{ promo_code }}">
+                    <span>{{ promo_code }}</span>
+                    <button type="button" class="promotion-copy-code" data-code="{{ promo_code }}" aria-label="Copy promo code {{ promo_code }}" title="Copy promo code" onclick="copyPromotionCode(this, event)"><i class="fa-regular fa-copy" aria-hidden="true"></i></button>
+                </div>
+                <div class="promotion-actions">
+                    <a class="promotion-primary" href="{{ url_for('visitor.promotion_detail', promotion_id=promo.id) }}"><i class="fa-solid fa-ticket"></i> View Deal</a>
+                    <div class="promotion-share-wrap">
+                        <button type="button" class="promotion-secondary promotion-share-button" aria-label="Share {{ promo_name }}" aria-haspopup="menu" aria-expanded="false" data-share-url="{{ url_for('visitor.promotion_detail', promotion_id=promo.id, _external=True) }}" data-share-title="{{ promo_name }}" data-share-text="{{ promo_discount or 'Special offer' }} - {{ promo_name }}" onclick="handlePromotionShare(this, event)"><i class="fa-solid fa-share-nodes"></i> Share</button>
+                        <div class="promotion-share-menu" role="menu" aria-label="Share {{ promo_name }}" hidden>
+                            <a href="#" role="menuitem" data-share-network="facebook" data-share-url="{{ url_for('visitor.promotion_detail', promotion_id=promo.id, _external=True) }}" data-share-title="{{ promo_name }}" data-share-text="{{ promo_discount or 'Special offer' }} - {{ promo_name }}" onclick="handlePromotionShare(this, event)"><i class="fa-brands fa-facebook" aria-hidden="true"></i> Facebook</a>
+                            <a href="#" role="menuitem" data-share-network="x" data-share-url="{{ url_for('visitor.promotion_detail', promotion_id=promo.id, _external=True) }}" data-share-title="{{ promo_name }}" data-share-text="{{ promo_discount or 'Special offer' }} - {{ promo_name }}" onclick="handlePromotionShare(this, event)"><i class="fa-brands fa-x-twitter" aria-hidden="true"></i> X</a>
+                            <a href="#" role="menuitem" data-share-network="whatsapp" data-share-url="{{ url_for('visitor.promotion_detail', promotion_id=promo.id, _external=True) }}" data-share-title="{{ promo_name }}" data-share-text="{{ promo_discount or 'Special offer' }} - {{ promo_name }}" onclick="handlePromotionShare(this, event)"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i> WhatsApp</a>
+                            <a href="#" role="menuitem" data-share-network="copy" data-share-url="{{ url_for('visitor.promotion_detail', promotion_id=promo.id, _external=True) }}" onclick="handlePromotionShare(this, event)"><i class="fa-regular fa-copy" aria-hidden="true"></i> Copy link</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

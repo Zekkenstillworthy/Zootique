@@ -4,43 +4,33 @@
 {% block page_title %}Establishment Profile{% endblock %}
 
 {% block content %}
-<div style="display: grid; gap: 2rem; max-width: 900px; margin: 0 auto;">
+<!-- Success toast -->
+<div class="zf-toast" id="zfToast" role="status" aria-live="polite">
+  <i class="fa-solid fa-circle-check"></i>
+  <span id="zfToastMsg">Establishment profile saved successfully.</span>
+</div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div style="margin: 0 0 18px 0; display:flex; flex-direction:column; gap:8px;">
-        {% for category, message in messages %}
-        {% if category == 'success' %}
-        <div class="card-panel" style="margin:0; padding:12px 14px; border-left:4px solid var(--success);">
-        {% else %}
-        <div class="card-panel" style="margin:0; padding:12px 14px; border-left:4px solid #ef4444;">
-        {% endif %}
-            <div style="font-size:13px; font-weight:600;">{{ message }}</div>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-    {% endwith %}
+<div style="display: grid; gap: 20px; max-width: 860px; margin: 0 auto;">
 
     <!-- Hero card -->
-    <div class="card-panel" style="padding: 0; overflow: hidden;">
-        <div style="background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
-                    padding: 2.5rem; color: white; display: flex; align-items: center; gap: 2rem;">
+    <div class="card-panel" style="padding: 0; overflow: hidden; border: 1px solid var(--border-light);">
+        <div style="background: linear-gradient(135deg, var(--primary), var(--primary-light));
+                    padding: 2rem 2.5rem; color: white; display: flex; align-items: center; gap: 1.5rem;">
             {% if zoo and zoo.image_url %}
                 <img src="{{ zoo.image_url }}" alt="{{ zoo.name }}"
-                     style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover;
-                            border: 4px solid rgba(255,255,255,0.4); flex-shrink: 0;">
+                     style="width: 84px; height: 84px; border-radius: 50%; object-fit: cover;
+                            border: 3px solid rgba(255,255,255,0.6); flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
             {% else %}
-                <div style="width: 90px; height: 90px; border-radius: 50%;
+                <div style="width: 84px; height: 84px; border-radius: 50%;
                             background: rgba(255,255,255,0.2); display: flex;
                             align-items: center; justify-content: center; flex-shrink: 0;">
-                    <i class="fa-solid fa-tree" style="font-size: 2.5rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-tree" style="font-size: 2.2rem; opacity: 0.9;"></i>
                 </div>
             {% endif %}
             <div>
-                <h2 style="margin: 0 0 0.3rem; font-size: 1.6rem;">{{ zoo.name if zoo else 'No Zoo Assigned' }}</h2>
-                <div style="opacity: 0.85; font-size: 0.95rem;">
-                    {% if zoo %}<i class="fa-solid fa-location-dot" style="margin-right: 0.4rem;"></i>{{ zoo.location or 'Location not set' }}{% endif %}
+                <h2 style="margin: 0 0 4px; font-size: 1.5rem; font-weight: 800; color: #ffffff;">{{ zoo.name if zoo else 'No Zoo Assigned' }}</h2>
+                <div style="opacity: 0.9; font-size: 0.9rem;">
+                    {% if zoo %}<i class="fa-solid fa-location-dot" style="margin-right: 6px;"></i>{{ zoo.location or 'Location not set' }}{% endif %}
                 </div>
             </div>
         </div>
@@ -48,94 +38,143 @@
 
     <!-- Edit form -->
     {% if zoo %}
-    <div class="card-panel">
-        <div class="card-header-bar">
-            <h2>Edit Profile Details</h2>
+    <div class="zf-form-card">
+        <div class="zf-form-header">
+            <h2 class="zf-form-title">
+                <i class="fa-solid fa-pen-to-square"></i>
+                <span>Edit Profile Details</span>
+            </h2>
+            <span class="zf-form-badge">Establishment</span>
         </div>
-        <div class="card-body" style="padding: 2rem;">
-            <form method="POST" action="{{ url_for('animal_farm_admin.save_establishment_profile') }}" enctype="multipart/form-data"
-                  style="display: grid; gap: 1.5rem;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                    <div>
-                        <label style="font-weight:600; color:var(--text-secondary);">
-                            Establishment Name <span style="color: var(--danger);">*</span>
-                        </label>
-                        <input type="text" name="name" required value="{{ zoo.name }}"
-                               style="width: 100%; padding:10px 12px; border:1px solid var(--border);
-                                      border-radius:8px; font-size: 0.95rem; font-family: inherit;">
+        <form id="estProfileForm" method="POST" action="{{ url_for('animal_farm_admin.save_establishment_profile') }}" enctype="multipart/form-data" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="zf-form-body">
+                <div class="zf-section">
+                    <div class="zf-section-label">
+                        <i class="fa-solid fa-circle-info"></i> Public Information
                     </div>
+                    <div class="zf-grid-2">
+                        <div class="zf-field">
+                            <label class="zf-label" for="zoo_name">
+                                Establishment Name <span class="zf-req">*</span>
+                            </label>
+                            <input type="text" id="zoo_name" name="name" class="zf-control" required value="{{ zoo.name }}" autocomplete="off">
+                            <span class="zf-error" id="zoo_name_error"><i class="fa-solid fa-triangle-exclamation"></i> Establishment name is required.</span>
+                        </div>
 
-                    <div>
-                        <label style="font-weight:600; color:var(--text-secondary);">
-                            Type / Category
-                        </label>
-                        <input type="text" name="type" value="{{ zoo.type or '' }}"
-                               placeholder="e.g. Wildlife Park, Aquarium…"
-                               style="width: 100%; padding:10px 12px; border:1px solid var(--border);
-                                      border-radius:8px; font-size: 0.95rem; font-family: inherit;">
+                        <div class="zf-field">
+                            <label class="zf-label" for="zoo_type">Type / Category</label>
+                            <input type="text" id="zoo_type" name="type" class="zf-control" value="{{ zoo.type or '' }}" placeholder="e.g., Wildlife Sanctuary, Botanical Zoo">
+                            <span class="zf-hint">Park category shown to visitors</span>
+                        </div>
+
+                        <div class="zf-field zf-full">
+                            <label class="zf-label" for="zoo_location">Location / Address</label>
+                            <input type="text" id="zoo_location" name="location" class="zf-control" value="{{ zoo.location or '' }}" placeholder="Complete address, province, or coordinates">
+                        </div>
+
+                        <div class="zf-field zf-full">
+                            <label class="zf-label" for="zoo_description">Public Description</label>
+                            <textarea id="zoo_description" name="description" class="zf-control" rows="4"
+                                      placeholder="Describe your establishment, mission, conservation programs, and guest attractions...">{{ zoo.description or '' }}</textarea>
+                            <span class="zf-hint">Displayed on visitor discovery pages</span>
+                        </div>
                     </div>
                 </div>
 
-                <div>
-                    <label style="font-weight:600; color:var(--text-secondary);">
-                        Location / Address
-                    </label>
-                    <input type="text" name="location" value="{{ zoo.location or '' }}"
-                           placeholder="Full address or region"
-                           style="width: 100%; padding:10px 12px; border:1px solid var(--border);
-                                  border-radius:8px; font-size: 0.95rem; font-family: inherit;">
+                <div class="zf-section">
+                    <div class="zf-section-label">
+                        <i class="fa-solid fa-image"></i> Facility Cover Photo
+                    </div>
+                    <div class="zf-field zf-full">
+                        <div class="zf-upload-zone" id="profileDropZone">
+                            <i class="fa-solid fa-cloud-arrow-up zf-upload-icon"></i>
+                            <div class="zf-upload-text"><strong>Drag and drop</strong> new cover photo here, or</div>
+                            <label class="zf-upload-btn" for="profile_cover_img">
+                                <i class="fa-solid fa-folder-open"></i> Browse Picture
+                            </label>
+                            <input type="file" id="profile_cover_img" name="image_file" accept="image/*" class="zf-file-input">
+                            <div class="zf-upload-hint">PNG, JPG or WEBP up to 5MB (leave empty to keep current)</div>
+                            <div class="zf-preview-wrap" id="profilePreviewWrap">
+                                <img id="profileImagePreview" src="" alt="Preview">
+                                <button type="button" class="zf-remove-btn" id="profileRemoveImgBtn">&times;</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+            </div>
 
-                <div>
-                    <label style="font-weight:600; color:var(--text-secondary);">
-                        Description
-                    </label>
-                    <textarea name="description" rows="5"
-                              placeholder="Describe your establishment — visible to visitors on the public site."
-                              style="width: 100%; padding:10px 12px; border:1px solid var(--border);
-                                     border-radius:8px; font-size: 0.95rem; font-family: inherit;
-                                     resize: vertical;">{{ zoo.description or '' }}</textarea>
-                </div>
-
-                <div>
-                    <label style="display: block; font-size: 0.85rem; font-weight: 700;
-                                  color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;">
-                        Upload Cover Picture (optional)
-                    </label>
-                    <input type="file" name="image_file" accept="image/*"
-                           style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0;
-                                  border-radius: 8px; font-size: 0.95rem; font-family: inherit;">
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.4rem;">
-                        Leave blank to keep the current cover photo.
-                    </p>
-                </div>
-
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 0.5rem;
-                             border-top: 1px solid #f1f5f9;">
-                    <a href="{{ url_for('animal_farm_admin.dashboard') }}"
-                       style="padding: 0.75rem 1.5rem; border: 1px solid #e2e8f0; border-radius: 8px;
-                              color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 0.9rem;">
-                        Cancel
-                    </a>
-                    <button type="submit" class="btn btn-primary"
-                            style="padding: 0.75rem 2rem; font-weight: 700;">
-                        <i class="fa-solid fa-floppy-disk" style="margin-right: 0.5rem;"></i>Save Changes
-                    </button>
-                </div>
-            </form>
-        </div>
+            <div class="zf-form-footer">
+                <a href="{{ url_for('animal_farm_admin.dashboard') }}" class="zf-btn-cancel" style="text-decoration:none;">Cancel</a>
+                <button type="submit" class="zf-btn-primary" id="saveProfileBtn">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                </button>
+            </div>
+        </form>
     </div>
     {% else %}
     <div class="card-panel">
-        <div class="card-body" style="padding: 3rem; text-align: center; color: var(--text-muted);">
-            <i class="fa-solid fa-triangle-exclamation" style="font-size: 3rem; margin-bottom: 1rem; color: #fbbf24;"></i>
-            <h3>No Zoo Assigned</h3>
-            <p>Your account is not linked to any establishment. Contact a Zootique Administrator to get assigned.</p>
+        <div class="zf-empty-state">
+            <i class="fa-solid fa-triangle-exclamation zf-empty-icon" style="color: #f59e0b;"></i>
+            <div class="zf-empty-title">No Zoo Facility Assigned</div>
+            <div class="zf-empty-desc">Your account is currently not assigned to any establishment. Contact a Super Admin to link your park.</div>
         </div>
     </div>
     {% endif %}
 
 </div>
+
+<script>
+const fileInput = document.getElementById('profile_cover_img');
+const previewWrap = document.getElementById('profilePreviewWrap');
+const imagePreview = document.getElementById('profileImagePreview');
+const removeImgBtn = document.getElementById('profileRemoveImgBtn');
+const dropZone = document.getElementById('profileDropZone');
+
+if (fileInput) {
+    fileInput.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                imagePreview.src = evt.target.result;
+                previewWrap.style.display = 'block';
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+}
+if (removeImgBtn) {
+    removeImgBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        fileInput.value = '';
+        imagePreview.src = '';
+        previewWrap.style.display = 'none';
+    });
+}
+
+const form = document.getElementById('estProfileForm');
+if (form) {
+    form.addEventListener('submit', function(e) {
+        const nameInput = document.getElementById('zoo_name');
+        const nameErr = document.getElementById('zoo_name_error');
+        if (!nameInput.value.trim()) {
+            e.preventDefault();
+            nameInput.classList.add('is-invalid');
+            if (nameErr) nameErr.style.display = 'block';
+            return;
+        } else {
+            nameInput.classList.remove('is-invalid');
+            if (nameErr) nameErr.style.display = 'none';
+        }
+
+        const btn = document.getElementById('saveProfileBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+        }
+    });
+}
+</script>
 {% endblock %}

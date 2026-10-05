@@ -1,93 +1,109 @@
 {% extends "base.html" %}
 
 {% block title %}System Feedback | Animal Farm Admin{% endblock %}
-{% block page_title %}System Feedback / Contact Super Admin{% endblock %}
+{% block page_title %}System Feedback &amp; Support{% endblock %}
 
 {% block content %}
-<div style="display: grid; gap: 2rem; max-width: 900px; margin: 0 auto;">
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div style="margin: 0 0 18px 0; display:flex; flex-direction:column; gap:8px;">
-        {% for category, message in messages %}
-        {% if category == 'success' %}
-        <div class="card-panel" style="margin:0; padding:12px 14px; border-left:4px solid var(--success);">
-        {% else %}
-        <div class="card-panel" style="margin:0; padding:12px 14px; border-left:4px solid #ef4444;">
-        {% endif %}
-            <div style="font-size:13px; font-weight:600;">{{ message }}</div>
+<!-- Success toast -->
+<div class="zf-toast" id="zfToast" role="status" aria-live="polite">
+  <i class="fa-solid fa-circle-check"></i>
+  <span id="zfToastMsg">Support feedback submitted successfully.</span>
+</div>
+
+<div style="display: grid; gap: 24px; max-width: 860px; margin: 0 auto;">
+
+    <!-- Submit feedback form -->
+    <div class="zf-form-card">
+        <div class="zf-form-header">
+            <h2 class="zf-form-title">
+                <i class="fa-solid fa-headset"></i>
+                <span>Submit Feedback to Super Admin</span>
+            </h2>
+            <span class="zf-form-badge">Support</span>
         </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-    {% endwith %}
 
-    <div class="card-panel">
-        <div class="card-header">
-            <h2>Submit Feedback to Support</h2>
-        </div>
-        <div class="card-body">
-            <form method="post" action="{{ url_for('animal_farm_admin.system_feedback') }}" style="display: flex; flex-direction: column; gap:10px;">
-                <div>
-                    <label style="font-weight:600; color:var(--text-secondary);">Category</label>
-                    <select name="category" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-family: inherit; width:100%;">
-                        <option value="">Select a category...</option>
-                        {% for category in categories %}
-                        <option value="{{ category }}">{{ category }}</option>
-                        {% endfor %}
-                    </select>
+        <form method="post" action="{{ url_for('animal_farm_admin.system_feedback') }}">
+            <div class="zf-form-body">
+                <div class="zf-section">
+                    <div class="zf-section-label">
+                        <i class="fa-solid fa-circle-info"></i> Support Request Details
+                    </div>
+                    <div class="zf-grid-2">
+                        <div class="zf-field">
+                            <label class="zf-label" for="fb_category">Category <span class="zf-req">*</span></label>
+                            <select id="fb_category" name="category" class="zf-control" required>
+                                <option value="">Select a category...</option>
+                                {% for category in categories %}
+                                <option value="{{ category }}">{{ category }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="zf-field">
+                            <label class="zf-label" for="fb_rating">Experience Rating (1-5)</label>
+                            <select id="fb_rating" name="rating" class="zf-control">
+                                <option value="5">5 — Excellent</option>
+                                <option value="4">4 — Good</option>
+                                <option value="3">3 — Fair</option>
+                                <option value="2">2 — Needs Improvement</option>
+                                <option value="1">1 — Poor</option>
+                            </select>
+                        </div>
+
+                        <div class="zf-field zf-full">
+                            <label class="zf-label" for="fb_comment">Comment / Message <span class="zf-req">*</span></label>
+                            <textarea id="fb_comment" name="comment" class="zf-control" rows="4" required placeholder="Describe technical issues, feature requests, or subscription questions..."></textarea>
+                        </div>
+                    </div>
                 </div>
+            </div>
 
-                <div>
-                    <label style="font-weight:600; color:var(--text-secondary);">Rating (1-5)</label>
-                    <input type="number" name="rating" min="1" max="5" value="5" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-family: inherit; width:100%;">
-                </div>
-
-                <div>
-                    <label style="font-weight:600; color:var(--text-secondary);">Your Comment / Message</label>
-                    <textarea name="comment" rows="4" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-family: inherit; resize: vertical; width:100%;" placeholder="Describe your issue or suggestion..."></textarea>
-                </div>
-
-                <button type="submit" class="btn btn-primary">
+            <div class="zf-form-footer">
+                <button type="submit" class="zf-btn-primary">
                     <i class="fa-solid fa-paper-plane"></i> Submit Feedback
                 </button>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 
     <!-- Previous Feedback -->
     <div class="card-panel">
         <div class="card-header">
-            <h2>Your Previous Feedback</h2>
+            <h2><i class="fa-solid fa-history" style="margin-right:8px;"></i> Previous Support Inquiries</h2>
+            <div class="card-header-actions">
+                <span class="badge badge-role">{{ feedbacks|length }} Inquiries</span>
+            </div>
         </div>
-        <div class="card-body">
+        <div class="card-body" style="padding:20px;">
         {% if feedbacks %}
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: flex; flex-direction: column; gap: 14px;">
             {% for fb in feedbacks %}
-                <div style="border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; align-items: flex-start;">
+                <div style="border: 1px solid var(--border-light); border-radius: 10px; padding: 18px 20px; background:#ffffff;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; align-items: flex-start; flex-wrap:wrap; gap:8px;">
                         <div>
-                            <span style="font-weight: 600; color: var(--text-primary); font-size: 1.1rem;">{{ fb.category }}</span>
-                            <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">
-                                Submitted on {{ fb.created_at.strftime('%b %d, %Y') }} • Rating: {{ fb.rating }}/5
+                            <span class="badge badge-routine" style="font-size:12px; margin-right:6px;">{{ fb.category }}</span>
+                            <span style="color:#f59e0b; font-size:13px; letter-spacing:1px;">{{ '★' * fb.rating }}{{ '☆' * (5 - fb.rating) }}</span>
+                            <div style="color: var(--text-muted); font-size: 12px; margin-top: 4px;">
+                                Submitted on {{ fb.created_at.strftime('%b %d, %Y at %H:%M') }}
                             </div>
                         </div>
-                        <div style="display:flex; gap:8px; align-items:center;">
+                        <div style="display:flex; gap:6px; align-items:center;">
                             {% if not fb.replies %}
                             <details>
                                 <summary class="btn btn-outline btn-sm" style="list-style:none; cursor:pointer;">Edit</summary>
-                                <div style="margin-top:10px; min-width:340px; background:#f8fafc; border:1px solid var(--border); border-radius:10px; padding:12px;">
-                                    <form method="post" action="{{ url_for('animal_farm_admin.update_system_feedback', feedback_id=fb.id) }}" style="display:grid; gap:8px;">
-                                        <label style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Category</label>
-                                        <select name="category" required style="padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;">
+                                <div style="margin-top:10px; min-width:320px; background:#f8fafc; border:1px solid var(--border); border-radius:10px; padding:14px;">
+                                    <form method="post" action="{{ url_for('animal_farm_admin.update_system_feedback', feedback_id=fb.id) }}" style="display:grid; gap:10px;">
+                                        <label class="zf-label">Category</label>
+                                        <select name="category" class="zf-control" required>
                                             {% for category in categories %}
                                             <option value="{{ category }}" {% if fb.category == category %}selected{% endif %}>{{ category }}</option>
                                             {% endfor %}
                                         </select>
-                                        <label style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Rating</label>
-                                        <input type="number" name="rating" min="1" max="5" value="{{ fb.rating }}" required style="padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;">
-                                        <label style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Comment</label>
-                                        <textarea name="comment" rows="3" required style="padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; resize: vertical;">{{ fb.comment }}</textarea>
+                                        <label class="zf-label">Rating</label>
+                                        <input type="number" name="rating" min="1" max="5" value="{{ fb.rating }}" class="zf-control" required>
+                                        <label class="zf-label">Comment</label>
+                                        <textarea name="comment" rows="3" class="zf-control" required>{{ fb.comment }}</textarea>
                                         <div style="display:flex; justify-content:flex-end;">
                                             <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
                                         </div>
@@ -95,36 +111,34 @@
                                 </div>
                             </details>
                             {% endif %}
-                            <form method="post" action="{{ url_for('animal_farm_admin.delete_system_feedback', feedback_id=fb.id) }}" onsubmit="return confirm('Delete this system feedback?');" style="margin:0;">
-                                <button type="submit" class="btn btn-ghost btn-sm"><i class="fa-solid fa-trash"></i> Delete</button>
+                            <form method="post" action="{{ url_for('animal_farm_admin.delete_system_feedback', feedback_id=fb.id) }}" onsubmit="return confirm('Delete this system feedback?');" style="margin:0; display:inline;">
+                                <button type="submit" class="zf-icon-btn danger" title="Delete Inquiry"><i class="fa-solid fa-trash"></i></button>
                             </form>
                         </div>
                     </div>
-                    <div style="color: var(--text-secondary); line-height: 1.5;">
-                        {{ fb.comment }}
-                    </div>
+                    <p style="margin:0; font-size:14px; color:var(--text); line-height:1.5;">{{ fb.comment }}</p>
 
                     {% if fb.replies %}
-                        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 1rem;">
-                            <h4 style="font-size: 0.95rem; color: var(--text-primary); margin: 0;">Support Replies</h4>
-                            {% for reply in fb.replies %}
-                                <div style="background: var(--bg-body); padding: 1rem; border-radius: 8px; border-left: 3px solid var(--primary-color);">
-                                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
-                                        Replied on {{ reply.created_at.strftime('%b %d, %Y %I:%M %p') }}
-                                    </div>
-                                    <div style="color: var(--text-secondary); line-height: 1.4; font-size: 0.95rem;">
-                                        {{ reply.reply_text }}
-                                    </div>
-                                </div>
-                            {% endfor %}
+                    <div style="margin-top:14px; padding-left:14px; border-left:3px solid var(--primary); display:grid; gap:8px;">
+                        {% for r in fb.replies %}
+                        <div style="background:#f8fafc; padding:10px 14px; border-radius:6px;">
+                            <div style="font-size:12px; font-weight:700; color:var(--primary);">Super Admin Response:</div>
+                            <div style="font-size:13px; color:var(--text); margin-top:2px;">{{ r.message }}</div>
                         </div>
+                        {% endfor %}
+                    </div>
                     {% endif %}
                 </div>
             {% endfor %}
             </div>
         {% else %}
-            <p style="color: var(--text-muted);">You haven't submitted any feedback yet.</p>
+            <div class="zf-empty-state">
+                <i class="fa-solid fa-inbox zf-empty-icon"></i>
+                <div class="zf-empty-title">No Prior Inquiries</div>
+                <div class="zf-empty-desc">Any system questions, feature requests, or bug reports submitted will appear here.</div>
+            </div>
         {% endif %}
+        </div>
     </div>
 
 </div>

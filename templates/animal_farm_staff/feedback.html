@@ -3,7 +3,7 @@
 {% block page_title %}Visitor Feedback{% endblock %}
 
 {% block content %}
-<div style="display:grid; gap:2rem;">
+<div style="display:grid; gap:20px;">
 
     <!-- Stats -->
     <div class="stats-grid" style="--stats-cols: 2;">
@@ -15,54 +15,54 @@
         <div class="stat-card">
             <div class="stat-icon icon-green"><i class="fa-solid fa-star"></i></div>
             <span class="value">{{ avg_rating }}</span>
-            <h3>Avg. Rating</h3>
+            <h3>Average Rating</h3>
         </div>
     </div>
 
-    <!-- Filter -->
-    <div class="card-panel" style="padding:1rem 1.5rem;">
-        <div style="display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center;">
-            <span style="font-size:0.85rem; font-weight:700; color:var(--text-muted);">Filter by Rating:</span>
-            <a href="{{ url_for('animal_farm_staff.visitor_feedback') }}"
-               style="padding:0.4rem 0.9rem; border-radius:6px; font-size:0.85rem; font-weight:600; text-decoration:none;
-                      {% if not selected_rating %}background:var(--primary-color); color:white;
-                      {% else %}background:#f1f5f9; color:var(--text-muted); border:1px solid #e2e8f0;{% endif %}">All</a>
-            {% for r in [5, 4, 3, 2, 1] %}
-            <a href="{{ url_for('animal_farm_staff.visitor_feedback') }}?rating={{ r }}"
-               style="padding:0.4rem 0.9rem; border-radius:6px; font-size:0.85rem; font-weight:600; text-decoration:none;
-                      {% if selected_rating == r|string %}background:var(--primary-color); color:white;
-                      {% else %}background:#f1f5f9; color:var(--text-muted); border:1px solid #e2e8f0;{% endif %}">
-                {{ '★' * r }}
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-
-    <!-- Feedback cards -->
+    <!-- Filter & Card -->
     <div class="card-panel">
-        <div class="card-header-bar"><h2>Reviews — {{ zoo.name }}</h2></div>
-        <div class="card-body" style="padding:1.5rem;">
+        <div class="zf-filter-bar">
+            <div class="zf-filter-group">
+                <span style="font-size:13px; font-weight:700; color:var(--text);"><i class="fa-solid fa-filter" style="color:var(--primary); margin-right:4px;"></i> Rating Filter:</span>
+                <a href="{{ url_for('animal_farm_staff.visitor_feedback') }}"
+                   class="btn btn-sm {% if not selected_rating %}btn-primary{% else %}btn-outline{% endif %}"
+                   style="border-radius:20px; text-decoration:none;">All Reviews</a>
+                {% for r in [5, 4, 3, 2, 1] %}
+                <a href="{{ url_for('animal_farm_staff.visitor_feedback') }}?rating={{ r }}"
+                   class="btn btn-sm {% if selected_rating == r|string %}btn-primary{% else %}btn-outline{% endif %}"
+                   style="border-radius:20px; text-decoration:none;">
+                    {{ r }} <i class="fa-solid fa-star" style="color:#f59e0b; font-size:11px;"></i>
+                </a>
+                {% endfor %}
+            </div>
+            <div class="card-header-actions">
+                <span class="badge badge-role">{{ zoo.name }}</span>
+            </div>
+        </div>
+
+        <div class="card-body" style="padding:20px;">
             {% if feedbacks %}
-            <div style="display:grid; gap:1rem;">
+            <div style="display:grid; gap:14px;">
                 {% for f in feedbacks %}
-                <div style="border:1px solid #e2e8f0; border-radius:10px; padding:1.2rem;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.6rem;">
+                <div style="border:1px solid var(--border-light); border-radius:10px; padding:16px 20px; background:#ffffff; transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='var(--shadow)'" onmouseout="this.style.boxShadow='none'">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
                         <div>
-                            <h4 style="margin:0; font-size:0.95rem;">{{ f.visitor_name }}</h4>
-                            <span style="font-size:0.8rem; color:var(--text-muted);">{{ f.date or '—' }}</span>
+                            <h4 style="margin:0 0 2px; font-size:15px; font-weight:700; color:var(--text);">{{ f.visitor_name or 'Anonymous Visitor' }}</h4>
+                            <span style="font-size:12px; color:var(--text-muted);"><i class="fa-regular fa-clock" style="margin-right:4px;"></i>{{ f.date or 'Recently' }}</span>
                         </div>
-                        <div style="color:#fbbf24; font-size:1rem; letter-spacing:2px;">
+                        <div style="color:#f59e0b; font-size:14px; letter-spacing:2px;">
                             {{ '★' * (f.rating or 0) }}{{ '☆' * (5 - (f.rating or 0)) }}
                         </div>
                     </div>
-                    <p style="margin:0; font-size:0.9rem; color:#334155; line-height:1.6;">{{ f.comment or '—' }}</p>
+                    <p style="margin:0; font-size:14px; color:var(--text); line-height:1.6;">{{ f.comment or 'No written comments provided.' }}</p>
                 </div>
                 {% endfor %}
             </div>
             {% else %}
-            <div style="text-align:center; padding:3rem; color:var(--text-muted);">
-                <i class="fa-solid fa-comment-slash" style="font-size:3rem; margin-bottom:1rem;"></i>
-                <p>No feedback yet{% if selected_rating %} with {{ selected_rating }} star(s){% endif %}.</p>
+            <div class="zf-empty-state">
+                <i class="fa-regular fa-comment-dots zf-empty-icon"></i>
+                <div class="zf-empty-title">No Reviews Found</div>
+                <div class="zf-empty-desc">No visitor reviews have been logged{% if selected_rating %} with {{ selected_rating }} star rating{% endif %}.</div>
             </div>
             {% endif %}
         </div>

@@ -1,57 +1,73 @@
 {% extends "base.html" %}
 
 {% block title %}Visitor Feedback Management | Animal Farm Admin{% endblock %}
-{% block page_title %}Visitor Feedback Management{% endblock %}
+{% block page_title %}Visitor Feedback{% endblock %}
 
 {% block content %}
 <div class="card-panel">
     <div class="card-header">
-        <h2>Visitor Feedback</h2>
+        <h2><i class="fa-solid fa-comments" style="margin-right:8px;"></i> Visitor Feedback Management</h2>
         <div class="card-header-actions">
-            <a class="btn btn-outline btn-sm" href="{{ url_for('animal_farm_admin.visitor_feedback_management') }}">Reset</a>
+            <a class="btn btn-outline btn-sm" href="{{ url_for('animal_farm_admin.visitor_feedback_management') }}">Reset Filters</a>
         </div>
     </div>
 
-    <form class="filter-bar" method="get" action="{{ url_for('animal_farm_admin.visitor_feedback_management') }}">
-        <select name="rating">
-            <option value="" {% if not selected_rating %}selected{% endif %}>All ratings</option>
-            {% for r in [5,4,3,2,1] %}
-              <option value="{{ r }}" {% if selected_rating|int == r %}selected{% endif %}>{{ r }} stars</option>
-            {% endfor %}
-        </select>
-        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-filter"></i> Filter</button>
-    </form>
+    <div class="zf-filter-bar">
+        <form method="get" action="{{ url_for('animal_farm_admin.visitor_feedback_management') }}" class="zf-filter-group" style="margin:0;">
+            <label class="zf-label" style="margin:0; font-weight:700;"><i class="fa-solid fa-filter" style="color:var(--primary); margin-right:4px;"></i> Star Rating:</label>
+            <select name="rating" class="zf-control" style="width:auto; height:38px; padding:6px 12px;">
+                <option value="" {% if not selected_rating %}selected{% endif %}>All Ratings (1-5)</option>
+                {% for r in [5,4,3,2,1] %}
+                  <option value="{{ r }}" {% if selected_rating|int == r %}selected{% endif %}>{{ r }} Stars</option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-primary btn-sm" type="submit" style="height:38px;">Apply Filter</button>
+        </form>
+        <div class="card-header-actions">
+            <span class="badge badge-role">{{ feedbacks|length }} Reviews</span>
+        </div>
+    </div>
 
-    <div class="card-body">
-        <div class="table-wrap">
-            <table>
+    <div class="card-body" style="padding:0;">
+        <div class="zf-table-wrap">
+            <table class="table-striped">
                 <thead>
                     <tr>
-                        <th>Visitor</th>
-                        <th>Date</th>
+                        <th style="padding-left:16px;">Visitor Name</th>
+                        <th>Submission Date</th>
                         <th>Rating</th>
-                        <th>Comment</th>
-                        <th style="width:120px;">Action</th>
+                        <th>Visitor Review</th>
+                        <th style="width:90px; text-align:right; padding-right:16px;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for f in feedbacks %}
                     <tr>
-                        <td>{{ f.visitor_name }}</td>
-                        <td>{{ f.date or '-' }}</td>
+                        <td style="padding-left:16px; font-weight:700; color:var(--text);">{{ f.visitor_name or 'Anonymous Visitor' }}</td>
+                        <td style="color:var(--text-muted); font-size:13px;">{{ f.date or '-' }}</td>
                         <td>
                             {% set rating = f.rating or 0 %}
-                            <span style="color:#f59e0b; letter-spacing: 2px;">{{ '★' * rating }}{{ '☆' * (5-rating) }}</span>
+                            <span style="color:#f59e0b; letter-spacing: 2px; font-size:13px;">{{ '★' * rating }}{{ '☆' * (5-rating) }}</span>
                         </td>
-                        <td>{{ f.comment }}</td>
-                        <td>
-                            <form method="post" action="{{ url_for('animal_farm_admin.delete_visitor_feedback', feedback_id=f.id) }}" onsubmit="return confirm('Delete this feedback entry?');" style="margin:0;">
-                                <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
+                        <td style="color:var(--text); font-size:13px; line-height:1.5;">{{ f.comment or '—' }}</td>
+                        <td style="text-align:right; padding-right:16px;">
+                            <form method="post" action="{{ url_for('animal_farm_admin.delete_visitor_feedback', feedback_id=f.id) }}" onsubmit="return confirm('Delete this feedback entry?');" style="margin:0; display:inline;">
+                                <button class="zf-icon-btn danger" type="submit" title="Delete Review">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
                             </form>
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="5" style="color: var(--text-muted);">No feedback found.</td></tr>
+                    <tr>
+                        <td colspan="5">
+                            <div class="zf-empty-state">
+                                <i class="fa-regular fa-comment-dots zf-empty-icon"></i>
+                                <div class="zf-empty-title">No Visitor Reviews Found</div>
+                                <div class="zf-empty-desc">Reviews submitted by visitors on the public establishment page will show up here.</div>
+                            </div>
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>

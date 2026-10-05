@@ -103,8 +103,8 @@
 </div>
 
 <!-- Plan Manager Modal / Popup -->
-<div id="planManagerModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; padding: 1.5rem; transition: all 0.2s ease;">
-  <div class="card-panel" style="width: 100%; max-width: 540px; margin: 0; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1); border-radius: var(--border-radius, 12px); overflow: hidden; transform: translateY(0); transition: transform 0.2s ease;">
+<div id="planManagerModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 2000; align-items: flex-start; justify-content: center; padding: 1.5rem; overflow-y: auto; transition: all 0.2s ease;">
+  <div class="card-panel" style="width: 100%; max-width: 540px; margin: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1); border-radius: var(--border-radius, 12px); overflow: hidden; transform: translateY(0); transition: transform 0.2s ease; max-height: 90vh; overflow-y: auto;">
     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-light, #e2e8f0);">
       <h2 id="planModalTitle" style="margin: 0; font-size: 1.1rem; font-weight: 700;">PLAN MANAGER — Add</h2>
       <button type="button" onclick="closePlanModal()" style="background: none; border: none; font-size: 1.5rem; line-height: 1; color: var(--text-muted, #64748b); cursor: pointer; padding: 0;">&times;</button>
@@ -118,7 +118,7 @@
           <input type="text" id="modalPlanName" name="name" placeholder="Basic Field, Habitat Pro, ..." required style="width:100%;">
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+        <div class="form-grid-2">
           <div>
             <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-muted, #64748b); margin-bottom:4px;">Price (₱)</label>
             <input type="number" id="modalPlanPrice" name="price" step="0.01" placeholder="0.00" required style="width:100%;">

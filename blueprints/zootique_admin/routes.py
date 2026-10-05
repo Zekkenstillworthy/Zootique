@@ -6,6 +6,7 @@ import json
 from datetime import datetime, timedelta
 
 from flask import Blueprint, current_app, render_template, redirect, url_for, request, flash, session
+from sqlalchemy import case
 from werkzeug.utils import secure_filename
 
 from services.storage import save_uploaded_image as _save_uploaded_image
@@ -14,6 +15,7 @@ from models import (
     db,
     Zoo,
     User,
+    EstablishmentRegistration,
     Booking,
     Feedback,
     SubscriptionPlan,
@@ -28,8 +30,10 @@ from services import (
     cancel_zoo_subscription,
     change_zoo_subscription_plan,
     renew_zoo_subscription,
+    approve_pending_subscription,
 )
 from services.auth_guard import require_role_guard
+from services.registration_notifications import send_registration_approved, send_registration_rejected
 
 admin_bp = Blueprint("zootique_admin", __name__)
 
@@ -273,6 +277,113 @@ def dashboard():
     )
 
 
+@admin_bp.get('/registrations')
+def registrations():
+    status = (request.args.get('status') or 'pending').strip().lower()
+    allowed_statuses = {'pending', 'approved', 'rejected', 'all'}
+    if status not in allowed_statuses:
+        status = 'pending'
+
+    query = EstablishmentRegistration.query
+    if status != 'all':
+        query = query.filter_by(status=status)
+    registrations = query.order_by(
+        case((EstablishmentRegistration.status == 'pending', 0), else_=1),
+        EstablishmentRegistration.created_at.desc(),
+    ).all()
+    return render_template(
+        'zootique_admin/registrations.html',
+        registrations=registrations,
+        selected_status=status,
+    )
+
+
+@admin_bp.get('/registrations/<int:registration_id>')
+def registration_detail(registration_id: int):
+    registration = db.session.get(EstablishmentRegistration, registration_id)
+    if not registration:
+        flash('Registration not found.', 'error')
+        return redirect(url_for('zootique_admin.registrations'))
+    return render_template('zootique_admin/registration_detail.html', registration=registration)
+
+
+@admin_bp.post('/registrations/<int:registration_id>/approve')
+def approve_registration(registration_id: int):
+    registration = db.session.get(EstablishmentRegistration, registration_id)
+    if not registration:
+        flash('Registration not found.', 'error')
+        return redirect(url_for('zootique_admin.registrations'))
+    if registration.status != 'pending':
+        flash('This registration has already been decided.', 'error')
+        return redirect(url_for('zootique_admin.registration_detail', registration_id=registration.id))
+    if not registration.admin_email or not registration.admin_password_hash:
+        flash('This registration is missing administrator account details.', 'error')
+        return redirect(url_for('zootique_admin.registration_detail', registration_id=registration.id))
+    if User.query.filter_by(email=registration.admin_email).first():
+        flash('The administrator email is already in use.', 'error')
+        return redirect(url_for('zootique_admin.registration_detail', registration_id=registration.id))
+
+    reviewer = _current_user()
+    try:
+        new_zoo = Zoo(
+            name=registration.establishment_name,
+            type=registration.establishment_type,
+            location=registration.location,
+        )
+        db.session.add(new_zoo)
+        db.session.flush()
+
+        new_user = User(
+            email=registration.admin_email,
+            full_name=registration.admin_full_name,
+            role='zoo_admin',
+            zoo_id=new_zoo.id,
+            password_hash=registration.admin_password_hash,
+        )
+        db.session.add(new_user)
+        registration.zoo_id = new_zoo.id
+        registration.status = 'approved'
+        registration.approved_by = reviewer.id if reviewer else None
+        registration.approved_at = datetime.utcnow()
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('Failed to approve registration %s', registration.id)
+        flash('Approval failed. No account or establishment was created.', 'error')
+        return redirect(url_for('zootique_admin.registration_detail', registration_id=registration.id))
+
+    try:
+        send_registration_approved(registration)
+    except Exception:
+        current_app.logger.exception('Approval email failed for registration %s', registration.id)
+    flash('Registration approved and administrator account created.', 'success')
+    return redirect(url_for('zootique_admin.registration_detail', registration_id=registration.id))
+
+
+@admin_bp.post('/registrations/<int:registration_id>/reject')
+def reject_registration(registration_id: int):
+    registration = db.session.get(EstablishmentRegistration, registration_id)
+    if not registration:
+        flash('Registration not found.', 'error')
+        return redirect(url_for('zootique_admin.registrations'))
+    if registration.status != 'pending':
+        flash('This registration has already been decided.', 'error')
+        return redirect(url_for('zootique_admin.registration_detail', registration_id=registration.id))
+
+    reviewer = _current_user()
+    registration.status = 'rejected'
+    registration.rejected_by = reviewer.id if reviewer else None
+    registration.rejected_at = datetime.utcnow()
+    registration.rejection_note = (request.form.get('rejection_note') or '').strip() or None
+    db.session.commit()
+    try:
+        send_registration_rejected(registration)
+    except Exception:
+        current_app.logger.exception('Rejection email failed for registration %s', registration.id)
+    flash('Registration rejected.', 'success')
+    return redirect(url_for('zootique_admin.registration_detail', registration_id=registration.id))
+
+
 @admin_bp.route('/layout-manager', methods=['GET', 'POST'])
 def layout_manager():
     return redirect(url_for('zootique_admin.dashboard'))
@@ -292,17 +403,25 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
     sub_rows = []
     active_count = 0
     expired_count = 0
+    pending_count = 0
     pending_renewals = 0
     mrr_total = 0.0
     active_by_plan: dict[int, int] = {}
     for s in subscriptions:
-        is_active = s.end_date >= now
-        if is_active:
-            active_count += 1
+        # Determine effective status
+        if s.status == 'pending':
+            status_label = 'Pending'
+            pending_count += 1
+            is_active = False
         else:
-            expired_count += 1
+            is_active = s.end_date >= now
+            status_label = 'Active' if is_active else 'Expired'
+            if is_active:
+                active_count += 1
+            else:
+                expired_count += 1
 
-        # Pending renewals: active subscriptions ending within the next 30 days.
+        # Pending renewals: active subs ending within the next 30 days.
         if is_active and s.end_date < (now + timedelta(days=30)):
             pending_renewals += 1
 
@@ -333,7 +452,7 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
             'zoo_name': s.zoo.name,
             'plan_id': s.plan.id,
             'plan_name': s.plan.name,
-            'status': 'Active' if is_active else 'Expired',
+            'status': status_label,
             'start_date': s.start_date.date().isoformat(),
             'end_date': s.end_date.date().isoformat(),
             'latest_payment_date': latest_payment.paid_at.date().isoformat() if latest_payment else '—',
@@ -376,6 +495,7 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
         "sub_stats": {
             "active": int(active_count),
             "mrr": float(mrr_total),
+            "pending_approvals": int(pending_count),
             "pending_renewals": int(pending_renewals),
             "churn_rate": float(churn_rate),
             "expired": int(expired_count),
@@ -593,6 +713,26 @@ def delete_subscription_plan(plan_id: int):
         flash(f"Failed to delete plan: {exc}", 'error')
 
     return redirect(url_for('zootique_admin.subscription_pricing_tiers'))
+
+
+@admin_bp.post('/subscriptions/<int:subscription_id>/approve')
+def approve_subscription(subscription_id: int):
+    """Approve a pending self-subscription from a Zoo Admin."""
+    subscription = db.session.get(ZooSubscription, subscription_id)
+    if not subscription:
+        flash('Subscription not found.', 'error')
+        return redirect(url_for('zootique_admin.manage_subscriptions'))
+    try:
+        _, payment = approve_pending_subscription(subscription=subscription)
+        flash(
+            f"Subscription approved for {subscription.zoo.name}. "
+            f"Payment ref: {payment.reference}",
+            'success',
+        )
+    except SubscriptionValidationError as exc:
+        flash(str(exc), 'error')
+    return redirect(url_for('zootique_admin.manage_subscriptions'))
+
 
 @admin_bp.get("/zoo-feedback")
 def view_feedback():

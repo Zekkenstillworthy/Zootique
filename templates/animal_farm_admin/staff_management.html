@@ -5,201 +5,321 @@
 
 {% block content %}
 
-<!-- ===== ASSIGN TASK ===== -->
-<div id="sm-tab-assign" class="sm-section" style="display:none; max-width: 640px;">
-  <div class="card-panel">
-    <div class="card-header">
-      <h2>Assign Task</h2>
+<!-- Success toast -->
+<div class="zf-toast" id="zfToast" role="status" aria-live="polite">
+  <i class="fa-solid fa-circle-check"></i>
+  <span id="zfToastMsg">Staff record updated successfully.</span>
+</div>
+
+<!-- ===== ASSIGN TASK TAB ===== -->
+<div id="sm-tab-assign" class="sm-section" style="display:none; max-width: 760px; margin: 0 auto;">
+  <div class="zf-form-card">
+    <div class="zf-form-header">
+      <h2 class="zf-form-title">
+        <i class="fa-solid fa-clipboard-check"></i>
+        <span id="taskFormTitleText">Assign Task</span>
+      </h2>
+      <span class="zf-form-badge" id="taskFormBadge">Task</span>
     </div>
-    <div class="card-body">
-      <form method="post" action="{{ url_for('animal_farm_admin.save_staff_task') }}" style="display:flex; flex-direction:column; gap:10px;">
-        <input type="hidden" name="task_id" id="task_id_input" value="">
 
-        <label style="font-weight:600; color:var(--text-secondary);">Title</label>
-        <input id="task_title_input" type="text" name="title" placeholder="e.g., Prepare group tour route" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+    <form id="assignTaskForm" method="post" action="{{ url_for('animal_farm_admin.save_staff_task') }}" novalidate>
+      <input type="hidden" name="task_id" id="task_id_input" value="">
 
-        <label style="font-weight:600; color:var(--text-secondary);">Description (optional)</label>
-        <textarea id="task_desc_input" name="description" rows="4" placeholder="Details" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;"></textarea>
-
-        <label style="font-weight:600; color:var(--text-secondary);">Assign To</label>
-        <select id="task_assign_input" name="assigned_to_user_id" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;">
-          <option value="">Unassigned</option>
-          {% for s in staff %}
-            <option value="{{ s.id }}">{{ s.full_name }} ({{ s.email }})</option>
-          {% endfor %}
-        </select>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-          <div>
-            <label style="font-weight:600; color:var(--text-secondary);">Due Date</label>
-            <input id="task_due_input" type="date" name="due_date" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+      <div class="zf-form-body">
+        <div class="zf-section">
+          <div class="zf-section-label">
+            <i class="fa-solid fa-circle-info"></i> Task Assignment Details
           </div>
-          <div>
-            <label style="font-weight:600; color:var(--text-secondary);">Status</label>
-            <select id="task_status_input" name="status" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;">
-              <option value="pending">Pending</option>
-              <option value="in_progress">In progress</option>
-              <option value="done">Done</option>
-            </select>
+          <div class="zf-grid-2">
+            <div class="zf-field zf-full">
+              <label class="zf-label" for="task_title_input">Task Title <span class="zf-req">*</span></label>
+              <input id="task_title_input" type="text" name="title" class="zf-control" placeholder="e.g., Prepare tour route and sanitize feeding bay" required autocomplete="off">
+              <span class="zf-error" id="task_title_error"><i class="fa-solid fa-triangle-exclamation"></i> Task title is required.</span>
+            </div>
+
+            <div class="zf-field zf-full">
+              <label class="zf-label" for="task_desc_input">Description</label>
+              <textarea id="task_desc_input" name="description" class="zf-control" rows="3" placeholder="Provide instructions or background notes..."></textarea>
+            </div>
+
+            <div class="zf-field">
+              <label class="zf-label" for="task_assign_input">Assign To Staff</label>
+              <select id="task_assign_input" name="assigned_to_user_id" class="zf-control">
+                <option value="">Unassigned</option>
+                {% for s in staff %}
+                  <option value="{{ s.id }}">{{ s.full_name }} ({{ s.email }})</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="zf-field">
+              <label class="zf-label" for="task_due_input">Due Date</label>
+              <input id="task_due_input" type="date" name="due_date" class="zf-control">
+            </div>
+
+            <div class="zf-field">
+              <label class="zf-label" for="task_status_input">Status</label>
+              <select id="task_status_input" name="status" class="zf-control">
+                <option value="pending">Pending</option>
+                <option value="in_progress">In progress</option>
+                <option value="done">Done</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="zf-form-footer">
+        <button type="button" class="zf-btn-cancel" onclick="window.switchSmTab && window.switchSmTab('tasks')">
+          <i class="fa-solid fa-list-check"></i> View Tasks
+        </button>
+        <button class="zf-btn-primary" type="submit" id="saveTaskBtn">
+          <i class="fa-solid fa-floppy-disk"></i> Save Task
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== STAFF ACCOUNTS TAB ===== -->
+<div id="sm-tab-accounts" class="sm-section" style="display:none;">
+  <div class="two-col" style="--two-col-template: 1.1fr 1.3fr;">
+    
+    <!-- Staff User Form -->
+    <div class="zf-form-card">
+      <div class="zf-form-header">
+        <h2 class="zf-form-title">
+          <i class="fa-solid fa-user-plus"></i>
+          <span id="staffFormTitleText">Add Staff Member</span>
+        </h2>
+        <span class="zf-form-badge" id="staffFormBadge">Staff</span>
+      </div>
+
+      <form id="staff-user-form" method="post" enctype="multipart/form-data" action="{{ url_for('animal_farm_admin.save_staff_user') }}" novalidate>
+        <input type="hidden" name="user_id" id="staff_user_id" value="" />
+
+        <div class="zf-form-body">
+          <div class="zf-section">
+            <div class="zf-section-label">
+              <i class="fa-solid fa-id-badge"></i> Account Credentials
+            </div>
+            <div class="zf-grid-2">
+              <div class="zf-field zf-full">
+                <label class="zf-label" for="staff_full_name">Full Name <span class="zf-req">*</span></label>
+                <input type="text" id="staff_full_name" name="full_name" class="zf-control" placeholder="e.g., Maria Santos" required autocomplete="off">
+                <span class="zf-error" id="staff_name_error"><i class="fa-solid fa-triangle-exclamation"></i> Full name is required.</span>
+              </div>
+
+              <div class="zf-field">
+                <label class="zf-label" for="staff_email">Email <span class="zf-req">*</span></label>
+                <input type="email" id="staff_email" name="email" class="zf-control" placeholder="staff@zoo.ph" required autocomplete="off">
+                <span class="zf-error" id="staff_email_error"><i class="fa-solid fa-triangle-exclamation"></i> Valid email is required.</span>
+              </div>
+
+              <div class="zf-field">
+                <label class="zf-label" for="staff_username">Username</label>
+                <input type="text" id="staff_username" name="username" class="zf-control" placeholder="e.g., msantos" autocomplete="off">
+              </div>
+
+              <div class="zf-field">
+                <label class="zf-label" for="staff_status">Status</label>
+                <select id="staff_status" name="status" class="zf-control">
+                  <option value="active">Active</option>
+                  <option value="suspended">Suspended</option>
+                </select>
+              </div>
+
+              <div class="zf-field">
+                <label class="zf-label" for="staff_password">Password</label>
+                <input type="password" id="staff_password" name="password" class="zf-control" placeholder="Set temporary password" autocomplete="new-password">
+                <span class="zf-hint" id="staffPwdHint">Required for new staff; leave blank to keep unchanged</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="zf-section">
+            <div class="zf-section-label">
+              <i class="fa-solid fa-camera"></i> Profile Photo
+            </div>
+              <div class="zf-upload-box" id="staffUploadBox" tabindex="0" role="button" aria-label="Upload staff photo">
+                <input type="file" id="staff_profile_img" name="profile_image_file" accept="image/png,image/jpeg,image/webp" aria-label="Choose file">
+                <div class="zf-upload-idle" id="staffUploadIdle">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                  <p class="zf-upload-title"><span>Click to upload</span> or drag and drop</p>
+                  <p class="zf-upload-meta">PNG, JPG or WEBP - Max 5 MB</p>
+                </div>
+                <div class="zf-upload-preview" id="staffUploadPreview">
+                  <img class="zf-preview-img" id="staffImagePreview" src="" alt="Preview" style="width:64px; height:64px; border-radius:50%; object-fit:cover;">
+                  <div class="zf-preview-info">
+                    <div class="zf-preview-name" id="staffPreviewName"></div>
+                    <div class="zf-preview-size" id="staffPreviewSize"></div>
+                  </div>
+                  <button type="button" class="zf-preview-remove" id="staffRemoveImgBtn" aria-label="Remove image">
+                    <i class="fa-solid fa-xmark"></i> Remove
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div style="display:flex; gap:10px; padding-top:4px;">
-          <button class="btn btn-primary" type="submit" style="flex:1;"><i class="fa-solid fa-floppy-disk"></i> Save Task</button>
-          <button type="button" onclick="window.switchSmTab && window.switchSmTab('tasks')" class="btn" style="flex:1; background:var(--border-light); color:var(--text-muted); border:1px solid var(--border); font-weight:700; border-radius:var(--radius); padding:10px; font-size:13px; cursor:pointer;">
-            <i class="fa-solid fa-list-check"></i> View Task List
+        <div class="zf-actions zf-form-footer">
+          <button type="button" class="zf-btn-cancel" onclick="resetStaffForm()">Reset</button>
+          <button class="zf-btn-save zf-btn-primary" type="submit" id="saveStaffBtn">
+            <span class="zf-spinner"></span>
+            <i class="fa-solid fa-user-check zf-save-label"></i>
+            <span class="zf-save-label" id="saveStaffBtnText">Save Staff Member</span>
           </button>
         </div>
-        <p style="color: var(--text-muted); font-size: 12px;">Staff can update task status from the Staff module.</p>
       </form>
     </div>
-  </div>
-</div>
 
-<!-- ===== STAFF ACCOUNTS ===== -->
-<div id="sm-tab-accounts" class="sm-section" style="display:none;">
-  <div class="card-panel">
-    <div class="card-header">
-      <h2>Staff Accounts</h2>
-      <div class="card-header-actions">
-        <button class="btn btn-outline btn-sm" type="button" onclick="resetStaffForm()">Clear</button>
+    <!-- Staff List Table -->
+    <div class="card-panel">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-users" style="margin-right:8px;"></i> Staff Members</h2>
+        <div class="card-header-actions">
+          <span class="badge badge-role">{{ staff|length }} Staff</span>
+        </div>
       </div>
-    </div>
-    <div class="card-body">
-      <form id="staff-user-form" method="post" enctype="multipart/form-data" action="{{ url_for('animal_farm_admin.save_staff_user') }}" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:20px;">
-        <input type="hidden" name="user_id" value="" />
-
-        <div style="grid-column: span 2;">
-          <label style="font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">Full Name</label>
-          <input type="text" name="full_name" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-        </div>
-
-        <div>
-          <label style="font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">Email</label>
-          <input type="email" name="email" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-        </div>
-        <div>
-          <label style="font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">Username (optional)</label>
-          <input type="text" name="username" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-        </div>
-
-        <div>
-          <label style="font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">Status</label>
-          <select name="status" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;">
-            <option value="active">Active</option>
-            <option value="suspended">Suspended</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">Password</label>
-          <input type="password" name="password" placeholder="(required for new staff)" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-        </div>
-
-        <div style="grid-column: span 2;">
-          <label style="font-weight:600; color:var(--text-secondary);">Profile Image (optional)</label>
-          <input type="file" name="profile_image_file" accept="image/*" />
-        </div>
-
-        <div style="grid-column: span 2; display:flex; gap:10px; align-items:center;">
-          <button class="btn btn-primary" type="submit"><i class="fa-solid fa-user-plus"></i> Save Staff User</button>
-          <span style="color: var(--text-muted); font-size: 12px;">Use "Edit" to load a user; leave password blank to keep it unchanged.</span>
-        </div>
-      </form>
-
-      <div class="table-wrap" style="margin:0;">
-        <table>
-          <thead>
-            <tr>
-              <th>Staff</th>
-              <th>Status</th>
-              <th style="width:170px;">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for s in staff %}
+      <div class="card-body" style="padding:0;">
+        <div class="zf-table-wrap">
+          <table class="table-striped">
+            <thead>
               <tr>
-                <td>
-                  <div style="display:flex; align-items:center; gap:10px;">
-                    {% if s.profile_image %}
-                      <img src="{{ s.profile_image }}" alt="" style="width:34px; height:34px; object-fit:cover; border-radius:50%; border:1px solid var(--border);" />
-                    {% else %}
-                      <div style="width:34px; height:34px; border-radius:50%; border:1px solid var(--border); background:white;"></div>
-                    {% endif %}
-                    <div>
-                      <div style="font-weight:700; color: var(--text);">{{ s.full_name }}</div>
-                      <div style="color: var(--text-muted); font-size:12px;">{{ s.email }}{% if s.username %} • {{ s.username }}{% endif %}</div>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <span class="badge badge-{{ 'active' if (s.status or 'active')=='active' else 'inactive' }}">{{ s.status or 'active' }}</span>
-                </td>
-                <td>
-                  <button class="btn btn-outline btn-sm" type="button" onclick='fillStaffForm({{ s.id|tojson }}, {{ (s.full_name or "")|tojson }}, {{ (s.email or "")|tojson }}, {{ (s.username or "")|tojson }}, {{ (s.status or "active")|tojson }})'>
-                    <i class="fa-solid fa-pen"></i> Edit
-                  </button>
-                  <form method="post" action="{{ url_for('animal_farm_admin.delete_staff_user', user_id=s.id) }}" style="display:inline;" onsubmit="return confirm('Delete this staff user?');">
-                    <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
-                  </form>
-                </td>
+                <th style="padding-left:16px;">Staff Member</th>
+                <th>Status</th>
+                <th style="width:110px; text-align:right; padding-right:16px;">Actions</th>
               </tr>
-            {% else %}
-              <tr><td colspan="3" style="color: var(--text-muted);">No staff users for this zoo.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for s in staff %}
+                <tr>
+                  <td style="padding-left:16px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      {% if s.profile_image %}
+                        <img src="{{ s.profile_image }}" alt="" style="width:36px; height:36px; object-fit:cover; border-radius:50%; border:1px solid var(--border);" />
+                      {% else %}
+                        <div style="width:36px; height:36px; border-radius:50%; background:var(--primary); color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px;">
+                          {{ (s.full_name or 'S')[0]|upper }}
+                        </div>
+                      {% endif %}
+                      <div>
+                        <div style="font-weight:700; color: var(--text);">{{ s.full_name }}</div>
+                        <div style="color: var(--text-muted); font-size:12px;">{{ s.email }}{% if s.username %} • @{{ s.username }}{% endif %}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge badge-{{ 'active' if (s.status or 'active') == 'active' else 'suspended' }}">
+                      {{ s.status or 'active' }}
+                    </span>
+                  </td>
+                  <td style="text-align:right; padding-right:16px;">
+                    <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
+                      <button class="zf-icon-btn" type="button" title="Edit Staff" onclick='fillStaffForm({{ s.id|tojson }}, {{ (s.full_name or "")|tojson }}, {{ (s.email or "")|tojson }}, {{ (s.username or "")|tojson }}, {{ (s.status or "active")|tojson }}, {{ (s.profile_image or "")|tojson }})'>
+                        <i class="fa-solid fa-pen"></i>
+                      </button>
+                      <form method="post" action="{{ url_for('animal_farm_admin.delete_staff_user', user_id=s.id) }}" style="display:inline;" onsubmit="return confirm('Delete this staff user?');">
+                        <button class="zf-icon-btn danger" type="submit" title="Delete Staff">
+                          <i class="fa-solid fa-trash"></i>
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="3">
+                    <div class="zf-empty-state">
+                      <i class="fa-solid fa-users-slash zf-empty-icon"></i>
+                      <div class="zf-empty-title">No Staff Accounts Yet</div>
+                      <div class="zf-empty-desc">Add caretakers, guides, and ground staff to assign duties and track daily park operations.</div>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
+
   </div>
 </div>
 
-<!-- ===== TASK LIST ===== -->
+<!-- ===== TASK LIST TAB ===== -->
 <div id="sm-tab-tasks" class="sm-section" style="display:none;">
   <div class="card-panel">
     <div class="card-header">
-      <h2>Task List</h2>
+      <h2><i class="fa-solid fa-list-check" style="margin-right:8px;"></i> All Assigned Tasks</h2>
+      <div class="card-header-actions">
+        <button class="btn btn-primary btn-sm" type="button" onclick="window.switchSmTab && window.switchSmTab('assign')">
+          <i class="fa-solid fa-plus"></i> New Task
+        </button>
+      </div>
     </div>
-    <div class="card-body">
-      <div class="table-wrap">
-        <table style="table-layout: fixed; width: 100%;">
+    <div class="card-body" style="padding:0;">
+      <div class="zf-table-wrap">
+        <table class="table-striped" style="table-layout: fixed; width: 100%;">
           <colgroup>
-            <col style="width: 38%;">
-            <col style="width: 18%;">
-            <col style="width: 13%;">
-            <col style="width: 13%;">
-            <col style="width: 18%;">
+            <col style="width: 36%;">
+            <col style="width: 20%;">
+            <col style="width: 14%;">
+            <col style="width: 16%;">
+            <col style="width: 14%;">
           </colgroup>
           <thead>
             <tr>
-              <th>Title</th>
-              <th>Assigned</th>
-              <th>Due</th>
+              <th style="padding-left:16px;">Task Title &amp; Details</th>
+              <th>Assigned To</th>
+              <th>Due Date</th>
               <th>Status</th>
-              <th>Actions</th>
+              <th style="text-align:right; padding-right:16px;">Actions</th>
             </tr>
           </thead>
           <tbody>
             {% for t in tasks %}
               <tr>
-                <td>
+                <td style="padding-left:16px;">
                   <div style="font-weight:700; color: var(--text); word-break: break-word;">{{ t.title }}</div>
-                  {% if t.description %}<div style="color: var(--text-muted); font-size:12px; word-break: break-word; white-space: normal;">{{ t.description }}</div>{% endif %}
+                  {% if t.description %}<div style="color: var(--text-muted); font-size:12px; word-break: break-word; white-space: normal; margin-top:2px;">{{ t.description }}</div>{% endif %}
                 </td>
-                <td>{{ t.assigned_to_user.full_name if t.assigned_to_user else '-' }}</td>
+                <td>{{ t.assigned_to_user.full_name if t.assigned_to_user else '<span style="color:var(--text-muted);">Unassigned</span>'|safe }}</td>
                 <td>{{ t.due_date.strftime('%Y-%m-%d') if t.due_date else '-' }}</td>
-                <td><span class="badge badge-{{ 'active' if t.status != 'done' else 'inactive' }}">{{ t.status }}</span></td>
                 <td>
-                  <button class="btn btn-outline btn-sm" type="button"
-                    onclick='fillTaskForm({{ t.id|tojson }}, {{ t.title|tojson }}, {{ (t.description or "")|tojson }}, {{ (t.assigned_to_user_id or "")|tojson }}, {{ (t.due_date.strftime("%Y-%m-%d") if t.due_date else "")|tojson }}, {{ t.status|tojson }})'>
-                    <i class="fa-solid fa-pen"></i> Edit
-                  </button>
-                  <form method="post" action="{{ url_for('animal_farm_admin.delete_staff_task', task_id=t.id) }}" style="display:inline;" onsubmit="return confirm('Delete this task?');">
-                    <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
-                  </form>
+                  {% if t.status == 'done' %}
+                    <span class="badge badge-completed">Done</span>
+                  {% elif t.status == 'in_progress' %}
+                    <span class="badge badge-in-progress">In Progress</span>
+                  {% else %}
+                    <span class="badge badge-pending">Pending</span>
+                  {% endif %}
+                </td>
+                <td style="text-align:right; padding-right:16px;">
+                  <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
+                    <button class="zf-icon-btn" type="button" title="Edit Task"
+                      onclick='fillTaskForm({{ t.id|tojson }}, {{ t.title|tojson }}, {{ (t.description or "")|tojson }}, {{ (t.assigned_to_user_id or "")|tojson }}, {{ (t.due_date.strftime("%Y-%m-%d") if t.due_date else "")|tojson }}, {{ t.status|tojson }})'>
+                      <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <form method="post" action="{{ url_for('animal_farm_admin.delete_staff_task', task_id=t.id) }}" style="display:inline;" onsubmit="return confirm('Delete this task?');">
+                      <button class="zf-icon-btn danger" type="submit" title="Delete Task">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             {% else %}
-              <tr><td colspan="5" style="color: var(--text-muted);">No tasks yet.</td></tr>
+              <tr>
+                <td colspan="5">
+                  <div class="zf-empty-state">
+                    <i class="fa-solid fa-list-check zf-empty-icon"></i>
+                    <div class="zf-empty-title">No Tasks Assigned</div>
+                    <div class="zf-empty-desc">Create your first staff duty to delegate feeding, maintenance, or guest activities.</div>
+                  </div>
+                </td>
+              </tr>
             {% endfor %}
           </tbody>
         </table>
@@ -219,35 +339,166 @@ function fillTaskForm(id, title, description, assignedTo, dueDate, status) {
     document.getElementById('task_assign_input').value = assignedTo || '';
     document.getElementById('task_due_input').value = dueDate || '';
     document.getElementById('task_status_input').value = status || 'pending';
+
+    const titleEl = document.getElementById('taskFormTitleText');
+    if (titleEl) titleEl.textContent = 'Edit Task';
+    const badgeEl = document.getElementById('taskFormBadge');
+    if (badgeEl) {
+        badgeEl.textContent = 'Edit';
+        badgeEl.classList.add('editing');
+    }
+
     if (window.switchSmTab) window.switchSmTab('assign');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function fillStaffForm(id, fullName, email, username, status) {
+function fillStaffForm(id, fullName, email, username, status, profileImg) {
     const form = document.getElementById('staff-user-form');
     if (!form) return;
-    form.querySelector('input[name="user_id"]').value = id || '';
-    form.querySelector('input[name="full_name"]').value = fullName || '';
-    form.querySelector('input[name="email"]').value = email || '';
-    form.querySelector('input[name="username"]').value = username || '';
-    form.querySelector('select[name="status"]').value = status || 'active';
-    form.querySelector('input[name="password"]').value = '';
-    const fileInput = form.querySelector('input[name="profile_image_file"]');
-    if (fileInput) fileInput.value = '';
+    document.getElementById('staff_user_id').value = id || '';
+    document.getElementById('staff_full_name').value = fullName || '';
+    document.getElementById('staff_email').value = email || '';
+    document.getElementById('staff_username').value = username || '';
+    document.getElementById('staff_status').value = status || 'active';
+    document.getElementById('staff_password').value = '';
+
+    const titleEl = document.getElementById('staffFormTitleText');
+    if (titleEl) titleEl.textContent = 'Edit Staff Member';
+    const badgeEl = document.getElementById('staffFormBadge');
+    if (badgeEl) {
+        badgeEl.textContent = 'Edit';
+        badgeEl.classList.add('editing');
+    }
+    const btnText = document.getElementById('saveStaffBtnText');
+    if (btnText) btnText.textContent = 'Update Staff Member';
+
+    const previewWrap = document.getElementById('staffPreviewWrap');
+    const img = document.getElementById('staffImagePreview');
+    if (profileImg && previewWrap && img) {
+        img.src = profileImg;
+        previewWrap.style.display = 'block';
+    }
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function resetStaffForm() {
     const form = document.getElementById('staff-user-form');
     if (!form) return;
-    form.querySelector('input[name="user_id"]').value = '';
-    form.querySelector('input[name="full_name"]').value = '';
-    form.querySelector('input[name="email"]').value = '';
-    form.querySelector('input[name="username"]').value = '';
-    form.querySelector('select[name="status"]').value = 'active';
-    form.querySelector('input[name="password"]').value = '';
-    const fileInput = form.querySelector('input[name="profile_image_file"]');
-    if (fileInput) fileInput.value = '';
+    form.reset();
+    document.getElementById('staff_user_id').value = '';
+    const titleEl = document.getElementById('staffFormTitleText');
+    if (titleEl) titleEl.textContent = 'Add Staff Member';
+    const badgeEl = document.getElementById('staffFormBadge');
+    if (badgeEl) {
+        badgeEl.textContent = 'Staff';
+        badgeEl.classList.remove('editing');
+    }
+    const btnText = document.getElementById('saveStaffBtnText');
+    if (btnText) btnText.textContent = 'Save Staff Member';
+    const previewWrap = document.getElementById('staffPreviewWrap');
+    if (previewWrap) previewWrap.style.display = 'none';
+}
+
+// Upload preview for staff profile image
+const staffFileInput = document.getElementById('staff_profile_img');
+const staffUploadBox = document.getElementById('staffUploadBox');
+const staffUploadIdle = document.getElementById('staffUploadIdle');
+const staffPreviewWrap = document.getElementById('staffUploadPreview');
+const staffImagePreview = document.getElementById('staffImagePreview');
+const staffPreviewName = document.getElementById('staffPreviewName');
+const staffPreviewSize = document.getElementById('staffPreviewSize');
+const staffRemoveBtn = document.getElementById('staffRemoveImgBtn');
+
+function resetStaffUpload() {
+    if (staffFileInput) staffFileInput.value = '';
+    if (staffImagePreview) staffImagePreview.src = '';
+    if (staffUploadIdle) staffUploadIdle.classList.remove('hidden');
+    if (staffPreviewWrap) staffPreviewWrap.classList.remove('visible');
+}
+
+if (staffFileInput) {
+    staffFileInput.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const f = e.target.files[0];
+            staffImagePreview.src = URL.createObjectURL(f);
+            if (staffPreviewName) staffPreviewName.textContent = f.name;
+            if (staffPreviewSize) staffPreviewSize.textContent = (f.size / (1024 * 1024)).toFixed(2) + ' MB';
+            if (staffUploadIdle) staffUploadIdle.classList.add('hidden');
+            if (staffPreviewWrap) staffPreviewWrap.classList.add('visible');
+        } else {
+            resetStaffUpload();
+        }
+    });
+}
+if (staffRemoveBtn) {
+    staffRemoveBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        resetStaffUpload();
+    });
+}
+
+// Form validation
+const assignTaskForm = document.getElementById('assignTaskForm');
+if (assignTaskForm) {
+    assignTaskForm.addEventListener('submit', function(e) {
+        const titleInput = document.getElementById('task_title_input');
+        const titleErr = document.getElementById('task_title_error');
+        if (!titleInput.value.trim()) {
+            e.preventDefault();
+            titleInput.classList.add('is-invalid');
+            if (titleErr) titleErr.style.display = 'block';
+            return;
+        } else {
+            titleInput.classList.remove('is-invalid');
+            if (titleErr) titleErr.style.display = 'none';
+        }
+        const btn = document.getElementById('saveTaskBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+        }
+    });
+}
+
+const staffUserForm = document.getElementById('staff-user-form');
+if (staffUserForm) {
+    staffUserForm.addEventListener('submit', function(e) {
+        const nameInput = document.getElementById('staff_full_name');
+        const nameErr = document.getElementById('staff_name_error');
+        const emailInput = document.getElementById('staff_email');
+        const emailErr = document.getElementById('staff_email_error');
+        let invalid = false;
+
+        if (!nameInput.value.trim()) {
+            nameInput.classList.add('is-invalid');
+            if (nameErr) nameErr.style.display = 'block';
+            invalid = true;
+        } else {
+            nameInput.classList.remove('is-invalid');
+            if (nameErr) nameErr.style.display = 'none';
+        }
+
+        if (!emailInput.value.trim() || !emailInput.value.includes('@')) {
+            emailInput.classList.add('is-invalid');
+            if (emailErr) emailErr.style.display = 'block';
+            invalid = true;
+        } else {
+            emailInput.classList.remove('is-invalid');
+            if (emailErr) emailErr.style.display = 'none';
+        }
+
+        if (invalid) {
+            e.preventDefault();
+            return;
+        }
+
+        const btn = document.getElementById('saveStaffBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+        }
+    });
 }
 </script>
 {% endblock %}

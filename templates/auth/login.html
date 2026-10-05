@@ -3,50 +3,53 @@
 {% block title %}Sign In to Zootique{% endblock %}
 
 {% block content %}
-<div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1e3a2b 0%, #0f291e 100%);">
+<div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--primary) 0%, #0b2516 100%); padding: 32px 16px;">
     
-    <div style="background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); width: 100%; max-width: 450px; overflow: hidden; display: flex; flex-direction: column;">
+    <div style="background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); width: 100%; max-width: 440px; overflow: hidden; display: flex; flex-direction: column;">
         
-        <div style="background: #1a4f32; padding: 2.5rem; text-align: center; color: white;">
-            <a href="/" style="color: white; text-decoration: none; font-size: 2rem; font-weight: 800; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                <i class="fa-solid fa-paw" style="color: #fca000;"></i> Zootique
+        <div style="background: #ffffff; padding: 2rem 2rem 1.5rem; text-align: center; border-bottom: 1px solid var(--border-light);">
+            <a href="/" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px;">
+                <img src="{{ url_for('static', filename='img/Zootique_Logo.png') }}" alt="Zootique" style="height: 46px; width: auto;" />
             </a>
-            <div style="font-size: 0.95rem; opacity: 0.8;">Sign in to your account</div>
+            <div style="font-size: 14px; color: var(--text-muted); font-weight: 500;">Sign in to your wildlife park management account</div>
         </div>
 
-        <div style="padding: 2.5rem;">
+        <div style="padding: 2rem;">
             <!-- Flash Messages -->
             {% with messages = get_flashed_messages(with_categories=true) %}
               {% if messages %}
                 {% for category, message in messages %}
-                  <div style="background: {% if category == 'success' %}#dcfce7{% else %}#fee2e2{% endif %}; color: {% if category == 'success' %}#16a34a{% else %}#ef4444{% endif %}; padding: 0.8rem; border-radius: 6px; font-size: 0.85rem; font-weight: bold; margin-bottom: 1.5rem; text-align: center;">
-                    {{ message }}
+                  <div class="zf-alert {% if category == 'success' %}zf-alert-success{% else %}zf-alert-error{% endif %}">
+                    <i class="fa-solid {% if category == 'success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
+                    <span>{{ message }}</span>
                   </div>
                 {% endfor %}
               {% endif %}
             {% endwith %}
 
-            <form action="{{ url_for('auth.login') }}" method="POST" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <form action="{{ url_for('auth.login') }}" method="POST" style="display: flex; flex-direction: column; gap: 16px;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="next" value="{{ request.args.get('next') }}">
-                <div>
-                    <label style="display: block; font-size: 0.85rem; font-weight: bold; color: #475569; margin-bottom: 0.5rem;">Email Address</label>
-                    <input type="email" name="email" required placeholder="Enter your email" style="width: 100%; padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.95rem;">
+                
+                <div class="zf-field">
+                    <label class="zf-label" for="login_email">Email Address <span class="zf-req">*</span></label>
+                    <input type="email" id="login_email" name="email" class="zf-control" required placeholder="admin@zootique.ph" autocomplete="email">
                 </div>
                 
-                <div>
-                    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
-                        <label style="display: block; font-size: 0.85rem; font-weight: bold; color: #475569;">Password</label>
-                        <a href="#" style="color: #0ea5e9; font-size: 0.75rem; text-decoration: none; font-weight: 600;">Forgot Password?</a>
+                <div class="zf-field">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+                        <label class="zf-label" for="login_password" style="margin-bottom:0;">Password <span class="zf-req">*</span></label>
                     </div>
-                    <input type="password" name="password" required placeholder="••••••••" style="width: 100%; padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.95rem;">
+                    <input type="password" id="login_password" name="password" class="zf-control" required placeholder="••••••••" autocomplete="current-password">
                 </div>
                 
-                <button type="submit" class="btn" style="background: #fca000; color: #1e293b; border: none; padding: 1rem; border-radius: 8px; font-weight: 800; font-size: 1rem; cursor: pointer; margin-top: 0.5rem;">Sign In</button>
+                <button type="submit" class="zf-btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 15px; margin-top: 6px;">
+                    <i class="fa-solid fa-right-to-bracket"></i> Sign In to Account
+                </button>
             </form>
             
-            <div style="text-align: center; margin-top: 2rem; font-size: 0.85rem; color: #64748b;">
-                Don't have an account? <a href="{{ url_for('auth.register') }}" style="color: #1a4f32; font-weight: bold; text-decoration: none;">Create an account</a>
+            <div style="text-align: center; margin-top: 24px; font-size: 13px; color: var(--text-muted);">
+                Don't have an establishment registered? <a href="{{ url_for('auth.register') }}" style="color: var(--primary); font-weight: 700; text-decoration: none;">Register your zoo</a>
             </div>
         </div>
         

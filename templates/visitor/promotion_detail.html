@@ -29,12 +29,12 @@
         </section>
     {% else %}
         <article class="promotion-detail-card" data-promotion-expiry="{{ promotion.valid_until or '' }}">
-            {% if promotion_image_url %}<div class="promotion-detail-banner"><img src="{{ promotion_image_url }}" alt="{{ promotion.name }}"></div>{% endif %}
+            {% if promotion_image_url %}<div class="promotion-detail-banner"><img src="{{ promotion_image_url }}" alt="{{ promotion.name }}" onerror="this.onerror=null;this.style.display='none';"></div>{% endif %}
             <div class="promotion-detail-body">
                 <div class="promotion-detail-kicker">{{ zoo.name }}{% if promotion.promo_type %} <span aria-hidden="true">·</span> {{ promotion.promo_type }}{% endif %}</div>
                 <h1>{{ promotion.name }}</h1>
                 <div class="promotion-detail-discount">{{ promotion.discount or 'Special offer' }}</div>
-                <div class="promotion-detail-meta"><i class="fa-regular fa-calendar"></i> <span data-expiry-label>{{ promotion.valid_until or 'No expiry' }}</span><span class="promotion-expiry-badge" data-expiry-badge></span></div>
+                <div class="promotion-detail-meta"><i class="fa-regular fa-calendar"></i> <span data-expiry-label>{{ promotion.valid_until or 'No expiry' }}</span><span class="promotion-expiry-badge{% if is_expired %} visible expired{% elif days_left is not none and days_left <= 3 %} visible{% endif %}" data-expiry-badge>{% if is_expired %}Expired{% elif days_left == 0 %}Last day{% elif days_left is not none and days_left <= 3 %}Ends soon{% endif %}</span></div>
                 <p class="promotion-detail-copy">Use promo code</p>
                 <div class="promotion-coupon" aria-label="Promo code {{ promotion.code }}">
                     <span>{{ promotion.code }}</span>

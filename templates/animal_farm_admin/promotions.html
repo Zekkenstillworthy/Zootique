@@ -6,133 +6,361 @@
 {% block content %}
 {% set selected_tab = request.args.get('tab', 'all') %}
 
+<!-- Success toast -->
+<div class="zf-toast" id="zfToast" role="status" aria-live="polite">
+  <i class="fa-solid fa-circle-check"></i>
+  <span id="zfToastMsg">Promotion saved successfully.</span>
+</div>
 
-<div class="card-panel">
-    <div class="card-header">
-        <h2>Philippine Promotions</h2>
+<!-- Main filter bar -->
+<div class="card-panel" style="margin-bottom:20px;">
+    <div class="zf-filter-bar">
+        <form method="get" action="{{ url_for('animal_farm_admin.promotions_management') }}" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0;">
+            <label class="zf-label" style="margin:0; font-weight:600;"><i class="fa-solid fa-filter" style="color:var(--primary); margin-right:4px;"></i> Promo Type:</label>
+            <select name="promo_type" class="zf-control" style="width:auto; min-width:160px; padding:6px 12px; height:38px;">
+                <option value="" {% if not selected_promo_type %}selected{% endif %}>All types</option>
+                {% for t in promo_types %}
+                    <option value="{{ t }}" {% if selected_promo_type==t %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-primary btn-sm" type="submit" style="height:38px;">Apply Filter</button>
+            {% if selected_promo_type %}
+                <a class="btn btn-ghost btn-sm" href="{{ url_for('animal_farm_admin.promotions_management') }}" style="height:38px; line-height:24px;">Clear</a>
+            {% endif %}
+        </form>
         <div class="card-header-actions">
-            <a class="btn btn-outline btn-sm" href="{{ url_for('animal_farm_admin.promotions_management') }}">Reset</a>
-        </div>
-    </div>
-
-    <form class="filter-bar" method="get" action="{{ url_for('animal_farm_admin.promotions_management') }}">
-        <select name="promo_type">
-            <option value="" {% if not selected_promo_type %}selected{% endif %}>All types</option>
-            {% for t in promo_types %}
-                <option value="{{ t }}" {% if selected_promo_type==t %}selected{% endif %}>{{ t }}</option>
-            {% endfor %}
-        </select>
-        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-filter"></i> Filter</button>
-    </form>
-
-    <div class="card-body">
-        <div class="two-col" style="--two-col-template: 1fr 1fr; {% if selected_tab == 'list' %}--two-col-template: 1fr;{% elif selected_tab == 'add' %}--two-col-template: 1fr;{% endif %}">
-            
-            {% if selected_tab in ['add', 'all'] %}
-            <div class="card-panel" style="margin:0;">
-                <div class="card-header">
-                    <h2>Add / Edit Promotion</h2>
-                </div>
-                <div class="card-body">
-                    <form method="post" enctype="multipart/form-data" action="{{ url_for('animal_farm_admin.save_promotion') }}" style="display:flex; flex-direction:column; gap:10px;">
-                        <input type="hidden" name="promo_id" value="">
-
-                        <label style="font-weight:600; color:var(--text-secondary);">Name</label>
-                        <input type="text" name="name" placeholder="e.g., Family Weekend Deal" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-
-                        <label style="font-weight:600; color:var(--text-secondary);">Type</label>
-                        <select name="promo_type" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;">
-                            {% for t in promo_types %}
-                                <option value="{{ t }}">{{ t }}</option>
-                            {% endfor %}
-                        </select>
-
-                        <label style="font-weight:600; color:var(--text-secondary);">Code</label>
-                        <input type="text" name="code" placeholder="e.g., FAMILY10" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; text-transform: uppercase; width:100%;" />
-
-                        <label style="font-weight:600; color:var(--text-secondary);">Discount (optional)</label>
-                        <input type="text" name="discount" placeholder="e.g., 10%" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-
-                        <label style="font-weight:600; color:var(--text-secondary);">Valid Until (optional)</label>
-                        <input type="text" name="valid_until" placeholder="YYYY-MM-DD" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-
-                        <label style="font-weight:600; color:var(--text-secondary);">Image (optional)</label>
-                        <input type="file" name="image_file" accept="image/*" style="width:100%;" />
-
-                        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Promotion</button>
-                    </form>
-                </div>
-            </div>
-            {% endif %}
-
-            {% if selected_tab in ['list', 'all'] %}
-            <div class="card-panel" style="margin:0;">
-                <div class="card-header">
-                    <h2>Promotion List</h2>
-                </div>
-                <div class="card-body">
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th style="width:70px;">Image</th>
-                                    <th>Name</th>
-                                    <th>Type</th>
-                                    <th>Code</th>
-                                    <th>Discount</th>
-                                    <th>Valid Until</th>
-                                    <th style="width:160px;">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for p in promotions %}
-                                    <tr>
-                                        <td>
-                                            {% if p.image_url %}
-                                                <img src="{{ p.image_url }}" alt="" style="width:54px; height:38px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
-                                            {% else %}
-                                                <span style="color: var(--text-muted);">-</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>{{ p.name }}</td>
-                                        <td>{{ p.promo_type or '-' }}</td>
-                                        <td><strong>{{ p.code }}</strong></td>
-                                        <td>{{ p.discount or '-' }}</td>
-                                        <td>{{ p.valid_until or '-' }}</td>
-                                        <td>
-                                            <button class="btn btn-outline btn-sm" type="button"
-                                                            onclick='fillPromoForm({{ p.id|tojson }}, {{ p.name|tojson }}, {{ (p.promo_type or "")|tojson }}, {{ p.code|tojson }}, {{ (p.discount or "")|tojson }}, {{ (p.valid_until or "")|tojson }})'>
-                                                <i class="fa-solid fa-pen"></i> Edit
-                                            </button>
-                                            <form method="post" action="{{ url_for('animal_farm_admin.delete_promotion', promo_id=p.id) }}" style="display:inline;" onsubmit="return confirm('Delete this promotion?');">
-                                                <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                {% else %}
-                                    <tr><td colspan="7" style="color: var(--text-muted);">No promotions yet.</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
+            <span class="badge badge-role">{{ promotions|length }} Active Deals</span>
         </div>
     </div>
 </div>
 
+<div class="two-col" style="--two-col-template: 1fr 1fr; {% if selected_tab == 'list' %}--two-col-template: 1fr;{% elif selected_tab == 'add' %}--two-col-template: 1fr;{% endif %}">
+    
+    {% if selected_tab in ['add', 'all'] %}
+    <div class="zf-form-card" id="promoFormCard">
+        <div class="zf-form-header">
+            <h2 class="zf-form-title">
+                <i class="fa-solid fa-tags"></i>
+                <span id="promoFormTitleText">Add Promotion</span>
+            </h2>
+            <span class="zf-form-badge" id="promoFormBadge">New</span>
+        </div>
+
+        <form id="promoForm" method="post" enctype="multipart/form-data" action="{{ url_for('animal_farm_admin.save_promotion') }}" novalidate>
+            <input type="hidden" name="promo_id" id="promo_id" value="">
+
+            <div class="zf-form-body">
+                <div class="zf-section">
+                    <div class="zf-section-label">
+                        <i class="fa-solid fa-circle-info"></i> Deal Details
+                    </div>
+                    <div class="zf-grid-2">
+                        <div class="zf-field zf-full">
+                            <label class="zf-label" for="promo_name">Promotion Name <span class="zf-req">*</span></label>
+                            <input type="text" id="promo_name" name="name" class="zf-control" placeholder="e.g., Family Weekend Safari" required autocomplete="off">
+                            <span class="zf-error" id="promo_name_error"><i class="fa-solid fa-triangle-exclamation"></i> Promotion name is required.</span>
+                        </div>
+
+                        <div class="zf-field">
+                            <label class="zf-label" for="promo_type">Type</label>
+                            <select id="promo_type" name="promo_type" class="zf-control">
+                                {% for t in promo_types %}
+                                    <option value="{{ t }}">{{ t }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="zf-field">
+                            <label class="zf-label" for="promo_code">Coupon / Promo Code <span class="zf-req">*</span></label>
+                            <input type="text" id="promo_code" name="code" class="zf-control" placeholder="e.g., SAFARI20" required style="text-transform: uppercase;" autocomplete="off">
+                            <span class="zf-error" id="promo_code_error"><i class="fa-solid fa-triangle-exclamation"></i> Promo code is required.</span>
+                        </div>
+
+                        <div class="zf-field">
+                            <label class="zf-label" for="promo_discount">Discount Value</label>
+                            <input type="text" id="promo_discount" name="discount" class="zf-control" placeholder="e.g., 20% or ₱150 OFF" autocomplete="off">
+                            <span class="zf-hint">Percentage or fixed amount</span>
+                        </div>
+
+                        <div class="zf-field">
+                            <label class="zf-label" for="promo_valid_until">Valid Until</label>
+                            <input type="date" id="promo_valid_until" name="valid_until" class="zf-control">
+                            <span class="zf-hint">Expiration date</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="zf-section">
+                    <div class="zf-section-label">
+                        <i class="fa-solid fa-image"></i> Promo Banner Image
+                    </div>
+                    <div class="zf-field zf-full">
+                        <div class="zf-upload-box" id="promoUploadBox" tabindex="0" role="button" aria-label="Upload promo banner">
+                            <input type="file" id="promo_image_file" name="image_file" accept="image/png,image/jpeg,image/webp" aria-label="Choose file">
+                            <div class="zf-upload-idle" id="promoUploadIdle">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <p class="zf-upload-title"><span>Click to upload</span> or drag and drop</p>
+                                <p class="zf-upload-meta">PNG, JPG or WEBP - Max 5 MB</p>
+                            </div>
+                            <div class="zf-upload-preview" id="promoUploadPreview">
+                                <img class="zf-preview-img" id="promoImagePreview" src="" alt="Preview">
+                                <div class="zf-preview-info">
+                                    <div class="zf-preview-name" id="promoPreviewName"></div>
+                                    <div class="zf-preview-size" id="promoPreviewSize"></div>
+                                </div>
+                                <button type="button" class="zf-preview-remove" id="promoRemoveImgBtn" aria-label="Remove image">
+                                    <i class="fa-solid fa-xmark"></i> Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="zf-actions zf-form-footer">
+                <button type="button" class="zf-btn-cancel" id="promoCancelBtn" onclick="resetPromoForm()">Cancel</button>
+                <button type="submit" class="zf-btn-save zf-btn-primary" id="promoSubmitBtn">
+                    <span class="zf-spinner"></span>
+                    <i class="fa-solid fa-floppy-disk zf-save-label"></i>
+                    <span class="zf-save-label" id="promoBtnText">Save Promotion</span>
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    {% if selected_tab in ['list', 'all'] %}
+    <div class="card-panel">
+        <div class="card-header">
+            <h2><i class="fa-solid fa-list" style="margin-right:8px;"></i> Promotion List</h2>
+            <div class="card-header-actions">
+                <span class="badge badge-role">{{ promotions|length }} Listed</span>
+            </div>
+        </div>
+        <div class="card-body" style="padding:0;">
+            <div class="zf-table-wrap">
+                <table class="table-striped">
+                    <thead>
+                        <tr>
+                            <th style="width:72px; padding-left:16px;">Banner</th>
+                            <th>Name</th>
+                            <th>Code</th>
+                            <th>Discount</th>
+                            <th>Valid Until</th>
+                            <th style="width:130px; text-align:right; padding-right:16px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in promotions %}
+                            <tr>
+                                <td style="padding-left:16px;">
+                                    {% if p.image_url %}
+                                        <img src="{{ p.image_url }}" alt="" style="width:52px; height:38px; object-fit:cover; border-radius:6px; border:1px solid var(--border);" />
+                                    {% else %}
+                                        <div style="width:52px; height:38px; background:#f1f5f9; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:14px;">
+                                            <i class="fa-solid fa-tags"></i>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div style="font-weight:600; color:var(--text);">{{ p.name }}</div>
+                                    {% if p.promo_type %}
+                                        <span class="badge badge-neutral" style="font-size:10px; margin-top:2px;">{{ p.promo_type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span style="font-family:monospace; font-weight:700; background:#f1f5f9; padding:2px 6px; border-radius:4px; letter-spacing:0.5px; border:1px solid var(--border);">
+                                        {{ p.code }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if p.discount %}
+                                        <span class="badge badge-success">{{ p.discount }}</span>
+                                    {% else %}
+                                        <span style="color:var(--text-muted);">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ p.valid_until or '-' }}</td>
+                                <td style="text-align:right; padding-right:16px;">
+                                    <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
+                                        <button class="zf-icon-btn" type="button" title="Edit Promotion"
+                                                onclick='fillPromoForm({{ p.id|tojson }}, {{ p.name|tojson }}, {{ (p.promo_type or "")|tojson }}, {{ p.code|tojson }}, {{ (p.discount or "")|tojson }}, {{ (p.valid_until or "")|tojson }}, {{ (p.image_url or "")|tojson }})'>
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                        <form method="post" action="{{ url_for('animal_farm_admin.delete_promotion', promo_id=p.id) }}" style="display:inline;" onsubmit="return confirm('Delete this promotion?');">
+                                            <button class="zf-icon-btn danger" type="submit" title="Delete Promotion">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="6">
+                                    <div class="zf-empty-state">
+                                        <i class="fa-solid fa-ticket zf-empty-icon"></i>
+                                        <div class="zf-empty-title">No Promotions Found</div>
+                                        <div class="zf-empty-desc">Create your first promotion code to offer seasonal discounts to visitors.</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
 <script>
-    function fillPromoForm(id, name, promoType, code, discount, validUntil) {
-        const form = document.querySelector('form[action$="/promotions/save"]');
-        if (!form) return;
-        form.querySelector('input[name="promo_id"]').value = id;
-        form.querySelector('input[name="name"]').value = name || '';
-        form.querySelector('select[name="promo_type"]').value = promoType || '';
-        form.querySelector('input[name="code"]').value = code || '';
-        form.querySelector('input[name="discount"]').value = discount || '';
-        form.querySelector('input[name="valid_until"]').value = validUntil || '';
+    const promoForm = document.getElementById('promoForm');
+    const fileInput = document.getElementById('promo_image_file');
+    const uploadBox = document.getElementById('promoUploadBox');
+    const uploadIdle = document.getElementById('promoUploadIdle');
+    const previewWrap = document.getElementById('promoUploadPreview');
+    const imagePreview = document.getElementById('promoImagePreview');
+    const previewName = document.getElementById('promoPreviewName');
+    const previewSize = document.getElementById('promoPreviewSize');
+    const removeImgBtn = document.getElementById('promoRemoveImgBtn');
+
+    function resetUpload() {
+        if (fileInput) fileInput.value = '';
+        if (imagePreview) imagePreview.src = '';
+        if (uploadIdle) uploadIdle.classList.remove('hidden');
+        if (previewWrap) previewWrap.classList.remove('visible');
+    }
+
+    function showPreview(file, customUrl) {
+        if (file) {
+            imagePreview.src = URL.createObjectURL(file);
+            if (previewName) previewName.textContent = file.name;
+            if (previewSize) previewSize.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+        } else if (customUrl) {
+            imagePreview.src = customUrl;
+            if (previewName) previewName.textContent = 'Promo Banner';
+            if (previewSize) previewSize.textContent = '';
+        }
+        if (uploadIdle) uploadIdle.classList.add('hidden');
+        if (previewWrap) previewWrap.classList.add('visible');
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                showPreview(this.files[0]);
+            } else {
+                resetUpload();
+            }
+        });
+    }
+
+    if (uploadBox) {
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadBox.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                uploadBox.classList.add('drag-over');
+            }, false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadBox.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                uploadBox.classList.remove('drag-over');
+            }, false);
+        });
+        uploadBox.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files && files.length > 0) {
+                fileInput.files = files;
+                showPreview(files[0]);
+            }
+        });
+    }
+
+    if (removeImgBtn) {
+        removeImgBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            resetUpload();
+        });
+    }
+
+    function fillPromoForm(id, name, promoType, code, discount, validUntil, imageUrl) {
+        if (!promoForm) return;
+        document.getElementById('promo_id').value = id;
+        document.getElementById('promo_name').value = name || '';
+        document.getElementById('promo_type').value = promoType || '';
+        document.getElementById('promo_code').value = code || '';
+        document.getElementById('promo_discount').value = discount || '';
+        document.getElementById('promo_valid_until').value = validUntil || '';
+
+        document.getElementById('promoFormTitleText').textContent = 'Edit Promotion';
+        const badge = document.getElementById('promoFormBadge');
+        if (badge) {
+            badge.textContent = 'Edit';
+            badge.classList.add('editing');
+        }
+        document.getElementById('promoBtnText').textContent = 'Update Promotion';
+
+        if (imageUrl) {
+            showPreview(null, imageUrl);
+        } else {
+            resetUpload();
+        }
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetPromoForm() {
+        if (!promoForm) return;
+        promoForm.reset();
+        document.getElementById('promo_id').value = '';
+        document.getElementById('promoFormTitleText').textContent = 'Add Promotion';
+        const badge = document.getElementById('promoFormBadge');
+        if (badge) {
+            badge.textContent = 'New';
+            badge.classList.remove('editing');
+        }
+        document.getElementById('promoBtnText').textContent = 'Save Promotion';
+        resetUpload();
+    }
+
+    if (promoForm) {
+        promoForm.addEventListener('submit', function(e) {
+            const nameField = document.getElementById('promo_name');
+            const nameError = document.getElementById('promo_name_error');
+            const codeField = document.getElementById('promo_code');
+            const codeError = document.getElementById('promo_code_error');
+            let hasError = false;
+
+            if (!nameField.value.trim()) {
+                nameField.classList.add('is-invalid');
+                nameError.style.display = 'block';
+                hasError = true;
+            } else {
+                nameField.classList.remove('is-invalid');
+                nameError.style.display = 'none';
+            }
+
+            if (!codeField.value.trim()) {
+                codeField.classList.add('is-invalid');
+                codeError.style.display = 'block';
+                hasError = true;
+            } else {
+                codeField.classList.remove('is-invalid');
+                codeError.style.display = 'none';
+            }
+
+            if (hasError) {
+                e.preventDefault();
+                return;
+            }
+
+            const btn = document.getElementById('promoSubmitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+        });
     }
 </script>
 {% endblock %}

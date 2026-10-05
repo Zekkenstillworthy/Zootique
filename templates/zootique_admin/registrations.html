@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Registrations | Super Admin{% endblock %}
+{% block page_title %}Establishment Registrations{% endblock %}
+
+{% block content %}
+<div class="card-panel">
+  <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+    <div>
+      <h2>REGISTRATION REVIEW QUEUE</h2>
+      <p style="margin:6px 0 0; color:var(--text-muted); font-size:13px;">Review submitted establishment details and documents before creating access.</p>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      {% for option in ['pending', 'approved', 'rejected', 'all'] %}
+      <a class="btn {% if selected_status == option %}btn-primary{% else %}btn-ghost{% endif %}" href="{{ url_for('zootique_admin.registrations', status=option) }}">{{ option|capitalize }}</a>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ESTABLISHMENT</th>
+          <th>TYPE</th>
+          <th>LOCATION</th>
+          <th>SUBMITTED</th>
+          <th>STATUS</th>
+          <th style="text-align:right;">ACTION</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for registration in registrations %}
+        <tr>
+          <td class="fw-600">{{ registration.establishment_name }}{% if registration.is_legacy_migration %}<div style="margin-top:5px;"><span class="badge badge-pending">Legacy — no original documents</span></div>{% endif %}</td>
+          <td>{{ registration.establishment_type }}</td>
+          <td>{{ registration.location }}</td>
+          <td>{{ registration.created_at.strftime('%b %d, %Y %I:%M %p') if registration.created_at else 'Not available' }}</td>
+          <td><span class="badge {% if registration.status == 'approved' %}badge-active{% elif registration.status == 'rejected' %}badge-pending{% endif %}">{{ registration.status|capitalize }}</span></td>
+          <td style="text-align:right;"><a class="btn btn-ghost" href="{{ url_for('zootique_admin.registration_detail', registration_id=registration.id) }}">Review</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="color:var(--text-muted);">No {{ selected_status }} registrations found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

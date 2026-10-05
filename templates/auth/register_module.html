@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -61,8 +61,10 @@
     }
     
     .logo {
-      display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 24px; color: white;
-      text-decoration: none;
+      display: flex; align-items: center; text-decoration: none;
+    }
+    .logo img {
+      height: 42px; width: auto; display: block;
     }
     .hero-text {
       font-size: clamp(32px, 4vw, 44px);
@@ -173,21 +175,22 @@
     }
     .form-control {
       width: 100%;
-      background: #e8e4d8;
-      border: 1px solid transparent;
+      background: #ffffff;
+      border: 1px solid #9CA3AF;
       border-radius: 6px;
-      padding: 14px 16px;
+      padding: 12px 14px;
       font-family: inherit;
       font-size: 14px;
-      color: #1a2e1e;
+      color: #111827;
       transition: all 0.2s;
     }
     .form-control:focus {
       outline: none;
-      border-color: #166453;
-      background: white;
+      border-color: #1B5E38;
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(27, 94, 56, 0.12);
     }
-    .form-control::placeholder { color: #a0aec0; }
+    .form-control::placeholder { color: #6B7280; }
     
     .form-row {
       display: flex;
@@ -313,7 +316,7 @@
     <div class="left-overlay-gradient"></div>
     
     <div class="left-content">
-      <a href="/" class="logo"><i class="fa-solid fa-tree"></i> Zootique</a>
+      <a href="/" class="logo"><img src="{{ url_for('static', filename='img/Zootique_Logo.png') }}" alt="Zootique" /></a>
     </div>
 
     <div class="copyright">

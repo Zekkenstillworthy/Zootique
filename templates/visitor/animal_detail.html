@@ -16,7 +16,7 @@
 
 {% block content %}
 <div class="card animal-detail-card" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: row;">
-    <img src="{{ animal.image_url }}" alt="{{ animal.name }}" style="width: 40%; object-fit: cover;">
+    {% if animal.image_url %}<img src="{{ animal.image_url }}" alt="{{ animal.name }}" onerror="this.onerror=null;this.style.display='none';" style="width: 40%; object-fit: cover;">{% endif %}
     <div class="card-content" style="width: 60%;">
         <h2 style="margin-bottom: 0.5rem;">{{ animal.name }}</h2>
         <p style="color: var(--accent-color); font-weight: bold; margin-bottom: 1rem;">{{ animal.species }}</p>

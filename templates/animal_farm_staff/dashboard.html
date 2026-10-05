@@ -1,106 +1,116 @@
 {% extends "base.html" %}
 
-{% block title %}Animal Farm Staff Dashboard{% endblock %}
-{% block page_title %}Animal Farm Staff Portal{% endblock %}
+{% block title %}Staff Dashboard | Zootique{% endblock %}
+{% block page_title %}Staff Dashboard{% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
-<div class="hero-box" style="background: linear-gradient(135deg, #0f291e 0%, #1e3a2b 100%);">
+<div class="hero-box" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); border-radius: var(--radius-lg); margin-bottom: 20px;">
     <div class="hero-text">
-        <h2>Welcome, Farm Staff!</h2>
-        <p>Review your daily tasks, feeding schedules, and on-ground activities.</p>
+        <h2>Welcome, {{ session.get('full_name', 'Farm Staff') }}!</h2>
+        <p>Review your daily roster, assigned care duties, and wildlife feeding schedules.</p>
     </div>
-    <div class="hero-image" style="background: linear-gradient(rgba(0, 0, 0, 0), rgba(26, 79, 50, 0.4)), url('https://images.unsplash.com/photo-1516253593875-bd7ba052fbc5?auto=format&fit=crop&q=80'); background-size: cover; background-position: center;"></div>
+    <div class="hero-image" style="background: linear-gradient(rgba(0, 0, 0, 0), rgba(27, 94, 56, 0.4)), url('https://images.unsplash.com/photo-1516253593875-bd7ba052fbc5?auto=format&fit=crop&q=80'); background-size: cover; background-position: center;"></div>
 </div>
 
 <!-- Stats Grid -->
-<div class="stats-grid" style="--stats-cols: 3;">
+<div class="stats-grid" style="--stats-cols: 3; margin-bottom: 20px;">
     <div class="stat-card">
-        <div class="stat-icon icon-blue">
+        <div class="stat-icon icon-amber">
             <i class="fa-solid fa-list-check"></i>
         </div>
         <span class="value">{{ tasks_pending }}</span>
-        <h3>Pending Tasks</h3>
+        <h3>Pending Duties</h3>
     </div>
     <div class="stat-card">
         <div class="stat-icon icon-green">
             <i class="fa-solid fa-paw"></i>
         </div>
         <span class="value">{{ animals_count }}</span>
-        <h3>Animals in Zoo</h3>
+        <h3>Animals in Facility</h3>
     </div>
     <div class="stat-card">
-        <div class="stat-icon icon-purple">
+        <div class="stat-icon icon-blue">
             <i class="fa-solid fa-circle-check"></i>
         </div>
         <span class="value">{{ tasks_done }}</span>
-        <h3>Tasks Completed</h3>
+        <h3>Completed Tasks</h3>
     </div>
 </div>
 
 <!-- Main Panels -->
-<div class="two-col">
+<div class="two-col" style="--two-col-template: 1.3fr 1fr; margin-bottom: 0;">
     <!-- Left: Daily Tasks Outline -->
     <div class="card-panel">
-        <div class="card-header-bar">
-            <h2>Your Pending Tasks for Today</h2>
+        <div class="card-header">
+            <h2><i class="fa-solid fa-clock-rotate-left" style="margin-right:8px;"></i> Pending Duties for Today</h2>
+            <div class="card-header-actions">
+                <a href="{{ url_for('animal_farm_staff.daily_tasks') }}" class="btn btn-outline btn-sm">Task Board</a>
+            </div>
         </div>
-        <div class="card-body">
-            <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+        <div class="card-body" style="padding: 20px;">
+            <div style="display: flex; flex-direction: column; gap: 12px;">
                 {% for task in recent_tasks %}
-                    {% set status_color = '#ef4444' if task.due_date and task.due_date < today else ('#fca000' if task.status == 'in_progress' else '#64748b') %}
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #e2e8f0; border-radius: 8px;">
-                        <div style="display: flex; align-items: center; gap: 1rem;">
-                            <div>
-                                <h4 style="margin: 0; color: #1e293b; font-size: 1rem;">{{ task.title }}</h4>
-                                <p style="margin: 0; color: #64748b; font-size: 0.8rem;">{{ task.description or 'No details provided.' }}</p>
-                            </div>
+                    {% set is_overdue = task.due_date and task.due_date < today %}
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; padding: 14px 16px; border: 1px solid var(--border-light); border-radius: 8px; background: #ffffff;">
+                        <div style="flex: 1; min-width: 0;">
+                            <h4 style="margin: 0 0 4px; color: var(--text); font-size: 15px; font-weight: 700; word-break: break-word;">{{ task.title }}</h4>
+                            <p style="margin: 0; color: var(--text-muted); font-size: 13px; line-height: 1.4; word-break: break-word;">{{ task.description or 'No extra notes provided.' }}</p>
                         </div>
-                        <span style="color: {{ status_color }}; font-weight: bold; font-size: 0.85rem; white-space: nowrap;">
-                            <i class="fa-regular fa-clock"></i>
-                            {% if task.due_date %}{{ task.due_date.strftime('%b %d') }}{% else %}No due date{% endif %}
-                        </span>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                            {% if is_overdue %}
+                                <span class="badge badge-danger"><i class="fa-solid fa-triangle-exclamation"></i> Overdue</span>
+                            {% elif task.due_date %}
+                                <span class="badge badge-routine"><i class="fa-regular fa-clock"></i> {{ task.due_date.strftime('%b %d') }}</span>
+                            {% else %}
+                                <span class="badge badge-neutral">Flexible</span>
+                            {% endif %}
+                        </div>
                     </div>
                 {% else %}
-                    <div style="text-align: center; padding: 2rem; color: #64748b; border: 2px dashed #e2e8f0; border-radius: 8px;">
-                        <i class="fa-solid fa-circle-check" style="font-size: 1.5rem; color: #22c55e; margin-bottom: 0.5rem; display: block;"></i>
-                        <p style="margin: 0; font-weight: 600;">No pending tasks assigned to you.</p>
+                    <div class="zf-empty-state" style="padding: 32px 16px;">
+                        <i class="fa-solid fa-circle-check zf-empty-icon" style="color: #22c55e;"></i>
+                        <div class="zf-empty-title">All Caught Up!</div>
+                        <div class="zf-empty-desc">No outstanding duties assigned to you for today.</div>
                     </div>
                 {% endfor %}
             </div>
             
-            <a href="{{ url_for('animal_farm_staff.daily_tasks') }}" class="btn" style="display: block; width: 100%; margin-top: 1.5rem; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; text-align: center; text-decoration: none;">View All Tasks</a>
+            <a href="{{ url_for('animal_farm_staff.daily_tasks') }}" class="btn btn-outline" style="display: block; width: 100%; margin-top: 16px; text-align: center; text-decoration: none;">View All Tasks</a>
         </div>
     </div>
 
     <!-- Right: Feeding Schedule & Status -->
     <div class="card-panel">
-        <div class="card-header-bar">
-            <h2>Feeding Schedule</h2>
+        <div class="card-header">
+            <h2><i class="fa-solid fa-utensils" style="margin-right:8px;"></i> Feeding Schedule Zones</h2>
         </div>
-        <div class="card-body">
+        <div class="card-body" style="padding: 20px;">
             <div class="service-icons">
                 <a href="{{ url_for('animal_farm_staff.feeding_schedule') }}" class="mini-box" style="text-decoration: none; color: inherit;">
                     <i class="fa-solid fa-horse"></i>
-                    <p style="font-size: 0.8rem; font-weight: 600;">Equines</p>
+                    <p style="font-size: 13px; font-weight: 700; margin-top: 6px;">Equines</p>
                 </a>
                 <a href="{{ url_for('animal_farm_staff.feeding_schedule') }}" class="mini-box" style="text-decoration: none; color: inherit;">
-                    <i class="fa-solid fa-piggy-bank"></i>
-                    <p style="font-size: 0.8rem; font-weight: 600;">Pig Pen</p>
+                    <i class="fa-solid fa-hippo"></i>
+                    <p style="font-size: 13px; font-weight: 700; margin-top: 6px;">Mammals</p>
                 </a>
                 <a href="{{ url_for('animal_farm_staff.feeding_schedule') }}" class="mini-box" style="text-decoration: none; color: inherit;">
                     <i class="fa-solid fa-crow"></i>
-                    <p style="font-size: 0.8rem; font-weight: 600;">Aviary</p>
+                    <p style="font-size: 13px; font-weight: 700; margin-top: 6px;">Aviary</p>
                 </a>
                 <a href="{{ url_for('animal_farm_staff.feeding_schedule') }}" class="mini-box" style="text-decoration: none; color: inherit;">
                     <i class="fa-solid fa-cow"></i>
-                    <p style="font-size: 0.8rem; font-weight: 600;">Grazing Field</p>
+                    <p style="font-size: 13px; font-weight: 700; margin-top: 6px;">Grazing</p>
                 </a>
             </div>
             
-            <div style="margin-top: 2rem; background: #fffbeb; padding: 1rem; border-radius: 8px; border-left: 4px solid #fca000;">
-                <h4 style="margin: 0 0 0.5rem 0; color: #b45309;"><i class="fa-solid fa-triangle-exclamation"></i> Staff Notice</h4>
-                <p style="margin: 0; font-size: 0.85rem; color: #78350f;">Avoid feeding 'Bessie' the cow standard hay today. Special dietary mix required as verified by the Farm Vet.</p>
+            <div class="zf-alert zf-alert-warning" style="margin-top: 20px; margin-bottom: 0;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <div>
+                    <strong>Veterinary Notice:</strong>
+                    <div style="font-size: 12px; margin-top: 2px;">Ensure all quarantine sections have sanitized water and verify diet supplements with medical records before feeding.</div>
+                </div>
             </div>
         </div>
     </div>

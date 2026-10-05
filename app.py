@@ -53,6 +53,7 @@ def create_app() -> Flask:
 
     # UI version label (used in templates). Can be overridden via env var.
     app.config["APP_VERSION"] = (os.environ.get("APP_VERSION") or "2.4.0").strip()
+    app.config["SITE_TIMEZONE"] = (os.environ.get("SITE_TIMEZONE") or "Asia/Manila").strip()
 
     @app.before_request
     def refresh_permanent_session():
@@ -165,18 +166,6 @@ def create_app() -> Flask:
                     + missing_db_hint
                 ) from ex
 
-        # Auto-seed demo data in development/testing so pages don't render empty states.
-        # Idempotent: only inserts when the relevant tables/sections are empty.
-        auto_seed = os.environ.get("AUTO_SEED_DEMO_DATA", "1").strip().lower() not in {"0", "false", "no", "off"}
-        if env_name in {"development", "dev", "testing", "test"} and auto_seed:
-            try:
-                from services.demo_seed import ensure_demo_data
-
-                ensure_demo_data(allow_create_tables=True)
-            except Exception:
-                # Seeding is best-effort; the app should still boot even if seeding fails.
-                db.session.rollback()
-
     # Inject mock data into application config
     app.config["ANIMALS"]    = data.ANIMALS
     app.config["ZOOS"]       = data.ZOOS
@@ -189,7 +178,61 @@ def create_app() -> Flask:
     # Register Blueprints
     @app.get("/")
     def landing():
-        return render_template("landing.html")
+        hero_zoos = []
+        try:
+            from models import Zoo, Service, Feedback, Animal, User
+            from sqlalchemy import func as _func
+            db_zoos = Zoo.query.order_by(Zoo.id.asc()).all()
+            for zoo in db_zoos:
+                # Only include establishments that are not suspended
+                admin_users = User.query.filter(
+                    User.zoo_id == zoo.id,
+                    User.role.in_(["admin", "animal_farm_admin"])
+                ).all()
+                if admin_users and all(getattr(u, "status", "active") == "suspended" for u in admin_users):
+                    continue
+
+                rating_val = (
+                    db.session.query(_func.avg(Feedback.rating))
+                    .filter(Feedback.zoo_id == zoo.id)
+                    .scalar() or 0
+                )
+                min_price = (
+                    db.session.query(_func.min(Service.price))
+                    .filter(Service.zoo_id == zoo.id)
+                    .scalar() or 0
+                )
+                animal_count = (
+                    db.session.query(_func.count(Animal.id))
+                    .filter(Animal.zoo_id == zoo.id)
+                    .scalar() or 0
+                )
+                hero_zoos.append({
+                    "id": zoo.id,
+                    "name": zoo.name,
+                    "type": (zoo.type or "Zoo Park").strip(),
+                    "location": zoo.location or "",
+                    "description": zoo.description or "Discover curated wildlife experiences.",
+                    "image_url": zoo.image_url or "",
+                    "rating": round(float(rating_val), 1),
+                    "price": float(min_price or 0),
+                    "animal_count": int(animal_count or 0),
+                })
+
+            platform_stats = None
+            if hero_zoos:
+                from models import Booking
+                total_animals = db.session.query(_func.count(Animal.id)).scalar() or 0
+                total_bookings = db.session.query(_func.count(Booking.id)).scalar() or 0
+                platform_stats = {
+                    "zoos": len(hero_zoos),
+                    "species": int(total_animals),
+                    "bookings": int(total_bookings),
+                }
+        except Exception:
+            hero_zoos = []
+            platform_stats = None
+        return render_template("landing.html", hero_zoos=hero_zoos, stats=platform_stats)
 
     app.register_blueprint(visitor_bp, url_prefix="/visitor")
 

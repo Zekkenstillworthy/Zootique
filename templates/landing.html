@@ -29,11 +29,12 @@
         .lp-logo {
             display: inline-flex;
             align-items: center;
-            gap: 0.6rem;
-            font-weight: 900;
             text-decoration: none;
-            color: #1a4f32;
-            font-size: 1.3rem;
+        }
+        .lp-logo img {
+            height: 40px;
+            width: auto;
+            display: block;
         }
         .lp-links {
             display: flex;
@@ -76,40 +77,281 @@
             color: #ffffff;
         }
 
+        /* =============================================
+           HERO SLIDER
+        ============================================= */
         .lp-hero {
-            background: linear-gradient(135deg, #0f291e 0%, #1e3a2b 100%);
-            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            background: #0b1f15;
+            min-height: 520px;
+            display: flex;
+            flex-direction: column;
         }
-        .lp-hero-inner {
-            padding: 4.25rem 2rem 3.25rem 2rem;
+
+        /* --- slides track --- */
+        .lp-slider-track {
+            display: flex;
+            width: 100%;
+            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform;
+            flex: 1;
+        }
+
+        /* --- individual slide --- */
+        .lp-slide {
+            min-width: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            min-height: 520px;
+        }
+
+        /* background image layer */
+        .lp-slide-bg {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            transition: opacity 0.4s;
+        }
+        .lp-slide-bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                100deg,
+                rgba(11, 31, 21, 0.90) 0%,
+                rgba(11, 31, 21, 0.65) 55%,
+                rgba(11, 31, 21, 0.25) 100%
+            );
+        }
+
+        /* slide content */
+        .lp-slide-inner {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 1140px;
+            margin: 0 auto;
+            padding: 5.5rem 2rem 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .lp-slide-content {
+            max-width: 720px;
+        }
+
+        .lp-slide-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: rgba(232, 134, 42, 0.18);
+            border: 1px solid rgba(232, 134, 42, 0.45);
+            color: #f59e0b;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 0.3rem 0.7rem;
+            border-radius: 100px;
+            margin-bottom: 0.85rem;
+        }
+
+        .lp-slide h1 {
+            margin: 0 0 0.85rem 0;
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 3.5vw, 3.2rem);
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: -1px;
+            line-height: 1.15;
+        }
+
+        .lp-slide-desc {
+            color: rgba(255,255,255,0.82);
+            line-height: 1.65;
+            max-width: 52ch;
+            font-size: 1rem;
+            font-weight: 400;
+            margin-bottom: 1.4rem;
+        }
+
+        .lp-slide-meta {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .lp-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: rgba(255,255,255,0.75);
+            font-size: 0.88rem;
+        }
+        .lp-meta-item i { color: #4ade80; }
+
+        .lp-slide-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .lp-btn-hero-primary {
+            background: linear-gradient(135deg, #1B5E38, #2d8c5a);
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.4rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            box-shadow: 0 4px 18px rgba(27, 94, 56, 0.45);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .lp-btn-hero-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(27, 94, 56, 0.6);
+        }
+
+        .lp-btn-hero-secondary {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.35);
+            color: #fff;
+            padding: 0.75rem 1.4rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            backdrop-filter: blur(8px);
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .lp-btn-hero-secondary:hover {
+            background: rgba(255,255,255,0.18);
+            border-color: rgba(255,255,255,0.55);
+        }
+
+
+        /* --- Controls bar (dots + arrows) --- */
+        .lp-slider-controls {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1rem 2rem 1.2rem;
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(6px);
+        }
+
+        .lp-arrow {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .lp-arrow:hover { background: rgba(255,255,255,0.25); }
+        .lp-arrow:focus-visible { outline: 2px solid #4ade80; outline-offset: 2px; }
+
+        .lp-dots {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .lp-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 100px;
+            background: rgba(255,255,255,0.3);
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            transition: width 0.3s, background 0.3s;
+        }
+        .lp-dot.active {
+            width: 28px;
+            background: #4ade80;
+        }
+        .lp-dot:focus-visible { outline: 2px solid #4ade80; outline-offset: 2px; }
+
+        /* --- Skeleton loader --- */
+        .lp-skeleton {
+            position: absolute;
+            inset: 0;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0f291e, #1e3a2b);
+        }
+        .lp-skeleton.hidden { display: none; }
+        .lp-sk-pulse {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #4ade80;
+            animation: sk-spin 0.9s linear infinite;
+        }
+        @keyframes sk-spin { to { transform: rotate(360deg); } }
+
+        /* --- Static fallback hero (shown when no zoos) --- */
+        .lp-hero-static {
+            padding: 4.25rem 2rem 3.25rem;
             display: grid;
             grid-template-columns: 1.2fr 0.8fr;
             gap: 2rem;
             align-items: center;
+            max-width: 1100px;
+            margin: 0 auto;
+            width: 100%;
         }
-        .lp-hero h1 {
+        .lp-hero-static h1 {
             margin: 0 0 1rem 0;
             font-size: clamp(2.1rem, 3vw, 3rem);
             letter-spacing: -1px;
             font-weight: 900;
+            color: #fff;
         }
-        .lp-hero p {
+        .lp-hero-static p {
             margin: 0;
             color: rgba(255,255,255,0.85);
             line-height: 1.6;
             max-width: 58ch;
             font-weight: 500;
         }
-        .lp-hero-card {
+        .lp-hero-static-card {
             background: rgba(255,255,255,0.06);
             border: 1px solid rgba(226,232,240,0.22);
             border-radius: 16px;
             padding: 1.4rem;
         }
 
+        /* --- Sections --- */
         .lp-section {
-            padding: 3rem 2rem;
-            background: #fbfbfb;
+            padding: 4.5rem 2rem;
+            background: #ffffff;
             border-top: 1px solid #e2e8f0;
         }
         .lp-section h2 {
@@ -125,10 +367,148 @@
             max-width: 80ch;
         }
 
+        /* =============================================
+           ABOUT US SECTION
+        ============================================= */
+        .lp-about-section {
+            padding: 5rem 2rem;
+            background: #ffffff;
+        }
+
+        .lp-about-intro {
+            max-width: 860px;
+            margin-bottom: 2.75rem;
+        }
+
+        .lp-about-title {
+            margin: 0 0 0.5rem 0;
+            color: #1B5E38;
+            font-size: 2.2rem;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+        }
+
+        .lp-about-mission {
+            margin: 0 0 0.85rem 0;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #2e7d32;
+            line-height: 1.5;
+        }
+
+        .lp-about-desc {
+            margin: 0;
+            color: #64748b;
+            font-size: 0.96rem;
+            line-height: 1.7;
+            max-width: 78ch;
+        }
+
+        /* Value Pillars Grid (4 cols on desktop, 2 on tablet, 1 on mobile) */
+        .lp-pillars-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.75rem; /* 28px gap within 24-32px scale */
+        }
+
+        .lp-pillar-card {
+            background: #fcfdfd;
+            border: 1px solid #e5e7eb;
+            border-top: 3px solid #1B5E38;
+            border-radius: 12px;
+            padding: 1.7rem 1.4rem;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            height: 100%;
+        }
+
+        .lp-pillar-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 24px rgba(27, 94, 56, 0.08);
+            border-color: #1B5E38;
+        }
+
+        .lp-pillar-card:nth-child(2) {
+            border-top-color: #E8862A;
+        }
+
+        .lp-pillar-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            background: rgba(27, 94, 56, 0.08);
+            color: #1B5E38;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+            margin-bottom: 1.1rem;
+        }
+
+        .lp-pillar-card:nth-child(2) .lp-pillar-icon {
+            background: rgba(232, 134, 42, 0.12);
+            color: #E8862A;
+        }
+
+        .lp-pillar-title {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #1a4f32;
+            letter-spacing: -0.2px;
+        }
+
+        .lp-pillar-desc {
+            margin: 0;
+            font-size: 0.88rem;
+            color: #64748b;
+            line-height: 1.6;
+            flex-grow: 1;
+        }
+
+        /* Real Platform Stats Strip */
+        .lp-stats-strip {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid #edf2f7;
+            text-align: center;
+        }
+
+        .lp-stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .lp-stat-number {
+            font-size: 1.9rem;
+            font-weight: 900;
+            color: #1B5E38;
+            letter-spacing: -0.5px;
+        }
+
+        .lp-stat-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 1024px) {
+            .lp-pillars-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+            }
+        }
         @media (max-width: 900px) {
-            /* Hide desktop nav links (will appear in dropdown) */
             .lp-links { display: none; }
-            /* Dropdown nav shown when toggled */
             .lp-links.show {
                 display: flex;
                 flex-direction: column;
@@ -143,15 +523,9 @@
                 z-index: 999;
                 gap: 0.25rem;
             }
-            /* Show mobile action links inside the dropdown */
-            .lp-links .lp-mobile-action {
-                display: flex;
-            }
-            /* Shrink nav height */
+            .lp-links .lp-mobile-action { display: flex; }
             .lp-nav-inner { height: 64px; padding: 0 1.25rem; position: relative; }
-            /* Hide desktop CTA buttons from header */
             .lp-actions { display: none; }
-            /* Show the hamburger */
             .lp-mobile-toggle {
                 display: inline-flex;
                 align-items: center;
@@ -164,18 +538,289 @@
                 padding: 6px;
                 margin-left: auto;
             }
-            .lp-section { padding: 2rem 1.25rem; }
-            .lp-hero-inner { grid-template-columns: 1fr; padding: 2.5rem 1.5rem 2rem; }
+            .lp-section { padding: 3rem 1.25rem; }
+            .lp-about-section { padding: 3.5rem 1.25rem; }
+            .lp-slide-inner,
+            .lp-hero-static {
+                padding: 4.75rem 1.5rem 2.5rem;
+            }
+            .lp-hero-static-card { display: none; }
         }
         @media (min-width: 901px) {
-            /* Hide hamburger on desktop */
             .lp-mobile-toggle { display: none; }
-            /* Hide mobile-only action links that live in dropdown */
             .lp-links .lp-mobile-action { display: none; }
         }
+        @media (max-width: 640px) {
+            .lp-about-title { font-size: 1.75rem; }
+            .lp-about-mission { font-size: 1.05rem; }
+            .lp-pillars-grid {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+            }
+            .lp-stats-strip {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+                text-align: left;
+            }
+        }
         @media (max-width: 480px) {
-            .lp-hero h1 { font-size: 1.8rem; }
-            .lp-hero-card .lp-btn { display: block; text-align: center; }
+            .lp-slide h1,
+            .lp-hero-static h1 { font-size: 1.8rem; }
+            .lp-slide-actions { flex-direction: column; }
+        }
+
+        /* Progress bar at top of hero */
+        .lp-progress {
+            position: absolute;
+            top: 0; left: 0;
+            height: 3px;
+            background: #4ade80;
+            z-index: 20;
+            transition: width 0.1s linear;
+            width: 0%;
+        }
+
+        /* Slide entrance animation */
+        @keyframes slideEntrance {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .lp-slide.is-active .lp-slide-badge,
+        .lp-slide.is-active h1,
+        .lp-slide.is-active .lp-slide-desc,
+        .lp-slide.is-active .lp-slide-meta,
+        .lp-slide.is-active .lp-slide-actions {
+            animation: slideEntrance 0.55s ease both;
+        }
+        .lp-slide.is-active h1           { animation-delay: 0.05s; }
+        .lp-slide.is-active .lp-slide-desc { animation-delay: 0.12s; }
+        .lp-slide.is-active .lp-slide-meta { animation-delay: 0.18s; }
+        .lp-slide.is-active .lp-slide-actions { animation-delay: 0.24s; }
+
+        /* =============================================
+           CONTACT SECTION
+        ============================================= */
+        .lp-contact-section {
+            padding: 5rem 2rem;
+            background: #f8faf9;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .lp-contact-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .lp-contact-header {
+            margin-bottom: 2.75rem;
+        }
+
+        .lp-contact-title {
+            margin: 0 0 0.5rem 0;
+            color: #1B5E38;
+            font-size: 2.2rem;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+        }
+
+        .lp-contact-intro {
+            margin: 0;
+            font-size: 1.05rem;
+            color: #64748b;
+            line-height: 1.65;
+            max-width: 72ch;
+        }
+
+        .lp-contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.6fr;
+            gap: 3rem;
+            align-items: start;
+        }
+
+        /* ---- Left column: details ---- */
+        .lp-contact-details {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .lp-contact-detail-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .lp-contact-detail-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(27, 94, 56, 0.08);
+            color: #1B5E38;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .lp-contact-detail-text h4 {
+            margin: 0 0 0.2rem 0;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+        }
+
+        .lp-contact-detail-text p,
+        .lp-contact-detail-text a {
+            margin: 0;
+            font-size: 0.96rem;
+            color: #374151;
+            line-height: 1.55;
+            text-decoration: none;
+        }
+
+        .lp-contact-detail-text a:hover {
+            color: #1B5E38;
+            text-decoration: underline;
+        }
+
+        /* ---- Right column: form ---- */
+        .lp-contact-form-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 2.25rem 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        .lp-contact-form-title {
+            margin: 0 0 1.5rem 0;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #1a4f32;
+        }
+
+        .lp-cf-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .lp-cf-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .lp-cf-group label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #374151;
+        }
+
+        .lp-cf-group input,
+        .lp-cf-group select,
+        .lp-cf-group textarea {
+            width: 100%;
+            padding: 0.65rem 0.9rem;
+            font-size: 0.92rem;
+            font-family: inherit;
+            color: #1a1a2e;
+            background: #fafafa;
+            border: 1.5px solid #d1d5db;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+        }
+
+        .lp-cf-group input:focus,
+        .lp-cf-group select:focus,
+        .lp-cf-group textarea:focus {
+            border-color: #1B5E38;
+            box-shadow: 0 0 0 3px rgba(27, 94, 56, 0.1);
+            background: #ffffff;
+        }
+
+        .lp-cf-group input.is-invalid,
+        .lp-cf-group select.is-invalid,
+        .lp-cf-group textarea.is-invalid {
+            border-color: #e53e3e;
+            box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
+        }
+
+        .lp-cf-error {
+            font-size: 0.78rem;
+            color: #e53e3e;
+            display: none;
+        }
+
+        .lp-cf-group.has-error .lp-cf-error { display: block; }
+
+        .lp-cf-group textarea { resize: vertical; min-height: 110px; }
+
+        .lp-cf-submit {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.8rem 1.5rem;
+            background: linear-gradient(135deg, #1B5E38 0%, #2e7d32 100%);
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s;
+            margin-top: 0.5rem;
+        }
+
+        .lp-cf-submit:hover { opacity: 0.9; transform: translateY(-1px); }
+        .lp-cf-submit:active { transform: translateY(0); }
+
+        .lp-cf-success {
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin-top: 1rem;
+            font-size: 0.92rem;
+            color: #166534;
+            font-weight: 600;
+        }
+
+        .lp-cf-success.show { display: flex; }
+
+        .lp-cf-mailto-note {
+            margin-top: 0.85rem;
+            font-size: 0.78rem;
+            color: #94a3b8;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .lp-contact-section { padding: 3.5rem 1.25rem; }
+            .lp-contact-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+        }
+        @media (max-width: 640px) {
+            .lp-contact-title { font-size: 1.75rem; }
+            .lp-cf-row { grid-template-columns: 1fr; }
+            .lp-contact-form-card { padding: 1.5rem 1.25rem; }
         }
     </style>
 </head>
@@ -184,7 +829,7 @@
 <header class="lp-nav">
     <div class="container lp-nav-inner" style="max-width: 1100px;">
         <a class="lp-logo" href="#home">
-            <i class="fa-solid fa-paw"></i> Zootique
+            <img src="{{ url_for('static', filename='img/Zootique_Logo.png') }}" alt="Zootique" />
         </a>
 
         <!-- Desktop nav links (hidden on mobile) -->
@@ -222,14 +867,137 @@
 </header>
 
 <main id="home">
-    <section class="lp-hero">
-        <div class="container lp-hero-inner" style="max-width: 1100px;">
+    <section class="lp-hero" id="lpHeroSection"
+             aria-label="Featured zoos and wildlife parks"
+             aria-roledescription="carousel">
+
+        <!-- skeleton -->
+        <div class="lp-skeleton" id="lpSkeleton">
+            <div class="lp-sk-pulse"></div>
+        </div>
+
+        <!-- progress bar -->
+        <div class="lp-progress" id="lpProgress" role="progressbar" aria-label="Slide timer"></div>
+
+        {% set has_zoos = hero_zoos and hero_zoos|length > 0 %}
+
+        {% if has_zoos %}
+        <!-- SLIDER MODE -->
+        <div class="lp-slider-track" id="lpTrack" aria-live="polite" aria-atomic="true">
+            {% for zoo in hero_zoos %}
+            {% set is_first = loop.first %}
+            <article class="lp-slide {% if is_first %}is-active{% endif %}"
+                     id="lp-slide-{{ loop.index0 }}"
+                     aria-roledescription="slide"
+                     aria-label="{{ zoo.name }} ({{ loop.index }} of {{ hero_zoos|length }})">
+
+                <!-- background -->
+                <div class="lp-slide-bg"
+                     style="background-image: url('{% if zoo.image_url %}{{ zoo.image_url }}{% else %}{{ url_for('static', filename='img/zoo_wildlife.png') }}{% endif %}');"
+                     aria-hidden="true">
+                </div>
+
+                <!-- content -->
+                <div class="lp-slide-inner">
+                    <div class="lp-slide-content">
+                        <div class="lp-slide-badge">
+                            <i class="fa-solid fa-paw"></i>
+                            {{ zoo.type }}
+                        </div>
+                        <h1>{{ zoo.name }}</h1>
+                        <p class="lp-slide-desc">{{ zoo.description }}</p>
+
+                        <div class="lp-slide-meta">
+                            {% if zoo.location %}
+                            <span class="lp-meta-item">
+                                <i class="fa-solid fa-location-dot"></i>
+                                {{ zoo.location }}
+                            </span>
+                            {% endif %}
+                            {% if zoo.animal_count and zoo.animal_count > 0 %}
+                            <span class="lp-meta-item">
+                                <i class="fa-solid fa-hippo"></i>
+                                {{ zoo.animal_count }} {{ 'Species' if zoo.animal_count == 1 else 'Species & Animals' }}
+                            </span>
+                            {% endif %}
+                            {% if zoo.rating > 0 %}
+                            <span class="lp-meta-item">
+                                <i class="fa-solid fa-star" style="color:#f59e0b;"></i>
+                                {{ zoo.rating }} / 5.0
+                            </span>
+                            {% endif %}
+                            {% if zoo.price > 0 %}
+                            <span class="lp-meta-item">
+                                <i class="fa-solid fa-ticket"></i>
+                                From &#8369;{{ "%.0f"|format(zoo.price) }}
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="lp-slide-actions">
+                            <a class="lp-btn-hero-primary"
+                               href="{{ url_for('visitor.zoo_detail', zoo_id=zoo.id) }}"
+                               aria-label="Explore {{ zoo.name }}">
+                                <i class="fa-solid fa-compass"></i> Explore {{ zoo.name }} &rarr;
+                            </a>
+                            <a class="lp-btn-hero-secondary"
+                               href="{{ url_for('auth.register_selection') }}">
+                                <i class="fa-solid fa-building-user"></i> Register Your Zoo
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+
+        <!-- Controls -->
+        <div class="lp-slider-controls">
+            <button class="lp-arrow"
+                    id="lpPrev"
+                    aria-label="Previous zoo"
+                    onclick="sliderPrev()">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+
+            <div class="lp-dots" id="lpDots" role="tablist" aria-label="Select zoo slide">
+                {% for zoo in hero_zoos %}
+                <button class="lp-dot {% if loop.first %}active{% endif %}"
+                        role="tab"
+                        aria-selected="{{ 'true' if loop.first else 'false' }}"
+                        aria-controls="lp-slide-{{ loop.index0 }}"
+                        data-index="{{ loop.index0 }}"
+                        aria-label="Go to {{ zoo.name }}"
+                        onclick="sliderGoTo({{ loop.index0 }})">
+                </button>
+                {% endfor %}
+            </div>
+
+            <button class="lp-arrow"
+                    id="lpNext"
+                    aria-label="Next zoo"
+                    onclick="sliderNext()">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+
+        {% else %}
+        <!-- STATIC FALLBACK (no zoos in database) -->
+        <div class="lp-hero-static">
             <div>
                 <h1>Curated experiences for zoos and farms.</h1>
-                <p>Zootique helps visitors explore, book, and review experiences, while Zoo Admins manage services, bookings, and operations across Lyger Zoo, Graco Farms, and Hiraya Farms.</p>
+                <p>Zootique helps visitors explore, book, and review experiences, while Zoo Admins manage services, bookings, and operations across partner establishments.</p>
+                <div style="margin-top: 1.5rem; display:flex; gap: 0.75rem; flex-wrap: wrap;">
+                    <a class="lp-btn-hero-primary" href="{{ url_for('auth.register_admin_step1') }}">
+                        <i class="fa-solid fa-building-user"></i> Register your Establishment
+                    </a>
+                    <a class="lp-btn-hero-secondary" href="{{ url_for('auth.login', module_name='visitor') }}">
+                        <i class="fa-solid fa-compass"></i> Explore as Visitor
+                    </a>
+                </div>
             </div>
-            <div class="lp-hero-card">
-                <div style="font-weight: 900; margin-bottom: 0.5rem;">Start here</div>
+            <div class="lp-hero-static-card">
+                <div style="font-weight: 900; margin-bottom: 0.5rem; color:#fff;">Start here</div>
                 <div style="margin-top: 1rem; display:flex; gap: 0.75rem; flex-wrap: wrap;">
                     <a class="lp-btn lp-btn-start" href="{{ url_for('auth.register_admin_step1') }}" style="padding: 0.65rem 1rem; border-radius: 12px;">
                         <i class="fa-solid fa-building-user"></i> Register your Establishment
@@ -240,24 +1008,221 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </section>
 
-    <section id="about" class="lp-section">
-        <div class="container" style="max-width: 1100px;">
-            <h2>About Us</h2>
-            <p>Zootique is built to keep bookings, services, and feedback organized across partner establishments. Visitors can discover experiences and manage reservations. Zoo Admins can manage day-to-day operations and send feedback directly to Superadmin support.</p>
+    <section id="about" class="lp-section lp-about-section">
+        <div class="container" style="max-width: 1140px;">
+            <!-- Intro Block -->
+            <div class="lp-about-intro">
+                <h2 class="lp-about-title">About Us</h2>
+                <p class="lp-about-mission">A unified platform connecting visitors to nature while empowering wildlife parks and animal farms with modern management tools.</p>
+                <p class="lp-about-desc">Zootique is built to keep bookings, services, and operations seamlessly organized across partner establishments. Visitors can discover curated wildlife parks and manage reservations, while zoo administrators coordinate daily activities, manage animals and events, and access direct Superadmin support.</p>
+            </div>
+
+            <!-- Value Pillars Grid -->
+            <div class="lp-pillars-grid">
+                <!-- Pillar 1: For Visitors -->
+                <div class="lp-pillar-card">
+                    <div class="lp-pillar-icon" aria-hidden="true">
+                        <i class="fa-solid fa-compass"></i>
+                    </div>
+                    <h3 class="lp-pillar-title">For Visitors</h3>
+                    <p class="lp-pillar-desc">Discover partner zoos and wildlife parks, book tickets and experiences, and leave reviews.</p>
+                </div>
+
+                <!-- Pillar 2: For Zoo & Farm Admins -->
+                <div class="lp-pillar-card">
+                    <div class="lp-pillar-icon" aria-hidden="true">
+                        <i class="fa-solid fa-sliders"></i>
+                    </div>
+                    <h3 class="lp-pillar-title">For Zoo & Farm Admins</h3>
+                    <p class="lp-pillar-desc">Manage services, animals, bookings, events, and revenue from one dashboard.</p>
+                </div>
+
+                <!-- Pillar 3: For Multiple Locations -->
+                <div class="lp-pillar-card">
+                    <div class="lp-pillar-icon" aria-hidden="true">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                    </div>
+                    <h3 class="lp-pillar-title">For Multiple Locations</h3>
+                    <p class="lp-pillar-desc">Each registered zoo and farm gets its own branded space on the platform.</p>
+                </div>
+
+                <!-- Pillar 4: Platform Support -->
+                <div class="lp-pillar-card">
+                    <div class="lp-pillar-icon" aria-hidden="true">
+                        <i class="fa-solid fa-headset"></i>
+                    </div>
+                    <h3 class="lp-pillar-title">Platform Support</h3>
+                    <p class="lp-pillar-desc">Admins can reach Superadmin support directly for platform issues and feedback.</p>
+                </div>
+            </div>
+
+            <!-- Optional Real Platform Stats -->
+            {% if stats and stats.zoos > 0 %}
+            <div class="lp-stats-strip">
+                <div class="lp-stat-item">
+                    <span class="lp-stat-number">{{ stats.zoos }}</span>
+                    <span class="lp-stat-label">Partner Establishments</span>
+                </div>
+                {% if stats.species > 0 %}
+                <div class="lp-stat-item">
+                    <span class="lp-stat-number">{{ stats.species }}</span>
+                    <span class="lp-stat-label">Species & Residents</span>
+                </div>
+                {% endif %}
+                {% if stats.bookings > 0 %}
+                <div class="lp-stat-item">
+                    <span class="lp-stat-number">{{ stats.bookings }}</span>
+                    <span class="lp-stat-label">Bookings Coordinated</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
     </section>
 
-    <section id="contact" class="lp-section">
-        <div class="container" style="max-width: 1100px;">
-            <h2>Contact</h2>
-            <p>For access issues or platform concerns, use the authentication portal to reach your module’s support and sign-in flows.</p>
+    <!-- ===== CONTACT SECTION ===== -->
+    <!-- NOTE: The form below uses a mailto: fallback. Replace the action/JS with a
+         proper POST endpoint (e.g. /api/contact) once the backend is ready. -->
+    <section id="contact" class="lp-contact-section">
+        <div class="lp-contact-inner">
+
+            <div class="lp-contact-header">
+                <h2 class="lp-contact-title">Contact</h2>
+                <p class="lp-contact-intro">
+                    Have a question as a visitor, or need help managing your zoo or farm?
+                    Reach out below — we're happy to help.
+                </p>
+            </div>
+
+            <div class="lp-contact-grid">
+
+                <!-- ── Left: details ── -->
+                <div class="lp-contact-details">
+
+                    <div class="lp-contact-detail-item">
+                        <div class="lp-contact-detail-icon">&#9993;</div>
+                        <div class="lp-contact-detail-text">
+                            <h4>General Support</h4>
+                            <!-- TODO: replace with real address before going live -->
+                            <a href="mailto:support@zootique.app">support@zootique.app</a>
+                        </div>
+                    </div>
+
+                    <div class="lp-contact-detail-item">
+                        <div class="lp-contact-detail-icon">&#128336;</div>
+                        <div class="lp-contact-detail-text">
+                            <h4>Business Hours</h4>
+                            <p>Monday – Friday, 9 AM – 6 PM (PHT)</p>
+                        </div>
+                    </div>
+
+                    <div class="lp-contact-detail-item">
+                        <div class="lp-contact-detail-icon">&#128205;</div>
+                        <div class="lp-contact-detail-text">
+                            <h4>Based In</h4>
+                            <!-- TODO: update with actual city/address -->
+                            <p>Philippines</p>
+                        </div>
+                    </div>
+
+                    <div class="lp-contact-detail-item">
+                        <div class="lp-contact-detail-icon">&#128274;</div>
+                        <div class="lp-contact-detail-text">
+                            <h4>Account &amp; Login Issues</h4>
+                            <p>If you are locked out or cannot access your dashboard, use the
+                               <a href="/login">login page</a> to reset your password or
+                               request access from your Superadmin.</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ── Right: form ── -->
+                <div class="lp-contact-form-card">
+                    <p class="lp-contact-form-title">Send Us a Message</p>
+
+                    <form id="lpContactForm" novalidate>
+
+                        <div class="lp-cf-row">
+                            <div class="lp-cf-group" id="cfg-name">
+                                <label for="cf-name">Your Name <span style="color:#e53e3e">*</span></label>
+                                <input type="text" id="cf-name" name="name"
+                                       placeholder="Juan dela Cruz" autocomplete="name">
+                                <span class="lp-cf-error">Please enter your name.</span>
+                            </div>
+                            <div class="lp-cf-group" id="cfg-email">
+                                <label for="cf-email">Email Address <span style="color:#e53e3e">*</span></label>
+                                <input type="email" id="cf-email" name="email"
+                                       placeholder="you@example.com" autocomplete="email">
+                                <span class="lp-cf-error">Please enter a valid email.</span>
+                            </div>
+                        </div>
+
+                        <div class="lp-cf-row">
+                            <div class="lp-cf-group" id="cfg-role">
+                                <label for="cf-role">I am a… <span style="color:#e53e3e">*</span></label>
+                                <select id="cf-role" name="role">
+                                    <option value="" disabled selected>Select your role</option>
+                                    <option value="visitor">Visitor / Guest</option>
+                                    <option value="zoo_admin">Zoo / Farm Admin</option>
+                                    <option value="staff">Zoo Staff</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                <span class="lp-cf-error">Please select your role.</span>
+                            </div>
+                            <div class="lp-cf-group" id="cfg-subject">
+                                <label for="cf-subject">Subject <span style="color:#e53e3e">*</span></label>
+                                <select id="cf-subject" name="subject">
+                                    <option value="" disabled selected>Select a topic</option>
+                                    <option value="general">General Inquiry</option>
+                                    <option value="booking">Booking / Tickets</option>
+                                    <option value="account">Account &amp; Access</option>
+                                    <option value="billing">Billing</option>
+                                    <option value="partnership">Partnership / Registration</option>
+                                    <option value="bug">Report a Bug</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                <span class="lp-cf-error">Please select a subject.</span>
+                            </div>
+                        </div>
+
+                        <div class="lp-cf-group" id="cfg-message">
+                            <label for="cf-message">Message <span style="color:#e53e3e">*</span></label>
+                            <textarea id="cf-message" name="message"
+                                      placeholder="Describe your question or concern…"></textarea>
+                            <span class="lp-cf-error">Please write a message (at least 10 characters).</span>
+                        </div>
+
+                        <button type="submit" class="lp-cf-submit" id="cf-submit">
+                            <span>&#9993;</span> Send Message
+                        </button>
+
+                        <div class="lp-cf-success" id="cf-success" role="alert">
+                            <span style="font-size:1.2rem">&#10003;</span>
+                            Thanks! Your email client will open with your message pre-filled.
+                            We'll get back to you within 1–2 business days.
+                        </div>
+
+                        <!-- Fallback note: swap for a real POST endpoint when available -->
+                        <p class="lp-cf-mailto-note">
+                            Clicking "Send" opens your email client via mailto: as a fallback.<br>
+                            A backend submission endpoint should replace this before launch.
+                        </p>
+
+                    </form>
+                </div>
+            </div>
         </div>
     </section>
 </main>
 
 <script>
+    /* ──────────────────────────────────────────
+       Navbar
+    ────────────────────────────────────────── */
     function toggleLpNav() {
         const nav = document.getElementById('lpMobileNav');
         const btn = document.getElementById('lpHamburger');
@@ -267,7 +1232,6 @@
         icon.className = isOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
     }
 
-    // Close menu when clicking outside
     document.addEventListener('click', function(e) {
         const nav = document.getElementById('lpMobileNav');
         const btn = document.getElementById('lpHamburger');
@@ -278,7 +1242,6 @@
         }
     });
 
-    // Close menu when a nav link is clicked (smooth scroll targets)
     document.querySelectorAll('.lp-link').forEach(function(link) {
         link.addEventListener('click', function() {
             const nav = document.getElementById('lpMobileNav');
@@ -290,16 +1253,225 @@
         });
     });
 
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            const nav = document.getElementById('lpMobileNav');
-            const btn = document.getElementById('lpHamburger');
-            if (nav) nav.classList.remove('show');
-            if (btn) btn.setAttribute('aria-expanded', 'false');
-            const icon = document.getElementById('lpHamburgerIcon');
-            if (icon) icon.className = 'fa-solid fa-bars';
+    /* ──────────────────────────────────────────
+       Slider
+    ────────────────────────────────────────── */
+    (function () {
+        const TOTAL       = {{ hero_zoos|length if hero_zoos else 0 }};
+        const AUTOPLAY_MS = 5500;
+        const STEP_MS     = 50;
+
+        if (TOTAL < 1) {
+            var sk = document.getElementById('lpSkeleton');
+            if (sk) sk.classList.add('hidden');
+            return;
         }
-    });
+
+        var current   = 0;
+        var timer     = null;
+        var progTimer = null;
+        var progWidth = 0;
+        var paused    = false;
+
+        var track    = document.getElementById('lpTrack');
+        var dots     = Array.from(document.querySelectorAll('.lp-dot'));
+        var progress = document.getElementById('lpProgress');
+        var skeleton = document.getElementById('lpSkeleton');
+        var slides   = Array.from(document.querySelectorAll('.lp-slide'));
+
+        /* Hide skeleton once first bg image loads */
+        function hideSkeleton() {
+            if (!skeleton) return;
+            skeleton.style.transition = 'opacity 0.4s';
+            skeleton.style.opacity = '0';
+            setTimeout(function() { skeleton.classList.add('hidden'); }, 400);
+        }
+
+        var firstBg = slides[0] ? slides[0].querySelector('.lp-slide-bg') : null;
+        if (firstBg) {
+            var bgUrl = (firstBg.style.backgroundImage || '').replace(/url\(["']?|["']?\)/g, '');
+            if (bgUrl) {
+                var img = new Image();
+                img.onload  = hideSkeleton;
+                img.onerror = hideSkeleton;
+                img.src = bgUrl;
+                setTimeout(hideSkeleton, 2500);
+            } else {
+                setTimeout(hideSkeleton, 300);
+            }
+        } else {
+            setTimeout(hideSkeleton, 300);
+        }
+
+        function updateSlide(idx) {
+            track.style.transform = 'translateX(-' + (idx * 100) + '%)';
+            slides.forEach(function(s, i) { s.classList.toggle('is-active', i === idx); });
+            dots.forEach(function(d, i) {
+                d.classList.toggle('active', i === idx);
+                d.setAttribute('aria-selected', i === idx ? 'true' : 'false');
+            });
+            current = idx;
+        }
+
+        function resetProgress() {
+            clearInterval(progTimer);
+            progWidth = 0;
+            if (progress) progress.style.width = '0%';
+            if (paused) return;
+            progTimer = setInterval(function() {
+                progWidth += (STEP_MS / AUTOPLAY_MS) * 100;
+                if (progress) progress.style.width = Math.min(progWidth, 100) + '%';
+                if (progWidth >= 100) clearInterval(progTimer);
+            }, STEP_MS);
+        }
+
+        function startAuto() {
+            clearInterval(timer);
+            if (TOTAL <= 1) return;
+            timer = setInterval(function() {
+                if (!paused) sliderNext();
+            }, AUTOPLAY_MS);
+            resetProgress();
+        }
+
+        window.sliderGoTo = function(idx) {
+            updateSlide((idx + TOTAL) % TOTAL);
+            startAuto();
+        };
+        window.sliderNext = function() { sliderGoTo((current + 1) % TOTAL); };
+        window.sliderPrev = function() { sliderGoTo((current - 1 + TOTAL) % TOTAL); };
+
+        /* Pause on hover / focus */
+        var hero = document.getElementById('lpHeroSection');
+        if (hero) {
+            hero.addEventListener('mouseenter', function() { paused = true;  clearInterval(progTimer); });
+            hero.addEventListener('mouseleave', function() { paused = false; startAuto(); });
+            hero.addEventListener('focusin',    function() { paused = true;  clearInterval(progTimer); });
+            hero.addEventListener('focusout',   function() { paused = false; startAuto(); });
+        }
+
+        /* Touch / swipe */
+        var touchStartX = null;
+        if (track) {
+            track.addEventListener('touchstart', function(e) {
+                touchStartX = e.changedTouches[0].clientX;
+            }, { passive: true });
+            track.addEventListener('touchend', function(e) {
+                if (touchStartX === null) return;
+                var dx = e.changedTouches[0].clientX - touchStartX;
+                if (Math.abs(dx) > 40) { dx < 0 ? sliderNext() : sliderPrev(); }
+                touchStartX = null;
+            }, { passive: true });
+        }
+
+        /* Keyboard: arrows + Escape (close mobile nav) */
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight') sliderNext();
+            if (e.key === 'ArrowLeft')  sliderPrev();
+            if (e.key === 'Escape') {
+                var nav = document.getElementById('lpMobileNav');
+                var btn = document.getElementById('lpHamburger');
+                if (nav) nav.classList.remove('show');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+                var icon = document.getElementById('lpHamburgerIcon');
+                if (icon) icon.className = 'fa-solid fa-bars';
+            }
+        });
+
+        /* Boot */
+        updateSlide(0);
+        startAuto();
+    })();
+
+    /* ──────────────────────────────────────────
+       Contact Form — mailto: fallback
+       TODO: replace window.location.href = mailto with a fetch() POST
+             to a real /api/contact endpoint before launch.
+    ────────────────────────────────────────── */
+    (function () {
+        var form    = document.getElementById('lpContactForm');
+        var success = document.getElementById('cf-success');
+        if (!form) return;
+
+        /* Helper: mark a group valid/invalid */
+        function setValidity(groupId, isValid) {
+            var grp = document.getElementById(groupId);
+            if (!grp) return;
+            var field = grp.querySelector('input, select, textarea');
+            if (isValid) {
+                grp.classList.remove('has-error');
+                if (field) field.classList.remove('is-invalid');
+            } else {
+                grp.classList.add('has-error');
+                if (field) field.classList.add('is-invalid');
+            }
+        }
+
+        /* Clear error styling when user edits a field */
+        ['cf-name','cf-email','cf-role','cf-subject','cf-message'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('input', function() {
+                var grpId = 'cfg-' + id.replace('cf-', '');
+                setValidity(grpId, true);
+            });
+            el.addEventListener('change', function() {
+                var grpId = 'cfg-' + id.replace('cf-', '');
+                setValidity(grpId, true);
+            });
+        });
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            var name    = document.getElementById('cf-name').value.trim();
+            var email   = document.getElementById('cf-email').value.trim();
+            var role    = document.getElementById('cf-role').value;
+            var subject = document.getElementById('cf-subject').value;
+            var message = document.getElementById('cf-message').value.trim();
+
+            /* Simple email pattern */
+            var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+            var valid = true;
+            setValidity('cfg-name',    !!name);     if (!name)           valid = false;
+            setValidity('cfg-email',   emailOk);    if (!emailOk)        valid = false;
+            setValidity('cfg-role',    !!role);      if (!role)           valid = false;
+            setValidity('cfg-subject', !!subject);   if (!subject)        valid = false;
+            setValidity('cfg-message', message.length >= 10);
+            if (message.length < 10) valid = false;
+
+            if (!valid) {
+                /* Scroll first invalid field into view */
+                var firstErr = form.querySelector('.is-invalid');
+                if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            /* Build mailto: URI */
+            /* TODO: swap "support@zootique.app" with config constant when available */
+            var to      = 'support@zootique.app';
+            var subLine = '[' + subject.charAt(0).toUpperCase() + subject.slice(1) + '] ' +
+                          '[' + role + '] Contact from Zootique';
+            var body    = 'Name: ' + name + '\nEmail: ' + email +
+                          '\nRole: ' + role + '\n\n' + message;
+
+            var mailto  = 'mailto:' + to +
+                          '?subject=' + encodeURIComponent(subLine) +
+                          '&body='    + encodeURIComponent(body);
+
+            window.location.href = mailto;
+
+            /* Show success banner */
+            if (success) success.classList.add('show');
+
+            /* Optionally reset form after short delay */
+            setTimeout(function() {
+                form.reset();
+                if (success) success.classList.remove('show');
+            }, 8000);
+        });
+    })();
 </script>
 
 </body>

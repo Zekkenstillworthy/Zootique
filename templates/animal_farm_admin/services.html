@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}Services Management | Animal Farm Admin{% endblock %}
 {% block page_title %}Services Management{% endblock %}
@@ -6,98 +6,339 @@
 {% block content %}
 {% set selected_tab = request.args.get('tab', 'all') %}
 
+<!-- Success toast -->
+<div class="zf-toast" id="zfToast" role="status" aria-live="polite">
+  <i class="fa-solid fa-circle-check"></i>
+  <span id="zfToastMsg">Service saved successfully.</span>
+</div>
 
 <div class="two-col" style="--two-col-template: 1fr 1fr; {% if selected_tab == 'list' %}--two-col-template: 1fr;{% elif selected_tab == 'add' %}--two-col-template: 1fr;{% endif %}">
-    
-    {% if selected_tab in ['add', 'all'] %}
-    <div class="card-panel">
-        <div class="card-header">
-            <h2>Add / Edit Service</h2>
-        </div>
-        <div class="card-body">
-            <form method="post" action="{{ url_for('animal_farm_admin.save_service') }}" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:10px;">
-                <input type="hidden" name="service_id" value="">
 
-                <label style="font-weight:600; color:var(--text-secondary);">Name</label>
-                <input type="text" name="name" placeholder="e.g., Safari Tour" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+  {% if selected_tab in ['add', 'all'] %}
+  <div class="zf-form-card" id="serviceFormCard">
 
-                <label style="font-weight:600; color:var(--text-secondary);">Price (PHP)</label>
-                <input type="number" name="price" step="0.01" placeholder="e.g., 499.00" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-
-                <label style="font-weight:600; color:var(--text-secondary);">Upload Picture (optional)</label>
-                <input type="file" name="image_file" accept="image/*" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-                <p style="margin:0; color: var(--text-muted); font-size: 12px;">Leave blank to keep the existing picture when editing.</p>
-
-                <label style="font-weight:600; color:var(--text-secondary);">Description (optional)</label>
-                <textarea name="description" rows="4" placeholder="Short description" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;"></textarea>
-
-                <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Service</button>
-                <p style="color: var(--text-muted); font-size: 12px;">To edit a service, use the Edit button in the table.</p>
-            </form>
-        </div>
+    <div class="zf-form-header">
+      <h2 class="zf-form-title">
+        <i class="fa-solid fa-list-check"></i>
+        <span id="serviceFormTitleText">Add Service</span>
+      </h2>
+      <span class="zf-form-badge" id="serviceFormBadge">New</span>
     </div>
-    {% endif %}
 
-    {% if selected_tab in ['list', 'all'] %}
-    <div class="card-panel">
-        <div class="card-header">
-            <h2>Service List</h2>
-        </div>
-        <div class="card-body">
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width:70px;">Image</th>
-                            <th>Name</th>
-                            <th>Price</th>
-                            <th>Description</th>
-                            <th style="width:160px;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for s in services %}
-                            <tr>
-                                <td>
-                                    {% if s.image_url %}
-                                        <img src="{{ s.image_url }}" alt="" style="width:54px; height:38px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
-                                    {% else %}
-                                        <span style="color: var(--text-muted);">-</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ s.name }}</td>
-                                <td>₱{{ '%.2f'|format(s.price or 0) }}</td>
-                                <td>{{ (s.description or '-')|truncate(80) }}</td>
-                                <td>
-                                    <button class="btn btn-outline btn-sm" type="button"
-                                                    onclick='fillServiceForm({{ s.id|tojson }}, {{ s.name|tojson }}, {{ (s.price or 0)|tojson }}, {{ (s.description or "")|tojson }})'>
-                                        <i class="fa-solid fa-pen"></i> Edit
-                                    </button>
-                                    <form method="post" action="{{ url_for('animal_farm_admin.delete_service', service_id=s.id) }}" style="display:inline;" onsubmit="return confirm('Delete this service?');">
-                                        <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        {% else %}
-                            <tr><td colspan="5" style="color: var(--text-muted);">No services yet.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <form id="serviceForm" method="post" action="{{ url_for('animal_farm_admin.save_service') }}" enctype="multipart/form-data" novalidate>
+      <input type="hidden" name="service_id" id="service_id" value="">
+
+      <div class="zf-form-body">
+
+        <div class="zf-section">
+          <div class="zf-section-label">
+            <i class="fa-solid fa-circle-info"></i> Basic Info
+          </div>
+          <div class="zf-grid-2">
+
+            <div class="zf-field">
+              <label class="zf-label" for="service_name">Name <span class="zf-req" aria-hidden="true">*</span></label>
+              <input type="text" id="service_name" name="name" class="zf-control"
+                     placeholder="e.g., Safari Tour" autocomplete="off" required aria-required="true"
+                     aria-describedby="service_name_error">
+              <span class="zf-error" id="service_name_error" role="alert">
+                <i class="fa-solid fa-triangle-exclamation"></i> Service name is required.
+              </span>
             </div>
+
+            <div class="zf-field">
+              <label class="zf-label" for="service_price">Price (PHP) <span class="zf-req" aria-hidden="true">*</span></label>
+              <div class="zf-price-wrap" id="servicePriceWrap">
+                <span class="zf-price-prefix" aria-hidden="true">&#8369;</span>
+                <input type="number" id="service_price" name="price" class="zf-price-input"
+                       placeholder="0.00" step="0.01" min="0" required aria-required="true"
+                       aria-describedby="service_price_error"
+                       oninput="this.value = this.value.replace(/[^0-9.]/g,'')">
+              </div>
+              <span class="zf-error" id="service_price_error" role="alert">
+                <i class="fa-solid fa-triangle-exclamation"></i> Please enter a valid price.
+              </span>
+            </div>
+
+            <div class="zf-field">
+              <label class="zf-label" for="service_category">Category</label>
+              <select id="service_category" name="category" class="zf-control">
+                <option value="">-- Select category --</option>
+                <option value="Tour">Tour</option>
+                <option value="Feeding">Feeding Experience</option>
+                <option value="Photography">Photography Session</option>
+                <option value="Education">Educational Program</option>
+                <option value="VIP">VIP Experience</option>
+                <option value="Workshop">Workshop</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="zf-field">
+              <label class="zf-label" for="service_status">Status</label>
+              <select id="service_status" name="service_status" class="zf-control">
+                <option value="">-- Select status --</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Seasonal">Seasonal</option>
+                <option value="Coming Soon">Coming Soon</option>
+              </select>
+            </div>
+
+          </div>
         </div>
+
+        <div class="zf-section">
+          <div class="zf-section-label">
+            <i class="fa-solid fa-image"></i> Details &amp; Media
+          </div>
+          <div class="zf-grid-2">
+
+            <div class="zf-field zf-full">
+              <label class="zf-label" for="service_description">Description</label>
+              <textarea id="service_description" name="description" class="zf-control" rows="4"
+                        placeholder="Describe what guests can expect from this service..."></textarea>
+            </div>
+
+            <div class="zf-field zf-full">
+              <label class="zf-label" for="service_image_file">Picture</label>
+              <div class="zf-upload-box" id="serviceUploadBox">
+                <input type="file" id="service_image_file" name="image_file"
+                       accept="image/jpeg,image/png,image/webp" aria-label="Upload service picture">
+                <div class="zf-upload-idle" id="serviceUploadIdle">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                  <p class="zf-upload-title"><span>Click to upload</span> or drag and drop</p>
+                  <p class="zf-upload-meta">JPG, PNG, WebP - Max 5 MB - Leave empty to keep existing when editing</p>
+                </div>
+                <div class="zf-upload-preview" id="serviceUploadPreview">
+                  <img class="zf-preview-img" id="servicePreviewImg" src="" alt="Preview">
+                  <div class="zf-preview-info">
+                    <div class="zf-preview-name" id="servicePreviewName"></div>
+                    <div class="zf-preview-size" id="servicePreviewSize"></div>
+                  </div>
+                  <button type="button" class="zf-preview-remove" id="serviceRemoveImg" aria-label="Remove image">
+                    <i class="fa-solid fa-xmark"></i> Remove
+                  </button>
+                </div>
+              </div>
+              <span class="zf-error" id="service_image_error" role="alert">
+                <i class="fa-solid fa-triangle-exclamation"></i> File exceeds the 5 MB limit.
+              </span>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <div class="zf-actions">
+        <a href="?tab=list" class="zf-btn-cancel" id="serviceCancelBtn">
+          <i class="fa-solid fa-xmark"></i> Cancel
+        </a>
+        <button type="submit" class="zf-btn-save" id="serviceSaveBtn">
+          <span class="zf-spinner"></span>
+          <i class="fa-solid fa-floppy-disk zf-save-label"></i>
+          <span class="zf-save-label" id="serviceSaveBtnLabel">Save Service</span>
+        </button>
+      </div>
+
+    </form>
+  </div>
+  {% endif %}
+
+  {% if selected_tab in ['list', 'all'] %}
+  <div class="card-panel">
+    <div class="card-header">
+      <h2>Service List</h2>
     </div>
-    {% endif %}
+    <div class="card-body">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:70px;">Image</th>
+              <th>Name</th>
+              <th>Price</th>
+              <th>Category</th>
+              <th>Description</th>
+              <th style="width:160px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in services %}
+              <tr>
+                <td>
+                  {% if s.image_url %}
+                    <img src="{{ s.image_url }}" alt="" style="width:54px; height:38px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
+                  {% else %}
+                    <span style="color: var(--text-muted);">-</span>
+                  {% endif %}
+                </td>
+                <td>{{ s.name }}</td>
+                <td style="font-weight:700; color:var(--primary);">&#8369;{{ '%.2f'|format(s.price or 0) }}</td>
+                <td>{{ (s.category or '-') }}</td>
+                <td>{{ (s.description or '-')|truncate(80) }}</td>
+                <td>
+                  <button class="btn btn-outline btn-sm" type="button"
+                      onclick='fillServiceForm({{ s.id|tojson }}, {{ s.name|tojson }}, {{ (s.price or 0)|tojson }}, {{ (s.description or "")|tojson }}, {{ (s.category or "")|tojson }}, {{ (s.service_status or "")|tojson }})'>
+                    <i class="fa-solid fa-pen"></i> Edit
+                  </button>
+                  <form method="post" action="{{ url_for('animal_farm_admin.delete_service', service_id=s.id) }}" style="display:inline;" onsubmit="return confirm('Delete this service?');">
+                    <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
+                  </form>
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:28px;">No services yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
 </div>
 
 <script>
-    function fillServiceForm(id, name, price, description) {
-        const form = document.querySelector('form[action$="/services/save"]');
-        if (!form) return;
-        form.querySelector('input[name="service_id"]').value = id;
-        form.querySelector('input[name="name"]').value = name || '';
-        form.querySelector('input[name="price"]').value = price || '';
-        form.querySelector('textarea[name="description"]').value = description || '';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+(function () {
+  function setMode(editing) {
+    var titleEl = document.getElementById('serviceFormTitleText');
+    var badgeEl = document.getElementById('serviceFormBadge');
+    var labelEl = document.getElementById('serviceSaveBtnLabel');
+    if (titleEl) titleEl.textContent = editing ? 'Edit Service'    : 'Add Service';
+    if (badgeEl) badgeEl.textContent = editing ? 'Editing'         : 'New';
+    if (labelEl) labelEl.textContent = editing ? 'Update Service'  : 'Save Service';
+  }
+
+  window.fillServiceForm = function(id, name, price, description, category, svcStatus) {
+    var form = document.getElementById('serviceForm');
+    if (!form) return;
+    document.getElementById('service_id').value = id;
+    document.getElementById('service_name').value = name || '';
+    document.getElementById('service_price').value = price || '';
+    document.getElementById('service_description').value = description || '';
+
+    var catSel = document.getElementById('service_category');
+    if (catSel) catSel.value = category || '';
+
+    var stSel = document.getElementById('service_status');
+    if (stSel) stSel.value = svcStatus || '';
+
+    setMode(true);
+    clearAllErrors();
+    resetUpload();
+    var card = document.getElementById('serviceFormCard');
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  function showError(inputId, errorId, wrapId) {
+    var el = document.getElementById(inputId);
+    var wrap = wrapId ? document.getElementById(wrapId) : null;
+    if (el)   { el.classList.add('is-error'); el.classList.remove('is-valid'); }
+    if (wrap) wrap.classList.add('is-error');
+    var err = document.getElementById(errorId);
+    if (err) err.classList.add('visible');
+    return false;
+  }
+  function clearError(inputId, errorId, wrapId) {
+    var el = document.getElementById(inputId);
+    var wrap = wrapId ? document.getElementById(wrapId) : null;
+    if (el)   { el.classList.remove('is-error'); if (String(el.value).trim()) el.classList.add('is-valid'); }
+    if (wrap) wrap.classList.remove('is-error');
+    var err = document.getElementById(errorId);
+    if (err) err.classList.remove('visible');
+    return true;
+  }
+  function clearAllErrors() {
+    document.querySelectorAll('#serviceForm .zf-control, #serviceForm .zf-price-input').forEach(function(el) { el.classList.remove('is-error','is-valid'); });
+    document.querySelectorAll('#serviceForm .zf-error').forEach(function(el) { el.classList.remove('visible'); });
+    document.querySelectorAll('#serviceForm .zf-price-wrap').forEach(function(el) { el.classList.remove('is-error'); });
+  }
+  function validateName()  { var el = document.getElementById('service_name');  return el && el.value.trim() ? clearError('service_name','service_name_error') : showError('service_name','service_name_error'); }
+  function validatePrice() { var el = document.getElementById('service_price'); return el && el.value !== '' && parseFloat(el.value) >= 0 ? clearError('service_price','service_price_error','servicePriceWrap') : showError('service_price','service_price_error','servicePriceWrap'); }
+
+  var nameEl  = document.getElementById('service_name');
+  var priceEl = document.getElementById('service_price');
+  if (nameEl)  { nameEl.addEventListener('blur',  validateName);  nameEl.addEventListener('input',  function(){ if(nameEl.classList.contains('is-error'))  validateName();  }); }
+  if (priceEl) { priceEl.addEventListener('blur', validatePrice); priceEl.addEventListener('input', function(){ if(priceEl.classList.contains('is-error')) validatePrice(); }); }
+
+  var form = document.getElementById('serviceForm');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      var valid = validateName() & validatePrice();
+      var fi = document.getElementById('service_image_file');
+      if (fi && fi.files[0] && fi.files[0].size > 5*1024*1024) {
+        document.getElementById('service_image_error').classList.add('visible');
+        valid = false;
+      }
+      if (!valid) {
+        e.preventDefault();
+        var first = form.querySelector('.is-error');
+        if (first) first.scrollIntoView({ behavior:'smooth', block:'center' });
+        return;
+      }
+      document.getElementById('serviceSaveBtn').classList.add('is-loading');
+    });
+  }
+
+  var fileInput  = document.getElementById('service_image_file');
+  var uploadBox  = document.getElementById('serviceUploadBox');
+  var idleState  = document.getElementById('serviceUploadIdle');
+  var preview    = document.getElementById('serviceUploadPreview');
+  var previewImg = document.getElementById('servicePreviewImg');
+  var previewNm  = document.getElementById('servicePreviewName');
+  var previewSz  = document.getElementById('servicePreviewSize');
+  var removeBtn  = document.getElementById('serviceRemoveImg');
+  var imgError   = document.getElementById('service_image_error');
+
+  function showPreview(file) {
+    previewImg.src = URL.createObjectURL(file);
+    previewNm.textContent = file.name;
+    previewSz.textContent = (file.size/(1024*1024)).toFixed(2)+' MB';
+    idleState.classList.add('hidden');
+    preview.classList.add('visible');
+  }
+  function resetUpload() {
+    if (fileInput)  fileInput.value = '';
+    if (previewImg) previewImg.src = '';
+    if (idleState)  idleState.classList.remove('hidden');
+    if (preview)    preview.classList.remove('visible');
+    if (imgError)   imgError.classList.remove('visible');
+  }
+
+  if (fileInput) {
+    fileInput.addEventListener('change', function() {
+      imgError.classList.remove('visible');
+      if (!this.files[0]) { resetUpload(); return; }
+      if (this.files[0].size > 5*1024*1024) { imgError.classList.add('visible'); resetUpload(); return; }
+      showPreview(this.files[0]);
+    });
+  }
+  if (removeBtn) removeBtn.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); resetUpload(); });
+  if (uploadBox) {
+    uploadBox.addEventListener('dragover',  function(e){ e.preventDefault(); uploadBox.classList.add('drag-over'); });
+    uploadBox.addEventListener('dragleave', function(){  uploadBox.classList.remove('drag-over'); });
+    uploadBox.addEventListener('drop', function(e){
+      e.preventDefault(); uploadBox.classList.remove('drag-over');
+      var f = e.dataTransfer.files[0]; if (!f) return;
+      var dt = new DataTransfer(); dt.items.add(f); fileInput.files = dt.files;
+      fileInput.dispatchEvent(new Event('change'));
+    });
+  }
+
+  function showToast(msg) {
+    var t = document.getElementById('zfToast');
+    document.getElementById('zfToastMsg').textContent = msg || 'Saved successfully.';
+    t.classList.add('visible');
+    setTimeout(function(){ t.classList.remove('visible'); }, 3500);
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('[style*="border-left:4px solid var(--success)"]').forEach(function(b){
+      var d = b.querySelector('div');
+      showToast(d ? d.textContent.trim() : 'Service saved successfully.');
+    });
+  });
+})();
 </script>
 {% endblock %}

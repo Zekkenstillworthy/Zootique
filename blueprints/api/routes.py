@@ -155,7 +155,7 @@ def _int_field(payload: dict, key: str, *, required: bool = False, minimum: int 
     return value
 
 
-def _float_field(payload: dict, key: str, *, required: bool = False, minimum: float | None = None):
+def _float_field(payload: dict, key: str, *, required: bool = False, minimum: float | None = None, maximum: float | None = None):
     value = payload.get(key)
     if value is None:
         if required:
@@ -169,7 +169,13 @@ def _float_field(payload: dict, key: str, *, required: bool = False, minimum: fl
 
     if minimum is not None and value < minimum:
         raise ValueError(f"{key} must be >= {minimum}.")
+    if maximum is not None and value > maximum:
+        raise ValueError(f"{key} must be <= {maximum}.")
     return value
+
+
+def _zone_position_field(payload: dict, key: str):
+    return _float_field(payload, key, minimum=0.0, maximum=100.0)
 
 
 def _parse_date_yyyy_mm_dd(value: str | None):
@@ -1471,6 +1477,8 @@ def admin_zones_list():
                     "description": zone.description,
                     "map_image_url": zone.map_image_url,
                     "panorama_360_url": zone.panorama_360_url,
+                    "position_x": zone.position_x,
+                    "position_y": zone.position_y,
                     "created_at": zone.created_at.isoformat() if zone.created_at else None,
                 }
                 for zone in zones
@@ -1495,6 +1503,8 @@ def admin_zones_create():
             description=_str_field(payload, "description"),
             map_image_url=_str_field(payload, "map_image_url"),
             panorama_360_url=_str_field(payload, "panorama_360_url"),
+            position_x=_zone_position_field(payload, "position_x"),
+            position_y=_zone_position_field(payload, "position_y"),
         )
         db.session.add(zone)
         db.session.commit()
@@ -1525,6 +1535,10 @@ def admin_zones_patch(zone_id: int):
             zone.map_image_url = _str_field(payload, "map_image_url")
         if "panorama_360_url" in payload:
             zone.panorama_360_url = _str_field(payload, "panorama_360_url")
+        if "position_x" in payload:
+            zone.position_x = _zone_position_field(payload, "position_x")
+        if "position_y" in payload:
+            zone.position_y = _zone_position_field(payload, "position_y")
 
         db.session.commit()
         return jsonify({"zone_id": zone.id})

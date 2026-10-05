@@ -50,12 +50,15 @@ def site_today(now: datetime | None = None):
 
 
 def local_image(zoo_slug: str, record_type: str, record_slug: str, requested: str | None) -> str | None:
-    if not requested:
-        return None
-    path = REPO_ROOT / "static" / "img" / "seed" / zoo_slug / requested
+    filename = requested or f"{record_type}-{record_slug}.jpg"
+    path = REPO_ROOT / "static" / "img" / "seed" / zoo_slug / filename
     if path.is_file():
-        return f"/static/img/seed/{zoo_slug}/{requested}"
+        return f"/static/img/seed/{zoo_slug}/{filename}"
     return None
+
+
+def _image_path(zoo_slug: str, filename: str) -> str | None:
+    return local_image(zoo_slug, "", filename.removesuffix(".jpg"), filename)
 
 
 def _table_exists(name: str) -> bool:
@@ -158,6 +161,17 @@ def fixture_summary() -> None:
 
 
 def dry_run(*, reset: bool = False, now: datetime | None = None) -> None:
+    if not reset:
+        print("DRY RUN: image reconciliation only")
+        for fixture in SAMPLE_ZOOS:
+            zoo = Zoo.query.filter_by(name=fixture["name"]).first()
+            if not zoo:
+                print(f"  MISSING zoo: {fixture['name']}")
+                continue
+            for label, current, desired in _image_values(zoo, fixture):
+                if current != desired:
+                    print(f"  UPDATE {fixture['name']}: {label} -> {desired or '(placeholder)'}")
+        return
     plans, exact = _plan(now or datetime.utcnow(), reset)
     fixture_summary()
     _print_plan(plans, exact)
@@ -177,6 +191,49 @@ def _upsert(model, filters: dict, values: dict, summary: SeedSummary):
                 changed = True
         summary.updated += int(changed)
     return row
+
+
+def _image_values(zoo: Zoo, fixture: dict) -> list[tuple[str, str | None, str | None]]:
+    values = [("zoo.image_url", zoo.image_url, _image_path(fixture["slug"], "zoo-cover.jpg")),
+              ("zoo.landing_map_image_url", zoo.landing_map_image_url, _image_path(fixture["slug"], "map.jpg"))]
+    zones = {zone.name: zone for zone in ZooZone.query.filter_by(zoo_id=zoo.id).all()}
+    for zone in fixture["zones"]:
+        row = zones.get(zone["name"])
+        if row:
+            values.append((f"zone:{zone['name']}.map_image_url", row.map_image_url, _image_path(fixture["slug"], f"zone-{slug(zone['name'])}.jpg")))
+    for model, rows, record_type, key in ((Animal, Animal.query.filter_by(zoo_id=zoo.id), "animal", "name"), (Service, Service.query.filter_by(zoo_id=zoo.id), "service", "name"), (Event, Event.query.filter_by(zoo_id=zoo.id), "event", "name")):
+        for row in rows.all():
+            values.append((f"{record_type}:{getattr(row, key)}.image_url", row.image_url, local_image(fixture["slug"], record_type, slug(getattr(row, key)), None)))
+    for row in Promotion.query.filter_by(zoo_id=zoo.id).all():
+        values.append((f"promotion:{row.code}.image_url", row.image_url, local_image(fixture["slug"], "promotion", slug(row.code), None)))
+    return values
+
+
+def _reconcile_images() -> SeedSummary:
+    summary = SeedSummary()
+    for fixture in SAMPLE_ZOOS:
+        zoo = Zoo.query.filter_by(name=fixture["name"]).first()
+        if not zoo:
+            continue
+        for label, current, desired in _image_values(zoo, fixture):
+            if current != desired:
+                target, field = label.split(":", 1) if ":" in label else (label.split(".", 1)[0], label.split(".", 1)[1])
+                if target == "zoo":
+                    setattr(zoo, field, desired)
+                elif target == "zone":
+                    zone_name, field = field.rsplit(".", 1)
+                    zone = ZooZone.query.filter_by(zoo_id=zoo.id, name=zone_name).first()
+                    if zone:
+                        setattr(zone, field, desired)
+                else:
+                    record_name, field = field.rsplit(".", 1)
+                    model = {"animal": Animal, "service": Service, "event": Event, "promotion": Promotion}[target]
+                    query = {"zoo_id": zoo.id, "code": record_name} if target == "promotion" else {"zoo_id": zoo.id, "name": record_name}
+                    row = model.query.filter_by(**query).first()
+                    if row:
+                        setattr(row, field, desired)
+                summary.updated += 1
+    return summary
 
 
 def _seed_zoo(fixture: dict, now: datetime, summary: SeedSummary, visitors: list[User], staff: list[User], plans: list[SubscriptionPlan], booking_has_user_id: bool) -> Zoo:
@@ -232,7 +289,10 @@ def seed(*, dry_run: bool = False, reset: bool = False, now: datetime | None = N
         dry_run_plan(reset=reset, now=now)
         return {}
     if not reset:
-        raise ValueError("Applying the sample rebuild requires --reset; use --dry-run to inspect it first.")
+        db.session.rollback()
+        with db.session.begin():
+            summary = _reconcile_images()
+        return {"image reconciliation": summary}
     db.session.rollback()
     booking_has_user_id = _booking_has_user_id()
     with db.session.begin():

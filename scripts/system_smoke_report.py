@@ -163,17 +163,9 @@ def main() -> int:
     all_checks: list[RouteCheck] = []
 
     with app.app_context():
-        # Ensure schema + demo data exist.
-        try:
-            from services.demo_seed import ensure_demo_data
-
-            ensure_demo_data(allow_create_tables=True)
-        except Exception:
-            db.session.rollback()
-
         zoo = Zoo.query.order_by(Zoo.id.asc()).first()
         if not zoo:
-            print("FAIL: no Zoo rows found even after seeding")
+            print("FAIL: no Zoo rows found; run scripts/seed_demo_data.py explicitly if demo data is required")
             return 2
 
         demo_password = "Password123!"

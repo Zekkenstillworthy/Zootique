@@ -1,8 +1,11 @@
 from urllib.parse import urlparse
 
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from werkzeug.datastructures import FileStorage
+from werkzeug.security import generate_password_hash
 
-from models import Zoo, User, EstablishmentType, db
+from models import EstablishmentRegistration, Zoo, User, EstablishmentType, db
+from services.storage import save_uploaded_document
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -20,6 +23,26 @@ EST_TYPE_LABELS = {
     'wildlife': 'Wildlife Park',
     'farm': 'Farm Attraction',
 }
+
+REGISTRATION_DOCUMENTS = {
+    'business_permit': ('Business/Establishment Permit', 'business_permit_url'),
+    'wildlife_license': ('Zoo or Wildlife Exhibition License', 'wildlife_license_url'),
+    'proof_of_address': ('Proof of Address', 'proof_of_address_url'),
+    'representative_id': ('Authorized Representative ID', 'representative_id_url'),
+}
+ALLOWED_DOCUMENT_EXTENSIONS = {'.pdf', '.jpg', '.jpeg', '.png'}
+MAX_DOCUMENT_SIZE = 8 * 1024 * 1024
+
+
+def _valid_registration_document(file_storage: FileStorage | None) -> bool:
+    if not file_storage or not file_storage.filename:
+        return False
+    filename = file_storage.filename.lower()
+    if not any(filename.endswith(extension) for extension in ALLOWED_DOCUMENT_EXTENSIONS):
+        return False
+    if file_storage.content_length and file_storage.content_length > MAX_DOCUMENT_SIZE:
+        return False
+    return True
 
 
 def _validate_password_policy(password: str) -> str | None:
@@ -242,6 +265,11 @@ def register(module_name):
 @auth_bp.route('/register-step-1', methods=['GET', 'POST'])
 @auth_bp.route('/register-admin-step1', methods=['GET', 'POST'])
 def register_admin_step1():
+    registration = None
+    registration_id = session.get('reg_registration_id')
+    if registration_id:
+        registration = db.session.get(EstablishmentRegistration, registration_id)
+
     if request.method == 'POST':
         zoo_name = (request.form.get('zoo_name') or '').strip()
         zoo_type = (request.form.get('zoo_type') or '').strip() or 'Zoo Park'
@@ -251,13 +279,53 @@ def register_admin_step1():
             flash('Please complete all required establishment details.', 'error')
             return redirect(url_for('auth.register_admin_step1'))
 
+        if not registration:
+            registration = EstablishmentRegistration(
+                establishment_name=zoo_name,
+                establishment_type=zoo_type,
+                location=zoo_location,
+                status='draft',
+            )
+            db.session.add(registration)
+            db.session.flush()
+        else:
+            registration.establishment_name = zoo_name
+            registration.establishment_type = zoo_type
+            registration.location = zoo_location
+
+        for document_key, (label, column_name) in REGISTRATION_DOCUMENTS.items():
+            document = request.files.get(document_key)
+            remove_document = request.form.get(f'remove_{document_key}') == '1'
+            current_url = getattr(registration, column_name)
+            if remove_document:
+                setattr(registration, column_name, None)
+                current_url = None
+            if document and document.filename:
+                if not _valid_registration_document(document):
+                    db.session.rollback()
+                    flash(f'{label} must be a PDF, JPG, or PNG file no larger than 8 MB.', 'error')
+                    return redirect(url_for('auth.register_admin_step1'))
+                uploaded_url = save_uploaded_document(document, f'establishment_registrations/{registration.id}')
+                if not uploaded_url:
+                    db.session.rollback()
+                    flash(f'Unable to upload {label}. Please try again.', 'error')
+                    return redirect(url_for('auth.register_admin_step1'))
+                setattr(registration, column_name, uploaded_url)
+            elif not current_url:
+                db.session.rollback()
+                flash('Please attach all four required establishment documents.', 'error')
+                return redirect(url_for('auth.register_admin_step1'))
+
+        db.session.commit()
+        session['reg_registration_id'] = registration.id
+
         session['reg_zoo_name'] = zoo_name
         session['reg_zoo_type'] = zoo_type
         session['reg_zoo_location'] = zoo_location
         return redirect(url_for('auth.register_admin_step2'))
 
     types = EstablishmentType.query.filter_by(is_active=True).order_by(EstablishmentType.name.asc()).all()
-    return render_template('auth/register_admin_step1.html', establishment_types=types)
+    return render_template('auth/register_admin_step1.html', establishment_types=types, registration=registration)
 
 
 @auth_bp.route('/register-step-2', methods=['GET', 'POST'])
@@ -289,20 +357,32 @@ def register_admin_step2():
             flash('Email already registered universally', 'error')
             return redirect(url_for('auth.register_admin_step2'))
 
-        new_zoo = Zoo(name=zoo_name, type=zoo_type, location=zoo_location)
-        db.session.add(new_zoo)
-        db.session.flush()
+        registration_id = session.get('reg_registration_id')
+        registration = db.session.get(EstablishmentRegistration, registration_id) if registration_id else None
+        if not registration:
+            flash('Please complete establishment details first.', 'error')
+            return redirect(url_for('auth.register_admin_step1'))
 
-        new_user = User(email=email, full_name=full_name, role='zoo_admin', zoo_id=new_zoo.id)
-        new_user.set_password(password)
-        db.session.add(new_user)
+        registration.establishment_name = zoo_name
+        registration.establishment_type = zoo_type
+        registration.location = zoo_location
+        registration.admin_full_name = full_name
+        registration.admin_email = email
+        registration.admin_password_hash = generate_password_hash(password)
+        registration.status = 'pending'
+        registration.approved_by = None
+        registration.approved_at = None
+        registration.rejected_by = None
+        registration.rejected_at = None
+        registration.rejection_note = None
         db.session.commit()
 
         session.pop('reg_zoo_name', None)
         session.pop('reg_zoo_type', None)
         session.pop('reg_zoo_location', None)
+        session.pop('reg_registration_id', None)
 
-        flash('Zoo admin account created successfully.', 'success')
+        flash('Registration submitted for Super Admin approval.', 'success')
         return redirect(url_for('auth.registration_success', role='zoo_admin'))
 
     return render_template('auth/register_admin_step2.html')

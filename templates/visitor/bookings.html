@@ -1,320 +1,1726 @@
 {% extends "base.html" %}
 
-{% block title %}My Bookings{% endblock %}
+{% block title %}My Bookings — Zootique Wildlife Park{% endblock %}
 
 {% block extra_head %}
+<!-- Google Fonts: Outfit (Display) & Plus Jakarta Sans (Body) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
-    .visitor-bookings-stats {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
+  :root {
+    --vb-cream-bg: #FAF7F2;
+    --vb-cream-surface: #FFFFFF;
+    --vb-cream-card: #FFFFFF;
+    --vb-border: #E8E2D8;
+    --vb-border-subtle: #F2ECE2;
+    --vb-forest: #143823;
+    --vb-forest-dark: #0D2617;
+    --vb-forest-light: #EEF7F2;
+    --vb-forest-sage: #4E7058;
+    --vb-terracotta: #C85A32;
+    --vb-terracotta-hover: #B24E2A;
+    --vb-terracotta-soft: #FAF0EB;
+    --vb-amber: #D97706;
+    --vb-amber-soft: #FEF7ED;
+    --vb-text-main: #222924;
+    --vb-text-muted: #667269;
+    --vb-text-light: #8E9991;
+    --vb-font-display: 'Outfit', sans-serif;
+    --vb-font-body: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  body {
+    background-color: var(--vb-cream-bg) !important;
+    font-family: var(--vb-font-body);
+    color: var(--vb-text-main);
+  }
+
+  .vb-page-wrapper {
+    background: var(--vb-cream-bg);
+    padding: 2.5rem 0 4.5rem;
+    min-height: calc(100vh - 70px);
+  }
+
+  /* ── Hero Header ── */
+  .vb-hero {
+    margin-bottom: 2rem;
+  }
+  .vb-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--vb-terracotta);
+    background: var(--vb-terracotta-soft);
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    margin-bottom: 0.85rem;
+  }
+  .vb-hero-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .vb-hero-title {
+    font-family: var(--vb-font-display);
+    font-size: 2.35rem;
+    font-weight: 800;
+    color: var(--vb-forest);
+    margin: 0 0 0.4rem;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+  }
+  .vb-hero-desc {
+    color: var(--vb-text-muted);
+    font-size: 0.98rem;
+    margin: 0;
+    max-width: 580px;
+    line-height: 1.5;
+  }
+  .vb-hero-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .vb-btn-terracotta {
+    background: var(--vb-terracotta);
+    color: #ffffff !important;
+    font-weight: 700;
+    font-size: 0.92rem;
+    padding: 0.7rem 1.4rem;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(200, 90, 50, 0.28);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .vb-btn-terracotta:hover {
+    background: var(--vb-terracotta-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(200, 90, 50, 0.36);
+  }
+  .vb-btn-outline-warm {
+    background: #ffffff;
+    color: var(--vb-forest) !important;
+    border: 1.5px solid var(--vb-border);
+    font-weight: 700;
+    font-size: 0.92rem;
+    padding: 0.7rem 1.25rem;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .vb-btn-outline-warm:hover {
+    border-color: var(--vb-forest);
+    background: var(--vb-forest-light);
+  }
+
+  /* ── Unified Cohesive Stat Bar ── */
+  .vb-stat-banner {
+    background: #ffffff;
+    border: 1px solid var(--vb-border);
+    border-radius: 18px;
+    box-shadow: 0 4px 20px rgba(20, 56, 35, 0.04);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin-bottom: 2.25rem;
+    overflow: hidden;
+  }
+  .vb-stat-item {
+    padding: 1.35rem 1.6rem;
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    position: relative;
+    transition: background 0.15s ease;
+  }
+  .vb-stat-item:hover {
+    background: #FCFAF7;
+  }
+  .vb-stat-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 22%;
+    height: 56%;
+    width: 1px;
+    background: var(--vb-border-subtle);
+  }
+  .vb-stat-icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+  .vb-stat-icon-forest { background: var(--vb-forest-light); color: var(--vb-forest); }
+  .vb-stat-icon-amber  { background: var(--vb-amber-soft); color: var(--vb-amber); }
+  .vb-stat-icon-terra  { background: var(--vb-terracotta-soft); color: var(--vb-terracotta); }
+  .vb-stat-icon-gold   { background: #FFF9E6; color: #B45309; }
+
+  .vb-stat-info {
+    min-width: 0;
+  }
+  .vb-stat-val {
+    font-family: var(--vb-font-display);
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: var(--vb-forest);
+    line-height: 1.15;
+    margin-bottom: 0.2rem;
+  }
+  .vb-stat-label {
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--vb-text-main);
+    line-height: 1.2;
+  }
+  .vb-stat-sub {
+    font-size: 0.74rem;
+    color: var(--vb-text-muted);
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Booking Form Card (Primary Centerpiece) ── */
+  .vb-booking-card {
+    background: #ffffff;
+    border: 1px solid var(--vb-border);
+    border-radius: 22px;
+    box-shadow: 0 8px 30px rgba(20, 56, 35, 0.06);
+    margin-bottom: 2.75rem;
+    overflow: hidden;
+  }
+  .vb-booking-header {
+    padding: 1.75rem 2rem 1.25rem;
+    border-bottom: 1px solid var(--vb-border-subtle);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    background: linear-gradient(180deg, #FCFAF7 0%, #ffffff 100%);
+  }
+  .vb-booking-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+  .vb-booking-icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--vb-forest);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+  }
+  .vb-booking-title {
+    font-family: var(--vb-font-display);
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--vb-forest);
+    margin: 0;
+  }
+  .vb-booking-subtitle {
+    font-size: 0.82rem;
+    color: var(--vb-text-muted);
+    margin-top: 2px;
+  }
+  .vb-live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--vb-forest);
+    background: var(--vb-forest-light);
+    border: 1px solid #C4E2D0;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+  }
+  .vb-live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #16A34A;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
+  }
+
+  .vb-booking-body {
+    padding: 2rem;
+  }
+
+  /* Form Top Row */
+  .vb-top-fields {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+  .vb-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+  .vb-field-label {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--vb-forest);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .vb-field-req {
+    color: var(--vb-terracotta);
+  }
+  .vb-select-control,
+  .vb-input-control {
+    font-family: var(--vb-font-body);
+    font-size: 0.95rem;
+    padding: 0.85rem 1.1rem;
+    border-radius: 12px;
+    border: 1.5px solid var(--vb-border);
+    background: #FCFAF7;
+    color: var(--vb-text-main);
+    transition: all 0.18s ease;
+    outline: none;
+    box-sizing: border-box;
+    width: 100%;
+  }
+  .vb-select-control:focus,
+  .vb-input-control:focus {
+    border-color: var(--vb-forest);
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(20, 56, 35, 0.12);
+  }
+  .vb-select-control.has-value {
+    border-color: var(--vb-forest);
+    background: #ffffff;
+  }
+
+  /* ── Centerpiece Calendar Card ── */
+  .vb-cal-container {
+    background: #FCFAF7;
+    border: 1.5px solid var(--vb-border);
+    border-radius: 18px;
+    padding: 1.5rem 1.65rem;
+    margin-bottom: 1.5rem;
+  }
+  .vb-cal-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .vb-cal-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+  .vb-cal-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1.5px solid var(--vb-border);
+    background: #ffffff;
+    color: var(--vb-forest);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.18s ease;
+  }
+  .vb-cal-btn:hover {
+    background: var(--vb-forest-light);
+    border-color: var(--vb-forest);
+    color: var(--vb-forest);
+  }
+  .vb-cal-month-title {
+    font-family: var(--vb-font-display);
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--vb-forest);
+    letter-spacing: -0.015em;
+  }
+
+  /* Integrated Organic Legend */
+  .vb-legend-pill {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #ffffff;
+    border: 1px solid var(--vb-border);
+    padding: 0.45rem 1rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--vb-text-muted);
+    flex-wrap: wrap;
+  }
+  .vb-legend-entry {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .vb-legend-sw {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .sw-sage   { background: #16A34A; }
+  .sw-amber  { background: var(--vb-amber); }
+  .sw-clay   { background: var(--vb-terracotta); }
+  .sw-stone  { background: #A8A29E; }
+
+  /* Calendar Weekday Row */
+  .vb-cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--vb-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--vb-border-subtle);
+    margin-bottom: 0.75rem;
+  }
+
+  /* Calendar Grid with Large Comfortable Cells */
+  .vb-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+  }
+  .vb-cal-day {
+    position: relative;
+    min-height: 64px;
+    border-radius: 12px;
+    padding: 6px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    outline: none;
+    user-select: none;
+    background: #ffffff;
+    box-sizing: border-box;
+    font-family: inherit;
+  }
+  .vb-day-num {
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+  .vb-day-indicator {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    margin-top: 3px;
+  }
+  .vb-day-sub {
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-top: 2px;
+    line-height: 1;
+    text-align: center;
+  }
+
+  /* ── 4 Organic Color States (Soft, Natural, Non-harsh) ── */
+  /* 1. Open */
+  .vb-cal-day.is-open {
+    background: #EEF7F2;
+    border-color: #C2E2CE;
+    color: #164E2D;
+  }
+  .vb-cal-day.is-open .vb-day-indicator { background: #16A34A; }
+  .vb-cal-day.is-open .vb-day-sub { color: #166534; }
+  .vb-cal-day.is-open:not([disabled]):hover {
+    background: #DDF1E4;
+    border-color: #16A34A;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.18);
+    z-index: 5;
+  }
+
+  /* 2. Limited */
+  .vb-cal-day.is-limited {
+    background: #FEF7ED;
+    border-color: #F8D8AD;
+    color: #8C4E12;
+  }
+  .vb-cal-day.is-limited .vb-day-indicator { background: #D97706; }
+  .vb-cal-day.is-limited .vb-day-sub { color: #92400E; }
+  .vb-cal-day.is-limited:not([disabled]):hover {
+    background: #FDF0DB;
+    border-color: #D97706;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.18);
+    z-index: 5;
+  }
+
+  /* 3. Closed / Full */
+  .vb-cal-day.is-closed,
+  .vb-cal-day.is-fully-booked,
+  .vb-cal-day.is-full {
+    background: #FAF0EE;
+    border-color: #F2C9BF;
+    color: #8E3727;
+    cursor: not-allowed;
+    opacity: 0.88;
+  }
+  .vb-cal-day.is-closed .vb-day-indicator,
+  .vb-cal-day.is-fully-booked .vb-day-indicator,
+  .vb-cal-day.is-full .vb-day-indicator { background: #DC2626; }
+  .vb-cal-day.is-closed .vb-day-sub,
+  .vb-cal-day.is-fully-booked .vb-day-sub,
+  .vb-cal-day.is-full .vb-day-sub { color: #991B1B; }
+
+  /* 4. Past / Outside Window */
+  .vb-cal-day.is-past,
+  .vb-cal-day.is-unavailable {
+    background: #F4F1EB;
+    border-color: #E2DDD4;
+    color: #9E978C;
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+
+  /* 5. "Today" Distinguished Ringed Treatment (No dashed border!) */
+  .vb-cal-day.is-today:not(.is-selected) {
+    box-shadow: inset 0 0 0 2px var(--vb-terracotta), 0 2px 8px rgba(200, 90, 50, 0.14) !important;
+  }
+  .vb-cal-day.is-today:not(.is-selected)::before {
+    content: 'TODAY';
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-size: 0.52rem;
+    font-weight: 800;
+    color: #ffffff;
+    background: var(--vb-terracotta);
+    padding: 1px 4px;
+    border-radius: 4px;
+    line-height: 1;
+    letter-spacing: 0.04em;
+  }
+
+  /* 6. Selected Date State */
+  .vb-cal-day.is-selected {
+    background: var(--vb-forest) !important;
+    border-color: var(--vb-forest-dark) !important;
+    color: #ffffff !important;
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 6px 16px rgba(20, 56, 35, 0.3) !important;
+    z-index: 10;
+  }
+  .vb-cal-day.is-selected .vb-day-indicator { background: var(--vb-terracotta) !important; width: 6px; height: 6px; }
+  .vb-cal-day.is-selected .vb-day-sub { color: #D1E8D9 !important; }
+  .vb-cal-day.is-selected::before { display: none; }
+
+  /* Empty slot */
+  .vb-cal-day.is-empty-slot {
+    background: transparent;
+    border-color: transparent;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  /* Tooltip Popover */
+  .vb-cal-day .vb-day-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--vb-forest-dark);
+    color: #ffffff;
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+    text-align: center;
+    line-height: 1.4;
+  }
+  .vb-cal-day .vb-day-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: var(--vb-forest-dark) transparent transparent transparent;
+  }
+  .vb-cal-day:hover .vb-day-tooltip,
+  .vb-cal-day:focus-visible .vb-day-tooltip {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .vb-cal-note {
+    font-size: 0.8rem;
+    color: var(--vb-text-muted);
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  /* ── Time Slots Section ── */
+  .vb-time-container {
+    margin-top: 1.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed var(--vb-border);
+    animation: vbFadeUp 0.25s ease;
+  }
+  @keyframes vbFadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .vb-time-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.85rem;
+  }
+  .vb-time-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--vb-forest);
+  }
+  .vb-time-badge {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--vb-forest);
+    background: var(--vb-forest-light);
+    border: 1px solid #C2E2CE;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+  }
+  .vb-time-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+    gap: 0.75rem;
+  }
+  .vb-time-chip {
+    padding: 0.75rem 0.9rem;
+    border-radius: 12px;
+    border: 1.5px solid var(--vb-border);
+    background: #ffffff;
+    color: var(--vb-text-main);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    font-family: inherit;
+    text-align: center;
+  }
+  .vb-time-chip:hover:not(:disabled) {
+    border-color: var(--vb-terracotta);
+    background: var(--vb-terracotta-soft);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(200, 90, 50, 0.14);
+  }
+  .vb-time-chip.is-selected {
+    background: var(--vb-forest) !important;
+    color: #ffffff !important;
+    border-color: var(--vb-forest-dark) !important;
+    box-shadow: 0 4px 14px rgba(20, 56, 35, 0.28) !important;
+    transform: translateY(-2px);
+  }
+  .vb-time-chip.is-selected .vb-chip-sub {
+    color: #D1E8D9 !important;
+  }
+  .vb-time-chip:disabled,
+  .vb-time-chip.is-full {
+    background: #F4F1EB;
+    color: #9E978C;
+    border-color: #E2DDD4;
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+  .vb-chip-time {
+    font-size: 0.98rem;
+    font-weight: 800;
+  }
+  .vb-chip-sub {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--vb-text-muted);
+    margin-top: 2px;
+  }
+
+  /* ── Form Actions & Helper Message ── */
+  .vb-form-footer {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--vb-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+  }
+  .vb-summary-helper {
+    font-size: 0.92rem;
+    color: var(--vb-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .vb-btn-confirm {
+    background: var(--vb-terracotta);
+    color: #ffffff !important;
+    font-weight: 800;
+    font-size: 1rem;
+    padding: 0.85rem 2rem;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(200, 90, 50, 0.32);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .vb-btn-confirm:hover:not(:disabled) {
+    background: var(--vb-terracotta-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(200, 90, 50, 0.42);
+  }
+  /* WCAG AA contrast for disabled confirm booking */
+  .vb-btn-confirm:disabled {
+    background: #9ca3af !important;
+    color: #1f2937 !important;
+    border-color: #9ca3af !important;
+    cursor: not-allowed;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+
+  /* ── Safari Ticket "Your Next Booking" Section ── */
+  .vb-section-title-row {
+    margin: 3rem 0 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .vb-section-title {
+    font-family: var(--vb-font-display);
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: var(--vb-forest);
+    margin: 0;
+  }
+
+  .vb-ticket-card {
+    background: #ffffff;
+    border: 1px solid var(--vb-border);
+    border-radius: 20px;
+    box-shadow: 0 6px 24px rgba(20, 56, 35, 0.05);
+    display: flex;
+    overflow: hidden;
+    margin-bottom: 2.5rem;
+  }
+  .vb-ticket-content {
+    flex: 1;
+    padding: 2rem;
+    position: relative;
+  }
+  .vb-ticket-media {
+    flex: 0 0 240px;
+    background: var(--vb-forest);
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    position: relative;
+    border-left: 2px dashed rgba(255, 255, 255, 0.55);
+  }
+  .vb-ticket-media::before,
+  .vb-ticket-media::after {
+    content: '';
+    position: absolute;
+    left: -12px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--vb-cream-bg);
+  }
+  .vb-ticket-media::before { top: -11px; }
+  .vb-ticket-media::after { bottom: -11px; }
+  .vb-ticket-qr {
+    width: 158px;
+    height: 158px;
+    padding: 0.55rem;
+    background: #ffffff;
+    border-radius: 12px;
+    object-fit: contain;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+  }
+  .vb-ticket-reference {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.9rem;
+    color: var(--vb-forest);
+    background: var(--vb-forest-light);
+    border-radius: 8px;
+    padding: 0.45rem 0.7rem;
+    font-family: var(--vb-font-display);
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+  .vb-ticket-empty {
+    padding: 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: #ffffff;
+    border: 1px solid var(--vb-border);
+    border-radius: 20px;
+    box-shadow: 0 4px 18px rgba(20, 56, 35, 0.03);
+    margin-bottom: 2.5rem;
+  }
+  .vb-empty-icon-wrap {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: var(--vb-terracotta-soft);
+    color: var(--vb-terracotta);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    flex-shrink: 0;
+  }
+  .vb-empty-heading {
+    font-family: var(--vb-font-display);
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--vb-forest);
+    margin: 0 0 0.35rem;
+  }
+  .vb-empty-desc {
+    color: var(--vb-text-muted);
+    font-size: 0.92rem;
+    margin: 0 0 0.85rem;
+    line-height: 1.5;
+  }
+
+  /* ── All Bookings List ── */
+  .vb-booking-row-item {
+    background: #ffffff;
+    border: 1px solid var(--vb-border);
+    border-radius: 16px;
+    padding: 1.35rem 1.5rem;
+    display: flex;
+    gap: 1.25rem;
+    align-items: stretch;
+    transition: all 0.18s ease;
+    box-shadow: 0 2px 8px rgba(20, 56, 35, 0.03);
+  }
+  .vb-booking-row-item:hover {
+    box-shadow: 0 6px 20px rgba(20, 56, 35, 0.08);
+    transform: translateY(-1px);
+    border-color: #D6CEC2;
+  }
+  .vb-row-empty {
+    background: #ffffff;
+    border: 1px solid var(--vb-border);
+    border-radius: 16px;
+    padding: 2.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    color: var(--vb-text-muted);
+  }
+
+  /* Reschedule Popover */
+  .vb-reschedule-box {
+    margin-top: 0.75rem;
+    background: #FCFAF7;
+    border: 1px solid var(--vb-border);
+    border-radius: 14px;
+    padding: 1.1rem;
+    width: min(340px, 100%);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  }
+
+  /* Responsive Rules */
+  @media (max-width: 1024px) {
+    .vb-stat-banner {
+      grid-template-columns: repeat(2, 1fr);
     }
-
-    .visitor-bookings-form {
-        margin-top: 1rem;
-        display: grid;
-        grid-template-columns: 2fr 1fr 1fr 1fr;
-        gap: 1rem;
-        align-items: end;
+    .vb-stat-item:nth-child(2)::after {
+      display: none;
     }
-
-    .visitor-bookings-feature {
-        background: white;
-        border-radius: 16px;
-        overflow: hidden;
-        display: flex;
-        flex-wrap: wrap;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-        border: 1px solid var(--border);
-        margin-bottom: 2rem;
-    }
-
-    .visitor-bookings-feature-body {
-        padding: 2rem;
-        flex: 1 1 320px;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .visitor-bookings-feature-media {
-        flex: 0 0 280px;
-        min-height: 220px;
-        position: relative;
-        background: var(--primary-dark);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .visitor-bookings-reschedule {
-        margin-top: 0.75rem;
-        background: var(--border-light);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 0.9rem;
-        width: min(320px, 100%);
-    }
-
-    @media (max-width: 1100px) {
-        .visitor-bookings-stats {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-    }
-
-    @media (max-width: 900px) {
-        .visitor-bookings-form {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .visitor-bookings-feature {
-            flex-direction: column;
-        }
-
-        .visitor-bookings-feature-media {
-            flex-basis: auto;
-            width: 100%;
-            min-height: 160px;
-        }
-    }
-
-    @media (max-width: 640px) {
-        .visitor-bookings-stats,
-        .visitor-bookings-form {
-            grid-template-columns: 1fr;
-        }
-
-        .visitor-bookings-reschedule {
-            width: 100%;
-        }
-    }
+  }
+  @media (max-width: 768px) {
+    .vb-hero-title { font-size: 1.95rem; }
+    .vb-top-fields { flex-direction: column; gap: 1rem; }
+    .vb-ticket-card { flex-direction: column; }
+    .vb-ticket-media { min-height: 250px; flex-basis: auto; width: 100%; border-left: 0; border-top: 2px dashed rgba(255, 255, 255, 0.55); }
+    .vb-ticket-media::before,
+    .vb-ticket-media::after { top: -12px; bottom: auto; }
+    .vb-ticket-media::before { left: -11px; }
+    .vb-ticket-media::after { left: auto; right: -11px; }
+    .vb-ticket-empty { flex-direction: column; text-align: center; }
+  }
+  @media (max-width: 640px) {
+    .vb-stat-banner { grid-template-columns: 1fr; }
+    .vb-stat-item::after { display: none !important; }
+    .vb-cal-day { min-height: 52px; padding: 4px 2px; }
+    .vb-day-num { font-size: 0.92rem; }
+    .vb-day-sub { font-size: 0.65rem; }
+    .vb-form-footer { flex-direction: column; align-items: stretch; }
+    .vb-btn-confirm { width: 100%; justify-content: center; }
+    .vb-legend-pill { width: 100%; justify-content: center; }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<section style="background: var(--primary-light);">
-<div class="container" style="padding: 3rem 0;">
-    <div style="margin-bottom: 2rem; color: var(--text-muted); font-size: 0.85rem;">
-        <span style="color: var(--primary); font-weight: 600;">Bookings</span>
+<section class="vb-page-wrapper">
+<div class="container">
+
+  <!-- HERO TITLE & ACTIONS -->
+  <div class="vb-hero">
+    <div class="vb-eyebrow">
+      <i class="fa-solid fa-compass"></i> Wildlife Park &amp; Sanctuary
+    </div>
+    <div class="vb-hero-row">
+      <div>
+        <h1 class="vb-hero-title">Reserve Your Wildlife Experience</h1>
+        <p class="vb-hero-desc">Secure park passes, book guided habitat tours, and explore real-time visitor availability.</p>
+      </div>
+      <div class="vb-hero-actions">
+        <a href="#new-booking" class="vb-btn-terracotta">
+          <i class="fa-solid fa-plus"></i> Book an Adventure
+        </a>
+        <button type="button" class="vb-btn-outline-warm" onclick="alert('Digital Ticket Wallet is coming soon!')">
+          <i class="fa-solid fa-ticket"></i> My Passes
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UNIFIED COHESIVE STAT BANNER -->
+  <div class="vb-stat-banner">
+    <div class="vb-stat-item">
+      <div class="vb-stat-icon-wrap vb-stat-icon-forest">
+        <i class="fa-solid fa-calendar-check"></i>
+      </div>
+      <div class="vb-stat-info">
+        <div class="vb-stat-val">{{ total_bookings or 0 }}</div>
+        <div class="vb-stat-label">Total Expeditions</div>
+        <div class="vb-stat-sub">All-time reservations</div>
+      </div>
     </div>
 
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap;">
+    <div class="vb-stat-item">
+      <div class="vb-stat-icon-wrap vb-stat-icon-amber">
+        <i class="fa-regular fa-clock"></i>
+      </div>
+      <div class="vb-stat-info">
+        <div class="vb-stat-val">
+          {{ (status_counts.get('Confirmed', 0) + status_counts.get('Pending', 0)) if status_counts else 0 }}
+        </div>
+        <div class="vb-stat-label">Upcoming &amp; Active</div>
+        <div class="vb-stat-sub">Confirmed + pending</div>
+      </div>
+    </div>
+
+    <div class="vb-stat-item">
+      <div class="vb-stat-icon-wrap vb-stat-icon-terra">
+        <i class="fa-solid fa-peso-sign"></i>
+      </div>
+      <div class="vb-stat-info">
+        <div class="vb-stat-val">₱ {{ "{:,.2f}".format(total_spent or 0) }}</div>
+        <div class="vb-stat-label">Total Invested</div>
+        <div class="vb-stat-sub">In wildlife preservation</div>
+      </div>
+    </div>
+
+    <div class="vb-stat-item">
+      <div class="vb-stat-icon-wrap vb-stat-icon-gold">
+        <i class="fa-solid fa-star"></i>
+      </div>
+      <div class="vb-stat-info">
+        <div class="vb-stat-val">{{ points or 0 }}</div>
+        <div class="vb-stat-label">Wild Points</div>
+        <div class="vb-stat-sub">Eco-rewards balance</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRIMARY BOOKING FORM WITH VISUAL CALENDAR CENTERPIECE -->
+  <div id="new-booking" class="vb-booking-card">
+    <div class="vb-booking-header">
+      <div class="vb-booking-title-wrap">
+        <div class="vb-booking-icon-badge">
+          <i class="fa-solid fa-paw"></i>
+        </div>
         <div>
-            <h1 style="margin: 0 0 0.5rem 0; font-size: 2rem; color: var(--primary);">My Bookings</h1>
-            <p style="margin: 0; color: var(--text-muted);">Manage all your reservations and park tickets</p>
+          <h2 class="vb-booking-title">Choose Your Wildlife Adventure</h2>
+          <div class="vb-booking-subtitle">Select an experience and pick an open date to view encounter slots</div>
         </div>
-        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-            <a href="#new-booking" class="btn" style="background: var(--primary); color: white; padding: 0.7rem 1.5rem; border-radius: 6px; font-weight: bold; border: none; text-decoration:none;"><i class="fa-solid fa-plus" style="margin-right: 8px;"></i> Book a New Experience</a>
-            <button class="btn" style="background: transparent; color: var(--primary); padding: 0.7rem 1.5rem; border-radius: 6px; font-weight: bold; border: 1px solid var(--primary);"><i class="fa-solid fa-ticket" style="margin-right: 8px;"></i> My Ticket Wallet</button>
-        </div>
+      </div>
+      <div class="vb-live-badge">
+        <span class="vb-live-dot"></span>
+        <span>Live Park Availability</span>
+      </div>
     </div>
 
-    <!-- STAT CARDS -->
-    <div class="visitor-bookings-stats">
-        <div style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); border-top: 3px solid var(--primary);">
-            <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary); font-weight: bold; font-size: 1.3rem; margin-bottom: 0.5rem;">
-                <i class="fa-regular fa-calendar-check"></i> {{ total_bookings or 0 }}
+    <div class="vb-booking-body">
+      <form id="booking-form" method="post" action="{{ url_for('visitor.my_bookings') }}">
+        <!-- Hidden synchronized inputs to preserve POST contract -->
+        <input type="hidden" id="new_date" name="date" value="" required>
+        <input type="hidden" id="new_time" name="time" value="" required>
+
+        <!-- Step 1: Experience & Guests -->
+        <div class="vb-top-fields">
+          <div class="vb-field-group" style="flex: 2; min-width: 260px;">
+            <label class="vb-field-label" for="new_service_id">
+              <i class="fa-solid fa-binoculars" style="color: var(--vb-terracotta);"></i>
+              <span>Select Experience <span class="vb-field-req">*</span></span>
+            </label>
+            <select id="new_service_id" name="service_id" required class="vb-select-control">
+              <option value="" selected disabled>Select an experience to check availability…</option>
+              {% for service in services %}
+              <option value="{{ service.id }}">{{ service.name }} — ₱{{ "{:,.2f}".format(service.price or 0) }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="vb-field-group" style="flex: 1; min-width: 140px;">
+            <label class="vb-field-label" for="new_guests">
+              <i class="fa-solid fa-user-group" style="color: var(--vb-terracotta);"></i>
+              <span>Guests <span class="vb-field-req">*</span></span>
+            </label>
+            <input type="number" id="new_guests" name="guests" min="1" max="50" value="1" required class="vb-input-control">
+            <div id="guests-warning" style="display: none; color: #dc2626; font-size: 0.78rem; font-weight: 700; margin-top: 0.35rem; align-items: center; gap: 0.35rem;">
+              <i class="fa-solid fa-triangle-exclamation"></i> Only <span id="warning-max-slots"></span> slots available.
             </div>
-            <div style="color: var(--text); font-weight: 600; font-size: 0.95rem;">Total Bookings</div>
-            <div style="color: var(--text-light); font-size: 0.75rem;">For this account</div>
+          </div>
         </div>
 
-        <div style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); border-top: 3px solid var(--primary);">
-            <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary); font-weight: bold; font-size: 1.3rem; margin-bottom: 0.5rem;">
-                <i class="fa-regular fa-clock"></i> {{ (status_counts.get('Confirmed', 0) + status_counts.get('Pending', 0)) if status_counts else 0 }}
+        <!-- Step 2: Centerpiece Availability Calendar -->
+        <div class="vb-cal-container">
+          <div class="vb-cal-topbar">
+            <div class="vb-cal-nav">
+              <button type="button" id="cal-prev-btn" class="vb-cal-btn" aria-label="Previous month">
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+              <div id="cal-month-year" class="vb-cal-month-title" aria-live="polite">Loading calendar…</div>
+              <button type="button" id="cal-next-btn" class="vb-cal-btn" aria-label="Next month">
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
             </div>
-            <div style="color: var(--text); font-weight: 600; font-size: 0.95rem;">Active</div>
-            <div style="color: var(--text-light); font-size: 0.75rem;">Confirmed + pending</div>
+
+            <!-- Integrated Natural Legend -->
+            <div class="vb-legend-pill" role="region" aria-label="Availability legend">
+              <div class="vb-legend-entry">
+                <span class="vb-legend-sw sw-sage"></span>
+                <span>Open</span>
+              </div>
+              <div class="vb-legend-entry">
+                <span class="vb-legend-sw sw-amber"></span>
+                <span>Limited</span>
+              </div>
+              <div class="vb-legend-entry">
+                <span class="vb-legend-sw sw-clay"></span>
+                <span>Closed / Full</span>
+              </div>
+              <div class="vb-legend-entry">
+                <span class="vb-legend-sw sw-stone"></span>
+                <span>Unavailable</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Weekday Header -->
+          <div class="vb-cal-weekdays">
+            <div>Sun</div>
+            <div>Mon</div>
+            <div>Tue</div>
+            <div>Wed</div>
+            <div>Thu</div>
+            <div>Fri</div>
+            <div>Sat</div>
+          </div>
+
+          <!-- Days Grid -->
+          <div id="cal-days-grid" class="vb-cal-grid" role="grid">
+            <!-- Dynamically populated day cells -->
+          </div>
+
+          <!-- Operating Note -->
+          <div class="vb-cal-note">
+            <i class="fa-solid fa-circle-info" style="color: var(--vb-forest);"></i>
+            <span>Park hours: <strong>9:00 AM – 5:00 PM</strong>. Mondays are reserved for animal habitat care and rest.</span>
+          </div>
         </div>
 
-        <div style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); border-top: 3px solid var(--primary);">
-            <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary); font-weight: bold; font-size: 1.3rem; margin-bottom: 0.5rem;">
-                ₱ {{ "{:,.2f}".format(total_spent or 0) }}
-            </div>
-            <div style="color: var(--text); font-weight: 600; font-size: 0.95rem;">Total Spent</div>
-            <div style="color: var(--text-light); font-size: 0.75rem;">Across all bookings</div>
+        <!-- Step 3: Interactive Time Slot Picker -->
+        <div id="vb-time-section" class="vb-time-container" style="display: none;">
+          <div class="vb-time-title-row">
+            <span class="vb-time-title"><i class="fa-regular fa-clock" style="color: var(--vb-terracotta); margin-right: 6px;"></i>Select Encounter Time <span class="vb-field-req">*</span></span>
+            <span id="time-summary-badge" class="vb-time-badge" style="display: none;">
+              <span id="time-summary-text"></span>
+            </span>
+          </div>
+          <div id="vb-time-chips-container" class="vb-time-grid">
+            <!-- Dynamically populated time chips -->
+          </div>
         </div>
 
-        <div style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); border-top: 3px solid var(--primary);">
-            <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary); font-weight: bold; font-size: 1.3rem; margin-bottom: 0.5rem;">
-                <i class="fa-solid fa-star"></i> {{ points or 0 }}
-            </div>
-            <div style="color: var(--text); font-weight: 600; font-size: 0.95rem;">Loyalty Points</div>
-            <div style="color: var(--text-light); font-size: 0.75rem;">Earned from bookings</div>
+        <!-- Form Footer: Helper & Confirm Action -->
+        <div class="vb-form-footer">
+          <div id="booking-selection-summary" class="vb-summary-helper">
+            <span>Select an experience to check availability.</span>
+          </div>
+          <button id="btn-confirm-booking" type="submit" class="vb-btn-confirm" disabled>
+            <i class="fa-solid fa-check"></i>
+            <span>Confirm Reservation</span>
+          </button>
         </div>
+      </form>
     </div>
+  </div>
 
-    <!-- NEW BOOKING FORM -->
-    <div id="new-booking" style="background: white; border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 2rem;">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap: 1rem; flex-wrap: wrap;">
-            <h3 style="margin:0; color:var(--primary);">Book a New Experience</h3>
-            <div style="color:var(--text-light); font-size: 0.85rem;">Creates a real DB booking row</div>
-        </div>
-        <form method="post" action="{{ url_for('visitor.my_bookings') }}" class="visitor-bookings-form">
-            <div>
-                <label style="display:block; font-size:0.8rem; font-weight:700; color:#475569; margin-bottom:0.4rem;">Service</label>
-                <select name="service_id" required style="width:100%; padding:0.8rem 1rem; border: 1px solid var(--border); border-radius: 8px; background: white; font-family: 'Inter', sans-serif;">
-                    <option value="" selected disabled>Select a service…</option>
-                    {% for service in services %}
-                    <option value="{{ service.id }}">{{ service.name }} — ₱{{ service.price }}</option>
-                    {% endfor %}
-                </select>
+  <!-- YOUR NEXT BOOKING SECTION -->
+  <div class="vb-section-title-row">
+    <h3 class="vb-section-title">Your Next Expedition</h3>
+  </div>
+
+  {% if next_booking %}
+  <div class="vb-ticket-card">
+    <div class="vb-ticket-content">
+      <div style="color: var(--vb-terracotta); font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">
+        Zootique Digital Ticket
+      </div>
+      <h2 style="font-family: var(--vb-font-display); font-size: 1.85rem; font-weight: 800; color: var(--vb-forest); margin: 0 0 0.35rem;">
+        {{ next_booking.service_name }}
+      </h2>
+      <div style="color: var(--vb-text-muted); font-size: 0.88rem; margin-bottom: 1.5rem;">
+        Present this ticket at the park entrance.
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; font-size: 0.93rem; color: var(--vb-text-muted);">
+        <div><i class="fa-regular fa-calendar" style="color: var(--vb-terracotta); width: 20px;"></i> <strong style="color: var(--vb-forest);">{{ next_booking.date }}</strong></div>
+        <div><i class="fa-regular fa-clock" style="color: var(--vb-forest); width: 20px;"></i> {{ next_booking.time }}</div>
+        <div><i class="fa-solid fa-user" style="color: var(--vb-forest); width: 20px;"></i> {{ next_booking.visitor_name or session.get('full_name', 'Visitor') }}</div>
+        <div><i class="fa-solid fa-user-group" style="color: var(--vb-forest); width: 20px;"></i> {{ next_booking.guests or 1 }} Guests</div>
+      </div>
+      <div>
+        {% set st = (next_booking.status or 'Pending')|lower %}
+        <span class="zf-badge {% if st == 'confirmed' %}zf-badge-success{% elif st == 'pending' %}zf-badge-warning{% elif st == 'cancelled' %}zf-badge-danger{% else %}zf-badge-default{% endif %}" style="font-size: 0.85rem; padding: 0.45rem 1rem;">
+          {{ next_booking.status or 'Pending' }}
+        </span>
+        <span class="vb-ticket-reference"><i class="fa-solid fa-hashtag"></i>{{ next_booking.id }}</span>
+      </div>
+    </div>
+    <div class="vb-ticket-media">
+      <img class="vb-ticket-qr"
+           src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&amp;data={{ ('Zootique booking ' ~ next_booking.id)|urlencode }}"
+           alt="QR code for booking {{ next_booking.id }}">
+      <div style="font-family: var(--vb-font-display); margin-top: 0.75rem; font-weight: 800; font-size: 1.05rem;">Scan at entry</div>
+      <div style="opacity: 0.75; font-size: 0.78rem; margin-top: 0.25rem;">Booking {{ next_booking.id }}</div>
+    </div>
+  </div>
+  {% else %}
+  <!-- Playful, Warm Eco-Tourism Empty State -->
+  <div class="vb-ticket-empty">
+    <div class="vb-empty-icon-wrap">
+      <i class="fa-solid fa-binoculars"></i>
+    </div>
+    <div style="flex: 1;">
+      <h4 class="vb-empty-heading">Your next wildlife journey awaits!</h4>
+      <p class="vb-empty-desc">You don't have any upcoming safari bookings scheduled. Choose an experience above and pick an open date to reserve your passes.</p>
+      <a href="#new-booking" class="vb-btn-outline-warm" style="font-size: 0.86rem; padding: 0.5rem 1rem;">
+        <i class="fa-solid fa-leaf" style="color: var(--vb-forest);"></i> Plan an Encounter
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ALL BOOKINGS LIST -->
+  <div class="vb-section-title-row">
+    <h3 class="vb-section-title">All Reservations</h3>
+  </div>
+
+  {% if bookings %}
+  <div style="display: flex; flex-direction: column; gap: 1rem;">
+    {% for b in bookings %}
+    {% set st = (b.status or 'Pending')|lower %}
+    {% set booking_img = (b.image_url or (b.service.image_url if b.service else None)) %}
+    <div class="vb-booking-row-item">
+      <!-- Thumbnail -->
+      {% if booking_img %}
+      <div style="width: 58px; height: 58px; border-radius: 12px; overflow: hidden; border: 1px solid var(--vb-border); flex: none;">
+        <img src="{{ booking_img }}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+      </div>
+      {% else %}
+      <div style="width: 58px; height: 58px; border-radius: 12px; background: var(--vb-forest-light); display: flex; align-items: center; justify-content: center; color: var(--vb-forest); font-size: 1.35rem; flex: none;">
+        <i class="fa-solid fa-paw"></i>
+      </div>
+      {% endif %}
+
+      <!-- Content -->
+      <div style="flex: 1; min-width: 0;">
+        <div style="display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; flex-wrap: wrap;">
+          <div>
+            <div style="display: flex; gap: 0.75rem; font-size: 0.82rem; color: var(--vb-text-muted); margin-bottom: 0.25rem;">
+              <span>#{{ b.id }}</span>
+              <span style="color: var(--vb-forest); font-weight: 700;">{{ b.service_name }}</span>
             </div>
-            <div>
-                <label style="display:block; font-size:0.8rem; font-weight:700; color:#475569; margin-bottom:0.4rem;">Date</label>
-                <input type="date" name="date" required style="width:100%; padding:0.8rem 1rem; border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif;">
+            <div style="font-family: var(--vb-font-display); font-size: 1.15rem; font-weight: 800; color: var(--vb-forest);">
+              {{ b.date }} · {{ b.time }}
             </div>
-            <div>
-                <label style="display:block; font-size:0.8rem; font-weight:700; color:#475569; margin-bottom:0.4rem;">Time</label>
-                <input type="time" name="time" required style="width:100%; padding:0.8rem 1rem; border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif;">
+          </div>
+
+          <div style="text-align: right;">
+            <div style="font-family: var(--vb-font-display); font-size: 1.25rem; font-weight: 800; color: var(--vb-forest);">
+              ₱{{ "{:,.2f}".format(b.amount or 0) }}
             </div>
-            <div>
-                <label style="display:block; font-size:0.8rem; font-weight:700; color:#475569; margin-bottom:0.4rem;">Guests</label>
-                <input type="number" name="guests" min="1" value="1" required style="width:100%; padding:0.8rem 1rem; border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif;">
+            <div style="margin-top: 0.3rem;">
+              <span class="zf-badge {% if st == 'confirmed' %}zf-badge-success{% elif st == 'pending' %}zf-badge-warning{% elif st == 'cancelled' %}zf-badge-danger{% else %}zf-badge-default{% endif %}">
+                {{ b.status or 'Pending' }}
+              </span>
             </div>
-            <div style="grid-column: 1 / -1; display:flex; justify-content:flex-end;">
-                <button class="btn" type="submit" style="background: var(--primary); color: white; padding: 0.8rem 1.6rem; border-radius: 8px; border: none; font-weight: 800;">
-                    <i class="fa-solid fa-check"></i> Confirm Booking
+
+            <!-- Action buttons -->
+            <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap;">
+              {% set payment_st = (b.payment_status or 'unpaid')|lower %}
+              {% if payment_st != 'paid' and st != 'cancelled' %}
+              <a href="{{ url_for('visitor.checkout_booking', booking_id=b.id) }}" class="vb-btn-terracotta" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; border-radius: 8px;">
+                Pay Now
+              </a>
+              {% elif payment_st == 'paid' %}
+              <span class="zf-badge zf-badge-success">
+                Paid{% if b.payment_reference %} · {{ b.payment_reference }}{% endif %}
+              </span>
+              {% endif %}
+
+              {% if st != 'cancelled' %}
+              <form method="post" action="{{ url_for('visitor.cancel_booking', booking_id=b.id) }}" style="margin: 0;">
+                <button type="submit" class="vb-btn-outline-warm" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; border-radius: 8px; color: #dc2626 !important; border-color: #fecaca;">
+                  Cancel
                 </button>
-            </div>
-        </form>
-        {% if services|length == 0 %}
-        <div style="margin-top: 1rem; color:#ef4444; font-weight:600;">No services exist yet. Run the DB seed or add services first.</div>
-        {% endif %}
-    </div>
+              </form>
 
-    <!-- NEXT BOOKING CARD -->
-    <div class="visitor-bookings-feature">
-        <div class="visitor-bookings-feature-body">
-            <div style="color: var(--text-muted); font-weight: bold; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 1rem;">Your Next Booking</div>
-            {% if next_booking %}
-            <h2 style="margin: 0 0 1rem 0; font-size: 2rem; color: var(--primary);">{{ next_booking.service_name }}</h2>
-            <div style="display: flex; flex-direction: column; gap: 0.9rem; margin-bottom: 1.5rem; color: #475569;">
-                <div><i class="fa-regular fa-calendar" style="color:var(--primary); width: 20px;"></i> Date: {{ next_booking.date }}</div>
-                <div><i class="fa-regular fa-clock" style="color:var(--primary); width: 20px;"></i> Time: {{ next_booking.time }}</div>
-                <div><i class="fa-solid fa-user-group" style="color:var(--primary); width: 20px;"></i> Guests: {{ next_booking.guests or 1 }}</div>
-                <div><i class="fa-solid fa-ticket" style="color:var(--primary); width: 20px;"></i> Booking ID: #{{ next_booking.id }}</div>
-                <div><i class="fa-solid fa-peso-sign" style="color:var(--primary); width: 20px;"></i> Amount: ₱{{ "{:,.2f}".format(next_booking.amount or 0) }}</div>
-            </div>
-            <div style="display:flex; align-items:center; gap: 0.6rem; margin-top: auto;">
-                {% set st = (next_booking.status or 'Pending')|lower %}
-                <div style="background: {% if st == 'confirmed' %}var(--success-bg){% elif st == 'pending' %}var(--warning-bg){% elif st == 'cancelled' %}var(--danger-bg){% else %}var(--border-light){% endif %}; color: {% if st == 'confirmed' %}var(--success){% elif st == 'pending' %}var(--warning){% elif st == 'cancelled' %}var(--danger){% else %}var(--text-muted){% endif %}; padding: 0.5rem 1rem; border-radius: 999px; font-weight: 800; font-size: 0.85rem;">
-                    {{ next_booking.status or 'Pending' }}
-                </div>
-            </div>
-            {% else %}
-            <div style="color:#64748b; font-weight:600;">No bookings yet. Create one above.</div>
-            {% endif %}
-        </div>
-
-        <div class="visitor-bookings-feature-media">
-            <div style="text-align:center; color:white; padding: 2rem;">
-                <i class="fa-solid fa-qrcode" style="font-size: 3rem; opacity: 0.7;"></i>
-                <div style="margin-top: 0.75rem; font-weight: 800;">Tickets</div>
-                <div style="opacity: 0.8; font-size: 0.85rem;">(UI placeholder)</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ALL BOOKINGS -->
-    <h3 style="color: var(--primary); margin-bottom: 1rem;">All Bookings</h3>
-    <div style="display:flex; flex-direction:column; gap: 1rem;">
-        {% for b in bookings %}
-        {% set st = (b.status or 'Pending')|lower %}
-        {% set booking_img = (b.image_url or (b.service.image_url if b.service else None)) %}
-        <div style="background: white; border-radius: 12px; border: 1px solid var(--border); padding: 1.25rem; display:flex; gap: 1.25rem; align-items: stretch;">
-            {% if booking_img %}
-            <div style="width: 56px; height: 56px; border-radius: 12px; overflow:hidden; border:1px solid var(--border); background: var(--border-light); flex: none;">
-                <img src="{{ booking_img }}" alt="" style="width:100%; height:100%; object-fit:cover; display:block;" />
-            </div>
-            {% else %}
-            <div style="width: 56px; height: 56px; border-radius: 12px; background: var(--border-light); display:flex; align-items:center; justify-content:center; color:var(--primary); font-size: 1.2rem; flex: none;">
-                <i class="fa-solid fa-ticket"></i>
-            </div>
-            {% endif %}
-            <div style="flex: 1; min-width: 0;">
-                <div style="display:flex; justify-content:space-between; gap: 1rem; align-items:flex-start; flex-wrap: wrap;">
+              <details style="display: inline-block;">
+                <summary class="vb-btn-outline-warm" style="list-style: none; cursor: pointer; font-size: 0.8rem; padding: 0.4rem 0.85rem; border-radius: 8px;">
+                  Reschedule
+                </summary>
+                <div class="vb-reschedule-box">
+                  <form method="post" action="{{ url_for('visitor.reschedule_booking', booking_id=b.id) }}" style="display: grid; gap: 0.6rem; margin: 0;">
+                    {% set date_val = b.date if b.date and '-' in b.date and b.date|length >= 10 else '' %}
+                    {% set time_val = b.time if b.time and ':' in b.time else '' %}
                     <div>
-                        <div style="display:flex; gap: 0.8rem; font-size: 0.85rem; color:var(--text-muted); margin-bottom: 0.2rem;">
-                            <span>#{{ b.id }}</span>
-                            <span style="color:var(--primary); font-weight: 700;">{{ b.service_name }}</span>
-                        </div>
-                        <div style="font-size: 1.05rem; font-weight: 900; color:var(--text);">{{ b.date }} · {{ b.time }}</div>
+                      <label class="vb-field-label" style="font-size: 0.8rem;">Date</label>
+                      <input type="date" name="date" required value="{{ date_val }}" class="vb-input-control" style="padding: 0.5rem 0.75rem; font-size: 0.88rem;">
                     </div>
-                    <div style="text-align:right;">
-                        <div style="font-size: 1.2rem; font-weight: 900; color:var(--primary);">₱{{ "{:,.2f}".format(b.amount or 0) }}</div>
-                        <div style="margin-top: 0.4rem; background: {% if st == 'confirmed' %}var(--success-bg){% elif st == 'pending' %}var(--warning-bg){% elif st == 'cancelled' %}var(--danger-bg){% else %}var(--border-light){% endif %}; color: {% if st == 'confirmed' %}var(--success){% elif st == 'pending' %}var(--warning){% elif st == 'cancelled' %}var(--danger){% else %}var(--text-muted){% endif %}; font-size: 0.75rem; padding: 0.25rem 0.7rem; border-radius: 999px; font-weight: 900; display:inline-block;">
-                            {{ b.status or 'Pending' }}
-                        </div>
-
-                        <div style="margin-top: 0.75rem; display:flex; gap: 0.5rem; justify-content:flex-end; flex-wrap: wrap;">
-                            {% set payment_st = (b.payment_status or 'unpaid')|lower %}
-                            {% if payment_st != 'paid' and st != 'cancelled' %}
-                            <a href="{{ url_for('visitor.checkout_booking', booking_id=b.id) }}" class="btn" style="background: var(--primary); color: #ffffff; border: 1px solid var(--primary); padding: 0.45rem 0.8rem; border-radius: 8px; font-weight: 900; text-decoration:none;">
-                                Pay Now
-                            </a>
-                            {% elif payment_st == 'paid' %}
-                            <div style="background:var(--success-bg); color:var(--success); border:1px solid var(--border); padding:0.4rem 0.65rem; border-radius:8px; font-size:0.75rem; font-weight:900;">
-                                Paid{% if b.payment_reference %} · {{ b.payment_reference }}{% endif %}
-                            </div>
-                            {% endif %}
-
-                            {% if st != 'cancelled' %}
-                            <form method="post" action="{{ url_for('visitor.cancel_booking', booking_id=b.id) }}" style="margin:0;">
-                                <button type="submit" class="btn" style="background: transparent; color: var(--danger); border: 1px solid var(--danger-bg); padding: 0.45rem 0.8rem; border-radius: 8px; font-weight: 900;">
-                                    Cancel
-                                </button>
-                            </form>
-                            <details style="display:inline-block;">
-                                <summary class="btn" style="list-style:none; cursor:pointer; background: transparent; color: var(--primary); border: 1px solid var(--primary); padding: 0.45rem 0.8rem; border-radius: 8px; font-weight: 900;">
-                                    Reschedule
-                                </summary>
-                                <div class="visitor-bookings-reschedule">
-                                    <form method="post" action="{{ url_for('visitor.reschedule_booking', booking_id=b.id) }}" style="display:grid; gap: 0.6rem; margin:0;">
-                                        {% set date_val = b.date if b.date and '-' in b.date and b.date|length >= 10 else '' %}
-                                        {% set time_val = b.time if b.time and ':' in b.time else '' %}
-                                        <div>
-                                            <label style="display:block; font-size:0.75rem; font-weight:800; color:#475569; margin-bottom:0.25rem;">Date</label>
-                                            <input type="date" name="date" required value="{{ date_val }}" style="width:100%; padding:0.65rem 0.8rem; border: 1px solid var(--border); border-radius: 10px; font-family: 'Inter', sans-serif;" />
-                                        </div>
-                                        <div>
-                                            <label style="display:block; font-size:0.75rem; font-weight:800; color:#475569; margin-bottom:0.25rem;">Time</label>
-                                            <input type="time" name="time" required value="{{ time_val }}" style="width:100%; padding:0.65rem 0.8rem; border: 1px solid var(--border); border-radius: 10px; font-family: 'Inter', sans-serif;" />
-                                        </div>
-                                        <div>
-                                            <label style="display:block; font-size:0.75rem; font-weight:800; color:#475569; margin-bottom:0.25rem;">Guests</label>
-                                            <input type="number" name="guests" min="1" required value="{{ b.guests or 1 }}" style="width:100%; padding:0.65rem 0.8rem; border: 1px solid var(--border); border-radius: 10px; font-family: 'Inter', sans-serif;" />
-                                        </div>
-                                        <div style="display:flex; justify-content:flex-end; gap: 0.5rem;">
-                                            <button type="submit" class="btn" style="background:var(--primary); color:white; border:none; padding: 0.55rem 0.9rem; border-radius: 10px; font-weight: 900;">Update</button>
-                                        </div>
-                                    </form>
-                                    <div style="margin-top: 0.5rem; color:#94a3b8; font-size: 0.75rem;">Rescheduling sets status to Pending.</div>
-                                </div>
-                            </details>
-                            {% else %}
-                            <div style="color:#94a3b8; font-size: 0.8rem; font-weight: 800;">No actions</div>
-                            {% endif %}
-                        </div>
+                    <div>
+                      <label class="vb-field-label" style="font-size: 0.8rem;">Time</label>
+                      <input type="time" name="time" required value="{{ time_val }}" class="vb-input-control" style="padding: 0.5rem 0.75rem; font-size: 0.88rem;">
                     </div>
+                    <div>
+                      <label class="vb-field-label" style="font-size: 0.8rem;">Guests</label>
+                      <input type="number" name="guests" min="1" required value="{{ b.guests or 1 }}" class="vb-input-control" style="padding: 0.5rem 0.75rem; font-size: 0.88rem;">
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; margin-top: 0.35rem;">
+                      <button type="submit" class="vb-btn-terracotta" style="font-size: 0.82rem; padding: 0.45rem 1rem;">Update</button>
+                    </div>
+                  </form>
+                  <div style="margin-top: 0.4rem; color: var(--vb-text-muted); font-size: 0.75rem;">Rescheduling sets status to Pending.</div>
                 </div>
-
-                <div style="display:flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.8rem; color:#475569; font-size: 0.9rem;">
-                    <span><i class="fa-solid fa-user-group" style="width: 18px; color:var(--primary);"></i> {{ b.guests or 1 }} guests</span>
-                    {% if b.zoo and b.zoo.name %}
-                    <span><i class="fa-solid fa-location-dot" style="width: 18px; color:var(--primary);"></i> {{ b.zoo.name }}</span>
-                    {% endif %}
-                </div>
+              </details>
+              {% else %}
+              <span style="color: var(--vb-text-muted); font-size: 0.8rem; font-weight: 700;">No actions</span>
+              {% endif %}
             </div>
+          </div>
         </div>
-        {% else %}
-        <div style="background:white; border:1px solid var(--border); border-radius: 12px; padding: 2rem; text-align:center; color:var(--text-muted); font-weight: 700;">
-            No bookings found for this account.
+
+        <!-- Meta info -->
+        <div style="display: flex; gap: 1.25rem; flex-wrap: wrap; margin-top: 0.75rem; color: var(--vb-text-muted); font-size: 0.88rem;">
+          <span><i class="fa-solid fa-user-group" style="color: var(--vb-forest); margin-right: 4px;"></i>{{ b.guests or 1 }} guests</span>
+          {% if b.zoo and b.zoo.name %}
+          <span><i class="fa-solid fa-location-dot" style="color: var(--vb-forest); margin-right: 4px;"></i>{{ b.zoo.name }}</span>
+          {% endif %}
         </div>
-        {% endfor %}
+      </div>
     </div>
+    {% endfor %}
+  </div>
+
+  {% if total_pages > 1 %}
+  <div style="display: flex; justify-content: center; align-items: center; gap: 0.75rem; margin-top: 1.5rem;">
+    {% if bookings_page > 1 %}
+    <a class="vb-btn-outline-warm" href="{{ url_for('visitor.my_bookings', page=bookings_page - 1) }}">Previous</a>
+    {% endif %}
+    <span style="color: var(--vb-text-muted); font-size: 0.85rem; font-weight: 600;">Page {{ bookings_page }} of {{ total_pages }}</span>
+    {% if bookings_page < total_pages %}
+    <a class="vb-btn-outline-warm" href="{{ url_for('visitor.my_bookings', page=bookings_page + 1) }}">Next</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <!-- Friendly Empty State for All Bookings -->
+  <div class="vb-row-empty">
+    <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--vb-forest-light); color: var(--vb-forest); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+      <i class="fa-solid fa-list-ul"></i>
+    </div>
+    <div>
+      <div style="font-weight: 700; color: var(--vb-forest); font-size: 0.95rem; margin-bottom: 2px;">No past reservations yet</div>
+      <div style="font-size: 0.88rem;">All your confirmed tickets, payments, and visit history will be listed right here. <a href="#new-booking" style="color: var(--vb-terracotta); font-weight: 700; text-decoration: none;">Explore park experiences</a></div>
+    </div>
+  </div>
+  {% endif %}
 
 </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  var selectedServiceId = null;
+  var currentYear = new Date().getFullYear();
+  var currentMonth = new Date().getMonth() + 1; // 1-12
+  var selectedDate = '';
+  var selectedTime = '';
+  var maxSlotCapacity = 50;
+  var currentMonthData = null;
+  var availabilityCache = Object.create(null);
+
+  var serviceSelect = document.getElementById('new_service_id');
+  var guestsInput = document.getElementById('new_guests');
+  var hiddenDate = document.getElementById('new_date');
+  var hiddenTime = document.getElementById('new_time');
+  var confirmBtn = document.getElementById('btn-confirm-booking');
+  var calGrid = document.getElementById('cal-days-grid');
+  var calTitle = document.getElementById('cal-month-year');
+  var prevBtn = document.getElementById('cal-prev-btn');
+  var nextBtn = document.getElementById('cal-next-btn');
+  var timeSection = document.getElementById('vb-time-section');
+  var timeChipsContainer = document.getElementById('vb-time-chips-container');
+  var selectionSummary = document.getElementById('booking-selection-summary');
+  var timeBadge = document.getElementById('time-summary-badge');
+  var timeBadgeText = document.getElementById('time-summary-text');
+  var guestsWarning = document.getElementById('guests-warning');
+  var warningMaxSlots = document.getElementById('warning-max-slots');
+
+  function updateFormState() {
+    var hasService = !!(serviceSelect && serviceSelect.value);
+    var hasDate = !!selectedDate;
+    var hasTime = !!selectedTime;
+    var guests = parseInt((guestsInput && guestsInput.value) || '1', 10);
+    var isGuestsValid = guests >= 1 && guests <= maxSlotCapacity;
+
+    if (confirmBtn) {
+      confirmBtn.disabled = !(hasService && hasDate && hasTime && isGuestsValid);
+    }
+
+    if ((!hasService || !hasDate) && timeSection) {
+      timeSection.style.display = 'none';
+    }
+
+    // Dynamic helper message
+    if (selectionSummary) {
+      if (!hasService && !hasDate) {
+        selectionSummary.innerHTML = '<span><i class="fa-solid fa-paw" style="color:var(--vb-forest);margin-right:6px;"></i>Select an experience to check availability.</span>';
+      } else if (!hasService && hasDate) {
+        selectionSummary.innerHTML = '<span style="color:var(--vb-terracotta);font-weight:700;"><i class="fa-solid fa-arrow-up" style="margin-right:6px;"></i>Date selected. Please choose an experience above to see available times.</span>';
+      } else if (hasService && !hasDate) {
+        selectionSummary.innerHTML = '<span><i class="fa-solid fa-calendar-days" style="color:var(--vb-forest);margin-right:6px;"></i>Pick an open date to see available times.</span>';
+      } else if (hasService && hasDate && !hasTime) {
+        selectionSummary.innerHTML = '<span><i class="fa-solid fa-clock" style="color:var(--vb-forest);margin-right:6px;"></i>Choose an encounter time slot below.</span>';
+      } else {
+        selectionSummary.innerHTML = '';
+      }
+    }
+  }
+
+  function fetchAvailability(year, month, serviceId) {
+    var cacheKey = year + '-' + String(month).padStart(2, '0') + ':' + (serviceId || 'all');
+    if (availabilityCache[cacheKey]) {
+      currentMonthData = availabilityCache[cacheKey];
+      renderCalendar(currentMonthData);
+      return;
+    }
+
+    if (calGrid) {
+      calGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 2.5rem 1rem; color: var(--vb-text-muted);"><i class="fa-solid fa-spinner fa-spin" style="margin-right: 8px; color: var(--vb-forest);"></i>Checking park availability…</div>';
+    }
+
+    var url = '/visitor/api/availability?month=' + year + '-' + String(month).padStart(2, '0');
+    if (serviceId) {
+      url += '&service_id=' + encodeURIComponent(serviceId);
+    }
+
+    fetch(url)
+      .then(function(res) {
+        if (res.status === 401) throw new Error('auth');
+        if (!res.ok) throw new Error('Network error loading availability');
+        return res.json();
+      })
+      .then(function(data) {
+        if (!data.success) throw new Error('Failed to retrieve availability');
+        availabilityCache[cacheKey] = data;
+        currentMonthData = data;
+        currentYear = data.year;
+        currentMonth = data.month_number;
+        if (selectedDate && (!data.days[selectedDate] || !data.days[selectedDate].is_selectable)) {
+          selectedDate = '';
+          selectedTime = '';
+          if (hiddenDate) hiddenDate.value = '';
+          if (hiddenTime) hiddenTime.value = '';
+          if (timeSection) timeSection.style.display = 'none';
+        }
+        renderCalendar(data);
+        updateFormState();
+      })
+      .catch(function(err) {
+        console.error('Availability fetch error:', err);
+        if (calGrid) {
+          var msg = err.message === 'auth'
+            ? '<i class="fa-solid fa-lock" style="margin-right: 6px;"></i>Please log in again to view availability.'
+            : '<i class="fa-solid fa-circle-exclamation" style="margin-right: 6px;"></i>Could not load calendar availability. Please refresh the page.';
+          calGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 1.5rem; color: #dc2626;">' + msg + '</div>';
+        }
+      });
+  }
+
+  function renderCalendar(data) {
+    if (calTitle) {
+      calTitle.textContent = data.month_name + ' ' + data.year;
+    }
+
+    if (!calGrid) return;
+    calGrid.innerHTML = '';
+
+    // Calculate day offset for Sunday start
+    var firstDayDate = new Date(data.year, data.month_number - 1, 1);
+    var startDayOffset = firstDayDate.getDay();
+
+    for (var i = 0; i < startDayOffset; i++) {
+      var emptyCell = document.createElement('div');
+      emptyCell.className = 'vb-cal-day is-empty-slot';
+      emptyCell.setAttribute('aria-hidden', 'true');
+      calGrid.appendChild(emptyCell);
+    }
+
+    var now = new Date();
+    var todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+
+    var dayKeys = Object.keys(data.days).sort();
+    dayKeys.forEach(function(dateKey) {
+      var dayInfo = data.days[dateKey];
+      var cell = document.createElement('button');
+      cell.type = 'button';
+      var statusKey = (dayInfo.status || 'open').replace(/_/g, '-');
+      cell.className = 'vb-cal-day is-' + statusKey;
+
+      if (dayInfo.is_today || dayInfo.date === todayStr) {
+        cell.classList.add('is-today');
+      }
+
+      if (dayInfo.date === selectedDate) {
+        cell.classList.add('is-selected');
+      }
+
+      var accessibleLabel = dayInfo.date + ': ' + dayInfo.status_label;
+      if (dayInfo.is_today || dayInfo.date === todayStr) {
+        accessibleLabel += ' (Today)';
+      }
+      if (dayInfo.hours && dayInfo.hours !== 'Closed') {
+        accessibleLabel += ', Hours: ' + dayInfo.hours;
+      }
+      if (dayInfo.remaining_capacity !== undefined && dayInfo.status !== 'closed' && dayInfo.status !== 'past' && dayInfo.status !== 'unavailable') {
+        accessibleLabel += ', ' + dayInfo.remaining_capacity + ' slots left';
+      }
+      cell.setAttribute('aria-label', accessibleLabel);
+
+      if (!dayInfo.is_selectable) {
+        cell.setAttribute('disabled', 'disabled');
+        cell.disabled = true;
+        cell.setAttribute('aria-disabled', 'true');
+      }
+
+      var numSpan = document.createElement('span');
+      numSpan.className = 'vb-day-num';
+      numSpan.textContent = dayInfo.day;
+      cell.appendChild(numSpan);
+
+      if (dayInfo.status !== 'past' && dayInfo.status !== 'unavailable') {
+        var dotSpan = document.createElement('span');
+        dotSpan.className = 'vb-day-indicator';
+        cell.appendChild(dotSpan);
+      }
+
+      var subSpan = document.createElement('span');
+      subSpan.className = 'vb-day-sub';
+      if (dayInfo.status === 'closed') {
+        subSpan.textContent = 'Closed';
+      } else if (dayInfo.status === 'fully_booked') {
+        subSpan.textContent = 'Full';
+      } else if (dayInfo.status === 'limited') {
+        subSpan.textContent = dayInfo.remaining_capacity + ' left';
+      } else if (dayInfo.status === 'open') {
+        subSpan.textContent = (dayInfo.remaining_capacity !== undefined ? dayInfo.remaining_capacity + ' left' : 'Open');
+      } else {
+        subSpan.textContent = '';
+      }
+      cell.appendChild(subSpan);
+
+      var tooltip = document.createElement('div');
+      tooltip.className = 'vb-day-tooltip';
+      tooltip.setAttribute('role', 'tooltip');
+      var tooltipHtml = '<strong>' + dayInfo.date + (dayInfo.is_today || dayInfo.date === todayStr ? ' (Today)' : '') + '</strong><br>' +
+        'Status: ' + dayInfo.status_label;
+      if (dayInfo.hours && dayInfo.status !== 'past' && dayInfo.status !== 'unavailable') {
+        tooltipHtml += '<br>Hours: ' + dayInfo.hours;
+      }
+      if (dayInfo.remaining_capacity !== undefined && dayInfo.status !== 'closed' && dayInfo.status !== 'past' && dayInfo.status !== 'unavailable') {
+        tooltipHtml += '<br>Remaining: ' + dayInfo.remaining_capacity + ' slots';
+      }
+      tooltip.innerHTML = tooltipHtml;
+      cell.appendChild(tooltip);
+
+      if (dayInfo.is_selectable) {
+        cell.addEventListener('click', function() {
+          selectDate(dayInfo);
+        });
+      }
+
+      calGrid.appendChild(cell);
+    });
+
+    if (selectedDate && data.days[selectedDate] && selectedServiceId) {
+      renderTimeSlots(data.days[selectedDate].slots || []);
+    }
+  }
+
+  function selectDate(dayInfo) {
+    selectedDate = dayInfo.date;
+    if (hiddenDate) hiddenDate.value = selectedDate;
+    selectedTime = '';
+    if (hiddenTime) hiddenTime.value = '';
+
+    var allCells = calGrid.querySelectorAll('.vb-cal-day');
+    allCells.forEach(function(c) {
+      c.classList.remove('is-selected');
+      var lbl = c.getAttribute('aria-label') || '';
+      if (lbl.indexOf(dayInfo.date + ':') === 0 || lbl.indexOf(dayInfo.date + ' ') === 0) {
+        c.classList.add('is-selected');
+      }
+    });
+
+    if (selectedServiceId) {
+      renderTimeSlots(dayInfo.slots || []);
+      if (window.innerWidth < 768 && timeSection) {
+        setTimeout(function() {
+          timeSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
+      }
+    } else {
+      if (timeSection) timeSection.style.display = 'none';
+    }
+
+    updateFormState();
+  }
+
+  function renderTimeSlots(slots) {
+    if (!timeSection || !timeChipsContainer) return;
+
+    if (!slots || slots.length === 0) {
+      timeSection.style.display = 'none';
+      return;
+    }
+
+    timeSection.style.display = 'block';
+    timeChipsContainer.innerHTML = '';
+    if (timeBadge) timeBadge.style.display = 'none';
+
+    slots.forEach(function(slot) {
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'vb-time-chip';
+      if (!slot.is_available) {
+        chip.classList.add('is-full');
+        chip.disabled = true;
+        chip.setAttribute('aria-disabled', 'true');
+      } else if (selectedTime && slot.time === selectedTime) {
+        chip.classList.add('is-selected');
+      }
+
+      var timeSpan = document.createElement('span');
+      timeSpan.className = 'vb-chip-time';
+      timeSpan.textContent = slot.time;
+      chip.appendChild(timeSpan);
+
+      var subSpan = document.createElement('span');
+      subSpan.className = 'vb-chip-sub';
+      subSpan.textContent = slot.is_available ? (slot.remaining + ' slots left') : 'Full';
+      chip.appendChild(subSpan);
+
+      chip.setAttribute('aria-label', slot.time + ' - ' + (slot.is_available ? (slot.remaining + ' slots available') : 'Fully Booked'));
+
+      if (slot.is_available) {
+        chip.addEventListener('click', function() {
+          selectTime(slot, chip);
+        });
+      }
+
+      timeChipsContainer.appendChild(chip);
+    });
+  }
+
+  function selectTime(slot, chipEl) {
+    selectedTime = slot.time;
+    if (hiddenTime) hiddenTime.value = selectedTime;
+    maxSlotCapacity = slot.remaining;
+
+    var allChips = timeChipsContainer.querySelectorAll('.vb-time-chip');
+    allChips.forEach(function(c) { c.classList.remove('is-selected'); });
+    chipEl.classList.add('is-selected');
+
+    if (timeBadge && timeBadgeText) {
+      timeBadge.style.display = 'inline-flex';
+      timeBadgeText.textContent = slot.time + ' (' + slot.remaining + ' slots available)';
+    }
+
+    if (guestsInput) {
+      guestsInput.max = slot.remaining;
+      validateGuests();
+    }
+
+    updateFormState();
+  }
+
+  function validateGuests() {
+    if (!guestsInput) return;
+    var val = parseInt(guestsInput.value || '1', 10);
+    if (val > maxSlotCapacity) {
+      if (guestsWarning && warningMaxSlots) {
+        warningMaxSlots.textContent = maxSlotCapacity;
+        guestsWarning.style.display = 'flex';
+      }
+      guestsInput.style.borderColor = '#dc2626';
+    } else {
+      if (guestsWarning) guestsWarning.style.display = 'none';
+      guestsInput.style.borderColor = '';
+    }
+    updateFormState();
+  }
+
+  function syncServiceDropdown() {
+    if (!serviceSelect) return;
+    if (serviceSelect.value) {
+      serviceSelect.classList.add('has-value');
+    } else {
+      serviceSelect.classList.remove('has-value');
+    }
+  }
+
+  // Event Listeners
+  if (serviceSelect) {
+    serviceSelect.addEventListener('change', function() {
+      syncServiceDropdown();
+      selectedServiceId = this.value;
+      selectedTime = '';
+      if (hiddenTime) hiddenTime.value = '';
+      if (timeSection) timeSection.style.display = 'none';
+      currentMonthData = null;
+      fetchAvailability(currentYear, currentMonth, selectedServiceId);
+      updateFormState();
+    });
+  }
+
+  if (guestsInput) {
+    guestsInput.addEventListener('input', validateGuests);
+    guestsInput.addEventListener('change', validateGuests);
+  }
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', function() {
+      currentMonth--;
+      if (currentMonth < 1) {
+        currentMonth = 12;
+        currentYear--;
+      }
+      fetchAvailability(currentYear, currentMonth, selectedServiceId);
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', function() {
+      currentMonth++;
+      if (currentMonth > 12) {
+        currentMonth = 1;
+        currentYear++;
+      }
+      fetchAvailability(currentYear, currentMonth, selectedServiceId);
+    });
+  }
+
+  // Initial Load
+  document.addEventListener('DOMContentLoaded', function() {
+    syncServiceDropdown();
+    if (serviceSelect && serviceSelect.value) {
+      selectedServiceId = serviceSelect.value;
+    }
+    fetchAvailability(currentYear, currentMonth, selectedServiceId);
+    updateFormState();
+  });
+})();
+</script>
 {% endblock %}

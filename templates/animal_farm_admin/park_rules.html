@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Park Rules | Animal Farm Admin{% endblock %}
+{% block page_title %}Park Rules{% endblock %}
+
+{% block content %}
+<div class="two-col" style="--two-col-template: 1fr 1.4fr;">
+  <div class="zf-form-card">
+    <div class="zf-form-header">
+      <h2 class="zf-form-title"><i class="fa-solid fa-clipboard-list"></i> <span id="ruleFormTitle">Add Park Rule</span></h2>
+      <span class="zf-form-badge" id="ruleFormBadge">New</span>
+    </div>
+    <form method="post" action="{{ url_for('animal_farm_admin.save_park_rule') }}">
+      <input type="hidden" name="rule_id" id="rule_id">
+      <div class="zf-form-body">
+        <div class="zf-field">
+          <label class="zf-label" for="rule_title">Title <span class="zf-req">*</span></label>
+          <input class="zf-control" type="text" id="rule_title" name="title" maxlength="160" required>
+        </div>
+        <div class="zf-field">
+          <label class="zf-label" for="rule_description">Description <span class="zf-req">*</span></label>
+          <textarea class="zf-control" id="rule_description" name="description" rows="5" required></textarea>
+        </div>
+        <div class="zf-field">
+          <label class="zf-label" for="rule_order">Display order</label>
+          <input class="zf-control" type="number" id="rule_order" name="display_order" min="0" value="0">
+        </div>
+      </div>
+      <div class="zf-actions">
+        <button class="zf-btn-cancel" type="button" onclick="resetRuleForm()">Clear</button>
+        <button class="zf-btn-save" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Rule</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card-panel">
+    <div class="card-header">
+      <h2>{{ zoo.name }} Rules</h2>
+    </div>
+    <div class="card-body">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Order</th><th>Rule</th><th>Description</th><th>Actions</th></tr></thead>
+          <tbody>
+          {% for rule in rules %}
+            <tr>
+              <td>{{ rule.display_order }}</td>
+              <td><strong>{{ rule.title }}</strong></td>
+              <td>{{ rule.description|truncate(100) }}</td>
+              <td style="white-space:nowrap;">
+                <button class="btn btn-outline btn-sm" type="button" onclick='editRule({{ rule.id|tojson }}, {{ rule.title|tojson }}, {{ rule.description|tojson }}, {{ rule.display_order|tojson }})'><i class="fa-solid fa-pen"></i> Edit</button>
+                <form method="post" action="{{ url_for('animal_farm_admin.delete_park_rule', rule_id=rule.id) }}" style="display:inline;" onsubmit="return confirm('Delete this park rule?');">
+                  <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:28px;">No park rules yet.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function editRule(id, title, description, displayOrder) {
+  document.getElementById('rule_id').value = id;
+  document.getElementById('rule_title').value = title || '';
+  document.getElementById('rule_description').value = description || '';
+  document.getElementById('rule_order').value = displayOrder || 0;
+  document.getElementById('ruleFormTitle').textContent = 'Edit Park Rule';
+  document.getElementById('ruleFormBadge').textContent = 'Editing';
+  document.getElementById('rule_title').focus();
+}
+function resetRuleForm() {
+  document.getElementById('rule_id').value = '';
+  document.getElementById('rule_title').value = '';
+  document.getElementById('rule_description').value = '';
+  document.getElementById('rule_order').value = 0;
+  document.getElementById('ruleFormTitle').textContent = 'Add Park Rule';
+  document.getElementById('ruleFormBadge').textContent = 'New';
+}
+</script>
+{% endblock %}

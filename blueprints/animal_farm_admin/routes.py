@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+import json
 
 import os
 
@@ -13,6 +14,7 @@ from models import (
     Booking,
     Event,
     Feedback,
+    ParkRule,
     Promotion,
     Service,
     StaffTask,
@@ -27,6 +29,12 @@ from models import (
     db,
 )
 from services import BookingValidationError, assign_booking_to_staff
+from services import (
+    SubscriptionValidationError,
+    subscribe_zoo_to_plan,
+    get_zoo_subscription_tier,
+    paywall_redirect,
+)
 from services.layout_config import (
     WIDGET_CATALOG,
     build_zoo_dashboard_widget_map,
@@ -45,6 +53,15 @@ def require_zoo_admin():
     result = require_role_guard(expected_role='zoo_admin', login_module='zoo_admin')
     if result is not None:
         return result
+
+
+@animal_farm_admin_bp.context_processor
+def inject_subscription_tier():
+    """Inject the current zoo's subscription tier into every template as g_sub_tier."""
+    zoo = _current_zoo()
+    tier = get_zoo_subscription_tier(zoo)
+    return {'g_sub_tier': tier}
+
 
 
 def _current_user() -> User | None:
@@ -126,7 +143,7 @@ def subscriptions():
         subscription.refresh_status()
         db.session.commit()
 
-    plans = SubscriptionPlan.query.filter_by(is_active=True).order_by(SubscriptionPlan.price.asc()).all()
+    plans = SubscriptionPlan.query.filter_by(is_active=True).order_by(SubscriptionPlan.tier_level.asc(), SubscriptionPlan.price.asc()).all()
     payments = []
     if subscription:
         payments = (
@@ -144,6 +161,50 @@ def subscriptions():
         payments=payments,
     )
 
+
+@animal_farm_admin_bp.post('/subscriptions/subscribe')
+def self_subscribe():
+    """Zoo Admin self-subscribes to a plan. Creates a pending subscription."""
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_admin.dashboard'))
+
+    plan_id_raw = (request.form.get('plan_id') or '').strip()
+    if not plan_id_raw or not plan_id_raw.isdigit():
+        flash('Please select a valid plan.', 'error')
+        return redirect(url_for('animal_farm_admin.subscriptions'))
+
+    plan = db.session.get(SubscriptionPlan, int(plan_id_raw))
+    if not plan or not plan.is_active:
+        flash('Selected plan is not available.', 'error')
+        return redirect(url_for('animal_farm_admin.subscriptions'))
+
+    # Check if there's already an active subscription — treat as upgrade
+    existing = (
+        ZooSubscription.query.filter_by(zoo_id=zoo.id)
+        .order_by(ZooSubscription.end_date.desc())
+        .first()
+    )
+    if existing:
+        existing.refresh_status()
+
+    try:
+        subscribe_zoo_to_plan(
+            zoo_id=zoo.id,
+            plan=plan,
+            auto_approve=False,  # Set True to skip Super Admin approval
+        )
+        flash(
+            f'Your subscription request for <strong>{plan.name}</strong> has been submitted. '
+            f'A Super Administrator will review and activate it shortly.',
+            'success',
+        )
+    except SubscriptionValidationError as exc:
+        flash(str(exc), 'error')
+
+    return redirect(url_for('animal_farm_admin.subscriptions'))
+
 @animal_farm_admin_bp.get('/layout-changer')
 def layout_changer():
     """Zoo Admin: Let zoo admins customise their own dashboard layout."""
@@ -151,6 +212,8 @@ def layout_changer():
     if not zoo:
         flash('Your account is not linked to a zoo.', 'error')
         return redirect(url_for('animal_farm_admin.dashboard'))
+    if get_zoo_subscription_tier(zoo) < 2:
+        return paywall_redirect(required_tier=2)
 
     now = datetime.utcnow()
     layout_config = get_layout_config_for_zoo(zoo.id)
@@ -183,6 +246,8 @@ def save_layout():
     if not zoo:
         flash('Your account is not linked to a zoo.', 'error')
         return redirect(url_for('animal_farm_admin.dashboard'))
+    if get_zoo_subscription_tier(zoo) < 2:
+        return paywall_redirect(required_tier=2)
 
     # Parse widget order
     widget_order_raw = (request.form.get('widget_order') or '').strip()
@@ -533,6 +598,68 @@ def save_establishment_profile():
     flash('Establishment profile updated.', 'success')
     return redirect(url_for('animal_farm_admin.establishment_profile'))
 
+
+@animal_farm_admin_bp.route('/park-rules')
+def park_rules_management():
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_admin.dashboard'))
+    if get_zoo_subscription_tier(zoo) < 1:
+        return paywall_redirect(required_tier=1)
+    rules = ParkRule.query.filter_by(zoo_id=zoo.id).order_by(ParkRule.display_order.asc(), ParkRule.id.asc()).all()
+    return render_template('animal_farm_admin/park_rules.html', zoo=zoo, rules=rules)
+
+
+@animal_farm_admin_bp.post('/park-rules/save')
+def save_park_rule():
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_admin.dashboard'))
+    if get_zoo_subscription_tier(zoo) < 1:
+        return paywall_redirect(required_tier=1)
+
+    rule_id = request.form.get('rule_id', type=int)
+    title = (request.form.get('title') or '').strip()
+    description = (request.form.get('description') or '').strip()
+    display_order = request.form.get('display_order', type=int)
+    if not title or not description:
+        flash('Rule title and description are required.', 'error')
+        return redirect(url_for('animal_farm_admin.park_rules_management'))
+
+    rule = ParkRule.query.filter_by(id=rule_id, zoo_id=zoo.id).first() if rule_id else None
+    if rule_id and not rule:
+        flash('Park rule not found.', 'error')
+        return redirect(url_for('animal_farm_admin.park_rules_management'))
+    if not rule:
+        rule = ParkRule(zoo_id=zoo.id)
+        db.session.add(rule)
+    rule.title = title
+    rule.description = description
+    rule.display_order = display_order if display_order is not None and display_order >= 0 else 0
+    db.session.commit()
+    flash('Park rule saved.', 'success')
+    return redirect(url_for('animal_farm_admin.park_rules_management'))
+
+
+@animal_farm_admin_bp.post('/park-rules/<int:rule_id>/delete')
+def delete_park_rule(rule_id: int):
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_admin.dashboard'))
+    if get_zoo_subscription_tier(zoo) < 1:
+        return paywall_redirect(required_tier=1)
+    rule = ParkRule.query.filter_by(id=rule_id, zoo_id=zoo.id).first()
+    if not rule:
+        flash('Park rule not found.', 'error')
+        return redirect(url_for('animal_farm_admin.park_rules_management'))
+    db.session.delete(rule)
+    db.session.commit()
+    flash('Park rule deleted.', 'success')
+    return redirect(url_for('animal_farm_admin.park_rules_management'))
+
 @animal_farm_admin_bp.route('/establishment-profile')
 def establishment_profile_legacy_redirect():
     return redirect(url_for('animal_farm_admin.establishment_profile'), code=301)
@@ -543,7 +670,8 @@ def services_management():
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.dashboard'))
-
+    if get_zoo_subscription_tier(zoo) < 1:
+        return paywall_redirect(required_tier=1)
     services = Service.query.filter_by(zoo_id=zoo.id).order_by(Service.id.desc()).all()
     return render_template('animal_farm_admin/services.html', zoo=zoo, services=services)
 
@@ -554,6 +682,8 @@ def save_service():
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.services_management'))
+    if get_zoo_subscription_tier(zoo) < 1:
+        return paywall_redirect(required_tier=1)
 
     service_id = request.form.get('service_id')
     name = (request.form.get('name') or '').strip()
@@ -595,7 +725,12 @@ def save_service():
 @animal_farm_admin_bp.post('/services/<int:service_id>/delete')
 def delete_service(service_id: int):
     zoo = _current_zoo()
-    service = Service.query.filter_by(id=service_id, zoo_id=(zoo.id if zoo else None)).first()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_admin.services_management'))
+    if get_zoo_subscription_tier(zoo) < 1:
+        return paywall_redirect(required_tier=1)
+    service = Service.query.filter_by(id=service_id, zoo_id=zoo.id).first()
     if not service:
         flash('Service not found.', 'error')
         return redirect(url_for('animal_farm_admin.services_management'))
@@ -611,6 +746,8 @@ def animals_management():
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.dashboard'))
+    if get_zoo_subscription_tier(zoo) < 1:
+        return paywall_redirect(required_tier=1)
     animals = Animal.query.filter_by(zoo_id=zoo.id).order_by(Animal.id.desc()).all()
     return render_template('animal_farm_admin/animals.html', zoo=zoo, animals=animals)
 
@@ -621,6 +758,8 @@ def save_animal():
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.animals_management'))
+    if get_zoo_subscription_tier(zoo) < 1:
+        return paywall_redirect(required_tier=1)
 
     animal_id = request.form.get('animal_id')
     name = (request.form.get('name') or '').strip()
@@ -661,7 +800,12 @@ def save_animal():
 @animal_farm_admin_bp.post('/animals/<int:animal_id>/delete')
 def delete_animal(animal_id: int):
     zoo = _current_zoo()
-    animal = Animal.query.filter_by(id=animal_id, zoo_id=(zoo.id if zoo else None)).first()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_admin.animals_management'))
+    if get_zoo_subscription_tier(zoo) < 1:
+        return paywall_redirect(required_tier=1)
+    animal = Animal.query.filter_by(id=animal_id, zoo_id=zoo.id).first()
     if not animal:
         flash('Animal not found.', 'error')
         return redirect(url_for('animal_farm_admin.animals_management'))
@@ -680,6 +824,8 @@ def events_management():
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.dashboard'))
+    if get_zoo_subscription_tier(zoo) < 1:
+        return paywall_redirect(required_tier=1)
     events = Event.query.filter_by(zoo_id=zoo.id).order_by(Event.id.desc()).all()
     return render_template('animal_farm_admin/events.html', zoo=zoo, events=events)
 
@@ -690,6 +836,8 @@ def save_event():
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.events_management'))
+    if get_zoo_subscription_tier(zoo) < 1:
+        return paywall_redirect(required_tier=1)
 
     event_id = request.form.get('event_id')
     name = (request.form.get('name') or '').strip()
@@ -728,7 +876,12 @@ def save_event():
 @animal_farm_admin_bp.post('/events/<int:event_id>/delete')
 def delete_event(event_id: int):
     zoo = _current_zoo()
-    event = Event.query.filter_by(id=event_id, zoo_id=(zoo.id if zoo else None)).first()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_admin.events_management'))
+    if get_zoo_subscription_tier(zoo) < 1:
+        return paywall_redirect(required_tier=1)
+    event = Event.query.filter_by(id=event_id, zoo_id=zoo.id).first()
     if not event:
         flash('Event not found.', 'error')
         return redirect(url_for('animal_farm_admin.events_management'))
@@ -747,6 +900,8 @@ def promotions_management():
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.dashboard'))
+    if get_zoo_subscription_tier(zoo) < 1:
+        return paywall_redirect(required_tier=1)
 
     promo_type = request.args.get('promo_type')
     query = Promotion.query.filter_by(zoo_id=zoo.id, country='Philippines')
@@ -770,6 +925,8 @@ def save_promotion():
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.promotions_management'))
+    if get_zoo_subscription_tier(zoo) < 1:
+        return paywall_redirect(required_tier=1)
 
     promo_id = request.form.get('promo_id')
     name = (request.form.get('name') or '').strip()
@@ -816,7 +973,12 @@ def save_promotion():
 @animal_farm_admin_bp.post('/promotions/<int:promo_id>/delete')
 def delete_promotion(promo_id: int):
     zoo = _current_zoo()
-    promo = Promotion.query.filter_by(id=promo_id, zoo_id=(zoo.id if zoo else None)).first()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_admin.promotions_management'))
+    if get_zoo_subscription_tier(zoo) < 1:
+        return paywall_redirect(required_tier=1)
+    promo = Promotion.query.filter_by(id=promo_id, zoo_id=zoo.id).first()
     if not promo:
         flash('Promotion not found.', 'error')
         return redirect(url_for('animal_farm_admin.promotions_management'))
@@ -850,6 +1012,8 @@ def delete_visitor_feedback(feedback_id: int):
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.dashboard'))
+    if get_zoo_subscription_tier(zoo) < 1:
+        return paywall_redirect(required_tier=1)
 
     feedback = Feedback.query.filter_by(id=feedback_id, zoo_id=zoo.id).first()
     if not feedback:
@@ -871,6 +1035,8 @@ def visitor_map_zone_management():
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.dashboard'))
+    if get_zoo_subscription_tier(zoo) < 2:
+        return paywall_redirect(required_tier=2)
     zones = ZooZone.query.filter_by(zoo_id=zoo.id).order_by(ZooZone.created_at.desc()).all()
     landing_map = {
         'title': (zoo.landing_map_title or f'{zoo.name} Visitor Map').strip(),
@@ -887,6 +1053,8 @@ def save_landing_map():
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.visitor_map_zone_management'))
+    if get_zoo_subscription_tier(zoo) < 2:
+        return paywall_redirect(required_tier=2)
 
     title = (request.form.get('landing_map_title') or '').strip()
     description = (request.form.get('landing_map_description') or '').strip() or None
@@ -907,12 +1075,51 @@ def save_landing_map():
     return redirect(url_for('animal_farm_admin.visitor_map_zone_management'))
 
 
+@animal_farm_admin_bp.post('/map-zones/pin-positions/save')
+def save_zone_pin_positions():
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_admin.visitor_map_zone_management'))
+    if get_zoo_subscription_tier(zoo) < 2:
+        return paywall_redirect(required_tier=2)
+
+    try:
+        positions = json.loads(request.form.get('pin_positions') or '{}')
+        if not isinstance(positions, dict):
+            raise ValueError
+        zones = {str(zone.id): zone for zone in ZooZone.query.filter_by(zoo_id=zoo.id).all()}
+        for zone_id, zone in zones.items():
+            raw_position = positions.get(zone_id)
+            if raw_position is None:
+                zone.position_x = None
+                zone.position_y = None
+                continue
+            if not isinstance(raw_position, dict):
+                raise ValueError
+            x = float(raw_position.get('x'))
+            y = float(raw_position.get('y'))
+            if not (0 <= x <= 100 and 0 <= y <= 100):
+                raise ValueError
+            zone.position_x = x
+            zone.position_y = y
+    except (TypeError, ValueError, json.JSONDecodeError):
+        flash('Pin positions must be percentages between 0 and 100.', 'error')
+        return redirect(url_for('animal_farm_admin.visitor_map_zone_management', tab='pin-editor'))
+
+    db.session.commit()
+    flash('Map pin positions saved.', 'success')
+    return redirect(url_for('animal_farm_admin.visitor_map_zone_management', tab='pin-editor'))
+
+
 @animal_farm_admin_bp.post('/map-zones/save')
 def save_zone():
     zoo = _current_zoo()
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.visitor_map_zone_management'))
+    if get_zoo_subscription_tier(zoo) < 2:
+        return paywall_redirect(required_tier=2)
 
     zone_id = request.form.get('zone_id')
     name = (request.form.get('name') or '').strip()
@@ -949,7 +1156,12 @@ def save_zone():
 @animal_farm_admin_bp.post('/map-zones/<int:zone_id>/delete')
 def delete_zone(zone_id: int):
     zoo = _current_zoo()
-    zone = ZooZone.query.filter_by(id=zone_id, zoo_id=(zoo.id if zoo else None)).first()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_admin.visitor_map_zone_management'))
+    if get_zoo_subscription_tier(zoo) < 2:
+        return paywall_redirect(required_tier=2)
+    zone = ZooZone.query.filter_by(id=zone_id, zoo_id=zoo.id).first()
     if not zone:
         flash('Zone not found.', 'error')
         return redirect(url_for('animal_farm_admin.visitor_map_zone_management'))
@@ -968,6 +1180,8 @@ def payment_revenue_management():
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.dashboard'))
+    if get_zoo_subscription_tier(zoo) < 1:
+        return paywall_redirect(required_tier=1)
 
     # last 6 months income (from bookings)
     now = datetime.utcnow()
@@ -1010,6 +1224,8 @@ def analytics_reports():
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.dashboard'))
+    if get_zoo_subscription_tier(zoo) < 2:
+        return paywall_redirect(required_tier=2)
 
     bookings = Booking.query.filter_by(zoo_id=zoo.id).all()
     total_bookings = len(bookings)
@@ -1039,6 +1255,8 @@ def staff_management():
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.dashboard'))
+    if get_zoo_subscription_tier(zoo) < 2:
+        return paywall_redirect(required_tier=2)
 
     staff = User.query.filter_by(role='zoo_staff', zoo_id=zoo.id).order_by(User.full_name.asc()).all()
     tasks = StaffTask.query.filter_by(zoo_id=zoo.id).order_by(StaffTask.created_at.desc()).limit(200).all()
@@ -1051,6 +1269,8 @@ def save_staff_user():
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.staff_management'))
+    if get_zoo_subscription_tier(zoo) < 2:
+        return paywall_redirect(required_tier=2)
 
     user_id = (request.form.get('user_id') or '').strip()
     full_name = (request.form.get('full_name') or '').strip()
@@ -1128,7 +1348,9 @@ def delete_staff_user(user_id: int):
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.staff_management'))
-    staff_user = User.query.filter_by(id=user_id, role='zoo_staff', zoo_id=(zoo.id if zoo else None)).first()
+    if get_zoo_subscription_tier(zoo) < 2:
+        return paywall_redirect(required_tier=2)
+    staff_user = User.query.filter_by(id=user_id, role='zoo_staff', zoo_id=zoo.id).first()
     if not staff_user:
         flash('Staff user not found.', 'error')
         return redirect(url_for('animal_farm_admin.staff_management'))
@@ -1151,6 +1373,8 @@ def save_staff_task():
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.staff_management'))
+    if get_zoo_subscription_tier(zoo) < 2:
+        return paywall_redirect(required_tier=2)
 
     task_id = request.form.get('task_id')
     title = (request.form.get('title') or '').strip()
@@ -1193,7 +1417,12 @@ def save_staff_task():
 @animal_farm_admin_bp.post('/staff-management/tasks/<int:task_id>/delete')
 def delete_staff_task(task_id: int):
     zoo = _current_zoo()
-    task = StaffTask.query.filter_by(id=task_id, zoo_id=(zoo.id if zoo else None)).first()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_admin.staff_management'))
+    if get_zoo_subscription_tier(zoo) < 2:
+        return paywall_redirect(required_tier=2)
+    task = StaffTask.query.filter_by(id=task_id, zoo_id=zoo.id).first()
     if not task:
         flash('Task not found.', 'error')
         return redirect(url_for('animal_farm_admin.staff_management'))

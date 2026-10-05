@@ -222,13 +222,13 @@
                   <td style="text-align:right; font-weight:900;">₱{{ "{:,.2f}".format(payment.amount) }}</td>
                   <td style="text-align:right;">
                     {% if status == 'paid' %}
-                      <span class="badge badge-confirmed">{{ payment.status|upper }}</span>
+                      <span class="badge badge-confirmed">PAID</span>
                     {% elif status == 'failed' %}
-                      <span class="badge" style="background:var(--danger-bg); color:var(--danger);">{{ payment.status|upper }}</span>
+                      <span class="badge badge-cancelled">FAILED</span>
                     {% elif status == 'refunded' %}
-                      <span class="badge" style="background:var(--warning-bg); color:var(--warning);">{{ payment.status|upper }}</span>
+                      <span class="badge badge-pending">REFUNDED</span>
                     {% else %}
-                      <span class="badge">{{ payment.status|upper }}</span>
+                      <span class="badge badge-routine">{{ payment.status|upper }}</span>
                     {% endif %}
                   </td>
                 </tr>

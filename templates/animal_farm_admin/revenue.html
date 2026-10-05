@@ -1,93 +1,116 @@
 {% extends "base.html" %}
 
 {% block title %}Payment & Revenue Management | Animal Farm Admin{% endblock %}
-{% block page_title %}Payment & Revenue Management{% endblock %}
+{% block page_title %}Payment &amp; Revenue{% endblock %}
 
 {% block content %}
-<div class="card-panel">
-    <div class="card-header">
-        <h2>Revenue</h2>
+<div style="display:grid; gap:20px;">
+
+    <!-- Stat cards -->
+    <div class="stats-grid" style="--stats-cols: 2;">
+        <div class="stat-card">
+            <div class="stat-icon icon-green"><i class="fa-solid fa-money-bill-trend-up"></i></div>
+            <span class="value">₱{{ '%.2f'|format(total_revenue or 0) }}</span>
+            <h3>Total Booking Revenue</h3>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-blue"><i class="fa-solid fa-chart-column"></i></div>
+            <span class="value">{{ months|length }}</span>
+            <h3>Months Tracked</h3>
+        </div>
     </div>
 
-    <div class="card-body">
-        <div class="stats-grid" style="--stats-cols: 2; margin-bottom: 12px;">
-            <div class="stat-card">
-                <div class="stat-icon-box green"><i class="fa-solid fa-money-bills"></i></div>
-                <div class="stat-value">₱{{ '%.2f'|format(total_revenue or 0) }}</div>
-                <div class="stat-label">Total Booking Revenue</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon-box blue"><i class="fa-solid fa-chart-column"></i></div>
-                <div class="stat-value">{{ months|length }}</div>
-                <div class="stat-label">Months Tracked</div>
+    <!-- Income Bar Chart -->
+    {% set max_income = (income_by_month.values()|max) if income_by_month else 0 %}
+    <div class="card-panel">
+        <div class="card-header">
+            <h2><i class="fa-solid fa-chart-simple" style="margin-right:8px;"></i> Monthly Booking Revenue (Last 6 Months)</h2>
+            <div class="card-header-actions">
+                <span class="badge badge-role">Peak: ₱{{ '%.2f'|format(max_income or 0) }}</span>
             </div>
         </div>
-
-        {% set max_income = (income_by_month.values()|max) if income_by_month else 0 %}
-        <div class="card-panel" style="margin: 0;">
-            <div class="card-header">
-                <h2>Last 6 Months Income</h2>
+        <div class="bar-chart-wrap" style="padding: 24px 20px 14px;">
+            <div class="bar-chart" style="height: 180px;">
+                {% for m in months %}
+                    {% set v = income_by_month.get(m, 0) %}
+                    {% set pct = (v / max_income * 100) if max_income else 0 %}
+                    <div class="bar-item">
+                        <div class="bar" style="height: {{ pct }}%; background: var(--primary);" title="₱{{ '%.2f'|format(v) }}"></div>
+                        <div class="bar-label">{{ m[5:] }}</div>
+                    </div>
+                {% endfor %}
             </div>
-            <div class="bar-chart-wrap">
-                <div class="bar-chart">
-                    {% for m in months %}
-                        {% set v = income_by_month.get(m, 0) %}
-                        {% set pct = (v / max_income * 100) if max_income else 0 %}
-                        <div class="bar-item">
-                            <div class="bar" style="height: {{ pct }}%; background: #4a90d9;"></div>
-                            <div class="bar-label">{{ m[5:] }}</div>
-                        </div>
-                    {% endfor %}
-                </div>
-                <div class="chart-legend">
-                    <div>Max month: <span>₱{{ '%.2f'|format(max_income or 0) }}</span></div>
-                </div>
+            <div class="chart-legend" style="margin-top: 14px; text-align: right; font-size: 12px; color: var(--text-muted);">
+                Revenue calculated from paid and confirmed visitor bookings.
             </div>
         </div>
+    </div>
 
-        <div class="card-panel" style="margin-top: 18px;">
-            <div class="card-header">
-                <h2>Recent Bookings</h2>
+    <!-- Recent Bookings Table -->
+    <div class="card-panel">
+        <div class="card-header">
+            <h2><i class="fa-solid fa-receipt" style="margin-right:8px;"></i> Recent Transaction Bookings</h2>
+            <div class="card-header-actions">
+                <span class="badge badge-role">{{ recent_bookings|length }} Transactions</span>
             </div>
-            <div class="card-body">
-                <div class="table-wrap">
-                    <table>
-                        <thead>
+        </div>
+        <div class="card-body" style="padding:0;">
+            <div class="zf-table-wrap">
+                <table class="table-striped">
+                    <thead>
+                        <tr>
+                            <th style="width:70px; padding-left:16px;">Photo</th>
+                            <th>Visitor Name</th>
+                            <th>Date &amp; Schedule</th>
+                            <th>Revenue Amount</th>
+                            <th style="padding-right:16px;">Booking Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in recent_bookings %}
                             <tr>
-                                <th style="width:70px;">Image</th>
-                                <th>Visitor</th>
-                                <th>Date</th>
-                                <th>Amount</th>
-                                <th>Status</th>
+                                <td style="padding-left:16px;">
+                                    {% set booking_img = (b.image_url or (b.service.image_url if b.service else None)) %}
+                                    {% if booking_img %}
+                                        <img src="{{ booking_img }}" alt="" style="width:52px; height:38px; object-fit:cover; border-radius:6px; border:1px solid var(--border);" />
+                                    {% else %}
+                                        <div style="width:52px; height:38px; background:#f1f5f9; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:14px;">
+                                            <i class="fa-solid fa-receipt"></i>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td style="font-weight:700; color:var(--text);">{{ b.visitor_name }}</td>
+                                <td>{{ b.date }} {{ b.time or '' }}</td>
+                                <td style="font-weight:700; color:var(--text);">₱{{ '%.2f'|format(b.amount or 0) }}</td>
+                                <td style="padding-right:16px;">
+                                    {% set st = (b.status or 'Pending')|lower %}
+                                    {% if st == 'confirmed' %}
+                                        <span class="badge badge-confirmed">Confirmed</span>
+                                    {% elif st == 'cancelled' %}
+                                        <span class="badge badge-cancelled">Cancelled</span>
+                                    {% elif st == 'finished' %}
+                                        <span class="badge badge-completed">Finished</span>
+                                    {% else %}
+                                        <span class="badge badge-pending">Pending</span>
+                                    {% endif %}
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {% for b in recent_bookings %}
-                                <tr>
-                                    <td>
-                                        {% set booking_img = (b.image_url or (b.service.image_url if b.service else None)) %}
-                                        {% if booking_img %}
-                                            <img src="{{ booking_img }}" alt="" style="width:54px; height:38px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
-                                        {% else %}
-                                            <span style="color: var(--text-muted);">-</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ b.visitor_name }}</td>
-                                    <td>{{ b.date }} {{ b.time or '' }}</td>
-                                    <td>₱{{ '%.2f'|format(b.amount or 0) }}</td>
-                                    <td>
-                                        {% set st = (b.status or 'Pending')|lower %}
-                                        <span class="badge badge-{{ 'confirmed' if st=='confirmed' else ('cancelled' if st=='cancelled' else 'pending') }}">{{ b.status or 'Pending' }}</span>
-                                    </td>
-                                </tr>
-                            {% else %}
-                                <tr><td colspan="5" style="color: var(--text-muted);">No bookings yet.</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                        {% else %}
+                            <tr>
+                                <td colspan="5">
+                                    <div class="zf-empty-state">
+                                        <i class="fa-solid fa-receipt zf-empty-icon"></i>
+                                        <div class="zf-empty-title">No Revenue Transactions</div>
+                                        <div class="zf-empty-desc">Completed and pending visitor booking receipts will be aggregated here.</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+
 </div>
 {% endblock %}

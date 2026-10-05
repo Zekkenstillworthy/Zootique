@@ -39,7 +39,7 @@
                 </div>
 
                 <div style="position: relative; margin-bottom: 1rem; margin-top: 1rem;">
-                    <img src="{{ profile_image_url or ('https://ui-avatars.com/api/?name=' ~ (user.full_name or 'Visitor')|urlencode ~ '&background=fff&color=1a4f32&size=100') }}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 4px solid #1a4f32; outline: 4px solid rgba(255,255,255,0.2);">
+                    {% if profile_image_url %}<img src="{{ profile_image_url }}" alt="" onerror="this.onerror=null;this.style.display='none';" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 4px solid #1a4f32; outline: 4px solid rgba(255,255,255,0.2);">{% else %}<i class="fa-solid fa-user" aria-hidden="true" style="width: 100px; height: 100px; display:flex; align-items:center; justify-content:center; font-size: 2.5rem; color: #1a4f32; background:#fff; border-radius:50%;"></i>{% endif %}
                     <i class="fa-solid fa-camera" style="position: absolute; bottom: 0; right: 0; background: white; color: #1a4f32; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"></i>
                 </div>
 

@@ -4,78 +4,200 @@
 
 {% block content %}
 
-<!-- ===== ADD EVENT ===== -->
-<div id="se-tab-add" class="se-section" style="display:none;">
-    <div class="card-panel">
-        <div class="card-header-bar">
-            <h2>Add Event — {{ zoo.name }}</h2>
+<!-- Success toast -->
+<div class="zf-toast" id="zfToast" role="status" aria-live="polite">
+  <i class="fa-solid fa-circle-check"></i>
+  <span id="zfToastMsg">Staff event schedule updated.</span>
+</div>
+
+<!-- ===== ADD / EDIT EVENT ===== -->
+<div id="se-tab-add" class="se-section" style="display:none; max-width: 760px; margin: 0 auto;">
+    <div class="zf-form-card">
+        <div class="zf-form-header">
+            <h2 class="zf-form-title">
+                <i class="fa-solid fa-calendar-plus"></i>
+                <span id="staffEventFormTitle">Add Park Event</span>
+            </h2>
+            <span class="zf-form-badge" id="staffEventBadge">Schedule</span>
         </div>
-        <form method="post" action="{{ url_for('animal_farm_staff.events_management') }}" style="padding:1rem 1.5rem; display:grid; grid-template-columns:2fr 1fr 1fr 1fr auto; gap:0.75rem; align-items:end;">
-            <div>
-                <label style="display:block; font-size:0.75rem; color:var(--text-muted); font-weight:700; margin-bottom:0.25rem;">Event Name</label>
-                <input type="text" name="name" required placeholder="Feeding Show">
+
+        <form id="staffEventForm" method="post" action="{{ url_for('animal_farm_staff.events_management') }}" novalidate>
+            <input type="hidden" name="event_id" id="staff_event_id" value="">
+
+            <div class="zf-form-body">
+                <div class="zf-section">
+                    <div class="zf-section-label">
+                        <i class="fa-solid fa-circle-info"></i> Event Schedule &amp; Location
+                    </div>
+                    <div class="zf-grid-2">
+                        <div class="zf-field zf-full">
+                            <label class="zf-label" for="ev_name">Event Name <span class="zf-req">*</span></label>
+                            <input type="text" id="ev_name" name="name" class="zf-control" required placeholder="e.g., Tiger Feeding Presentation" autocomplete="off">
+                            <span class="zf-error" id="ev_name_err"><i class="fa-solid fa-triangle-exclamation"></i> Event name is required.</span>
+                        </div>
+
+                        <div class="zf-field">
+                            <label class="zf-label" for="ev_type">Type / Format</label>
+                            <input type="text" id="ev_type" name="type" class="zf-control" placeholder="e.g., Live Demo, Safari Tour" autocomplete="off">
+                        </div>
+
+                        <div class="zf-field">
+                            <label class="zf-label" for="ev_time">Event Time</label>
+                            <input type="text" id="ev_time" name="time" class="zf-control" placeholder="e.g., 10:30 AM" autocomplete="off">
+                        </div>
+
+                        <div class="zf-field zf-full">
+                            <label class="zf-label" for="ev_location">Location / Pavilion</label>
+                            <input type="text" id="ev_location" name="location" class="zf-control" placeholder="e.g., South Lagoon Stage / Aviary Dome" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div>
-                <label style="display:block; font-size:0.75rem; color:var(--text-muted); font-weight:700; margin-bottom:0.25rem;">Type</label>
-                <input type="text" name="type" placeholder="Show">
-            </div>
-            <div>
-                <label style="display:block; font-size:0.75rem; color:var(--text-muted); font-weight:700; margin-bottom:0.25rem;">Time</label>
-                <input type="text" name="time" placeholder="10:00 AM">
-            </div>
-            <div>
-                <label style="display:block; font-size:0.75rem; color:var(--text-muted); font-weight:700; margin-bottom:0.25rem;">Location</label>
-                <input type="text" name="location" placeholder="Main Stage">
-            </div>
-            <div style="display:flex; gap:8px;">
-                <button class="btn btn-primary" type="submit">Add</button>
+
+            <div class="zf-form-footer">
+                <button type="button" class="zf-btn-cancel" onclick="resetStaffEventForm(); window.switchSeTab && window.switchSeTab('list');">
+                    <i class="fa-solid fa-calendar-days"></i> View Schedule
+                </button>
+                <button class="zf-btn-primary" type="submit" id="saveStaffEventBtn">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span id="saveStaffEventBtnText">Save Event</span>
+                </button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- ===== SCHEDULED EVENTS ===== -->
+<!-- ===== SCHEDULED EVENTS LIST ===== -->
 <div id="se-tab-list" class="se-section" style="display:none;">
     <div class="card-panel">
-        <div class="card-header-bar">
-            <h2>Scheduled Events — {{ zoo.name }}</h2>
+        <div class="card-header">
+            <h2><i class="fa-solid fa-calendar-days" style="margin-right:8px;"></i> Scheduled Events — {{ zoo.name }}</h2>
+            <div class="card-header-actions">
+                <button class="btn btn-primary btn-sm" type="button" onclick="resetStaffEventForm(); window.switchSeTab && window.switchSeTab('add');">
+                    <i class="fa-solid fa-plus"></i> Add Event
+                </button>
+            </div>
         </div>
-        <div class="table-container" style="box-shadow:none; margin-bottom:0; border-radius:0 0 var(--border-radius) var(--border-radius);">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Event ID</th><th>Name</th><th>Type</th><th>Time</th><th>Location</th><th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for ev in events %}
-                    <tr>
-                        <td style="color:var(--text-muted); font-size:0.8rem;">#EV-{{ ev.id }}</td>
-                        <td>
-                            <form method="post" action="{{ url_for('animal_farm_staff.events_management') }}" style="display:flex; gap:8px; align-items:center;">
-                                <input type="hidden" name="event_id" value="{{ ev.id }}">
-                                <input type="text" name="name" value="{{ ev.name }}" required style="min-width:180px;">
-                        </td>
-                        <td><input type="text" name="type" value="{{ ev.type or '' }}" style="min-width:110px;"></td>
-                        <td><input type="text" name="time" value="{{ ev.time or '' }}" style="min-width:110px;"></td>
-                        <td><input type="text" name="location" value="{{ ev.location or '' }}" style="min-width:130px;"></td>
-                        <td>
-                                <button class="btn btn-outline btn-sm" type="submit">Save</button>
-                            </form>
-                            <form method="post" action="{{ url_for('animal_farm_staff.delete_event', event_id=ev.id) }}" style="margin-top:6px;">
-                                <button class="btn btn-sm" type="submit" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca;">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:3rem;">
-                        No events scheduled.
-                    </td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="card-body" style="padding:0;">
+            <div class="zf-table-wrap">
+                <table class="table-striped">
+                    <thead>
+                        <tr>
+                            <th style="width:100px; padding-left:16px;">Reference</th>
+                            <th>Event Name</th>
+                            <th>Category</th>
+                            <th>Schedule Time</th>
+                            <th>Location Venue</th>
+                            <th style="width:120px; text-align:right; padding-right:16px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ev in events %}
+                        <tr>
+                            <td style="padding-left:16px; color:var(--text-muted); font-size:12px; font-family:monospace;">
+                                #EV-{{ ev.id }}
+                            </td>
+                            <td style="font-weight:700; color:var(--text);">{{ ev.name }}</td>
+                            <td>
+                                {% if ev.type %}
+                                    <span class="badge badge-routine">{{ ev.type }}</span>
+                                {% else %}
+                                    <span style="color:var(--text-muted);">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ ev.time or '-' }}</td>
+                            <td>{{ ev.location or '-' }}</td>
+                            <td style="text-align:right; padding-right:16px;">
+                                <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
+                                    <button class="zf-icon-btn" type="button" title="Edit Event"
+                                            onclick='fillStaffEventForm({{ ev.id|tojson }}, {{ ev.name|tojson }}, {{ (ev.type or "")|tojson }}, {{ (ev.time or "")|tojson }}, {{ (ev.location or "")|tojson }})'>
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <form method="post" action="{{ url_for('animal_farm_staff.delete_event', event_id=ev.id) }}" style="display:inline;" onsubmit="return confirm('Delete this event?');">
+                                        <button class="zf-icon-btn danger" type="submit" title="Delete Event">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6">
+                                <div class="zf-empty-state">
+                                    <i class="fa-regular fa-calendar-xmark zf-empty-icon"></i>
+                                    <div class="zf-empty-title">No Events Scheduled</div>
+                                    <div class="zf-empty-desc">Create your park events to schedule daily feeding, tour guides, and educational talks.</div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
+<script>
+function fillStaffEventForm(id, name, type, time, location) {
+    document.getElementById('staff_event_id').value = id || '';
+    document.getElementById('ev_name').value = name || '';
+    document.getElementById('ev_type').value = type || '';
+    document.getElementById('ev_time').value = time || '';
+    document.getElementById('ev_location').value = location || '';
+
+    const titleEl = document.getElementById('staffEventFormTitle');
+    if (titleEl) titleEl.textContent = 'Edit Event';
+    const badgeEl = document.getElementById('staffEventBadge');
+    if (badgeEl) {
+        badgeEl.textContent = 'Edit';
+        badgeEl.classList.add('editing');
+    }
+    const btnText = document.getElementById('saveStaffEventBtnText');
+    if (btnText) btnText.textContent = 'Update Event';
+
+    if (window.switchSeTab) window.switchSeTab('add');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetStaffEventForm() {
+    const form = document.getElementById('staffEventForm');
+    if (!form) return;
+    form.reset();
+    document.getElementById('staff_event_id').value = '';
+    const titleEl = document.getElementById('staffEventFormTitle');
+    if (titleEl) titleEl.textContent = 'Add Park Event';
+    const badgeEl = document.getElementById('staffEventBadge');
+    if (badgeEl) {
+        badgeEl.textContent = 'Schedule';
+        badgeEl.classList.remove('editing');
+    }
+    const btnText = document.getElementById('saveStaffEventBtnText');
+    if (btnText) btnText.textContent = 'Save Event';
+}
+
+const staffEvForm = document.getElementById('staffEventForm');
+if (staffEvForm) {
+    staffEvForm.addEventListener('submit', function(e) {
+        const nameIn = document.getElementById('ev_name');
+        const nameErr = document.getElementById('ev_name_err');
+        if (!nameIn.value.trim()) {
+            e.preventDefault();
+            nameIn.classList.add('is-invalid');
+            if (nameErr) nameErr.style.display = 'block';
+            return;
+        } else {
+            nameIn.classList.remove('is-invalid');
+            if (nameErr) nameErr.style.display = 'none';
+        }
+
+        const btn = document.getElementById('saveStaffEventBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+        }
+    });
+}
+</script>
 {% endblock %}

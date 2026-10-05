@@ -11,13 +11,13 @@
       <div style="width: 72px; height: 72px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 32px;">
         <i class="fa-solid fa-check"></i>
       </div>
-      <h1 style="font-size: 28px; margin: 0; font-weight: 800; letter-spacing: -0.5px;">Registration Complete!</h1>
+      <h1 style="font-size: 28px; margin: 0; font-weight: 800; letter-spacing: -0.5px;">{% if role == 'zoo_admin' %}Registration Submitted{% else %}Registration Complete!{% endif %}</h1>
     </div>
 
     <div style="padding: 40px;">
       <p style="font-size: 16px; color: #475569; line-height: 1.6; margin-bottom: 30px;">
         {% if role == 'zoo_admin' %}
-          Your administrator account and establishment profiles have been successfully created. Welcome to the Zootique management network!
+          Your establishment registration and documents were submitted for Super Admin review. Your administrator account will be created after approval.
         {% elif role == 'zoo_staff' %}
           Your staff account has been securely provisioned and linked to your selected establishment.
         {% else %}
@@ -25,10 +25,10 @@
         {% endif %}
       </p>
 
-      <a href="{{ url_for('auth.login', module_name=role) }}" 
+      <a href="{% if role == 'zoo_admin' %}{{ url_for('auth.portal') }}{% else %}{{ url_for('auth.login', module_name=role) }}{% endif %}"
          style="display: block; width: 100%; padding: 16px; background: {% if role == 'zoo_admin' %}#d97706{% elif role == 'zoo_staff' %}#0284c7{% else %}#1a4f32{% endif %};
                 color: white; border-radius: 8px; font-size: 16px; font-weight: 700; text-decoration: none; transition: transform 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-        Proceed to Login <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i>
+        {% if role == 'zoo_admin' %}Return to Portal{% else %}Proceed to Login <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i>{% endif %}
       </a>
     </div>
 

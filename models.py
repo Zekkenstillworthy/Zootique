@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
+from sqlalchemy import event, inspect as sqlalchemy_inspect
 from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
@@ -50,6 +51,7 @@ class Zoo(db.Model):
     subscriptions = db.relationship('ZooSubscription', back_populates='zoo', lazy=True)
     admin_feedbacks = db.relationship('ZooAdminFeedback', back_populates='zoo', lazy=True)
     layout_config = db.relationship('ZooLayoutConfig', back_populates='zoo', uselist=False, cascade='all, delete-orphan', lazy=True)
+    park_rules = db.relationship('ParkRule', back_populates='zoo', cascade='all, delete-orphan', lazy=True)
 
     zones = db.relationship('ZooZone', back_populates='zoo', lazy=True)
     staff_tasks = db.relationship('StaffTask', back_populates='zoo', lazy=True)
@@ -65,6 +67,36 @@ class EstablishmentType(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
 
+class EstablishmentRegistration(db.Model):
+    __tablename__ = 'establishment_registrations'
+    id = db.Column(db.Integer, primary_key=True)
+    establishment_name = db.Column(db.String(100), nullable=False)
+    establishment_type = db.Column(db.String(50), nullable=False)
+    location = db.Column(db.String(255), nullable=False)
+    admin_full_name = db.Column(db.String(100), nullable=True)
+    admin_email = db.Column(db.String(120), nullable=True)
+    admin_password_hash = db.Column(db.String(256), nullable=True)
+    business_permit_url = db.Column(db.String(800), nullable=True)
+    wildlife_license_url = db.Column(db.String(800), nullable=True)
+    proof_of_address_url = db.Column(db.String(800), nullable=True)
+    representative_id_url = db.Column(db.String(800), nullable=True)
+    status = db.Column(db.String(30), nullable=False, default='pending')
+    zoo_id = db.Column(db.Integer, db.ForeignKey('zoos.id', ondelete='SET NULL'), nullable=True)
+    approved_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    approved_at = db.Column(db.DateTime, nullable=True)
+    rejected_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    rejected_at = db.Column(db.DateTime, nullable=True)
+    rejection_note = db.Column(db.Text, nullable=True)
+    reviewer_note = db.Column(db.Text, nullable=True)
+    is_legacy_migration = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime, nullable=True, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    zoo = db.relationship('Zoo', foreign_keys=[zoo_id], lazy=True)
+    approver = db.relationship('User', foreign_keys=[approved_by], lazy=True)
+    rejector = db.relationship('User', foreign_keys=[rejected_by], lazy=True)
+
+
 class ZooLayoutConfig(db.Model):
     __tablename__ = 'zoo_layout_configs'
     id = db.Column(db.Integer, primary_key=True)
@@ -77,6 +109,19 @@ class ZooLayoutConfig(db.Model):
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     zoo = db.relationship('Zoo', back_populates='layout_config', lazy=True)
+
+
+class ParkRule(db.Model):
+    __tablename__ = 'park_rules'
+    id = db.Column(db.Integer, primary_key=True)
+    zoo_id = db.Column(db.Integer, db.ForeignKey('zoos.id', ondelete='CASCADE'), nullable=False, index=True)
+    title = db.Column(db.String(160), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    display_order = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    zoo = db.relationship('Zoo', back_populates='park_rules', lazy=True)
 
 class Animal(db.Model):
     __tablename__ = 'animals'
@@ -125,6 +170,47 @@ class Booking(db.Model):
     user = db.relationship('User', foreign_keys=[user_id], back_populates='bookings', lazy=True)
     assigned_staff_user = db.relationship('User', foreign_keys=[assigned_staff_user_id], back_populates='assigned_bookings', lazy=True)
     payments = db.relationship('BookingPayment', back_populates='booking', lazy=True)
+
+
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    booking_id = db.Column(db.String(20), db.ForeignKey('bookings.id', ondelete='CASCADE'), nullable=True)
+    notification_type = db.Column(db.String(40), nullable=False)
+    message = db.Column(db.String(500), nullable=False)
+    dedupe_key = db.Column(db.String(180), nullable=False, unique=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    read_at = db.Column(db.DateTime, nullable=True)
+
+    user = db.relationship('User', lazy=True)
+    booking = db.relationship('Booking', lazy=True)
+
+
+@event.listens_for(Booking, 'after_update')
+def create_booking_confirmation_notification(mapper, connection, booking):
+    status_history = sqlalchemy_inspect(booking).attrs.status.history
+    if not status_history.has_changes() or (booking.status or '').lower() != 'confirmed' or not booking.user_id:
+        return
+
+    notification_table = Notification.__table__
+    dedupe_key = f'booking-confirmed:{booking.id}'
+    existing = connection.execute(
+        db.select(notification_table.c.id).where(notification_table.c.dedupe_key == dedupe_key)
+    ).first()
+    if existing:
+        return
+
+    connection.execute(
+        notification_table.insert().values(
+            user_id=booking.user_id,
+            booking_id=booking.id,
+            notification_type='booking_confirmation',
+            message=f'Booking confirmed: {booking.service_name} on {booking.date}.',
+            dedupe_key=dedupe_key,
+        )
+    )
 
 
 class BookingPayment(db.Model):
@@ -197,6 +283,8 @@ class ZooZone(db.Model):
     description = db.Column(db.Text, nullable=True)
     map_image_url = db.Column(db.String(500), nullable=True)
     panorama_360_url = db.Column(db.String(800), nullable=True)
+    position_x = db.Column(db.Float, nullable=True)
+    position_y = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     zoo = db.relationship('Zoo', back_populates='zones', lazy=True)
@@ -226,6 +314,8 @@ class SubscriptionPlan(db.Model):
     duration_months = db.Column(db.Integer, nullable=False)
     features = db.Column(db.Text, nullable=True)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
+    # tier_level: 0=free/basic, 1=standard, 2=pro/advanced
+    tier_level = db.Column(db.Integer, nullable=False, default=1)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     subscriptions = db.relationship('ZooSubscription', back_populates='plan', lazy=True)
@@ -238,7 +328,7 @@ class ZooSubscription(db.Model):
     plan_id = db.Column(db.Integer, db.ForeignKey('subscription_plans.id', ondelete="CASCADE"), nullable=False)
     start_date = db.Column(db.DateTime, nullable=False)
     end_date = db.Column(db.DateTime, nullable=False)
-    status = db.Column(db.String(20), nullable=False, default='active')  # active|expired
+    status = db.Column(db.String(20), nullable=False, default='active')  # active|expired|pending
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     zoo = db.relationship('Zoo', back_populates='subscriptions', lazy=True)
@@ -247,6 +337,8 @@ class ZooSubscription(db.Model):
 
     def refresh_status(self, now: datetime | None = None):
         now = now or datetime.utcnow()
+        if self.status == 'pending':
+            return  # pending stays pending until Super Admin approves
         self.status = 'active' if self.end_date >= now else 'expired'
 
 

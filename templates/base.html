@@ -774,12 +774,16 @@
 
 
             <!-- Navigation -->
-            <nav class="sidebar-nav">
-                {% if request.blueprint == 'animal_farm_admin' %}
+            <nav cl                {% if request.blueprint == 'animal_farm_admin' %}
                 <!-- Animal Farm Admin Navigation -->
+                {# -- resolve subscription tier for lock icons -- #}
+                {% set _sub_tier = g_sub_tier if g_sub_tier is defined else -1 %}
                 <a href="{{ url_for('animal_farm_admin.subscriptions') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_admin.subscriptions' %}active{% endif %}">
                     <i class="fa-solid fa-id-card"></i> Subscription
+                    {% if _sub_tier < 0 %}
+                    <span style="margin-left:auto; font-size:10px; background:#f59e0b; color:#fff; padding:1px 6px; border-radius:99px; font-weight:700;">No Plan</span>
+                    {% endif %}
                 </a>
                 <a href="{{ url_for('animal_farm_admin.dashboard') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_admin.dashboard' %}active{% endif %}">
@@ -788,6 +792,7 @@
                 <a href="{{ url_for('animal_farm_admin.park_rules_management') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_admin.park_rules_management' %}active{% endif %}">
                     <i class="fa-solid fa-clipboard-list"></i> Park Rules
+                    {% if _sub_tier < 1 %}<i class="fa-solid fa-lock" style="font-size:10px; margin-left:auto; opacity:0.6;"></i>{% endif %}
                 </a>
                 <a href="{{ url_for('animal_farm_admin.booking_management') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_admin.booking_management' %}active{% endif %}">
@@ -799,7 +804,9 @@
                     <button
                         class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.services_management' %}active{% endif %}"
                         onclick="toggleDropdown(event, 'services-dropdown')">
-                        <span class="trigger-label"><i class="fa-solid fa-list-check"></i> Services</span>
+                        <span class="trigger-label"><i class="fa-solid fa-list-check"></i> Services
+                          {% if _sub_tier < 1 %}<i class="fa-solid fa-lock" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
+                        </span>
                         <i class="fa-solid fa-chevron-down chevron"></i>
                     </button>
                     <div class="nav-dropdown-menu" id="services-dropdown">
@@ -819,7 +826,9 @@
                     <button
                         class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.animals_management' %}active{% endif %}"
                         onclick="toggleDropdown(event, 'animals-dropdown')">
-                        <span class="trigger-label"><i class="fa-solid fa-paw"></i> Animals</span>
+                        <span class="trigger-label"><i class="fa-solid fa-paw"></i> Animals
+                          {% if _sub_tier < 1 %}<i class="fa-solid fa-lock" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
+                        </span>
                         <i class="fa-solid fa-chevron-down chevron"></i>
                     </button>
                     <div class="nav-dropdown-menu" id="animals-dropdown">
@@ -839,7 +848,9 @@
                     <button
                         class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.events_management' %}active{% endif %}"
                         onclick="toggleDropdown(event, 'events-dropdown')">
-                        <span class="trigger-label"><i class="fa-solid fa-calendar-days"></i> Events</span>
+                        <span class="trigger-label"><i class="fa-solid fa-calendar-days"></i> Events
+                          {% if _sub_tier < 1 %}<i class="fa-solid fa-lock" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
+                        </span>
                         <i class="fa-solid fa-chevron-down chevron"></i>
                     </button>
                     <div class="nav-dropdown-menu {% if request.endpoint == 'animal_farm_admin.events_management' %}open{% endif %}" id="events-dropdown" {% if request.endpoint == 'animal_farm_admin.events_management' %}data-permanent-active="true"{% endif %}>
@@ -859,7 +870,9 @@
                     <button
                         class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.promotions_management' %}active{% endif %}"
                         onclick="toggleDropdown(event, 'promotions-dropdown')">
-                        <span class="trigger-label"><i class="fa-solid fa-tags"></i> Promotions</span>
+                        <span class="trigger-label"><i class="fa-solid fa-tags"></i> Promotions
+                          {% if _sub_tier < 1 %}<i class="fa-solid fa-lock" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
+                        </span>
                         <i class="fa-solid fa-chevron-down chevron"></i>
                     </button>
                     <div class="nav-dropdown-menu" id="promotions-dropdown">
@@ -882,7 +895,9 @@
                     <button
                         class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.visitor_map_zone_management' %}active{% endif %}"
                         onclick="toggleDropdown(event, 'afa-map-dropdown')">
-                        <span class="trigger-label"><i class="fa-solid fa-map-location-dot"></i> Map & Zones</span>
+                        <span class="trigger-label"><i class="fa-solid fa-map-location-dot"></i> Map &amp; Zones
+                          {% if _sub_tier < 2 %}<i class="fa-solid fa-lock" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
+                        </span>
                         <i class="fa-solid fa-chevron-down chevron"></i>
                     </button>
                     <div class="nav-dropdown-menu {% if request.endpoint == 'animal_farm_admin.visitor_map_zone_management' %}open{% endif %}"
@@ -912,10 +927,12 @@
                 <a href="{{ url_for('animal_farm_admin.payment_revenue_management') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_admin.payment_revenue_management' %}active{% endif %}">
                     <i class="fa-solid fa-money-bills"></i> Revenue
+                    {% if _sub_tier < 1 %}<i class="fa-solid fa-lock" style="font-size:10px; margin-left:auto; opacity:0.6;"></i>{% endif %}
                 </a>
                 <a href="{{ url_for('animal_farm_admin.analytics_reports') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_admin.analytics_reports' %}active{% endif %}">
-                    <i class="fa-solid fa-chart-line"></i> Analytics & Reports
+                    <i class="fa-solid fa-chart-line"></i> Analytics &amp; Reports
+                    {% if _sub_tier < 2 %}<i class="fa-solid fa-lock" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
                 </a>
                 <a href="{{ url_for('animal_farm_admin.system_feedback') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_admin.system_feedback' %}active{% endif %}">
@@ -926,7 +943,9 @@
                     <button
                         class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.staff_management' %}active{% endif %}"
                         onclick="toggleDropdown(event, 'afa-staff-dropdown')">
-                        <span class="trigger-label"><i class="fa-solid fa-user-check"></i> Staff Management</span>
+                        <span class="trigger-label"><i class="fa-solid fa-user-check"></i> Staff Management
+                          {% if _sub_tier < 2 %}<i class="fa-solid fa-lock" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
+                        </span>
                         <i class="fa-solid fa-chevron-down chevron"></i>
                     </button>
                     <div class="nav-dropdown-menu {% if request.endpoint == 'animal_farm_admin.staff_management' %}open{% endif %}"
@@ -970,6 +989,7 @@
                         </a>
                     </div>
                 </div>
+            </div>
                 {% elif request.blueprint == 'animal_farm_staff' %}
                 <!-- Animal Farm Staff Navigation -->
                 <a href="{{ url_for('animal_farm_staff.dashboard') }}"
@@ -1170,15 +1190,22 @@
                     {% for category, message in messages %}
                     {% if category == 'success' %}
                     <div class="card-panel" style="margin:0; padding:12px 14px; border-left:4px solid var(--success);">
-                        {% else %}
-                        <div class="card-panel" style="margin:0; padding:12px 14px; border-left:4px solid #ef4444;">
-                            {% endif %}
-                            <div style="font-size:13px; font-weight:600;">{{ message }}</div>
-                        </div>
-                        {% endfor %}
+                    {% elif category == 'paywall' %}
+                    <div class="card-panel" style="margin:0; padding:12px 14px; border-left:4px solid #f59e0b; background:#fffbeb; display:flex; align-items:center; gap:10px;">
+                        <i class="fa-solid fa-lock" style="color:#d97706; flex-shrink:0;"></i>
+                        <div style="font-size:13px; font-weight:600; color:#92400e;">{{ message|safe }}</div>
+                    </div>
+                    {% else %}
+                    <div class="card-panel" style="margin:0; padding:12px 14px; border-left:4px solid #ef4444;">
+                    {% endif %}
+                    {% if category not in ['paywall'] %}
+                        <div style="font-size:13px; font-weight:600;">{{ message|safe }}</div>
                     </div>
                     {% endif %}
-                    {% endwith %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
 
                     {% else %}
                     <!-- =================== VISITOR TOP NAVBAR LAYOUT =================== -->

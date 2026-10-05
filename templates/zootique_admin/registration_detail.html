@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Registration Review | Super Admin{% endblock %}
+{% block page_title %}Registration Review{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+  <a class="btn btn-ghost" href="{{ url_for('zootique_admin.registrations') }}"><i class="fa-solid fa-arrow-left"></i> Back to Registrations</a>
+  <span class="badge {% if registration.status == 'approved' %}badge-active{% elif registration.status == 'rejected' %}badge-pending{% endif %}">{{ registration.status|capitalize }}</span>
+</div>
+
+<div class="two-col" style="--two-col-template: 1fr 1fr; align-items:start;">
+  <div class="card-panel">
+    <div class="card-header"><h2>ESTABLISHMENT DETAILS</h2></div>
+    <div class="card-body">
+      <dl style="display:grid; gap:16px; margin:0;">
+        <div><dt class="stat-label">ESTABLISHMENT NAME</dt><dd style="margin:4px 0 0; font-weight:800;">{{ registration.establishment_name }}</dd></div>
+        <div><dt class="stat-label">ESTABLISHMENT TYPE</dt><dd style="margin:4px 0 0;">{{ registration.establishment_type }}</dd></div>
+        <div><dt class="stat-label">LOCATION</dt><dd style="margin:4px 0 0;">{{ registration.location }}</dd></div>
+        <div><dt class="stat-label">ADMINISTRATOR</dt><dd style="margin:4px 0 0;">{{ registration.admin_full_name or '—' }} · {{ registration.admin_email or '—' }}</dd></div>
+        <div><dt class="stat-label">SUBMITTED</dt><dd style="margin:4px 0 0;">{{ registration.created_at.strftime('%b %d, %Y %I:%M %p') if registration.created_at else 'Not available' }}</dd></div>
+        {% if registration.is_legacy_migration %}<div><dt class="stat-label">LEGACY RECORD</dt><dd style="margin:4px 0 0;"><span class="badge badge-pending">Legacy — no original documents</span></dd></div>{% endif %}
+        {% if registration.reviewer_note %}<div><dt class="stat-label">REVIEWER NOTE</dt><dd style="margin:4px 0 0;">{{ registration.reviewer_note }}</dd></div>{% endif %}
+        {% if registration.rejection_note %}<div><dt class="stat-label">REJECTION NOTE</dt><dd style="margin:4px 0 0;">{{ registration.rejection_note }}</dd></div>{% endif %}
+      </dl>
+    </div>
+  </div>
+
+  <div class="card-panel">
+    <div class="card-header"><h2>SUBMITTED DOCUMENTS</h2></div>
+    <div class="card-body" style="display:grid; gap:12px;">
+      {% set documents = [
+        ('Business/Establishment Permit', registration.business_permit_url),
+        ('Zoo or Wildlife Exhibition License', registration.wildlife_license_url),
+        ('Proof of Address', registration.proof_of_address_url),
+        ('Authorized Representative ID', registration.representative_id_url)
+      ] %}
+      {% for label, url in documents %}
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; border:1px solid var(--border-light); padding:12px; border-radius:8px;">
+        <span style="font-weight:700; font-size:13px;">{{ label }}</span>
+        {% if registration.is_legacy_migration %}<span style="color:var(--text-muted); font-size:12px; font-weight:700;">Not available</span>{% elif url %}<a class="btn btn-ghost" href="{{ url }}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> View file</a>{% else %}<span style="color:var(--danger); font-size:12px; font-weight:700;">Missing</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% if registration.status == 'pending' %}
+<div class="card-panel" style="margin-top:16px;">
+  <div class="card-header"><h2>DECISION</h2></div>
+  <div class="card-body" style="display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap;">
+    <form method="post" action="{{ url_for('zootique_admin.approve_registration', registration_id=registration.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-primary" type="submit" onclick="return confirm('Approve this registration and create the Zoo admin account?');"><i class="fa-solid fa-check"></i> Approve & Create Account</button>
+    </form>
+    <form method="post" action="{{ url_for('zootique_admin.reject_registration', registration_id=registration.id) }}" style="display:flex; gap:8px; align-items:flex-end; flex:1; min-width:280px;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label style="flex:1; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted);">Rejection note (optional)<textarea name="rejection_note" rows="2" style="display:block; width:100%; margin-top:6px; border:1px solid var(--border-light); border-radius:6px; padding:8px; font:inherit;"></textarea></label>
+      <button class="btn btn-ghost" type="submit" onclick="return confirm('Reject this registration?');"><i class="fa-solid fa-xmark"></i> Reject</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

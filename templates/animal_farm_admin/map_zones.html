@@ -1,83 +1,236 @@
 {% extends "base.html" %}
 
 {% block title %}Visitor Map & Zone Management | Animal Farm Admin{% endblock %}
-{% block page_title %}Map & Zones{% endblock %}
+{% block page_title %}Map &amp; Zones{% endblock %}
 
 {% block content %}
 {% set initial_tab = request.args.get('tab', 'add') %}
 
+<style>
+    .map-editor-pin {
+        position:absolute;
+        transform:translate(-50%, -100%);
+        z-index:3;
+        width:34px;
+        height:34px;
+        border:3px solid #fff;
+        border-radius:50% 50% 50% 0;
+        background:#0d9b82;
+        color:#fff;
+        box-shadow:0 3px 10px rgba(19,42,28,.35);
+        cursor:grab;
+    }
+    .map-editor-pin:active { cursor:grabbing; }
+    .map-editor-pin i { font-size:14px; }
+    .map-editor-pin span { position:absolute; left:38px; top:4px; padding:3px 6px; border-radius:4px; background:#132a1c; color:#fff; font-size:11px; white-space:nowrap; pointer-events:none; }
+    .map-editor-pin b { position:absolute; right:-9px; top:-10px; width:17px; height:17px; border-radius:50%; background:#b42318; color:#fff; font:700 13px/16px sans-serif; cursor:pointer; }
+</style>
+
+<!-- Success toast -->
+<div class="zf-toast" id="zfToast" role="status" aria-live="polite">
+  <i class="fa-solid fa-circle-check"></i>
+  <span id="zfToastMsg">Zone configuration updated successfully.</span>
+</div>
+
 <!-- ===== ADD / EDIT ZONE ===== -->
-<div id="mz-tab-add" class="mz-section" style="display:none;">
-    <div class="card-panel" style="max-width: 640px;">
-        <div class="card-header">
-            <h2>Add / Edit Zone</h2>
+<div id="mz-tab-add" class="mz-section" style="display:none; max-width: 760px; margin: 0 auto;">
+    <div class="zf-form-card">
+        <div class="zf-form-header">
+            <h2 class="zf-form-title">
+                <i class="fa-solid fa-map-location-dot"></i>
+                <span id="zoneFormTitleText">Add Zone</span>
+            </h2>
+            <span class="zf-form-badge" id="zoneFormBadge">Zone</span>
         </div>
-        <div class="card-body">
-            <form method="post" action="{{ url_for('animal_farm_admin.save_zone') }}" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:10px;">
-                <input type="hidden" name="zone_id" id="zone_id_input" value="">
 
-                <label style="font-weight:600; color:var(--text-secondary);">Zone Name</label>
-                <input id="zone_name_input" type="text" name="name" placeholder="e.g., Safari Walk" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+        <form id="zoneForm" method="post" action="{{ url_for('animal_farm_admin.save_zone') }}" enctype="multipart/form-data" novalidate>
+            <input type="hidden" name="zone_id" id="zone_id_input" value="">
 
-                <label style="font-weight:600; color:var(--text-secondary);">Description (optional)</label>
-                <textarea id="zone_desc_input" name="description" rows="3" placeholder="Short description" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;"></textarea>
+            <div class="zf-form-body">
+                <div class="zf-section">
+                    <div class="zf-section-label">
+                        <i class="fa-solid fa-circle-info"></i> Zone Specifications
+                    </div>
+                    <div class="zf-grid-2">
+                        <div class="zf-field zf-full">
+                            <label class="zf-label" for="zone_name_input">Zone Name <span class="zf-req">*</span></label>
+                            <input id="zone_name_input" type="text" name="name" class="zf-control" placeholder="e.g., Safari Walkway, Aviary Trail" required autocomplete="off">
+                            <span class="zf-error" id="zone_name_error"><i class="fa-solid fa-triangle-exclamation"></i> Zone name is required.</span>
+                        </div>
 
-                <label style="font-weight:600; color:var(--text-secondary);">Upload Zone Map Image (optional)</label>
-                <input type="file" name="map_image_file" accept="image/*" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-                <p style="margin:0; color: var(--text-muted); font-size: 12px;">Leave blank to keep the existing picture when editing.</p>
+                        <div class="zf-field zf-full">
+                            <label class="zf-label" for="zone_desc_input">Description</label>
+                            <textarea id="zone_desc_input" name="description" class="zf-control" rows="3" placeholder="Briefly describe exhibits, walkways, or safety guidance for this zone..."></textarea>
+                        </div>
 
-                <label style="font-weight:600; color:var(--text-secondary);">360° Panorama URL (optional)</label>
-                <input id="zone_pano_input" type="text" name="panorama_360_url" placeholder="https://..." style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-
-                <div style="display:flex; gap:10px; padding-top:4px;">
-                    <button class="btn btn-primary" type="submit" style="flex:1;"><i class="fa-solid fa-floppy-disk"></i> Save Zone</button>
-                    <button type="button" onclick="switchMzTab('zones')" class="btn" style="flex:1; background:var(--border-light); color:var(--text-muted); border:1px solid var(--border); font-weight:700; border-radius:var(--radius); padding:10px; font-size:13px; cursor:pointer;">
-                        <i class="fa-solid fa-layer-group"></i> View All Zones
-                    </button>
+                        <div class="zf-field zf-full">
+                            <label class="zf-label" for="zone_pano_input">360° Virtual Panorama URL</label>
+                            <input id="zone_pano_input" type="url" name="panorama_360_url" class="zf-control" placeholder="https://my.matterport.com/show/?m=... or hosted panorama link">
+                            <span class="zf-hint">Embed or link to interactive 360° panoramic view</span>
+                        </div>
+                    </div>
                 </div>
-                <p style="color: var(--text-muted); font-size: 12px;">You can insert a link to a hosted 360° view (e.g., a virtual tour page).</p>
-            </form>
-        </div>
+
+                <div class="zf-section">
+                    <div class="zf-section-label">
+                        <i class="fa-solid fa-image"></i> Zone Layout Diagram
+                    </div>
+                    <div class="zf-field zf-full">
+                        <div class="zf-upload-box" id="zoneUploadBox" tabindex="0" role="button" aria-label="Upload zone map">
+                            <input type="file" id="zone_map_img" name="map_image_file" accept="image/png,image/jpeg,image/webp" aria-label="Choose file">
+                            <div class="zf-upload-idle" id="zoneUploadIdle">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <p class="zf-upload-title"><span>Click to upload</span> or drag and drop</p>
+                                <p class="zf-upload-meta">PNG, JPG or WEBP - Max 5 MB</p>
+                            </div>
+                            <div class="zf-upload-preview" id="zoneUploadPreview">
+                                <img class="zf-preview-img" id="zoneImagePreview" src="" alt="Preview">
+                                <div class="zf-preview-info">
+                                    <div class="zf-preview-name" id="zonePreviewName"></div>
+                                    <div class="zf-preview-size" id="zonePreviewSize"></div>
+                                </div>
+                                <button type="button" class="zf-preview-remove" id="zoneRemoveImgBtn" aria-label="Remove image">
+                                    <i class="fa-solid fa-xmark"></i> Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="zf-actions zf-form-footer">
+                <button type="button" class="zf-btn-cancel" onclick="resetZoneForm(); switchMzTab('zones');">
+                    <i class="fa-solid fa-layer-group"></i> View All Zones
+                </button>
+                <button class="zf-btn-save zf-btn-primary" type="submit" id="saveZoneBtn">
+                    <span class="zf-spinner"></span>
+                    <i class="fa-solid fa-floppy-disk zf-save-label"></i>
+                    <span class="zf-save-label" id="saveZoneBtnText">Save Zone</span>
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
 <!-- ===== LANDING PAGE MAP ===== -->
-<div id="mz-tab-landing-map" class="mz-section" style="display:none;">
-    <div class="card-panel">
-        <div class="card-header">
-            <h2>Landing Page Map</h2>
+<div id="mz-tab-landing-map" class="mz-section" style="display:none; max-width: 860px; margin: 0 auto;">
+    <div class="zf-form-card">
+        <div class="zf-form-header">
+            <h2 class="zf-form-title">
+                <i class="fa-solid fa-globe"></i>
+                <span>Public Landing Page Map</span>
+            </h2>
+            <span class="zf-form-badge">Interactive Map</span>
         </div>
-        <div class="card-body">
-            <form method="post" action="{{ url_for('animal_farm_admin.save_landing_map') }}" enctype="multipart/form-data" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <label style="font-weight:600; color:var(--text-secondary);">Map Title</label>
-                    <input type="text" name="landing_map_title" value="{{ landing_map.title }}" placeholder="e.g., Lyger Zoo Visitor Map" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
 
-                    <label style="font-weight:600; color:var(--text-secondary);">Map Description</label>
-                    <textarea name="landing_map_description" rows="3" placeholder="Help visitors plan their route" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;">{{ landing_map.description }}</textarea>
+        <form method="post" action="{{ url_for('animal_farm_admin.save_landing_map') }}" enctype="multipart/form-data">
+            <div class="zf-form-body">
+                <div class="two-col" style="--two-col-template: 1fr 1fr; margin-bottom: 0;">
+                    <div>
+                        <div class="zf-section">
+                            <div class="zf-section-label">
+                                <i class="fa-solid fa-circle-info"></i> Map Overview
+                            </div>
+                            <div class="zf-field">
+                                <label class="zf-label" for="landing_map_title">Map Title</label>
+                                <input type="text" id="landing_map_title" name="landing_map_title" class="zf-control" value="{{ landing_map.title }}" placeholder="e.g., Zootique Visitor Master Map">
+                            </div>
+                            <div class="zf-field" style="margin-top:12px;">
+                                <label class="zf-label" for="landing_map_description">Map Description</label>
+                                <textarea id="landing_map_description" name="landing_map_description" class="zf-control" rows="4" placeholder="Help visitors navigate paths, amenities, dining, and restrooms...">{{ landing_map.description }}</textarea>
+                            </div>
+                        </div>
 
-                    <label style="font-weight:600; color:var(--text-secondary);">Upload Map Image (optional)</label>
-                    <input type="file" name="landing_map_image_file" accept="image/*" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-                    <p style="margin:0; color: var(--text-muted); font-size: 12px;">Leave blank to keep the current map image.</p>
+                        <div class="zf-section" style="margin-top:16px;">
+                            <div class="zf-section-label">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Upload New Map
+                            </div>
+                            <div class="zf-field">
+                                <input type="file" id="landing_map_file" name="landing_map_image_file" accept="image/*" class="zf-control" style="padding:8px;">
+                                <div class="zf-hint" style="margin-top:4px;">Leave blank to preserve current layout.</div>
+                            </div>
+                        </div>
+                    </div>
 
-                    <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-                        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Landing Map</button>
-                        {% if landing_map.updated_at %}
-                            <span style="color: var(--text-muted); font-size: 12px;">Updated {{ landing_map.updated_at.strftime('%Y-%m-%d %H:%M') }}</span>
-                        {% endif %}
+                    <div>
+                        <div class="zf-section">
+                            <div class="zf-section-label">
+                                <i class="fa-solid fa-eye"></i> Current Map Preview
+                            </div>
+                            <div style="background: #f8fafc; border: 1px dashed var(--border); border-radius: 10px; padding: 12px; min-height: 240px; display: flex; align-items: center; justify-content: center;">
+                                {% if landing_map.image_url %}
+                                    <img src="{{ landing_map.image_url }}" alt="{{ landing_map.title or 'Landing map' }}" style="width:100%; max-height: 250px; object-fit: contain; border-radius: 6px;" />
+                                {% else %}
+                                    <div class="zf-empty-state" style="padding: 24px;">
+                                        <i class="fa-solid fa-map-location-dot zf-empty-icon" style="font-size:32px;"></i>
+                                        <div class="zf-empty-title" style="font-size:14px;">No Map Uploaded</div>
+                                        <div class="zf-empty-desc" style="font-size:12px;">Upload an illustrated park map for public guest view.</div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {% if landing_map.updated_at %}
+                                <div style="color: var(--text-muted); font-size: 11px; margin-top: 8px; text-align: right;">
+                                    Last updated: {{ landing_map.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <div style="background: var(--surface-2); border:1px dashed var(--border); border-radius:10px; padding:10px; min-height: 220px;">
-                    {% if landing_map.image_url %}
-                        <img src="{{ landing_map.image_url }}" alt="{{ landing_map.title or 'Landing map preview' }}" style="width:100%; max-height: 260px; object-fit: cover; border-radius: 8px; border:1px solid var(--border);" />
-                    {% else %}
-                        <div style="height:100%; min-height: 180px; display:flex; align-items:center; justify-content:center; color: var(--text-muted);">
-                            No landing page map is set yet.
-                        </div>
-                    {% endif %}
+            <div class="zf-form-footer">
+                <button class="zf-btn-primary" type="submit">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Landing Map
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ===== PIN EDITOR ===== -->
+<div id="mz-tab-pin-editor" class="mz-section" style="display:none; max-width:1100px; margin:0 auto;">
+    <div class="zf-form-card">
+        <div class="zf-form-header">
+            <h2 class="zf-form-title"><i class="fa-solid fa-location-dot"></i> Pin Editor</h2>
+            <span class="zf-form-badge">Landing Map</span>
+        </div>
+        <div class="zf-form-body">
+            {% if landing_map.image_url %}
+                <p style="margin:0 0 14px; color:var(--text-muted);">Select an unplaced zone, then click the map to place its pin. Drag existing pins to adjust them.</p>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px;">
+                    <label for="pinZoneSelect" class="zf-label" style="margin:0;">Zone to place</label>
+                    <select id="pinZoneSelect" class="zf-control" style="max-width:300px;">
+                        <option value="">Choose an unplaced zone</option>
+                        {% for z in zones if z.position_x is none or z.position_y is none %}
+                            <option value="{{ z.id }}">{{ z.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="zf-btn-primary" id="placePinModeBtn"><i class="fa-solid fa-crosshairs"></i> Place on map</button>
                 </div>
-            </form>
+                <div id="pinEditorMap" style="position:relative; width:100%; cursor:crosshair; border:1px solid var(--border); background:#f8fafc; overflow:hidden;">
+                    <img src="{{ landing_map.image_url }}" alt="{{ landing_map.title or 'Landing map' }}" style="display:block; width:100%; height:auto;">
+                    {% for z in zones if z.position_x is not none and z.position_y is not none %}
+                        <button type="button" class="map-editor-pin" data-zone-id="{{ z.id }}" title="{{ z.name }}" style="left:{{ z.position_x }}%; top:{{ z.position_y }}%;">
+                            <i class="fa-solid fa-location-dot"></i><span>{{ z.name }}</span><b aria-label="Remove pin">&times;</b>
+                        </button>
+                    {% endfor %}
+                </div>
+                <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-top:14px; color:var(--text-muted); font-size:12px;">
+                    <span><i class="fa-solid fa-hand-pointer"></i> Click the map to place the selected zone.</span>
+                    <span><i class="fa-solid fa-arrows-up-down-left-right"></i> Drag a pin to reposition it. Click its x to unset it.</span>
+                </div>
+                <form method="post" action="{{ url_for('animal_farm_admin.save_zone_pin_positions') }}" id="pinPositionsForm" style="margin-top:18px; text-align:right;">
+                    <input type="hidden" name="pin_positions" id="pinPositionsInput" value="{}">
+                    <button type="submit" class="zf-btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Pin Positions</button>
+                </form>
+            {% else %}
+                <div class="zf-empty-state" style="padding:48px 24px;">
+                    <i class="fa-solid fa-map-location-dot zf-empty-icon"></i>
+                    <div class="zf-empty-title">Upload a landing map first</div>
+                    <div class="zf-empty-desc">The Pin Editor uses the landing map image exactly as uploaded.</div>
+                    <button type="button" class="zf-btn-primary" style="margin-top:14px;" onclick="switchMzTab('landing-map')"><i class="fa-solid fa-map"></i> Open Landing Map</button>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -86,51 +239,72 @@
 <div id="mz-tab-zones" class="mz-section" style="display:none;">
     <div class="card-panel">
         <div class="card-header">
-            <h2>Zones</h2>
+            <h2><i class="fa-solid fa-layer-group" style="margin-right:8px;"></i> Zone Directory</h2>
+            <div class="card-header-actions">
+                <button class="btn btn-primary btn-sm" type="button" onclick="resetZoneForm(); switchMzTab('add');">
+                    <i class="fa-solid fa-plus"></i> New Zone
+                </button>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="table-wrap">
-                <table>
+        <div class="card-body" style="padding:0;">
+            <div class="zf-table-wrap">
+                <table class="table-striped">
                     <thead>
                         <tr>
-                            <th style="width:70px;">Image</th>
-                            <th>Name</th>
+                            <th style="width:72px; padding-left:16px;">Map</th>
+                            <th>Zone Name</th>
                             <th>Description</th>
-                            <th>360°</th>
-                            <th style="width:160px;">Actions</th>
+                            <th>360° Panorama</th>
+                            <th style="width:130px; text-align:right; padding-right:16px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for z in zones %}
                             <tr>
-                                <td>
+                                <td style="padding-left:16px;">
                                     {% if z.map_image_url %}
-                                        <img src="{{ z.map_image_url }}" alt="" style="width:54px; height:38px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
+                                        <img src="{{ z.map_image_url }}" alt="" style="width:52px; height:38px; object-fit:cover; border-radius:6px; border:1px solid var(--border);" />
                                     {% else %}
-                                        <span style="color: var(--text-muted);">-</span>
+                                        <div style="width:52px; height:38px; background:#f1f5f9; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:14px;">
+                                            <i class="fa-solid fa-map"></i>
+                                        </div>
                                     {% endif %}
                                 </td>
-                                <td>{{ z.name }}</td>
-                                <td>{{ (z.description or '-')|truncate(80) }}</td>
+                                <td style="font-weight:700; color:var(--text);">{{ z.name }}</td>
+                                <td style="color:var(--text-muted); font-size:13px;">{{ (z.description or '-')|truncate(80) }}</td>
                                 <td>
                                     {% if z.panorama_360_url %}
-                                        <a href="{{ z.panorama_360_url }}" target="_blank" class="btn btn-outline btn-sm">Open</a>
+                                        <a href="{{ z.panorama_360_url }}" target="_blank" class="btn btn-outline btn-sm" style="padding:3px 8px; font-size:11px;">
+                                            <i class="fa-solid fa-street-view"></i> 360° View
+                                        </a>
                                     {% else %}
                                         <span style="color: var(--text-muted);">-</span>
                                     {% endif %}
                                 </td>
-                                <td>
-                                    <button class="btn btn-outline btn-sm" type="button"
-                                        onclick='fillZoneForm({{ z.id|tojson }}, {{ z.name|tojson }}, {{ (z.description or "")|tojson }}, {{ (z.panorama_360_url or "")|tojson }})'>
-                                        <i class="fa-solid fa-pen"></i> Edit
-                                    </button>
-                                    <form method="post" action="{{ url_for('animal_farm_admin.delete_zone', zone_id=z.id) }}" style="display:inline;" onsubmit="return confirm('Delete this zone?');">
-                                        <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
-                                    </form>
+                                <td style="text-align:right; padding-right:16px;">
+                                    <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
+                                        <button class="zf-icon-btn" type="button" title="Edit Zone"
+                                            onclick='fillZoneForm({{ z.id|tojson }}, {{ z.name|tojson }}, {{ (z.description or "")|tojson }}, {{ (z.panorama_360_url or "")|tojson }}, {{ (z.map_image_url or "")|tojson }})'>
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                        <form method="post" action="{{ url_for('animal_farm_admin.delete_zone', zone_id=z.id) }}" style="display:inline;" onsubmit="return confirm('Delete this zone?');">
+                                            <button class="zf-icon-btn danger" type="submit" title="Delete Zone">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         {% else %}
-                            <tr><td colspan="5" style="color: var(--text-muted);">No zones yet.</td></tr>
+                            <tr>
+                                <td colspan="5">
+                                    <div class="zf-empty-state">
+                                        <i class="fa-solid fa-map-location-dot zf-empty-icon"></i>
+                                        <div class="zf-empty-title">No Zones Registered</div>
+                                        <div class="zf-empty-desc">Break down your wildlife park into zones (e.g. Carnivore Trail, Reptile House, Safari Plains).</div>
+                                    </div>
+                                </td>
+                            </tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -143,14 +317,202 @@
 
 {% block extra_js %}
 <script>
-// Fill zone form from Zones table Edit button — switches tab client-side, no reload
-function fillZoneForm(id, name, description, panoUrl) {
+const initialPinPositions = {
+{% for z in zones if z.position_x is not none and z.position_y is not none %}
+    "{{ z.id }}": {x: {{ z.position_x }}, y: {{ z.position_y }}},
+{% endfor %}
+};
+const pinEditorMap = document.getElementById('pinEditorMap');
+const pinZoneSelect = document.getElementById('pinZoneSelect');
+const placePinModeBtn = document.getElementById('placePinModeBtn');
+const pinPositionsInput = document.getElementById('pinPositionsInput');
+let pinPlacementEnabled = false;
+
+function pinPositionFromEvent(event) {
+    const bounds = pinEditorMap.getBoundingClientRect();
+    return {
+        x: Math.max(0, Math.min(100, ((event.clientX - bounds.left) / bounds.width) * 100)),
+        y: Math.max(0, Math.min(100, ((event.clientY - bounds.top) / bounds.height) * 100)),
+    };
+}
+
+function renderEditorPin(zoneId) {
+    const position = initialPinPositions[zoneId];
+    const existing = pinEditorMap.querySelector('[data-zone-id="' + zoneId + '"]');
+    if (!position) {
+        if (existing) existing.remove();
+        return;
+    }
+    if (existing) {
+        existing.style.left = position.x + '%';
+        existing.style.top = position.y + '%';
+        return;
+    }
+    const option = pinZoneSelect.querySelector('option[value="' + zoneId + '"]');
+    const pin = document.createElement('button');
+    pin.type = 'button';
+    pin.className = 'map-editor-pin';
+    pin.dataset.zoneId = zoneId;
+    pin.title = option ? option.textContent : 'Zone';
+    pin.style.cssText = 'position:absolute; transform:translate(-50%, -100%); z-index:3; left:' + position.x + '%; top:' + position.y + '%;';
+    pin.innerHTML = '<i class="fa-solid fa-location-dot"></i><span></span><b aria-label="Remove pin">&times;</b>';
+    pin.querySelector('span').textContent = option ? option.textContent : 'Zone';
+    pinEditorMap.appendChild(pin);
+}
+
+function updatePinPosition(zoneId, position) {
+    initialPinPositions[zoneId] = position;
+    renderEditorPin(zoneId);
+}
+
+if (pinEditorMap) {
+    pinEditorMap.addEventListener('click', function(event) {
+        if (event.target.closest('.map-editor-pin')) return;
+        if (!pinPlacementEnabled || !pinZoneSelect.value) return;
+        updatePinPosition(pinZoneSelect.value, pinPositionFromEvent(event));
+        pinPlacementEnabled = false;
+        placePinModeBtn.classList.remove('active');
+    });
+    pinEditorMap.addEventListener('pointerdown', function(event) {
+        const pin = event.target.closest('.map-editor-pin');
+        if (!pin || event.target.closest('b')) return;
+        event.preventDefault();
+        const zoneId = pin.dataset.zoneId;
+        const move = function(moveEvent) {
+            updatePinPosition(zoneId, pinPositionFromEvent(moveEvent));
+        };
+        const stop = function() {
+            document.removeEventListener('pointermove', move);
+            document.removeEventListener('pointerup', stop);
+        };
+        document.addEventListener('pointermove', move);
+        document.addEventListener('pointerup', stop, {once: true});
+    });
+    pinEditorMap.addEventListener('click', function(event) {
+        const removeButton = event.target.closest('.map-editor-pin b');
+        if (!removeButton) return;
+        event.preventDefault();
+        event.stopPropagation();
+        delete initialPinPositions[removeButton.closest('.map-editor-pin').dataset.zoneId];
+        removeButton.closest('.map-editor-pin').remove();
+    });
+}
+if (placePinModeBtn) {
+    placePinModeBtn.addEventListener('click', function() {
+        pinPlacementEnabled = !pinPlacementEnabled;
+        this.classList.toggle('active', pinPlacementEnabled);
+    });
+}
+if (document.getElementById('pinPositionsForm')) {
+    document.getElementById('pinPositionsForm').addEventListener('submit', function() {
+        pinPositionsInput.value = JSON.stringify(initialPinPositions);
+    });
+}
+
+const zoneFileInput = document.getElementById('zone_map_img');
+const zoneUploadBox = document.getElementById('zoneUploadBox');
+const zoneUploadIdle = document.getElementById('zoneUploadIdle');
+const zonePreviewWrap = document.getElementById('zoneUploadPreview');
+const zoneImagePreview = document.getElementById('zoneImagePreview');
+const zonePreviewName = document.getElementById('zonePreviewName');
+const zonePreviewSize = document.getElementById('zonePreviewSize');
+const zoneRemoveBtn = document.getElementById('zoneRemoveImgBtn');
+
+function resetZoneUpload() {
+    if (zoneFileInput) zoneFileInput.value = '';
+    if (zoneImagePreview) zoneImagePreview.src = '';
+    if (zoneUploadIdle) zoneUploadIdle.classList.remove('hidden');
+    if (zonePreviewWrap) zonePreviewWrap.classList.remove('visible');
+}
+
+if (zoneFileInput) {
+    zoneFileInput.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const f = e.target.files[0];
+            zoneImagePreview.src = URL.createObjectURL(f);
+            if (zonePreviewName) zonePreviewName.textContent = f.name;
+            if (zonePreviewSize) zonePreviewSize.textContent = (f.size / (1024 * 1024)).toFixed(2) + ' MB';
+            if (zoneUploadIdle) zoneUploadIdle.classList.add('hidden');
+            if (zonePreviewWrap) zonePreviewWrap.classList.add('visible');
+        } else {
+            resetZoneUpload();
+        }
+    });
+}
+if (zoneRemoveBtn) {
+    zoneRemoveBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        resetZoneUpload();
+    });
+}
+
+function fillZoneForm(id, name, description, panoUrl, mapImg) {
     document.getElementById('zone_id_input').value = id || '';
     document.getElementById('zone_name_input').value = name || '';
     document.getElementById('zone_desc_input').value = description || '';
     document.getElementById('zone_pano_input').value = panoUrl || '';
+
+    const titleEl = document.getElementById('zoneFormTitleText');
+    if (titleEl) titleEl.textContent = 'Edit Zone';
+    const badgeEl = document.getElementById('zoneFormBadge');
+    if (badgeEl) {
+        badgeEl.textContent = 'Edit';
+        badgeEl.classList.add('editing');
+    }
+    const btnText = document.getElementById('saveZoneBtnText');
+    if (btnText) btnText.textContent = 'Update Zone';
+
+    if (mapImg && zoneImagePreview) {
+        zoneImagePreview.src = mapImg;
+        if (zonePreviewName) zonePreviewName.textContent = name ? name + ' Map' : 'Zone Map';
+        if (zoneUploadIdle) zoneUploadIdle.classList.add('hidden');
+        if (zonePreviewWrap) zonePreviewWrap.classList.add('visible');
+    } else {
+        resetZoneUpload();
+    }
+
     if (window.switchMzTab) window.switchMzTab('add');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetZoneForm() {
+    const form = document.getElementById('zoneForm');
+    if (!form) return;
+    form.reset();
+    document.getElementById('zone_id_input').value = '';
+    const titleEl = document.getElementById('zoneFormTitleText');
+    if (titleEl) titleEl.textContent = 'Add Zone';
+    const badgeEl = document.getElementById('zoneFormBadge');
+    if (badgeEl) {
+        badgeEl.textContent = 'Zone';
+        badgeEl.classList.remove('editing');
+    }
+    const btnText = document.getElementById('saveZoneBtnText');
+    if (btnText) btnText.textContent = 'Save Zone';
+    resetZoneUpload();
+}
+
+const zoneForm = document.getElementById('zoneForm');
+if (zoneForm) {
+    zoneForm.addEventListener('submit', function(e) {
+        const nameInput = document.getElementById('zone_name_input');
+        const nameErr = document.getElementById('zone_name_error');
+        if (!nameInput.value.trim()) {
+            e.preventDefault();
+            nameInput.classList.add('is-invalid');
+            if (nameErr) nameErr.style.display = 'block';
+            return;
+        } else {
+            nameInput.classList.remove('is-invalid');
+            if (nameErr) nameErr.style.display = 'none';
+        }
+
+        const btn = document.getElementById('saveZoneBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+        }
+    });
 }
 </script>
 {% endblock %}

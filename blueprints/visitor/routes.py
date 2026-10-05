@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, date, timedelta
+from zoneinfo import ZoneInfo
 import calendar
 from functools import wraps
 import math
@@ -9,7 +10,7 @@ import re
 import secrets
 from urllib.parse import urlparse, unquote
 
-from flask import Blueprint, render_template, abort, request, redirect, url_for, flash, session, jsonify
+from flask import Blueprint, current_app, render_template, abort, request, redirect, url_for, flash, session, jsonify
 from sqlalchemy import func, or_
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
@@ -32,6 +33,14 @@ from services import (
 from services.visitor_notifications import ensure_visitor_notifications
 
 visitor_bp = Blueprint("visitor", __name__)
+
+
+def _site_today() -> date:
+    timezone_name = (str(current_app.config.get("SITE_TIMEZONE", "Asia/Manila")) or "Asia/Manila").strip()
+    try:
+        return datetime.now(ZoneInfo(timezone_name)).date()
+    except Exception:
+        return datetime.now(ZoneInfo("Asia/Manila")).date()
 
 
 def _is_user_active(user: User | None) -> bool:
@@ -372,6 +381,24 @@ def home():
     events = _maybe_filter_by_selected_zoo(Event.query, Event).order_by(Event.id.asc()).all()
 
     selected_zoo_id = _selected_zoo_id()
+    today = _site_today()
+    week_start = today - timedelta(days=today.weekday())
+    week_end = week_start + timedelta(days=6)
+    events_this_week = []
+    for event in events:
+        try:
+            event_day = date.fromisoformat((event.time or "").split()[0])
+        except (TypeError, ValueError):
+            continue
+        if week_start <= event_day <= week_end:
+            events_this_week.append(event)
+    avg_rating = None
+    if selected_zoo_id:
+        avg_rating = db.session.query(func.avg(Feedback.rating)).filter(Feedback.zoo_id == selected_zoo_id).scalar()
+    bookings_today = Booking.query.filter(Booking.zoo_id == selected_zoo_id, Booking.date == today.isoformat()).count() if selected_zoo_id else 0
+    habitat_zone_names = {
+        animal.habitat for animal in Animal.query.filter_by(zoo_id=selected_zoo_id).all() if animal.habitat
+    } if selected_zoo_id else set()
 
     user = _current_user()
     bookings: list[Booking] | list[dict]
@@ -426,6 +453,10 @@ def home():
         bookings=bookings,
         promotions=promotions,
         events=events,
+        events_this_week=events_this_week,
+        avg_rating=round(float(avg_rating), 1) if avg_rating is not None else None,
+        bookings_today=bookings_today,
+        habitat_zone_names=habitat_zone_names,
         landing_map=landing_map,
     )
 
@@ -467,7 +498,7 @@ def list_zoos():
                 "type_slug": type_slug,
                 "location": zoo.location or "Location unavailable",
                 "description": zoo.description or "Discover curated wildlife experiences.",
-                "image_url": zoo.image_url or "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=1200&q=80",
+                "image_url": zoo.image_url or "",
                 "rating": round(float(rating_value), 1),
                 "price": float(min_price or 0),
             }
@@ -488,6 +519,17 @@ def zoo_detail(zoo_id: int):
 @visitor_bp.get("/animals")
 def animals():
     zoo_animals = _maybe_filter_by_selected_zoo(Animal.query, Animal).order_by(Animal.id.asc()).all()
+    selected_zoo_id = _selected_zoo_id()
+    zoo_zones = []
+    if selected_zoo_id:
+        zoo_zones = [
+            zone for zone in ZooZone.query.filter_by(zoo_id=selected_zoo_id).order_by(ZooZone.id.asc()).all()
+            if Animal.query.filter_by(zoo_id=selected_zoo_id, habitat=zone.name).count() > 0
+        ]
+    zone_counts = {
+        zone.name: Animal.query.filter_by(zoo_id=selected_zoo_id, habitat=zone.name).count()
+        for zone in zoo_zones
+    }
     habitat_count = 0
     try:
         habitat_count = len({(getattr(a, "habitat", None) or "").strip() for a in zoo_animals if (getattr(a, "habitat", None) or "").strip()})
@@ -499,6 +541,8 @@ def animals():
         animals=zoo_animals,
         animal_count=(len(zoo_animals) if isinstance(zoo_animals, list) else 0),
         habitat_count=habitat_count,
+        zoo_zones=zoo_zones,
+        zone_counts=zone_counts,
     )
 
 @visitor_bp.get("/animals/<int:animal_id>")
@@ -731,7 +775,7 @@ def visitor_availability():
         booked_by_slot[(parsed_d, t_str)] = booked_by_slot.get((parsed_d, t_str), 0) + pax
 
     _, num_days = calendar.monthrange(year, month)
-    today = date.today()
+    today = _site_today()
     max_advance_date = today + timedelta(days=90)
 
     days: dict[str, dict] = {}
@@ -976,32 +1020,17 @@ def promotions():
     promos = query.order_by(Promotion.id.asc()).all()
 
     ending_soon_count = 0
-    try:
-        from datetime import date
-
-        today = date.today()
-        for promo in promos:
-            valid_until = None
-            if isinstance(promo, dict):
-                valid_until = (promo.get("valid_until") or "").strip() or None
-            else:
-                valid_until = (getattr(promo, "valid_until", None) or "").strip() or None
-
-            if not valid_until:
-                continue
-
-            # Expecting ISO date strings (YYYY-MM-DD). If not parseable, ignore.
-            try:
-                y, m, d = valid_until.split("-", 2)
-                until_date = date(int(y), int(m), int(d))
-            except Exception:
-                continue
-
-            days_left = (until_date - today).days
-            if 0 <= days_left <= 7:
-                ending_soon_count += 1
-    except Exception:
-        ending_soon_count = 0
+    today = date.today()
+    for promo in promos:
+        valid_until = (getattr(promo, "valid_until", None) or "").strip()
+        try:
+            days_left = (date.fromisoformat(valid_until) - today).days if valid_until else None
+        except ValueError:
+            days_left = None
+        promo.is_expired = days_left is not None and days_left < 0
+        promo.days_left = days_left
+        if days_left is not None and 0 <= days_left <= 7:
+            ending_soon_count += 1
 
     return render_template(
         "visitor/promotions.html",
@@ -1017,12 +1046,13 @@ def promotion_detail(promotion_id: int):
         abort(404)
 
     valid_until = (promotion.valid_until or "").strip()
-    expired = False
+    days_left = None
     if valid_until:
         try:
-            expired = date.fromisoformat(valid_until) < date.today()
+            days_left = (date.fromisoformat(valid_until) - _site_today()).days
         except ValueError:
             pass
+    expired = days_left is not None and days_left < 0
 
     promotion_url = url_for("visitor.promotion_detail", promotion_id=promotion.id, _external=True)
     image_url = (promotion.image_url or "").strip()
@@ -1040,6 +1070,8 @@ def promotion_detail(promotion_id: int):
         "share_description": share_description,
         "zoo_detail_url": url_for("visitor.zoo_detail", zoo_id=promotion.zoo_id, _external=True),
         "unavailable": expired,
+        "is_expired": expired,
+        "days_left": days_left,
     }
     return render_template("visitor/promotion_detail.html", **context), 410 if expired else 200
 

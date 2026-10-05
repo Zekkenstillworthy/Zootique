@@ -471,7 +471,8 @@
       <img class="zoo-card-img"
            src="{{ zoo.image_url }}"
            alt="{{ zoo.name }}"
-           loading="lazy">
+           loading="lazy"
+           onerror="this.onerror=null;this.style.display='none';">
       <div class="zoo-card-body">
         <div class="zoo-card-top">
           <span class="type-badge badge-{{ zoo.type_slug }}">

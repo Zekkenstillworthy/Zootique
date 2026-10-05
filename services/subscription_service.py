@@ -100,3 +100,88 @@ def change_zoo_subscription_plan(*, subscription: ZooSubscription, new_plan: Sub
 
     db.session.commit()
     return subscription, payment
+
+
+def subscribe_zoo_to_plan(
+    *,
+    zoo_id: int,
+    plan: SubscriptionPlan,
+    auto_approve: bool = False,
+) -> ZooSubscription:
+    """Create a new subscription request from a Zoo Admin.
+
+    If *auto_approve* is True the subscription is immediately set to 'active'
+    and a payment record is created (useful for demo environments).
+    Otherwise the subscription is created with status='pending' and awaits
+    Super Admin approval via ``approve_pending_subscription()``.
+    """
+    if not plan or not plan.is_active:
+        raise SubscriptionValidationError("Selected plan is not active.")
+
+    now = datetime.utcnow()
+    duration_months = max(int(plan.duration_months or 1), 1)
+    end_date = now + _months_to_duration(duration_months)
+
+    # Cancel any existing pending subscription for this zoo to avoid duplicates
+    existing_pending = (
+        ZooSubscription.query
+        .filter_by(zoo_id=zoo_id, status="pending")
+        .first()
+    )
+    if existing_pending:
+        db.session.delete(existing_pending)
+        db.session.flush()
+
+    subscription = ZooSubscription(
+        zoo_id=zoo_id,
+        plan_id=plan.id,
+        start_date=now,
+        end_date=end_date,
+        status="active" if auto_approve else "pending",
+    )
+    db.session.add(subscription)
+    db.session.flush()  # get the id before creating payment
+
+    if auto_approve:
+        payment = SubscriptionPayment(
+            subscription_id=subscription.id,
+            amount=float(plan.price),
+            paid_at=now,
+            period_start=now,
+            period_end=end_date,
+            reference=_new_subscription_reference("SELF", subscription.id),
+            status="paid",
+        )
+        db.session.add(payment)
+
+    db.session.commit()
+    return subscription
+
+
+def approve_pending_subscription(*, subscription: ZooSubscription) -> tuple[ZooSubscription, SubscriptionPayment]:
+    """Super Admin approves a pending self-subscription request."""
+    if not subscription:
+        raise SubscriptionValidationError("Subscription not found.")
+    if subscription.status != "pending":
+        raise SubscriptionValidationError("Subscription is not pending approval.")
+
+    now = datetime.utcnow()
+    subscription.status = "active"
+    subscription.start_date = now
+    subscription.end_date = now + _months_to_duration(
+        max(int(subscription.plan.duration_months or 1), 1)
+    )
+
+    payment = SubscriptionPayment(
+        subscription_id=subscription.id,
+        amount=float(subscription.plan.price),
+        paid_at=now,
+        period_start=subscription.start_date,
+        period_end=subscription.end_date,
+        reference=_new_subscription_reference("APPR", subscription.id),
+        status="paid",
+    )
+    db.session.add(payment)
+    db.session.commit()
+    return subscription, payment
+

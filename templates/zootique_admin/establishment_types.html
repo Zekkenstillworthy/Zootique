@@ -1,133 +1,149 @@
 {% extends "base.html" %}
 
-{% block title %}Establishment Types | Zootique Admin{% endblock %}
+{% block title %}Establishment Types | Super Admin{% endblock %}
 {% block page_title %}Establishment Types{% endblock %}
 
 {% block content %}
 <div style="display:flex; flex-direction:column; gap:20px;">
 
     <!-- Top Action Bar -->
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-        <div>
-            <h1 style="font-size:22px; font-weight:800; color:var(--text-main); margin:0 0 4px 0;">Establishment Types</h1>
-            <p style="font-size:13px; color:var(--text-muted); margin:0;">Define and manage establishment categories selectable by Zoo Admins during registration.</p>
+    <div class="zf-page-header" style="margin-bottom:0;">
+        <div class="zf-page-title-group">
+            <h2 class="zf-page-title">Establishment Categories</h2>
+            <p class="zf-page-subtitle">Define and manage establishment classifications available to administrators upon facility onboarding.</p>
         </div>
-        <button type="button" class="btn btn-primary" onclick="openTypeModal()" style="display:inline-flex; align-items:center; gap:8px;">
-            <i class="fa-solid fa-plus-circle"></i> Add Establishment Type
+        <button type="button" class="btn btn-primary" onclick="openTypeModal()">
+            <i class="fa-solid fa-plus"></i> Add Establishment Type
         </button>
     </div>
 
     <!-- Main Table Card -->
     <div class="card-panel">
-        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-            <h2><i class="fa-solid fa-layer-group" style="margin-right:8px; opacity:0.8;"></i>AVAILABLE TYPES ({{ establishment_types|length }})</h2>
+        <div class="card-header">
+            <h2><i class="fa-solid fa-layer-group" style="margin-right:8px;"></i> Available Establishment Classifications</h2>
+            <div class="card-header-actions">
+                <span class="badge badge-role">{{ establishment_types|length }} Types Active</span>
+            </div>
         </div>
         <div class="card-body" style="padding:0;">
-            <table class="data-table" style="width:100%; border-collapse:collapse;">
-                <thead>
-                    <tr style="background:var(--border-light); text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">
-                        <th style="padding:12px 16px;">Type Name</th>
-                        <th style="padding:12px 16px;">Description</th>
-                        <th style="padding:12px 16px;">Status</th>
-                        <th style="padding:12px 16px;">Created</th>
-                        <th style="padding:12px 16px; text-align:right;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for et in establishment_types %}
-                    <tr style="border-bottom:1px solid var(--border-light); font-size:13px;">
-                        <td style="padding:14px 16px; font-weight:700; color:var(--text-main);">
-                            <i class="fa-solid fa-tag" style="margin-right:8px; color:var(--primary); opacity:0.7;"></i>
-                            {{ et.name }}
-                        </td>
-                        <td style="padding:14px 16px; color:var(--text-muted); max-width:320px;">
-                            {{ et.description or '—' }}
-                        </td>
-                        <td style="padding:14px 16px;">
-                            {% if et.is_active %}
-                            <span class="badge badge-success" style="background:#e6f4ea; color:#137333; padding:4px 10px; border-radius:9999px; font-size:11px; font-weight:800; text-transform:uppercase;">Active</span>
-                            {% else %}
-                            <span class="badge badge-warning" style="background:#fef3c7; color:#92400e; padding:4px 10px; border-radius:9999px; font-size:11px; font-weight:800; text-transform:uppercase;">Inactive</span>
-                            {% endif %}
-                        </td>
-                        <td style="padding:14px 16px; color:var(--text-muted); font-size:12px;">
-                            {{ et.created_at.strftime('%b %d, %Y') if et.created_at else '—' }}
-                        </td>
-                        <td style="padding:14px 16px; text-align:right;">
-                            <div style="display:inline-flex; align-items:center; gap:6px;">
-                                <button type="button" class="btn" style="background:var(--border-light); color:var(--text-main); padding:6px 12px; font-size:12px; border-radius:6px; font-weight:700; border:1px solid var(--border);"
-                                        data-et-id="{{ et.id }}"
-                                        data-et-name="{{ et.name }}"
-                                        data-et-description="{{ et.description or '' }}"
-                                        data-et-active="{{ '1' if et.is_active else '0' }}"
-                                        onclick="editTypeModal(this)">
-                                    <i class="fa-solid fa-pen"></i> Edit
-                                </button>
-
-                                <form method="post" action="{{ url_for('zootique_admin.toggle_establishment_type_status', type_id=et.id) }}" style="margin:0;">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="btn" style="background:transparent; color:var(--text-muted); padding:6px 10px; font-size:12px; border-radius:6px; font-weight:700; border:1px solid var(--border);">
-                                        {% if et.is_active %}
-                                        <i class="fa-solid fa-eye-slash" title="Deactivate"></i>
-                                        {% else %}
-                                        <i class="fa-solid fa-eye" title="Activate"></i>
-                                        {% endif %}
+            <div class="zf-table-wrap">
+                <table class="table-striped">
+                    <thead>
+                        <tr>
+                            <th style="padding-left:16px;">Type Classification</th>
+                            <th>Description</th>
+                            <th>Registration Status</th>
+                            <th>Date Created</th>
+                            <th style="width:140px; text-align:right; padding-right:16px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for et in establishment_types %}
+                        <tr>
+                            <td style="padding-left:16px; font-weight:700; color:var(--text);">
+                                <i class="fa-solid fa-tag" style="margin-right:8px; color:var(--primary); opacity:0.8;"></i>
+                                {{ et.name }}
+                            </td>
+                            <td style="color:var(--text-muted); font-size:13px; max-width:320px;">
+                                {{ et.description or '—' }}
+                            </td>
+                            <td>
+                                {% if et.is_active %}
+                                <span class="badge badge-active">Active</span>
+                                {% else %}
+                                <span class="badge badge-suspended">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td style="color:var(--text-muted); font-size:12px;">
+                                {{ et.created_at.strftime('%b %d, %Y') if et.created_at else '—' }}
+                            </td>
+                            <td style="text-align:right; padding-right:16px;">
+                                <div style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">
+                                    <button type="button" class="zf-icon-btn"
+                                            data-et-id="{{ et.id }}"
+                                            data-et-name="{{ et.name }}"
+                                            data-et-description="{{ et.description or '' }}"
+                                            data-et-active="{{ '1' if et.is_active else '0' }}"
+                                            onclick="editTypeModal(this)" title="Edit Classification">
+                                        <i class="fa-solid fa-pen"></i>
                                     </button>
-                                </form>
 
-                                <form method="post" action="{{ url_for('zootique_admin.delete_establishment_type', type_id=et.id) }}" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete establishment type {{ et.name }}?');">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="btn" style="background:#fee2e2; color:#ef4444; padding:6px 10px; font-size:12px; border-radius:6px; font-weight:700; border:1px solid #fca5a5;">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="5" style="padding:32px; text-align:center; color:var(--text-muted); font-weight:600;">
-                            No establishment types found. Click "Add Establishment Type" to create one.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                                    <form method="post" action="{{ url_for('zootique_admin.toggle_establishment_type_status', type_id=et.id) }}" style="display:inline; margin:0;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="zf-icon-btn" title="{% if et.is_active %}Deactivate for registration{% else %}Activate for registration{% endif %}">
+                                            {% if et.is_active %}
+                                            <i class="fa-solid fa-eye-slash" style="color:#d97706;"></i>
+                                            {% else %}
+                                            <i class="fa-solid fa-eye" style="color:#16a34a;"></i>
+                                            {% endif %}
+                                        </button>
+                                    </form>
+
+                                    <form method="post" action="{{ url_for('zootique_admin.delete_establishment_type', type_id=et.id) }}" style="display:inline; margin:0;" onsubmit="return confirm('Delete establishment type {{ et.name }}?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="zf-icon-btn danger" title="Delete Type">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5">
+                                <div class="zf-empty-state">
+                                    <i class="fa-solid fa-layer-group zf-empty-icon"></i>
+                                    <div class="zf-empty-title">No Categories Found</div>
+                                    <div class="zf-empty-desc">Create categories (e.g. Wildlife Park, Aviary, Marine Aquarium) to classify onboarded establishments.</div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- ================= Modal: Add/Edit Establishment Type ================= -->
-<div id="typeModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.5); backdrop-filter:blur(3px); align-items:center; justify-content:center; padding:16px;">
-    <div style="background:white; width:100%; max-width:480px; border-radius:12px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); overflow:hidden;">
-        <div style="padding:18px 24px; background:var(--primary); color:white; display:flex; justify-content:space-between; align-items:center;">
-            <h3 id="modalTitle" style="margin:0; font-size:16px; font-weight:800;"><i class="fa-solid fa-layer-group" style="margin-right:8px;"></i>Add Establishment Type</h3>
-            <button type="button" onclick="closeTypeModal()" style="background:none; border:none; color:white; font-size:18px; cursor:pointer; opacity:0.8;"><i class="fa-solid fa-xmark"></i></button>
+<div id="typeModal" class="zf-modal-backdrop" role="dialog" aria-modal="true" onclick="if(event.target===this) closeTypeModal()">
+    <div class="zf-modal-dialog" style="max-width:500px;">
+        <div class="zf-modal-header">
+            <h3 class="zf-modal-title" id="modalTitle">
+                <i class="fa-solid fa-layer-group" style="margin-right:8px;"></i>
+                <span>Add Establishment Type</span>
+            </h3>
+            <button type="button" class="zf-modal-close" onclick="closeTypeModal()" title="Close">&times;</button>
         </div>
-        <form method="post" action="{{ url_for('zootique_admin.save_establishment_type') }}" style="padding:24px; display:flex; flex-direction:column; gap:16px;">
+        <form method="post" action="{{ url_for('zootique_admin.save_establishment_type') }}" style="display:flex; flex-direction:column; margin:0;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="type_id" id="modal_type_id" value="">
 
-            <div>
-                <label style="display:block; font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Type Name <span style="color:var(--danger);">*</span></label>
-                <input type="text" name="name" id="modal_name" placeholder="e.g. Aquarium, Safari Park, Bird Sanctuary" required style="width:100%; border:1px solid var(--border); border-radius:6px; padding:10px 12px; font-size:14px;">
+            <div class="zf-modal-body">
+                <div class="zf-field">
+                    <label class="zf-label" for="modal_name">Classification Name <span class="zf-req">*</span></label>
+                    <input type="text" name="name" id="modal_name" class="zf-control" placeholder="e.g. Marine Aquarium, Safari Park, Wildlife Reserve" required>
+                </div>
+
+                <div class="zf-field" style="margin-top:14px;">
+                    <label class="zf-label" for="modal_description">Description</label>
+                    <textarea name="description" id="modal_description" rows="3" class="zf-control" placeholder="Brief scope and criteria for this category..."></textarea>
+                </div>
+
+                <div class="zf-field" style="margin-top:14px;">
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; font-weight:600; color:var(--text);">
+                        <input type="checkbox" name="is_active" id="modal_is_active" value="1" checked style="width:16px; height:16px; accent-color:var(--primary);">
+                        Visible in public onboarding registration
+                    </label>
+                </div>
             </div>
 
-            <div>
-                <label style="display:block; font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Description</label>
-                <textarea name="description" id="modal_description" rows="3" placeholder="Brief description of this establishment category..." style="width:100%; border:1px solid var(--border); border-radius:6px; padding:10px 12px; font-size:13px; font-family:inherit; resize:vertical;"></textarea>
-            </div>
-
-            <div>
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; font-weight:700; color:var(--text-main);">
-                    <input type="checkbox" name="is_active" id="modal_is_active" value="1" checked style="width:16px; height:16px; accent-color:var(--primary);">
-                    Active for registration selection
-                </label>
-            </div>
-
-            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px; padding-top:16px; border-top:1px solid var(--border-light);">
-                <button type="button" class="btn" onclick="closeTypeModal()" style="background:var(--border-light); color:var(--text-muted); padding:10px 16px; border-radius:6px; font-weight:700; border:1px solid var(--border);">Cancel</button>
-                <button type="submit" class="btn btn-primary" style="padding:10px 20px; border-radius:6px; font-weight:800;"><i class="fa-solid fa-floppy-disk"></i> Save Type</button>
+            <div class="zf-modal-footer">
+                <button type="button" class="zf-btn-cancel" onclick="closeTypeModal()">Cancel</button>
+                <button type="submit" class="zf-btn-primary">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Classification
+                </button>
             </div>
         </form>
     </div>
@@ -135,25 +151,28 @@
 
 <script>
 window.openTypeModal = function() {
-    document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-layer-group" style="margin-right:8px;"></i>Add Establishment Type';
+    document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-layer-group" style="margin-right:8px;"></i><span>Add Establishment Type</span>';
     document.getElementById('modal_type_id').value = '';
     document.getElementById('modal_name').value = '';
     document.getElementById('modal_description').value = '';
     document.getElementById('modal_is_active').checked = true;
-    document.getElementById('typeModal').style.display = 'flex';
+    document.getElementById('typeModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
 };
 
 window.editTypeModal = function(btn) {
-    document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-pen" style="margin-right:8px;"></i>Edit Establishment Type';
+    document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-pen" style="margin-right:8px;"></i><span>Edit Establishment Type</span>';
     document.getElementById('modal_type_id').value = btn.getAttribute('data-et-id');
     document.getElementById('modal_name').value = btn.getAttribute('data-et-name');
     document.getElementById('modal_description').value = btn.getAttribute('data-et-description');
     document.getElementById('modal_is_active').checked = (btn.getAttribute('data-et-active') === '1');
-    document.getElementById('typeModal').style.display = 'flex';
+    document.getElementById('typeModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
 };
 
 window.closeTypeModal = function() {
-    document.getElementById('typeModal').style.display = 'none';
+    document.getElementById('typeModal').classList.remove('open');
+    document.body.style.overflow = '';
 };
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeTypeModal();

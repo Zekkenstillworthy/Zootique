@@ -11,6 +11,14 @@ from .subscription_service import (
     renew_zoo_subscription,
     cancel_zoo_subscription,
     change_zoo_subscription_plan,
+    subscribe_zoo_to_plan,
+    approve_pending_subscription,
+)
+from .subscription_guard import (
+    get_zoo_active_subscription,
+    get_zoo_subscription_tier,
+    paywall_redirect,
+    FEATURE_TIERS,
 )
 from .feedback_service import (
     FeedbackServiceError,
@@ -34,6 +42,12 @@ __all__ = [
     "renew_zoo_subscription",
     "cancel_zoo_subscription",
     "change_zoo_subscription_plan",
+    "subscribe_zoo_to_plan",
+    "approve_pending_subscription",
+    "get_zoo_active_subscription",
+    "get_zoo_subscription_tier",
+    "paywall_redirect",
+    "FEATURE_TIERS",
     "FeedbackServiceError",
     "FeedbackValidationError",
     "FeedbackAuthorizationError",

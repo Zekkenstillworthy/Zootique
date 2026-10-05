@@ -716,17 +716,14 @@
       </p>
       <div class="hero-meta">
         <div class="hero-meta-item">
-          <i class="fa-regular fa-circle-check" style="color:#86efac;"></i>
-          Open Today&nbsp;<span style="opacity:.85">{{ zoo.location or '' }}</span>
+          <i class="fa-solid fa-location-dot" style="color:#86efac;"></i>
+          <span style="opacity:.85">{{ zoo.location or '' }}</span>
         </div>
-        <div class="hero-meta-item">
-          <i class="fa-solid fa-sun" style="color:#fde68a;"></i>
-          28°C
+        {% if bookings_today %}<div class="hero-meta-item">
+          <i class="fa-solid fa-ticket" style="color:#6ee7b7;"></i>
+          {{ bookings_today }} booking{{ '' if bookings_today == 1 else 's' }} today
         </div>
-        <div class="hero-meta-item">
-          <i class="fa-solid fa-person-walking" style="color:#6ee7b7;"></i>
-          {{ bookings|length }} visitors today
-        </div>
+        {% endif %}
       </div>
       <div class="hero-actions">
         <a href="{{ url_for('visitor.services') }}" class="btn-hero-primary">
@@ -758,12 +755,13 @@
   </div>
   <div class="stat-item">
     <i class="fa-solid fa-star"></i>
-    <div class="stat-val">4.8</div>
+    {% if avg_rating is not none %}<div class="stat-val">{{ avg_rating }}</div>
     <div class="stat-lbl">Visitor Rating</div>
+    {% endif %}
   </div>
   <div class="stat-item">
     <i class="fa-regular fa-calendar"></i>
-    <div class="stat-val">{{ events|length }}</div>
+    <div class="stat-val">{{ events_this_week|length }}</div>
     <div class="stat-lbl">Events This Week</div>
   </div>
 </div>
@@ -802,7 +800,7 @@
 <div class="page-section" style="padding-top:28px;">
   <div class="section-header"><div class="section-title"><i class="fa-solid fa-layer-group"></i> Zoo Zones</div></div>
   <div class="promo-grid">
-    {% for zone in zoo.zones %}
+    {% for zone in zoo.zones if zone.name in habitat_zone_names %}
       <div class="promo-card dark-green">
         <div class="promo-title">{{ zone.name }}</div>
         <div class="promo-name">{{ zone.description or 'Explore this zoo zone.' }}</div>
@@ -879,9 +877,9 @@
       {% for booking in bookings[:2] %}
       <div class="booking-card">
            <img class="booking-img"
-             src="{{ booking.image_url or url_for('static', filename='img/dashboard_elephant.png') }}"
+             src="{{ booking.image_url or '' }}"
              alt="{{ booking.service_name }}"
-             onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/dashboard_elephant.png') }}';">
+             onerror="this.onerror=null;this.style.display='none';">
         <div class="booking-body">
           <div class="booking-name">{{ booking.service_name }}</div>
           <div class="booking-meta">
@@ -926,7 +924,7 @@
     {% for svc in services[:4] %}
     <div class="exp-card">
       <div class="exp-img-wrap">
-        <img class="exp-img" src="{{ svc.image_url if svc.image_url and not svc.image_url.startswith('https://images.unsplash.com/') else url_for('static', filename='img/dashboard_elephant.png') }}" alt="{{ svc.name }}" loading="lazy" onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/dashboard_elephant.png') }}';">
+        {% if svc.image_url %}<img class="exp-img" src="{{ svc.image_url }}" alt="{{ svc.name }}" loading="lazy" onerror="this.onerror=null;this.style.display='none';">{% else %}<div class="exp-img" aria-label="Image unavailable"></div>{% endif %}
         <div class="exp-category">Experience</div>
         <button class="exp-heart" title="Wishlist">
           <i class="fa-regular fa-heart"></i>

@@ -1,0 +1,348 @@
+
+Manila Zoo (manila-zoo)
+  zones: Entrance Plaza [facility], Savannah Wetlands Habitat [habitat], Learning Pavilion [facility]
+  animals: Leo (Lion -> Savannah Wetlands Habitat), Mina (Giraffe -> Savannah Wetlands Habitat), Bubbles (Hippopotamus -> Savannah Wetlands Habitat), Kiko (Zebra -> Savannah Wetlands Habitat), Amara (Crocodile -> Savannah Wetlands Habitat), Sinta (Philippine eagle -> Savannah Wetlands Habitat)
+  services: General Admission, Guided Safari Tour, Animal Feeding Experience, Keeper Talk
+  events: Savannah Feeding Show (Savannah Wetlands Habitat, +14d), Keeper Conservation Talk (Learning Pavilion, +21d)
+
+Lyger Zoo (lyger-zoo)
+  zones: Entrance Plaza [facility], Grassland Habitat [habitat], Learning Pavilion [facility]
+  animals: Kibo (Elephant -> Grassland Habitat), Naya (Giraffe -> Grassland Habitat), Rafi (Zebra -> Grassland Habitat), Tala (Lion -> Grassland Habitat), Mako (Crocodile -> Grassland Habitat), Luna (Owl -> Grassland Habitat)
+  services: General Admission, Wildlife Tram Tour, Elephant Care Talk, Family Discovery Walk
+  events: Grassland Feeding Hour (Grassland Habitat, +14d), Wildlife Keeper Talk (Learning Pavilion, +21d)
+
+Burol Zoo (burol-zoo)
+  zones: Entrance Plaza [facility], River Wetlands [habitat], Learning Pavilion [facility]
+  animals: Clover (Goat -> River Wetlands), Datu (Crocodile -> River Wetlands), Pia (Capybara -> River Wetlands), Liko (Macaw -> River Wetlands), Nami (Otter -> River Wetlands), Berto (Tortoise -> River Wetlands)
+  services: General Admission, Wetlands Walk, Junior Keeper Hour, School Nature Trail
+  events: Wetlands Feeding (River Wetlands, +14d), Junior Keeper Talk (Learning Pavilion, +21d)
+
+Graco Farms (graco-farms)
+  zones: Entrance Plaza [facility], Farm Pasture [habitat], Learning Pavilion [facility]
+  animals: Bessie (Cow -> Farm Pasture), Tomas (Carabao -> Farm Pasture), Poppy (Goat -> Farm Pasture), Mila (Sheep -> Farm Pasture), Nico (Chicken -> Farm Pasture), Daisy (Rabbit -> Farm Pasture)
+  services: Farm Learning Tour, Animal Feeding Round, Garden Workshop, Harvest Picnic Pass
+  events: Pasture Feeding Round (Farm Pasture, +14d), Farmer Skills Talk (Learning Pavilion, +21d)
+
+Hiraya Farms (hiraya-farms)
+  zones: Entrance Plaza [facility], Petting Pasture [habitat], Learning Pavilion [facility]
+  animals: Coco (Goat -> Petting Pasture), Lala (Horse -> Petting Pasture), Mango (Carabao -> Petting Pasture), Pip (Rabbit -> Petting Pasture), Sage (Chicken -> Petting Pasture), Momo (Sheep -> Petting Pasture)
+  services: Petting Yard Pass, Hillside Farm Tour, Carabao Care Session, Family Garden Class
+  events: Petting Pasture Feeding (Petting Pasture, +14d), Farm Stewardship Talk (Learning Pavilion, +21d)
+
+Coral Triangle Marine Discovery Center (coral-triangle)
+  zones: Entrance Plaza [facility], Coral Reef Habitat [habitat], Learning Pavilion [facility]
+  animals: Milo (Clownfish -> Coral Reef Habitat), Luna (Green sea turtle -> Coral Reef Habitat), Coral (Seahorse -> Coral Reef Habitat), Azure (Blue tang -> Coral Reef Habitat), Tide (Stingray -> Coral Reef Habitat), Bituin (Whale shark -> Coral Reef Habitat)
+  services: Reef Guided Walk, Behind the Reef Session, Sea Turtle Recovery Talk, Sunset Aquarium Visit
+  events: Reef Feeding Demonstration (Coral Reef Habitat, +14d), Blue Planet Talk (Learning Pavilion, +21d)
+
+Palawan Wildlife Rescue Sanctuary (palawan-rescue)
+  zones: Entrance Plaza [facility], Rainforest Canopy [habitat], Learning Pavilion [facility]
+  animals: Amihan (Philippine eagle -> Rainforest Canopy), Kaya (Bearcat -> Rainforest Canopy), Lakan (Philippine crocodile -> Rainforest Canopy), Sinta (Owl -> Rainforest Canopy), Tala (Hornbill -> Rainforest Canopy), Bughaw (Flying fox -> Rainforest Canopy)
+  services: Rescue Forest Walk, Raptor Care Briefing, Wetland Conservation Tour, Keeper for a Morning
+  events: Wetland Feeding Session (Rainforest Canopy, +14d), Rescue Keeper Talk (Learning Pavilion, +21d)
+
+Taal Countryside Animal Farm (taal-countryside)
+  zones: Entrance Plaza [facility], Countryside Pasture [habitat], Learning Pavilion [facility]
+  animals: Pipin (Goat -> Countryside Pasture), Dahlia (Horse -> Countryside Pasture), Mabini (Carabao -> Countryside Pasture), Tala (Rabbit -> Countryside Pasture), Basil (Chicken -> Countryside Pasture), Honey (Sheep -> Countryside Pasture)
+  services: Morning Farm Rounds, Carabao Care Experience, Garden-to-Table Workshop, Young Farmers Trail
+  events: Pasture Feeding Show (Countryside Pasture, +14d), Heritage Farm Talk (Learning Pavilion, +21d)
+
+Davao Highlands Wildlife Park (davao-highlands)
+  zones: Entrance Plaza [facility], Highland Grassland [habitat], Learning Pavilion [facility]
+  animals: Kibo (Asian elephant -> Highland Grassland), Sari (Malayan tiger -> Highland Grassland), Mara (Giraffe -> Highland Grassland), Jengo (Lion -> Highland Grassland), Nala (Red panda -> Highland Grassland), Bongo (Zebra -> Highland Grassland)
+  services: Highlands Wildlife Tour, Elephant Keeper Talk, Twilight Predator Walk, Wildlife Portrait Session
+  events: Highland Feeding Hour (Highland Grassland, +14d), Mindanao Conservation Talk (Learning Pavilion, +21d)
+
+Northern Plains Safari Reserve (northern-plains)
+  zones: Entrance Plaza [facility], Open Savanna [habitat], Learning Pavilion [facility]
+  animals: Zuri (Giraffe -> Open Savanna), Kito (Zebra -> Open Savanna), Oko (Rhinoceros -> Open Savanna), Ayo (Ostrich -> Open Savanna), Jabari (Lion -> Open Savanna), Mosi (Wildebeest -> Open Savanna)
+  services: Open Range Safari Drive, Giraffe Browse Encounter, Grassland Keeper Briefing, Sunrise Wildlife Drive
+  events: Savanna Feeding Demonstration (Open Savanna, +14d), Reserve Stewardship Talk (Learning Pavilion, +21d)
+DRY RUN: no database writes
+zoos                     Manila Zoo                                 create= 0 update= 1 delete= 0
+zoo_zones                Manila Zoo                                 create= 1 update= 0 delete= 1
+  DELETE 3:Savannah Zone
+animals                  Manila Zoo                                 create= 3 update= 0 delete= 0
+services                 Manila Zoo                                 create= 1 update= 0 delete= 0
+events                   Manila Zoo                                 create= 2 update= 0 delete= 2
+  DELETE 6:Animal Feeding Time
+  DELETE 7:Keeper Talk
+promotions               Manila Zoo                                 create= 5 update= 0 delete= 2
+  DELETE 6:Season Pass Promo
+  DELETE 7:Family Bundle
+bookings                 Manila Zoo                                 create=10 update= 0 delete= 3
+  DELETE BK-1005:Visitor One
+  DELETE BK-1006:Visitor Two
+  DELETE BK-1007:Visitor One
+feedbacks                Manila Zoo                                 create= 3 update= 0 delete= 4
+  DELETE 3:Elena Torres
+  DELETE 4:Ricardo Gomez
+  DELETE 5:Alyssa Reyes
+  DELETE 6:Martin Santos
+staff_tasks              Manila Zoo                                 create= 3 update= 0 delete= 3
+  DELETE 2:Morning enclosure check
+  DELETE 3:Prepare feeding supplies
+  DELETE 4:Close-of-day log
+registrations            Manila Zoo                                 create= 0 update= 0 delete= 0
+subscriptions            Manila Zoo                                 create= 0 update= 0 delete= 0
+zoos                     Lyger Zoo                                  create= 0 update= 1 delete= 0
+zoo_zones                Lyger Zoo                                  create= 1 update= 0 delete= 1
+  DELETE 6:Savannah Zone
+animals                  Lyger Zoo                                  create= 5 update= 0 delete= 2
+  DELETE 5:Leo
+  DELETE 6:Mina
+services                 Lyger Zoo                                  create= 3 update= 0 delete= 2
+  DELETE 4:Guided Safari Tour
+  DELETE 5:Lion Feeding Experience
+events                   Lyger Zoo                                  create= 2 update= 0 delete= 2
+  DELETE 8:Animal Feeding Time
+  DELETE 9:Keeper Talk
+promotions               Lyger Zoo                                  create= 5 update= 0 delete= 2
+  DELETE 8:Season Pass Promo
+  DELETE 9:Family Bundle
+bookings                 Lyger Zoo                                  create=10 update= 0 delete= 1
+  DELETE BK-1004:Royce
+feedbacks                Lyger Zoo                                  create= 3 update= 0 delete= 4
+  DELETE 7:Elena Torres
+  DELETE 8:Ricardo Gomez
+  DELETE 9:Alyssa Reyes
+  DELETE 10:Martin Santos
+staff_tasks              Lyger Zoo                                  create= 3 update= 0 delete= 3
+  DELETE 5:Morning enclosure check
+  DELETE 6:Prepare feeding supplies
+  DELETE 7:Close-of-day log
+registrations            Lyger Zoo                                  create= 0 update= 0 delete= 0
+subscriptions            Lyger Zoo                                  create= 0 update= 0 delete= 0
+zoos                     Burol Zoo                                  create= 0 update= 1 delete= 0
+zoo_zones                Burol Zoo                                  create= 1 update= 0 delete= 1
+  DELETE 9:Savannah Zone
+animals                  Burol Zoo                                  create= 5 update= 0 delete= 0
+services                 Burol Zoo                                  create= 4 update= 0 delete= 1
+  DELETE 9:Petting Yard Pass
+events                   Burol Zoo                                  create= 2 update= 0 delete= 2
+  DELETE 10:Animal Feeding Time
+  DELETE 11:Keeper Talk
+promotions               Burol Zoo                                  create= 5 update= 0 delete= 2
+  DELETE 10:Season Pass Promo
+  DELETE 11:Family Bundle
+bookings                 Burol Zoo                                  create=10 update= 0 delete= 2
+  DELETE BK-1008:Visitor One
+  DELETE BK-Z3-1001:Visitor One
+feedbacks                Burol Zoo                                  create= 3 update= 0 delete= 4
+  DELETE 11:Elena Torres
+  DELETE 12:Ricardo Gomez
+  DELETE 13:Alyssa Reyes
+  DELETE 14:Martin Santos
+staff_tasks              Burol Zoo                                  create= 3 update= 0 delete= 3
+  DELETE 8:Morning enclosure check
+  DELETE 9:Prepare feeding supplies
+  DELETE 10:Close-of-day log
+registrations            Burol Zoo                                  create= 0 update= 0 delete= 0
+subscriptions            Burol Zoo                                  create= 0 update= 0 delete= 0
+zoos                     Graco Farms                                create= 0 update= 1 delete= 0
+zoo_zones                Graco Farms                                create= 1 update= 0 delete= 1
+  DELETE 12:Savannah Zone
+animals                  Graco Farms                                create= 5 update= 0 delete= 0
+services                 Graco Farms                                create= 3 update= 0 delete= 0
+events                   Graco Farms                                create= 2 update= 0 delete= 2
+  DELETE 12:Animal Feeding Time
+  DELETE 13:Keeper Talk
+promotions               Graco Farms                                create= 5 update= 0 delete= 2
+  DELETE 12:Season Pass Promo
+  DELETE 13:Family Bundle
+bookings                 Graco Farms                                create=10 update= 0 delete= 2
+  DELETE BK-1009:Visitor One
+  DELETE BK-Z4-1001:Visitor One
+feedbacks                Graco Farms                                create= 3 update= 0 delete= 4
+  DELETE 15:Elena Torres
+  DELETE 16:Ricardo Gomez
+  DELETE 17:Alyssa Reyes
+  DELETE 18:Martin Santos
+staff_tasks              Graco Farms                                create= 3 update= 0 delete= 3
+  DELETE 11:Morning enclosure check
+  DELETE 12:Prepare feeding supplies
+  DELETE 13:Close-of-day log
+registrations            Graco Farms                                create= 0 update= 0 delete= 0
+subscriptions            Graco Farms                                create= 0 update= 0 delete= 0
+zoos                     Hiraya Farms                               create= 0 update= 1 delete= 0
+zoo_zones                Hiraya Farms                               create= 1 update= 0 delete= 1
+  DELETE 15:Savannah Zone
+animals                  Hiraya Farms                               create= 6 update= 0 delete= 1
+  DELETE 8:Clover
+services                 Hiraya Farms                               create= 3 update= 0 delete= 0
+events                   Hiraya Farms                               create= 2 update= 0 delete= 2
+  DELETE 14:Animal Feeding Time
+  DELETE 15:Keeper Talk
+promotions               Hiraya Farms                               create= 5 update= 0 delete= 2
+  DELETE 14:Season Pass Promo
+  DELETE 15:Family Bundle
+bookings                 Hiraya Farms                               create=10 update= 0 delete= 2
+  DELETE BK-1010:Visitor One
+  DELETE BK-Z5-1001:Visitor One
+feedbacks                Hiraya Farms                               create= 3 update= 0 delete= 4
+  DELETE 19:Elena Torres
+  DELETE 20:Ricardo Gomez
+  DELETE 21:Alyssa Reyes
+  DELETE 22:Martin Santos
+staff_tasks              Hiraya Farms                               create= 3 update= 0 delete= 3
+  DELETE 14:Morning enclosure check
+  DELETE 15:Prepare feeding supplies
+  DELETE 16:Close-of-day log
+registrations            Hiraya Farms                               create= 0 update= 0 delete= 0
+subscriptions            Hiraya Farms                               create= 0 update= 0 delete= 0
+zoos                     Coral Triangle Marine Discovery Center     create= 1 update= 0 delete= 0
+zoo_zones                Coral Triangle Marine Discovery Center     create= 3 update= 0 delete= 0
+animals                  Coral Triangle Marine Discovery Center     create= 6 update= 0 delete= 0
+services                 Coral Triangle Marine Discovery Center     create= 4 update= 0 delete= 0
+events                   Coral Triangle Marine Discovery Center     create= 2 update= 0 delete= 0
+promotions               Coral Triangle Marine Discovery Center     create= 5 update= 0 delete= 0
+bookings                 Coral Triangle Marine Discovery Center     create=10 update= 0 delete= 0
+feedbacks                Coral Triangle Marine Discovery Center     create= 3 update= 0 delete= 0
+staff_tasks              Coral Triangle Marine Discovery Center     create= 3 update= 0 delete= 0
+registrations            Coral Triangle Marine Discovery Center     create= 1 update= 0 delete= 0
+subscriptions            Coral Triangle Marine Discovery Center     create= 1 update= 0 delete= 0
+zoos                     Palawan Wildlife Rescue Sanctuary          create= 1 update= 0 delete= 0
+zoo_zones                Palawan Wildlife Rescue Sanctuary          create= 3 update= 0 delete= 0
+animals                  Palawan Wildlife Rescue Sanctuary          create= 6 update= 0 delete= 0
+services                 Palawan Wildlife Rescue Sanctuary          create= 4 update= 0 delete= 0
+events                   Palawan Wildlife Rescue Sanctuary          create= 2 update= 0 delete= 0
+promotions               Palawan Wildlife Rescue Sanctuary          create= 5 update= 0 delete= 0
+bookings                 Palawan Wildlife Rescue Sanctuary          create=10 update= 0 delete= 0
+feedbacks                Palawan Wildlife Rescue Sanctuary          create= 3 update= 0 delete= 0
+staff_tasks              Palawan Wildlife Rescue Sanctuary          create= 3 update= 0 delete= 0
+registrations            Palawan Wildlife Rescue Sanctuary          create= 1 update= 0 delete= 0
+subscriptions            Palawan Wildlife Rescue Sanctuary          create= 1 update= 0 delete= 0
+zoos                     Taal Countryside Animal Farm               create= 1 update= 0 delete= 0
+zoo_zones                Taal Countryside Animal Farm               create= 3 update= 0 delete= 0
+animals                  Taal Countryside Animal Farm               create= 6 update= 0 delete= 0
+services                 Taal Countryside Animal Farm               create= 4 update= 0 delete= 0
+events                   Taal Countryside Animal Farm               create= 2 update= 0 delete= 0
+promotions               Taal Countryside Animal Farm               create= 5 update= 0 delete= 0
+bookings                 Taal Countryside Animal Farm               create=10 update= 0 delete= 0
+feedbacks                Taal Countryside Animal Farm               create= 3 update= 0 delete= 0
+staff_tasks              Taal Countryside Animal Farm               create= 3 update= 0 delete= 0
+registrations            Taal Countryside Animal Farm               create= 1 update= 0 delete= 0
+subscriptions            Taal Countryside Animal Farm               create= 1 update= 0 delete= 0
+zoos                     Davao Highlands Wildlife Park              create= 1 update= 0 delete= 0
+zoo_zones                Davao Highlands Wildlife Park              create= 3 update= 0 delete= 0
+animals                  Davao Highlands Wildlife Park              create= 6 update= 0 delete= 0
+services                 Davao Highlands Wildlife Park              create= 4 update= 0 delete= 0
+events                   Davao Highlands Wildlife Park              create= 2 update= 0 delete= 0
+promotions               Davao Highlands Wildlife Park              create= 5 update= 0 delete= 0
+bookings                 Davao Highlands Wildlife Park              create=10 update= 0 delete= 0
+feedbacks                Davao Highlands Wildlife Park              create= 3 update= 0 delete= 0
+staff_tasks              Davao Highlands Wildlife Park              create= 3 update= 0 delete= 0
+registrations            Davao Highlands Wildlife Park              create= 1 update= 0 delete= 0
+subscriptions            Davao Highlands Wildlife Park              create= 1 update= 0 delete= 0
+zoos                     Northern Plains Safari Reserve             create= 1 update= 0 delete= 0
+zoo_zones                Northern Plains Safari Reserve             create= 3 update= 0 delete= 0
+animals                  Northern Plains Safari Reserve             create= 6 update= 0 delete= 0
+services                 Northern Plains Safari Reserve             create= 4 update= 0 delete= 0
+events                   Northern Plains Safari Reserve             create= 2 update= 0 delete= 0
+promotions               Northern Plains Safari Reserve             create= 5 update= 0 delete= 0
+bookings                 Northern Plains Safari Reserve             create=10 update= 0 delete= 0
+feedbacks                Northern Plains Safari Reserve             create= 3 update= 0 delete= 0
+staff_tasks              Northern Plains Safari Reserve             create= 3 update= 0 delete= 0
+registrations            Northern Plains Safari Reserve             create= 1 update= 0 delete= 0
+subscriptions            Northern Plains Safari Reserve             create= 1 update= 0 delete= 0
+events                   orphan                                     create= 0 update= 0 delete= 1
+  DELETE 1:Lion Feeding Show
+events                   orphan                                     create= 0 update= 0 delete= 1
+  DELETE 2:Dolphin Performance
+events                   orphan                                     create= 0 update= 0 delete= 1
+  DELETE 3:Bird of Prey Demonstration
+events                   orphan                                     create= 0 update= 0 delete= 1
+  DELETE 4:Elephant Feeding
+events                   orphan                                     create= 0 update= 0 delete= 1
+  DELETE 5:Night Safari Walk
+bookings                 orphan                                     create= 0 update= 0 delete= 1
+  DELETE BK-1001:Juan Dela Cruz
+bookings                 orphan                                     create= 0 update= 0 delete= 1
+  DELETE BK-1002:Maria Clara
+bookings                 orphan                                     create= 0 update= 0 delete= 1
+  DELETE BK-1003:Pedro Penduko
+EXACT DELETIONS
+- zoo_zones:Manila Zoo:3:Savannah Zone
+- events:Manila Zoo:6:Animal Feeding Time
+- events:Manila Zoo:7:Keeper Talk
+- promotions:Manila Zoo:6:Season Pass Promo
+- promotions:Manila Zoo:7:Family Bundle
+- bookings:Manila Zoo:BK-1005:Visitor One
+- bookings:Manila Zoo:BK-1006:Visitor Two
+- bookings:Manila Zoo:BK-1007:Visitor One
+- feedbacks:Manila Zoo:3:Elena Torres
+- feedbacks:Manila Zoo:4:Ricardo Gomez
+- feedbacks:Manila Zoo:5:Alyssa Reyes
+- feedbacks:Manila Zoo:6:Martin Santos
+- staff_tasks:Manila Zoo:2:Morning enclosure check
+- staff_tasks:Manila Zoo:3:Prepare feeding supplies
+- staff_tasks:Manila Zoo:4:Close-of-day log
+- zoo_zones:Lyger Zoo:6:Savannah Zone
+- animals:Lyger Zoo:5:Leo
+- animals:Lyger Zoo:6:Mina
+- services:Lyger Zoo:4:Guided Safari Tour
+- services:Lyger Zoo:5:Lion Feeding Experience
+- events:Lyger Zoo:8:Animal Feeding Time
+- events:Lyger Zoo:9:Keeper Talk
+- promotions:Lyger Zoo:8:Season Pass Promo
+- promotions:Lyger Zoo:9:Family Bundle
+- bookings:Lyger Zoo:BK-1004:Royce
+- feedbacks:Lyger Zoo:7:Elena Torres
+- feedbacks:Lyger Zoo:8:Ricardo Gomez
+- feedbacks:Lyger Zoo:9:Alyssa Reyes
+- feedbacks:Lyger Zoo:10:Martin Santos
+- staff_tasks:Lyger Zoo:5:Morning enclosure check
+- staff_tasks:Lyger Zoo:6:Prepare feeding supplies
+- staff_tasks:Lyger Zoo:7:Close-of-day log
+- zoo_zones:Burol Zoo:9:Savannah Zone
+- services:Burol Zoo:9:Petting Yard Pass
+- events:Burol Zoo:10:Animal Feeding Time
+- events:Burol Zoo:11:Keeper Talk
+- promotions:Burol Zoo:10:Season Pass Promo
+- promotions:Burol Zoo:11:Family Bundle
+- bookings:Burol Zoo:BK-1008:Visitor One
+- bookings:Burol Zoo:BK-Z3-1001:Visitor One
+- feedbacks:Burol Zoo:11:Elena Torres
+- feedbacks:Burol Zoo:12:Ricardo Gomez
+- feedbacks:Burol Zoo:13:Alyssa Reyes
+- feedbacks:Burol Zoo:14:Martin Santos
+- staff_tasks:Burol Zoo:8:Morning enclosure check
+- staff_tasks:Burol Zoo:9:Prepare feeding supplies
+- staff_tasks:Burol Zoo:10:Close-of-day log
+- zoo_zones:Graco Farms:12:Savannah Zone
+- events:Graco Farms:12:Animal Feeding Time
+- events:Graco Farms:13:Keeper Talk
+- promotions:Graco Farms:12:Season Pass Promo
+- promotions:Graco Farms:13:Family Bundle
+- bookings:Graco Farms:BK-1009:Visitor One
+- bookings:Graco Farms:BK-Z4-1001:Visitor One
+- feedbacks:Graco Farms:15:Elena Torres
+- feedbacks:Graco Farms:16:Ricardo Gomez
+- feedbacks:Graco Farms:17:Alyssa Reyes
+- feedbacks:Graco Farms:18:Martin Santos
+- staff_tasks:Graco Farms:11:Morning enclosure check
+- staff_tasks:Graco Farms:12:Prepare feeding supplies
+- staff_tasks:Graco Farms:13:Close-of-day log
+- zoo_zones:Hiraya Farms:15:Savannah Zone
+- animals:Hiraya Farms:8:Clover
+- events:Hiraya Farms:14:Animal Feeding Time
+- events:Hiraya Farms:15:Keeper Talk
+- promotions:Hiraya Farms:14:Season Pass Promo
+- promotions:Hiraya Farms:15:Family Bundle
+- bookings:Hiraya Farms:BK-1010:Visitor One
+- bookings:Hiraya Farms:BK-Z5-1001:Visitor One
+- feedbacks:Hiraya Farms:19:Elena Torres
+- feedbacks:Hiraya Farms:20:Ricardo Gomez
+- feedbacks:Hiraya Farms:21:Alyssa Reyes
+- feedbacks:Hiraya Farms:22:Martin Santos
+- staff_tasks:Hiraya Farms:14:Morning enclosure check
+- staff_tasks:Hiraya Farms:15:Prepare feeding supplies
+- staff_tasks:Hiraya Farms:16:Close-of-day log
+- events:orphan:1:Lion Feeding Show
+- events:orphan:2:Dolphin Performance
+- events:orphan:3:Bird of Prey Demonstration
+- events:orphan:4:Elephant Feeding
+- events:orphan:5:Night Safari Walk
+- bookings:orphan:BK-1001:Juan Dela Cruz
+- bookings:orphan:BK-1002:Maria Clara
+- bookings:orphan:BK-1003:Pedro Penduko

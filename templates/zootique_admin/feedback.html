@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Zoo Feedback{% endblock %}
 {% block page_title %}Zoo Feedback{% endblock %}
@@ -49,7 +49,7 @@
   <div class="card-panel" style="margin-bottom:0;">
     <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
       <h2>RECENT FEEDBACK</h2>
-      <input type="text" placeholder="Search sentiment..." style="max-width:220px;">
+      <input type="text" placeholder="Search sentiment..." class="zf-control" style="max-width:220px; height:34px; font-size:13px;">
     </div>
     <div class="card-body" style="padding-top:0; display:flex; flex-direction:column; gap:10px;">
       {% for f in feedbacks %}
@@ -105,7 +105,7 @@
 
       <div style="margin-top:14px; font-size:12px; font-weight:900; letter-spacing:0.02em; color:var(--text-muted);">INTERNAL REPLY</div>
       <form id="sa_reply_form" method="post" action="" style="margin-top:8px; display:flex; flex-direction:column; gap:10px;">
-        <textarea name="reply_text" rows="5" placeholder="Type your response to the park administrator here..." required></textarea>
+        <textarea name="reply_text" rows="5" class="zf-control" placeholder="Type your response to the park administrator here..." required></textarea>
         <button class="btn btn-primary" type="submit"><i class="fa-solid fa-paper-plane"></i> SEND REPLY</button>
         <div style="font-size:12px; color:var(--text-muted);">
           Replies sent through this portal are emailed directly to the Zoo's primary account owner and stored in their "Communications" tab.

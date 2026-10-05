@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}Animals | Zoo Admin{% endblock %}
 {% block page_title %}Animals{% endblock %}
@@ -6,41 +6,142 @@
 {% block content %}
 {% set selected_tab = request.args.get('tab', 'all') %}
 
+<!-- Success toast -->
+<div class="zf-toast" id="zfToast" role="status" aria-live="polite">
+  <i class="fa-solid fa-circle-check"></i>
+  <span id="zfToastMsg">Animal saved successfully.</span>
+</div>
 
 <div class="two-col" style="--two-col-template: 1fr 1fr; {% if selected_tab == 'list' %}--two-col-template: 1fr;{% elif selected_tab == 'add' %}--two-col-template: 1fr;{% endif %}">
-  
+
   {% if selected_tab in ['add', 'all'] %}
-  <div class="card-panel">
-    <div class="card-header">
-      <h2>Add / Edit Animal</h2>
+  <div class="zf-form-card" id="animalFormCard">
+
+    <div class="zf-form-header">
+      <h2 class="zf-form-title">
+        <i class="fa-solid fa-paw"></i>
+        <span id="animalFormTitleText">Add Animal</span>
+      </h2>
+      <span class="zf-form-badge" id="animalFormBadge">New</span>
     </div>
-    <div class="card-body">
-      <form method="post" action="{{ url_for('animal_farm_admin.save_animal') }}" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:10px;">
-        <input type="hidden" name="animal_id" value="">
 
-        <label style="font-weight:600; color:var(--text-secondary);">Name</label>
-        <input type="text" name="name" placeholder="Animal name" required style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+    <form id="animalForm" method="post" action="{{ url_for('animal_farm_admin.save_animal') }}" enctype="multipart/form-data" novalidate>
+      <input type="hidden" name="animal_id" id="animal_id" value="">
 
-        <label style="font-weight:600; color:var(--text-secondary);">Species</label>
-        <input type="text" name="species" placeholder="e.g., Bengal Tiger" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+      <div class="zf-form-body">
 
-        <label style="font-weight:600; color:var(--text-secondary);">Habitat</label>
-        <input type="text" name="habitat" placeholder="e.g., Forest" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+        <div class="zf-section">
+          <div class="zf-section-label">
+            <i class="fa-solid fa-circle-info"></i> Basic Info
+          </div>
+          <div class="zf-grid-2">
 
-        <label style="font-weight:600; color:var(--text-secondary);">Status</label>
-        <input type="text" name="status" placeholder="e.g., Healthy" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
+            <div class="zf-field">
+              <label class="zf-label" for="animal_name">Name <span class="zf-req" aria-hidden="true">*</span></label>
+              <input type="text" id="animal_name" name="name" class="zf-control"
+                     placeholder="e.g., Raja" autocomplete="off" required aria-required="true"
+                     aria-describedby="animal_name_error">
+              <span class="zf-error" id="animal_name_error" role="alert">
+                <i class="fa-solid fa-triangle-exclamation"></i> Name is required.
+              </span>
+            </div>
 
-        <label style="font-weight:600; color:var(--text-secondary);">Upload Picture (optional)</label>
-        <input type="file" name="image_file" accept="image/*" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;" />
-        <p style="margin:0; color: var(--text-muted); font-size: 12px;">Leave blank to keep the existing picture when editing.</p>
+            <div class="zf-field">
+              <label class="zf-label" for="animal_species">Species</label>
+              <input type="text" id="animal_species" name="species" class="zf-control"
+                     placeholder="e.g., Bengal Tiger" autocomplete="off">
+              <span class="zf-hint">Scientific or common name</span>
+            </div>
 
-        <label style="font-weight:600; color:var(--text-secondary);">Description (optional)</label>
-        <textarea name="description" rows="4" placeholder="Short description" style="padding:10px 12px; border:1px solid var(--border); border-radius:8px; width:100%;"></textarea>
+            <div class="zf-field">
+              <label class="zf-label" for="animal_habitat">Habitat</label>
+              <select id="animal_habitat" name="habitat" class="zf-control">
+                <option value="">-- Select habitat --</option>
+                <option value="Forest">Forest</option>
+                <option value="Savanna">Savanna</option>
+                <option value="Aquatic">Aquatic</option>
+                <option value="Aviary">Aviary</option>
+                <option value="Grassland">Grassland</option>
+                <option value="Wetland">Wetland</option>
+                <option value="Desert">Desert</option>
+                <option value="Arctic">Arctic</option>
+              </select>
+            </div>
 
-        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Animal</button>
-        <p style="color: var(--text-muted); font-size: 12px;">To edit an animal, use the Edit button in the table.</p>
-      </form>
-    </div>
+            <div class="zf-field">
+              <label class="zf-label" for="animal_status">Status <span class="zf-req" aria-hidden="true">*</span></label>
+              <select id="animal_status" name="status" class="zf-control" required aria-required="true"
+                      aria-describedby="animal_status_error">
+                <option value="">-- Select status --</option>
+                <option value="Healthy">Healthy</option>
+                <option value="Under Observation">Under Observation</option>
+                <option value="Sick">Sick</option>
+                <option value="Quarantined">Quarantined</option>
+                <option value="Deceased">Deceased</option>
+              </select>
+              <span class="zf-error" id="animal_status_error" role="alert">
+                <i class="fa-solid fa-triangle-exclamation"></i> Please select a status.
+              </span>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="zf-section">
+          <div class="zf-section-label">
+            <i class="fa-solid fa-image"></i> Details &amp; Media
+          </div>
+          <div class="zf-grid-2">
+
+            <div class="zf-field zf-full">
+              <label class="zf-label" for="animal_description">Description</label>
+              <textarea id="animal_description" name="description" class="zf-control" rows="4"
+                        placeholder="Briefly describe the animal characteristics, behaviour, or history..."></textarea>
+            </div>
+
+            <div class="zf-field zf-full">
+              <label class="zf-label" for="animal_image_file">Picture</label>
+              <div class="zf-upload-box" id="animalUploadBox">
+                <input type="file" id="animal_image_file" name="image_file"
+                       accept="image/jpeg,image/png,image/webp" aria-label="Upload animal picture">
+                <div class="zf-upload-idle" id="animalUploadIdle">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                  <p class="zf-upload-title"><span>Click to upload</span> or drag and drop</p>
+                  <p class="zf-upload-meta">JPG, PNG, WebP - Max 5 MB - Leave empty to keep existing when editing</p>
+                </div>
+                <div class="zf-upload-preview" id="animalUploadPreview">
+                  <img class="zf-preview-img" id="animalPreviewImg" src="" alt="Preview">
+                  <div class="zf-preview-info">
+                    <div class="zf-preview-name" id="animalPreviewName"></div>
+                    <div class="zf-preview-size" id="animalPreviewSize"></div>
+                  </div>
+                  <button type="button" class="zf-preview-remove" id="animalRemoveImg" aria-label="Remove image">
+                    <i class="fa-solid fa-xmark"></i> Remove
+                  </button>
+                </div>
+              </div>
+              <span class="zf-error" id="animal_image_error" role="alert">
+                <i class="fa-solid fa-triangle-exclamation"></i> File exceeds the 5 MB limit.
+              </span>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <div class="zf-actions">
+        <a href="?tab=list" class="zf-btn-cancel" id="animalCancelBtn">
+          <i class="fa-solid fa-xmark"></i> Cancel
+        </a>
+        <button type="submit" class="zf-btn-save" id="animalSaveBtn">
+          <span class="zf-spinner"></span>
+          <i class="fa-solid fa-floppy-disk zf-save-label"></i>
+          <span class="zf-save-label" id="animalSaveBtnLabel">Save Animal</span>
+        </button>
+      </div>
+
+    </form>
   </div>
   {% endif %}
 
@@ -75,7 +176,17 @@
                 <td>{{ a.name }}</td>
                 <td>{{ a.species or '-' }}</td>
                 <td>{{ a.habitat or '-' }}</td>
-                <td>{{ a.status or '-' }}</td>
+                <td>
+                  {% if a.status %}
+                    {% if a.status == 'Healthy' %}
+                      <span class="badge badge-healthy">{{ a.status }}</span>
+                    {% elif a.status == 'Under Observation' %}
+                      <span class="badge badge-observation">{{ a.status }}</span>
+                    {% else %}
+                      <span class="badge badge-cancelled">{{ a.status }}</span>
+                    {% endif %}
+                  {% else %}-{% endif %}
+                </td>
                 <td>
                   <button class="btn btn-outline btn-sm" type="button"
                       onclick='fillAnimalForm({{ a.id|tojson }}, {{ a.name|tojson }}, {{ (a.species or "")|tojson }}, {{ (a.habitat or "")|tojson }}, {{ (a.status or "")|tojson }}, {{ (a.description or "")|tojson }})'>
@@ -87,7 +198,7 @@
                 </td>
               </tr>
             {% else %}
-              <tr><td colspan="6" style="color: var(--text-muted);">No animals yet.</td></tr>
+              <tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:28px;">No animals yet.</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -95,19 +206,150 @@
     </div>
   </div>
   {% endif %}
+
 </div>
 
 <script>
-  function fillAnimalForm(id, name, species, habitat, status, description) {
-    const form = document.querySelector('form[action$="/animals/save"]');
-    if (!form) return;
-    form.querySelector('input[name="animal_id"]').value = id;
-    form.querySelector('input[name="name"]').value = name || '';
-    form.querySelector('input[name="species"]').value = species || '';
-    form.querySelector('input[name="habitat"]').value = habitat || '';
-    form.querySelector('input[name="status"]').value = status || '';
-    form.querySelector('textarea[name="description"]').value = description || '';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+(function () {
+  function setMode(editing) {
+    var titleEl = document.getElementById('animalFormTitleText');
+    var badgeEl = document.getElementById('animalFormBadge');
+    var labelEl = document.getElementById('animalSaveBtnLabel');
+    if (titleEl) titleEl.textContent = editing ? 'Edit Animal'   : 'Add Animal';
+    if (badgeEl) badgeEl.textContent = editing ? 'Editing'       : 'New';
+    if (labelEl) labelEl.textContent = editing ? 'Update Animal' : 'Save Animal';
   }
+
+  window.fillAnimalForm = function(id, name, species, habitat, status, description) {
+    var form = document.getElementById('animalForm');
+    if (!form) return;
+    document.getElementById('animal_id').value = id;
+    document.getElementById('animal_name').value = name || '';
+    document.getElementById('animal_species').value = species || '';
+    document.getElementById('animal_description').value = description || '';
+
+    var hSel = document.getElementById('animal_habitat');
+    if (hSel) {
+      hSel.value = habitat || '';
+      if (habitat && hSel.value !== habitat) {
+        var opt = document.createElement('option');
+        opt.value = habitat; opt.text = habitat; opt.selected = true;
+        hSel.prepend(opt);
+      }
+    }
+
+    var sSel = document.getElementById('animal_status');
+    if (sSel) sSel.value = status || '';
+
+    setMode(true);
+    clearAllErrors();
+    resetUpload();
+    var card = document.getElementById('animalFormCard');
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  function showError(inputId, errorId) {
+    var el = document.getElementById(inputId);
+    if (el) { el.classList.add('is-error'); el.classList.remove('is-valid'); }
+    var err = document.getElementById(errorId);
+    if (err) err.classList.add('visible');
+    return false;
+  }
+  function clearError(inputId, errorId) {
+    var el = document.getElementById(inputId);
+    if (el) { el.classList.remove('is-error'); if (el.value.trim()) el.classList.add('is-valid'); }
+    var err = document.getElementById(errorId);
+    if (err) err.classList.remove('visible');
+    return true;
+  }
+  function clearAllErrors() {
+    document.querySelectorAll('#animalForm .zf-control').forEach(function(el) { el.classList.remove('is-error','is-valid'); });
+    document.querySelectorAll('#animalForm .zf-error').forEach(function(el) { el.classList.remove('visible'); });
+  }
+  function validateName()   { var el = document.getElementById('animal_name');   return el && el.value.trim() ? clearError('animal_name','animal_name_error')     : showError('animal_name','animal_name_error'); }
+  function validateStatus() { var el = document.getElementById('animal_status'); return el && el.value        ? clearError('animal_status','animal_status_error') : showError('animal_status','animal_status_error'); }
+
+  var nameEl = document.getElementById('animal_name');
+  if (nameEl) { nameEl.addEventListener('blur', validateName); nameEl.addEventListener('input', function(){ if(nameEl.classList.contains('is-error')) validateName(); }); }
+  var statusEl = document.getElementById('animal_status');
+  if (statusEl) { statusEl.addEventListener('blur', validateStatus); statusEl.addEventListener('change', function(){ if(statusEl.classList.contains('is-error')) validateStatus(); }); }
+
+  var form = document.getElementById('animalForm');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      var valid = validateName() & validateStatus();
+      var fi = document.getElementById('animal_image_file');
+      if (fi && fi.files[0] && fi.files[0].size > 5*1024*1024) {
+        document.getElementById('animal_image_error').classList.add('visible');
+        valid = false;
+      }
+      if (!valid) {
+        e.preventDefault();
+        var first = form.querySelector('.is-error');
+        if (first) first.scrollIntoView({ behavior:'smooth', block:'center' });
+        return;
+      }
+      document.getElementById('animalSaveBtn').classList.add('is-loading');
+    });
+  }
+
+  var fileInput  = document.getElementById('animal_image_file');
+  var uploadBox  = document.getElementById('animalUploadBox');
+  var idleState  = document.getElementById('animalUploadIdle');
+  var preview    = document.getElementById('animalUploadPreview');
+  var previewImg = document.getElementById('animalPreviewImg');
+  var previewNm  = document.getElementById('animalPreviewName');
+  var previewSz  = document.getElementById('animalPreviewSize');
+  var removeBtn  = document.getElementById('animalRemoveImg');
+  var imgError   = document.getElementById('animal_image_error');
+
+  function showPreview(file) {
+    previewImg.src = URL.createObjectURL(file);
+    previewNm.textContent = file.name;
+    previewSz.textContent = (file.size/(1024*1024)).toFixed(2)+' MB';
+    idleState.classList.add('hidden');
+    preview.classList.add('visible');
+  }
+  function resetUpload() {
+    if (fileInput)  fileInput.value = '';
+    if (previewImg) previewImg.src = '';
+    if (idleState)  idleState.classList.remove('hidden');
+    if (preview)    preview.classList.remove('visible');
+    if (imgError)   imgError.classList.remove('visible');
+  }
+
+  if (fileInput) {
+    fileInput.addEventListener('change', function() {
+      imgError.classList.remove('visible');
+      if (!this.files[0]) { resetUpload(); return; }
+      if (this.files[0].size > 5*1024*1024) { imgError.classList.add('visible'); resetUpload(); return; }
+      showPreview(this.files[0]);
+    });
+  }
+  if (removeBtn) removeBtn.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); resetUpload(); });
+  if (uploadBox) {
+    uploadBox.addEventListener('dragover',  function(e){ e.preventDefault(); uploadBox.classList.add('drag-over'); });
+    uploadBox.addEventListener('dragleave', function(){  uploadBox.classList.remove('drag-over'); });
+    uploadBox.addEventListener('drop', function(e){
+      e.preventDefault(); uploadBox.classList.remove('drag-over');
+      var f = e.dataTransfer.files[0]; if (!f) return;
+      var dt = new DataTransfer(); dt.items.add(f); fileInput.files = dt.files;
+      fileInput.dispatchEvent(new Event('change'));
+    });
+  }
+
+  function showToast(msg) {
+    var t = document.getElementById('zfToast');
+    document.getElementById('zfToastMsg').textContent = msg || 'Saved successfully.';
+    t.classList.add('visible');
+    setTimeout(function(){ t.classList.remove('visible'); }, 3500);
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('[style*="border-left:4px solid var(--success)"]').forEach(function(b){
+      var d = b.querySelector('div');
+      showToast(d ? d.textContent.trim() : 'Animal saved successfully.');
+    });
+  });
+})();
 </script>
 {% endblock %}
