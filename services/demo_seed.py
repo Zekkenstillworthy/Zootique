@@ -358,7 +358,7 @@ def seed(*, dry_run: bool = False, reset: bool = False, now: datetime | None = N
             Notification.query.filter_by(booking_id=booking.id).delete(synchronize_session=False)
             BookingPayment.query.filter_by(booking_id=booking.id).delete(synchronize_session=False)
             db.session.delete(booking)
-        plans = [SubscriptionPlan.query.filter_by(name="Basic").first(), SubscriptionPlan.query.filter_by(name="Premium").first()]
+        plans = [SubscriptionPlan.query.filter_by(name="Standard").first(), SubscriptionPlan.query.filter_by(name="Pro").first()]
         if not all(plans): raise RuntimeError("Subscription plans are required")
         visitors = []
         staff = []
@@ -383,7 +383,3 @@ def _ensure_sample_user(email: str, role: str, name: str, zoo_id: int | None):
         user.set_password(os.environ.get("DEMO_PASSWORD", "Password123!"))
         db.session.add(user)
     return user, created
-
-
-def ensure_demo_data(*, allow_create_tables: bool = True, dry_run: bool = False, reset: bool = False):
-    return seed(dry_run=dry_run, reset=reset)

@@ -253,6 +253,34 @@
                             <div class="dashboard-progress">
                                 <div class="dashboard-progress-bar" data-progress-width="{{ widget.revenue_goal_pct }}"></div>
                             </div>
+                            {% if saved_graphs %}
+                            <section style="margin-top:24px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                                    <h2 style="margin:0;">Saved graphs</h2>
+                                    <a class="btn btn-ghost" href="{{ url_for('animal_farm_admin.graph_builder') }}">Manage graphs</a>
+                                </div>
+                                <div class="zoo-dashboard-grid">
+                                {% for graph in saved_graphs %}
+                                    {% set data = graph_data.get(graph.id) %}
+                                    <article class="dashboard-widget">
+                                        <div class="dashboard-widget-header"><h3><i class="fa-solid fa-chart-pie"></i> {{ graph.name }}</h3></div>
+                                        <div class="dashboard-widget-body">
+                                        {% if data %}
+                                            <div style="display:grid;grid-template-columns:repeat({{ data.labels|length }},1fr);align-items:end;gap:6px;min-height:140px;">
+                                            {% for label in data.labels %}
+                                                <div style="text-align:center;">
+                                                    <div style="height:{{ [((data.values[loop.index0] / (data.values|max or 1)) * 100), 4]|max }}px;background:#2d8c5a;border-radius:5px 5px 0 0;" title="{{ data.values[loop.index0] }}"></div>
+                                                    <small>{{ label }}</small>
+                                                </div>
+                                            {% endfor %}
+                                            </div>
+                                        {% else %}<div class="dashboard-empty-state">No graph data yet.</div>{% endif %}
+                                        </div>
+                                    </article>
+                                {% endfor %}
+                                </div>
+                            </section>
+                            {% endif %}
                         </div>
                         {% if widget.revenue_change_pct is not none %}
                             <div class="sa-pill {% if widget.revenue_change_pct >= 0 %}sa-pill--ok{% else %}sa-pill--danger{% endif %}">

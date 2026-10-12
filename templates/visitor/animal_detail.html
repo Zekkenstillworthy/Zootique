@@ -1,33 +1,314 @@
 {% extends "base.html" %}
 
-{% block title %}{{ animal.name }} - {{ animal.species }}{% endblock %}
-{% block page_title %}{{ animal.name }}'s Profile{% endblock %}
+{% block title %}{{ animal.name }} — {{ animal.species }} | Zootique{% endblock %}
+{% block page_title %}{{ animal.name }}'s Wildlife Profile{% endblock %}
 
 {% block extra_head %}
 <style>
-    @media (max-width: 600px) {
-        .animal-detail-card { flex-direction: column !important; }
-        .animal-detail-card > img,
-        .animal-detail-card > .card-content { width: 100% !important; }
-        .animal-detail-card > img { max-height: 260px; }
-    }
+  .animal-profile-wrapper {
+    max-width: 860px;
+    margin: 2rem auto 4rem auto;
+    padding: 0 1rem;
+  }
+  .animal-hero-card {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+  }
+  .animal-img-banner {
+    width: 100%;
+    height: 380px;
+    object-fit: cover;
+    background: #143823;
+    display: block;
+  }
+  .animal-placeholder-banner {
+    width: 100%;
+    height: 320px;
+    background: linear-gradient(135deg, #143823 0%, #1a4f32 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    gap: 0.75rem;
+  }
+  .animal-content-body {
+    padding: 2.25rem 2.5rem;
+  }
+  .animal-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+  }
+  .animal-title-wrap h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #143823;
+    margin: 0;
+  }
+  .animal-species-sub {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #C85A32;
+    font-style: italic;
+    margin-top: 0.25rem;
+  }
+  .animal-meta-chips {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .animal-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+  .chip-status-healthy { background: #dcfce7; color: #15803d; }
+  .chip-status-other { background: #fef3c7; color: #b45309; }
+  .chip-zone { background: #e0f2fe; color: #0369a1; }
+  .chip-age { background: #f1f5f9; color: #475569; }
+
+  .animal-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    background: #f8fafc;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.75rem;
+  }
+  .animal-stat-item .stat-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #64748b;
+    letter-spacing: 0.05em;
+  }
+  .animal-stat-item .stat-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 0.2rem;
+  }
+
+  .animal-desc-text {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #334155;
+    margin-bottom: 2rem;
+  }
+
+  .fun-facts-box {
+    background: #fffbeb;
+    border: 1.5px solid #fde68a;
+    border-radius: 16px;
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 2rem;
+  }
+  .fun-facts-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #92400e;
+    margin: 0 0 0.85rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .fun-facts-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.65rem;
+  }
+  .fun-facts-list li {
+    font-size: 0.95rem;
+    color: #78350f;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+  .fun-facts-list li i {
+    color: #d97706;
+    margin-top: 4px;
+    font-size: 0.85rem;
+  }
+
+  .trivia-teaser-banner {
+    background: linear-gradient(135deg, #143823 0%, #1a4f32 100%);
+    border-radius: 14px;
+    padding: 1.5rem 1.75rem;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+  .teaser-text h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #fef08a;
+  }
+  .teaser-text p {
+    margin: 0;
+    font-size: 0.88rem;
+    color: #d1fae5;
+  }
+  .teaser-btn {
+    background: #C85A32;
+    color: #ffffff;
+    font-weight: 800;
+    padding: 0.7rem 1.3rem;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .teaser-btn:hover { background: #b04e2a; }
+
+  @media (max-width: 640px) {
+    .animal-content-body { padding: 1.5rem 1.25rem; }
+    .animal-img-banner { height: 260px; }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="card animal-detail-card" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: row;">
-    {% if animal.image_url %}<img src="{{ animal.image_url }}" alt="{{ animal.name }}" onerror="this.onerror=null;this.style.display='none';" style="width: 40%; object-fit: cover;">{% endif %}
-    <div class="card-content" style="width: 60%;">
-        <h2 style="margin-bottom: 0.5rem;">{{ animal.name }}</h2>
-        <p style="color: var(--accent-color); font-weight: bold; margin-bottom: 1rem;">{{ animal.species }}</p>
-        <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
-            <p><strong>Habitat:</strong> {{ animal.habitat }}</p>
-            <p><strong>Status:</strong> <span class="badge" style="background: {% if animal.status == 'Healthy' %}#d4edda{% else %}#fff3cd{% endif %}; color: {% if animal.status == 'Healthy' %}#155724{% else %}#856404{% endif %};">{{ animal.status }}</span></p>
-        </div>
-        <p style="color: #555; line-height: 1.8;">{{ animal.description }}</p>
-        <div style="margin-top: 2rem;">
-            <a href="{{ url_for('visitor.animals') }}" class="btn btn-primary" style="background-color: var(--secondary-color);">Back to Gallery</a>
-        </div>
+<div class="animal-profile-wrapper">
+  <div class="animal-hero-card">
+    <!-- Image -->
+    {% if animal.image_url %}
+    <img src="{{ animal.image_url }}" alt="{{ animal.name }}" class="animal-img-banner"
+         onerror="this.onerror=null; this.style.display='none'; document.getElementById('placeholderFallback').style.display='flex';">
+    <div id="placeholderFallback" class="animal-placeholder-banner" style="display:none;">
+      <i class="fa-solid fa-paw" style="font-size: 3.5rem; opacity: 0.85;"></i>
+      <span style="font-size: 1.1rem; font-weight: 700;">{{ animal.name }}</span>
     </div>
+    {% else %}
+    <div class="animal-placeholder-banner">
+      <i class="fa-solid fa-paw" style="font-size: 3.5rem; opacity: 0.85;"></i>
+      <span style="font-size: 1.1rem; font-weight: 700;">{{ animal.name }}</span>
+    </div>
+    {% endif %}
+
+    <!-- Content -->
+    <div class="animal-content-body">
+      <div class="animal-header-row">
+        <div class="animal-title-wrap">
+          <h1>{{ animal.name }}</h1>
+          <div class="animal-species-sub">{{ animal.species or 'Wildlife Resident' }}</div>
+        </div>
+
+        <div class="animal-meta-chips">
+          {% if animal.status %}
+          <span class="animal-chip {% if animal.status == 'Healthy' %}chip-status-healthy{% else %}chip-status-other{% endif %}">
+            <i class="fa-solid fa-heart-pulse"></i> {{ animal.status }}
+          </span>
+          {% endif %}
+          {% if zone %}
+          <span class="animal-chip chip-zone">
+            <i class="fa-solid fa-map-location-dot"></i> {{ zone.name }}
+          </span>
+          {% endif %}
+          {% if animal.age %}
+          <span class="animal-chip chip-age">
+            <i class="fa-solid fa-cake-candles"></i> {{ animal.age }}
+          </span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Quick Stats Strip -->
+      <div class="animal-stat-grid">
+        <div class="animal-stat-item">
+          <div class="stat-label">Natural Habitat</div>
+          <div class="stat-value"><i class="fa-solid fa-tree" style="color:#1a4f32; margin-right:4px;"></i> {{ animal.habitat or 'Protected Habitat' }}</div>
+        </div>
+        <div class="animal-stat-item">
+          <div class="stat-label">Park Home</div>
+          <div class="stat-value"><i class="fa-solid fa-landmark" style="color:#1a4f32; margin-right:4px;"></i> {{ zoo.name if zoo else 'Zootique Sanctuary' }}</div>
+        </div>
+        {% if zone %}
+        <div class="animal-stat-item">
+          <div class="stat-label">Exhibition Zone</div>
+          <div class="stat-value"><i class="fa-solid fa-compass" style="color:#1a4f32; margin-right:4px;"></i> {{ zone.name }}</div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Narrative Description -->
+      <div class="animal-desc-text">
+        {{ animal.description or 'A cherished resident of our wildlife sanctuary. Visit during park hours to observe natural behaviors and feeding interactions.' }}
+      </div>
+
+      <!-- Fun Facts -->
+      {% if fun_facts_list and fun_facts_list|length > 0 %}
+      <div class="fun-facts-box">
+        <h3 class="fun-facts-title">
+          <i class="fa-solid fa-lightbulb" style="color:#f59e0b;"></i> Fascinating Wildlife Facts
+        </h3>
+        <ul class="fun-facts-list">
+          {% for fact in fun_facts_list %}
+          <li>
+            <i class="fa-solid fa-star"></i>
+            <span>{{ fact }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% elif animal.fun_facts %}
+      <div class="fun-facts-box">
+        <h3 class="fun-facts-title">
+          <i class="fa-solid fa-lightbulb" style="color:#f59e0b;"></i> Fascinating Wildlife Facts
+        </h3>
+        <p style="margin:0; color:#78350f; line-height:1.6;">{{ animal.fun_facts }}</p>
+      </div>
+      {% endif %}
+
+      <!-- Gamification / Trivia Teaser -->
+      <div class="trivia-teaser-banner">
+        <div class="teaser-text">
+          <h4><i class="fa-solid fa-trophy"></i> Test Your Knowledge!</h4>
+          <p>Answer trivia about {{ animal.species or 'wildlife' }} to earn Wild Points redeemable for booking discounts.</p>
+        </div>
+        <a href="{{ url_for('visitor.trivia') }}" class="teaser-btn">
+          <i class="fa-solid fa-gamepad"></i> Play Wildlife Trivia
+        </a>
+      </div>
+
+      <!-- Navigation Actions -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+        <a href="{{ url_for('visitor.animals') }}" style="text-decoration:none; color:#1a4f32; font-weight:800; font-size:0.95rem; display:inline-flex; align-items:center; gap:0.4rem;">
+          <i class="fa-solid fa-arrow-left"></i> Back to Wildlife Directory
+        </a>
+        {% if zoo %}
+        <a href="{{ url_for('visitor.park_info', zoo_id=zoo.id) }}" style="text-decoration:none; color:#64748b; font-weight:700; font-size:0.9rem; display:inline-flex; align-items:center; gap:0.4rem;">
+          <i class="fa-solid fa-map"></i> View Park Map &amp; Zones
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

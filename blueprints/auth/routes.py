@@ -1,11 +1,16 @@
 from urllib.parse import urlparse
+from datetime import datetime, timedelta
+import hashlib
+import secrets
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 from werkzeug.datastructures import FileStorage
 from werkzeug.security import generate_password_hash
+from email.utils import parseaddr
 
 from models import EstablishmentRegistration, Zoo, User, EstablishmentType, db
 from services.storage import save_uploaded_document
+from services.registration_notifications import send_registration_submitted, send_registration_email_verification
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -49,6 +54,10 @@ def _validate_password_policy(password: str) -> str | None:
     if len(password or '') < PASSWORD_MIN_LENGTH:
         return f'Password must be at least {PASSWORD_MIN_LENGTH} characters.'
     return None
+
+
+def _valid_email(value: str) -> bool:
+    return bool(value and parseaddr(value)[1] == value and "@" in value)
 
 
 def _set_auth_session(user: User):
@@ -225,7 +234,11 @@ def register(module_name):
 
         return render_template('auth/register.html')
 
-    if module_name not in allowed_public_roles:
+    if module_name == 'zoo_staff':
+        if session.get('role') != 'zoo_admin' or not session.get('reg_staff_zoo_id'):
+            flash('Staff accounts are created by Zoo Admins.', 'error')
+            return redirect(url_for('auth.login_selection'))
+    elif module_name not in allowed_public_roles:
         flash('Registration for that account type is not available.', 'error')
         return redirect(url_for('auth.portal'))
 
@@ -250,11 +263,15 @@ def register(module_name):
             flash('Email already registered universally', 'error')
             return redirect(url_for('auth.register', module_name=module_name))
 
-        new_user = User(email=email, full_name=full_name, role=module_name)
+        staff_zoo_id = session.get('reg_staff_zoo_id') if module_name == 'zoo_staff' else None
+        new_user = User(email=email, full_name=full_name, role=module_name, zoo_id=staff_zoo_id)
         new_user.set_password(password)
 
         db.session.add(new_user)
         db.session.commit()
+
+        if module_name == 'zoo_staff':
+            session.pop('reg_staff_zoo_id', None)
 
         flash(f'Successfully registered access to {ROLES[module_name]}!', 'success')
         return redirect(url_for('auth.registration_success', role=module_name))
@@ -274,9 +291,15 @@ def register_admin_step1():
         zoo_name = (request.form.get('zoo_name') or '').strip()
         zoo_type = (request.form.get('zoo_type') or '').strip() or 'Zoo Park'
         zoo_location = (request.form.get('zoo_location') or '').strip()
+        contact_name = (request.form.get('establishment_contact_name') or '').strip()
+        contact_email = (request.form.get('establishment_contact_email') or '').strip().lower()
+        contact_phone = (request.form.get('establishment_contact_phone') or '').strip()
 
         if not zoo_name or not zoo_location:
             flash('Please complete all required establishment details.', 'error')
+            return redirect(url_for('auth.register_admin_step1'))
+        if not contact_name or not _valid_email(contact_email):
+            flash('A valid establishment contact name and email are required.', 'error')
             return redirect(url_for('auth.register_admin_step1'))
 
         if not registration:
@@ -292,6 +315,9 @@ def register_admin_step1():
             registration.establishment_name = zoo_name
             registration.establishment_type = zoo_type
             registration.location = zoo_location
+        registration.establishment_contact_name = contact_name
+        registration.establishment_contact_email = contact_email
+        registration.establishment_contact_phone = contact_phone or None
 
         for document_key, (label, column_name) in REGISTRATION_DOCUMENTS.items():
             document = request.files.get(document_key)
@@ -342,6 +368,7 @@ def register_admin_step2():
     if request.method == 'POST':
         full_name = (request.form.get('full_name') or '').strip()
         email = (request.form.get('email') or '').strip().lower()
+        phone = (request.form.get('phone') or '').strip()
         password = request.form.get('password') or ''
 
         if not full_name or not email or not password:
@@ -368,24 +395,116 @@ def register_admin_step2():
         registration.location = zoo_location
         registration.admin_full_name = full_name
         registration.admin_email = email
+        registration.admin_phone = phone or None
         registration.admin_password_hash = generate_password_hash(password)
-        registration.status = 'pending'
+        token = secrets.token_urlsafe(32)
+        registration.email_verification_token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
+        registration.email_verification_expires_at = datetime.utcnow() + timedelta(minutes=30)
+        registration.email_verified_at = None
+        registration.status = 'draft'
         registration.approved_by = None
         registration.approved_at = None
         registration.rejected_by = None
         registration.rejected_at = None
         registration.rejection_note = None
         db.session.commit()
+        verification_sent = send_registration_email_verification(registration, token)
+        registration.acknowledgement_email_status = 'sent' if verification_sent else 'failed'
+        db.session.commit()
 
-        session.pop('reg_zoo_name', None)
-        session.pop('reg_zoo_type', None)
-        session.pop('reg_zoo_location', None)
-        session.pop('reg_registration_id', None)
-
-        flash('Registration submitted for Super Admin approval.', 'success')
-        return redirect(url_for('auth.registration_success', role='zoo_admin'))
+        if not verification_sent:
+            flash('We could not send the verification email. Please check the mail log or try again.', 'error')
+            return redirect(url_for('auth.register_admin_step2'))
+        flash('Check the applicant email to verify it before submitting the application.', 'success')
+        return redirect(url_for('auth.verify_registration_email'))
 
     return render_template('auth/register_admin_step2.html')
+
+
+@auth_bp.route('/verify-registration-email', methods=['GET', 'POST'])
+def verify_registration_email():
+    if request.method == 'POST':
+        expected = session.get('_csrf_token')
+        provided = request.form.get('csrf_token')
+        if not expected or not provided or not secrets.compare_digest(str(expected), str(provided)):
+            return 'Invalid or missing CSRF token.', 400
+    registration_id = request.args.get('registration_id', type=int) or request.form.get('registration_id', type=int) or session.get('reg_registration_id')
+    registration = db.session.get(EstablishmentRegistration, registration_id) if registration_id else None
+    token = (request.args.get('token') or '').strip()
+    if request.method == 'POST':
+        token = (request.form.get('token') or '').strip()
+    if not registration:
+        flash('Your registration session has expired. Please start again.', 'error')
+        return redirect(url_for('auth.register_admin_step1'))
+    if not token or not registration.email_verification_token_hash:
+        flash('Enter the verification code from your email.', 'error')
+        return render_template('auth/verify_registration_email.html', registration=registration)
+    if not registration.email_verification_expires_at or registration.email_verification_expires_at < datetime.utcnow():
+        flash('That verification link has expired. Please submit the account details again.', 'error')
+        return render_template('auth/verify_registration_email.html', registration=registration)
+    token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
+    if not secrets.compare_digest(token_hash, registration.email_verification_token_hash):
+        flash('The verification code is invalid.', 'error')
+        return render_template('auth/verify_registration_email.html', registration=registration)
+
+    registration.email_verified_at = datetime.utcnow()
+    registration.email_verification_token_hash = None
+    registration.email_verification_expires_at = None
+    registration.status = 'pending'
+    db.session.commit()
+    applicant_sent, establishment_sent = send_registration_submitted(registration)
+    registration.acknowledgement_email_status = 'sent' if applicant_sent else 'failed'
+    registration.confirmation_email_status = 'sent' if establishment_sent else 'failed'
+    db.session.commit()
+    session.pop('reg_zoo_name', None)
+    session.pop('reg_zoo_type', None)
+    session.pop('reg_zoo_location', None)
+    session.pop('reg_registration_id', None)
+    if applicant_sent and establishment_sent:
+        flash('Email verified. Registration submitted for Super Admin approval. Confirmation emails were sent.', 'success')
+    else:
+        flash('Email verified and registration submitted, but one or more confirmation emails could not be delivered. Review the delivery status.', 'error')
+    return redirect(url_for('auth.registration_success', role='zoo_admin'))
+
+
+@auth_bp.route('/activate-zoo-admin', methods=['GET', 'POST'])
+def activate_zoo_admin():
+    registration_id = request.args.get('registration_id', type=int) or request.form.get('registration_id', type=int)
+    token = (request.args.get('token') or request.form.get('token') or '').strip()
+    registration = db.session.get(EstablishmentRegistration, registration_id) if registration_id else None
+    if not registration or registration.status != 'approved' or not registration.activation_token_hash:
+        flash('This activation link is invalid or has already been used.', 'error')
+        return redirect(url_for('auth.login', module_name='zoo_admin'))
+    if request.method == 'POST':
+        expected = session.get('_csrf_token')
+        provided = request.form.get('csrf_token')
+        if not expected or not provided or not secrets.compare_digest(str(expected), str(provided)):
+            return 'Invalid or missing CSRF token.', 400
+    if not registration.activation_expires_at or registration.activation_expires_at < datetime.utcnow():
+        flash('This activation link has expired. Contact Zootique support.', 'error')
+        return redirect(url_for('auth.login', module_name='zoo_admin'))
+    token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
+    if not token or not secrets.compare_digest(token_hash, registration.activation_token_hash):
+        flash('This activation link is invalid.', 'error')
+        return redirect(url_for('auth.login', module_name='zoo_admin'))
+    user = User.query.filter_by(email=registration.admin_email, role='zoo_admin').first()
+    if not user:
+        flash('The administrator account could not be found.', 'error')
+        return redirect(url_for('auth.login', module_name='zoo_admin'))
+    if request.method == 'POST':
+        password = request.form.get('password') or ''
+        password_error = _validate_password_policy(password)
+        if password_error:
+            flash(password_error, 'error')
+            return render_template('auth/activate_zoo_admin.html', registration=registration, token=token)
+        user.set_password(password)
+        user.status = 'active'
+        registration.activation_token_hash = None
+        registration.activation_expires_at = None
+        db.session.commit()
+        flash('Administrator account activated. You can now sign in.', 'success')
+        return redirect(url_for('auth.login', module_name='zoo_admin'))
+    return render_template('auth/activate_zoo_admin.html', registration=registration, token=token)
 
 
 @auth_bp.get('/establishment-selection')

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Loyalty Settings | Zootique Admin{% endblock %}
+{% block page_title %}Loyalty Settings{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto; box-shadow: 0 12px 34px rgba(19,42,28,.08); border-radius: 14px; overflow: hidden; border: 1px solid #dbe3df;">
+  <div style="background: linear-gradient(135deg, #1a3d2b, #6e8d73); padding: 2rem 2.5rem; color: #fff;">
+    <h2 style="margin: 0 0 0.5rem; font-size: 1.8rem; font-weight: 800;"><i class="fa-solid fa-gift" style="margin-right: 12px; color: #f59e0b;"></i>Visitor Loyalty Conversion</h2>
+    <p style="margin: 0; font-size: 0.95rem; opacity: 0.9;">Configure how visitors earn and redeem points across the platform.</p>
+  </div>
+  
+  <div class="card-body" style="padding: 2.5rem;">
+    <form method="post" class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      
+      <div style="grid-column: 1 / -1;">
+        <h3 style="font-size: 1.1rem; color: #173b28; border-bottom: 2px solid #e1e9e2; padding-bottom: 0.5rem; margin-bottom: 1rem;"><i class="fa-solid fa-coins" style="margin-right: 8px; color: #1a4f32;"></i>Earning Points</h3>
+      </div>
+
+      <div class="form-group">
+        <label style="font-weight: 700; color: #405448; margin-bottom: 0.4rem; display: block;">Points per Currency Unit</label>
+        <div style="position: relative;">
+          <i class="fa-solid fa-plus-minus" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64756b;"></i>
+          <input name="points_per_currency" type="number" step="0.01" min="0" value="{{ setting.points_per_currency }}" required class="form-control" style="padding-left: 36px; border-radius: 8px; border: 1px solid #c2d1c7;">
+        </div>
+        <small style="color: #64756b; margin-top: 0.3rem; display: block;">How many points earned per ₱1 spent.</small>
+      </div>
+
+      <div class="form-group" style="display: flex; flex-direction: column; justify-content: center; gap: 0.75rem; background: #f8faf8; padding: 1rem; border-radius: 8px; border: 1px solid #e1e9e2;">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; color: #173b28;">
+          <input type="checkbox" name="booking_enabled" {% if setting.booking_enabled %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #1a4f32;"> 
+          Award points for bookings
+        </label>
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; color: #173b28;">
+          <input type="checkbox" name="trivia_enabled" {% if setting.trivia_enabled %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #1a4f32;"> 
+          Award points for trivia
+        </label>
+      </div>
+
+      <div style="grid-column: 1 / -1; margin-top: 1rem;">
+        <h3 style="font-size: 1.1rem; color: #173b28; border-bottom: 2px solid #e1e9e2; padding-bottom: 0.5rem; margin-bottom: 1rem;"><i class="fa-solid fa-tags" style="margin-right: 8px; color: #1a4f32;"></i>Redeeming Points</h3>
+      </div>
+
+      <div class="form-group">
+        <label style="font-weight: 700; color: #405448; margin-bottom: 0.4rem; display: block;">Currency Value per Point</label>
+        <div style="position: relative;">
+          <i class="fa-solid fa-tag" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64756b;"></i>
+          <input name="currency_per_point" type="number" step="0.001" min="0.001" value="{{ setting.currency_per_point }}" required class="form-control" style="padding-left: 36px; border-radius: 8px; border: 1px solid #c2d1c7;">
+        </div>
+        <small style="color: #64756b; margin-top: 0.3rem; display: block;">Value of 1 point in PHP (e.g. 0.01).</small>
+      </div>
+
+      <div class="form-group">
+        <label style="font-weight: 700; color: #405448; margin-bottom: 0.4rem; display: block;">Min. Redemption Points</label>
+        <div style="position: relative;">
+          <i class="fa-solid fa-arrow-up-9-1" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64756b;"></i>
+          <input name="minimum_redemption_points" type="number" min="1" value="{{ setting.minimum_redemption_points }}" required class="form-control" style="padding-left: 36px; border-radius: 8px; border: 1px solid #c2d1c7;">
+        </div>
+        <small style="color: #64756b; margin-top: 0.3rem; display: block;">Minimum points required to redeem.</small>
+      </div>
+
+      <div class="form-group">
+        <label style="font-weight: 700; color: #405448; margin-bottom: 0.4rem; display: block;">Max. Redemption %</label>
+        <div style="position: relative;">
+          <i class="fa-solid fa-percent" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64756b;"></i>
+          <input name="maximum_redemption_percent" type="number" step="0.01" min="0.01" max="100" value="{{ setting.maximum_redemption_percent }}" required class="form-control" style="padding-left: 36px; border-radius: 8px; border: 1px solid #c2d1c7;">
+        </div>
+        <small style="color: #64756b; margin-top: 0.3rem; display: block;">Max % of order total that can be covered.</small>
+      </div>
+
+      <div class="form-group">
+        <label style="font-weight: 700; color: #405448; margin-bottom: 0.4rem; display: block;">Expiration Days (Optional)</label>
+        <div style="position: relative;">
+          <i class="fa-regular fa-calendar-xmark" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64756b;"></i>
+          <input name="expiration_days" type="number" min="1" value="{{ setting.expiration_days or '' }}" class="form-control" style="padding-left: 36px; border-radius: 8px; border: 1px solid #c2d1c7;" placeholder="No expiration">
+        </div>
+        <small style="color: #64756b; margin-top: 0.3rem; display: block;">Days until points expire.</small>
+      </div>
+
+      <div style="grid-column: 1 / -1; margin-top: 1rem; border-top: 1px solid #e1e9e2; padding-top: 1.5rem; text-align: right;">
+        <button class="btn btn-primary" type="submit" style="font-size: 1.05rem; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 700; box-shadow: 0 4px 12px rgba(26,79,50,0.3);">
+          <i class="fa-solid fa-floppy-disk" style="margin-right: 6px;"></i> Save Conversion Settings
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

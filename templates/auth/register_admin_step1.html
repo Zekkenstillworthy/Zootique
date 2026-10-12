@@ -87,6 +87,14 @@
           <input type="text" name="zoo_location" value="{{ session.get('reg_zoo_location', '') }}" placeholder="Full Address or Region" required style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px 16px; font-family: inherit; font-size: 14px;">
         </div>
 
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:16px; display:grid; gap:12px;">
+          <strong style="color:#166534;">Establishment contact</strong>
+          <input type="text" name="establishment_contact_name" value="{{ registration.establishment_contact_name if registration else '' }}" placeholder="Contact person name" required style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:12px 14px; font-family:inherit;">
+          <input type="email" name="establishment_contact_email" value="{{ registration.establishment_contact_email if registration else '' }}" placeholder="establishment@example.com" required style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:12px 14px; font-family:inherit;">
+          <input type="tel" name="establishment_contact_phone" value="{{ registration.establishment_contact_phone if registration else '' }}" placeholder="Contact phone (optional)" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:12px 14px; font-family:inherit;">
+          <small style="color:#166534;">This address receives registration status and confirmation emails.</small>
+        </div>
+
         <div style="background: #e2e8f0; color: #334155; padding: 12px 16px; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 10px; border-radius: 6px; margin-top: 0.5rem;">
           <i class="fa-solid fa-file-shield"></i> REQUIRED DOCUMENTS
         </div>

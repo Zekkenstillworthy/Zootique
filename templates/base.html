@@ -474,6 +474,7 @@
             display: flex;
             flex-direction: column;
             gap: 0;
+            margin-bottom: 4px;
         }
 
         /* Trigger button matches .nav-item exactly */
@@ -481,20 +482,36 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 8px;
-            padding: 10px 18px;
+            gap: 10px;
+            padding: 0 12px;
             min-height: 44px;
+            margin: 0;
             color: rgba(255, 255, 255, 0.65);
             font-size: 13px;
             font-weight: 500;
             text-decoration: none;
-            border-radius: 0;
+            border-radius: 8px;
             transition: background 0.2s ease, color 0.2s ease;
             cursor: pointer;
             border: none;
             background: none;
             width: 100%;
             text-align: left;
+        }
+
+        .sidebar-nav > .nav-item,
+        .sidebar-nav > .nav-dropdown > .nav-dropdown-trigger {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+
+        .sidebar-nav > .nav-item > i:first-child,
+        .sidebar-nav > .nav-dropdown > .nav-dropdown-trigger .trigger-label > i:first-child {
+            width: 20px;
+            text-align: center;
+            flex-shrink: 0;
         }
 
         .nav-dropdown-trigger .trigger-label {
@@ -514,7 +531,9 @@
         }
 
         .nav-dropdown-trigger .chevron {
+            width: 20px;
             font-size: 10px;
+            text-align: center;
             opacity: 0.6;
             transition: transform 0.2s ease;
             flex-shrink: 0;
@@ -543,6 +562,9 @@
             gap: 0;
             background: rgba(0, 0, 0, 0.15);
             overflow: hidden;
+            margin: 0 8px 4px;
+            padding: 4px 0 4px 12px;
+            border-left: 1px solid rgba(255, 255, 255, 0.18);
         }
 
         .nav-dropdown-menu.open {
@@ -554,19 +576,21 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 9px 18px 9px 42px;
+            min-height: 38px;
+            padding: 0 12px;
             color: rgba(255, 255, 255, 0.55);
             text-decoration: none;
             font-size: 12px;
             font-weight: 500;
             transition: background 0.2s ease, color 0.2s ease;
             white-space: nowrap;
-            border-left: 2px solid transparent;
+            border-radius: 8px;
+            border-left: 0;
             position: relative;
         }
 
         .nav-dropdown-item i {
-            width: 14px;
+            width: 20px;
             text-align: center;
             font-size: 12px;
             flex-shrink: 0;
@@ -582,7 +606,6 @@
             background: rgba(255, 255, 255, 0.10);
             color: #ffffff;
             font-weight: 600;
-            border-left-color: var(--accent, #e67e22);
         }
 
         /* ===== RESPONSIVE OVERRIDES for inline-styled visitor templates ===== */
@@ -774,7 +797,8 @@
 
 
             <!-- Navigation -->
-            <nav cl                {% if request.blueprint == 'animal_farm_admin' %}
+            <nav class="sidebar-nav">
+                {% if request.blueprint == 'animal_farm_admin' %}
                 <!-- Animal Farm Admin Navigation -->
                 {# -- resolve subscription tier for lock icons -- #}
                 {% set _sub_tier = g_sub_tier if g_sub_tier is defined else -1 %}
@@ -792,11 +816,25 @@
                 <a href="{{ url_for('animal_farm_admin.park_rules_management') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_admin.park_rules_management' %}active{% endif %}">
                     <i class="fa-solid fa-clipboard-list"></i> Park Rules
-                    {% if _sub_tier < 1 %}<i class="fa-solid fa-lock" style="font-size:10px; margin-left:auto; opacity:0.6;"></i>{% endif %}
+                    {% if _sub_tier < feature_required_tier('park_rules') %}<i class="fa-solid fa-lock" title="Requires Standard Tier" style="font-size:10px; margin-left:auto; opacity:0.6;"></i>{% endif %}
                 </a>
                 <a href="{{ url_for('animal_farm_admin.booking_management') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_admin.booking_management' %}active{% endif %}">
                     <i class="fa-solid fa-calendar-check"></i> Bookings
+                </a>
+                <a href="{{ url_for('animal_farm_admin.booking_bundles') }}"
+                    class="nav-item {% if request.endpoint == 'animal_farm_admin.booking_bundles' %}active{% endif %}">
+                    <i class="fa-solid fa-boxes-stacked"></i> Booking Bundles
+                </a>
+                <a href="{{ url_for('animal_farm_admin.availability_settings') }}"
+                    class="nav-item {% if request.endpoint == 'animal_farm_admin.availability_settings' %}active{% endif %}">
+                    <i class="fa-solid fa-clock"></i> Availability
+                    {% if _sub_tier < feature_required_tier('availability_settings') %}<i class="fa-solid fa-lock" title="Requires Standard Tier" style="font-size:10px; margin-left:auto; opacity:0.6;"></i>{% endif %}
+                </a>
+                <a href="{{ url_for('animal_farm_admin.payment_methods') }}"
+                    class="nav-item {% if request.endpoint == 'animal_farm_admin.payment_methods' %}active{% endif %}">
+                    <i class="fa-solid fa-credit-card"></i> Payment Methods
+                    {% if _sub_tier < feature_required_tier('payment_methods') %}<i class="fa-solid fa-lock" title="Requires Standard Tier" style="font-size:10px; margin-left:auto; opacity:0.6;"></i>{% endif %}
                 </a>
 
                 <!-- Services Dropdown -->
@@ -805,7 +843,7 @@
                         class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.services_management' %}active{% endif %}"
                         onclick="toggleDropdown(event, 'services-dropdown')">
                         <span class="trigger-label"><i class="fa-solid fa-list-check"></i> Services
-                          {% if _sub_tier < 1 %}<i class="fa-solid fa-lock" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
+                          {% if _sub_tier < feature_required_tier('services') %}<i class="fa-solid fa-lock" title="Requires Standard Tier" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
                         </span>
                         <i class="fa-solid fa-chevron-down chevron"></i>
                     </button>
@@ -827,7 +865,7 @@
                         class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.animals_management' %}active{% endif %}"
                         onclick="toggleDropdown(event, 'animals-dropdown')">
                         <span class="trigger-label"><i class="fa-solid fa-paw"></i> Animals
-                          {% if _sub_tier < 1 %}<i class="fa-solid fa-lock" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
+                          {% if _sub_tier < feature_required_tier('animals') %}<i class="fa-solid fa-lock" title="Requires Standard Tier" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
                         </span>
                         <i class="fa-solid fa-chevron-down chevron"></i>
                     </button>
@@ -849,7 +887,7 @@
                         class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.events_management' %}active{% endif %}"
                         onclick="toggleDropdown(event, 'events-dropdown')">
                         <span class="trigger-label"><i class="fa-solid fa-calendar-days"></i> Events
-                          {% if _sub_tier < 1 %}<i class="fa-solid fa-lock" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
+                          {% if _sub_tier < feature_required_tier('events') %}<i class="fa-solid fa-lock" title="Requires Standard Tier" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
                         </span>
                         <i class="fa-solid fa-chevron-down chevron"></i>
                     </button>
@@ -871,7 +909,7 @@
                         class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.promotions_management' %}active{% endif %}"
                         onclick="toggleDropdown(event, 'promotions-dropdown')">
                         <span class="trigger-label"><i class="fa-solid fa-tags"></i> Promotions
-                          {% if _sub_tier < 1 %}<i class="fa-solid fa-lock" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
+                          {% if _sub_tier < feature_required_tier('promotions') %}<i class="fa-solid fa-lock" title="Requires Standard Tier" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
                         </span>
                         <i class="fa-solid fa-chevron-down chevron"></i>
                     </button>
@@ -896,7 +934,7 @@
                         class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.visitor_map_zone_management' %}active{% endif %}"
                         onclick="toggleDropdown(event, 'afa-map-dropdown')">
                         <span class="trigger-label"><i class="fa-solid fa-map-location-dot"></i> Map &amp; Zones
-                          {% if _sub_tier < 2 %}<i class="fa-solid fa-lock" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
+                          {% if _sub_tier < feature_required_tier('map_zones') %}<i class="fa-solid fa-lock" title="Requires Pro Tier" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
                         </span>
                         <i class="fa-solid fa-chevron-down chevron"></i>
                     </button>
@@ -927,24 +965,34 @@
                 <a href="{{ url_for('animal_farm_admin.payment_revenue_management') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_admin.payment_revenue_management' %}active{% endif %}">
                     <i class="fa-solid fa-money-bills"></i> Revenue
-                    {% if _sub_tier < 1 %}<i class="fa-solid fa-lock" style="font-size:10px; margin-left:auto; opacity:0.6;"></i>{% endif %}
+                    {% if _sub_tier < feature_required_tier('revenue') %}<i class="fa-solid fa-lock" title="Requires Standard Tier" style="font-size:10px; margin-left:auto; opacity:0.6;"></i>{% endif %}
                 </a>
                 <a href="{{ url_for('animal_farm_admin.analytics_reports') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_admin.analytics_reports' %}active{% endif %}">
                     <i class="fa-solid fa-chart-line"></i> Analytics &amp; Reports
-                    {% if _sub_tier < 2 %}<i class="fa-solid fa-lock" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
+                    {% if _sub_tier < feature_required_tier('analytics') %}<i class="fa-solid fa-lock" title="Requires Pro Tier" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
+                </a>
+                <a href="{{ url_for('animal_farm_admin.graph_builder') }}"
+                    class="nav-item {% if request.endpoint == 'animal_farm_admin.graph_builder' %}active{% endif %}">
+                    <i class="fa-solid fa-chart-pie"></i> Graph Builder
+                    {% if _sub_tier < feature_required_tier('graph_builder') %}<i class="fa-solid fa-lock" title="Requires Pro Tier" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
                 </a>
                 <a href="{{ url_for('animal_farm_admin.system_feedback') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_admin.system_feedback' %}active{% endif %}">
                     <i class="fa-solid fa-headset"></i> Feedback to Super Admin
                 </a>
+                <a href="{{ url_for('animal_farm_admin.trivia_management') }}"
+                    class="nav-item {% if request.endpoint == 'animal_farm_admin.trivia_management' %}active{% endif %}">
+                    <i class="fa-solid fa-gamepad"></i> Trivia &amp; Quizzes
+                </a>
+
                 <!-- Staff Management Dropdown -->
                 <div class="nav-dropdown">
                     <button
                         class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.staff_management' %}active{% endif %}"
                         onclick="toggleDropdown(event, 'afa-staff-dropdown')">
                         <span class="trigger-label"><i class="fa-solid fa-user-check"></i> Staff Management
-                          {% if _sub_tier < 2 %}<i class="fa-solid fa-lock" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
+                          {% if _sub_tier < feature_required_tier('staff_management') %}<i class="fa-solid fa-lock" title="Requires Standard Tier" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
                         </span>
                         <i class="fa-solid fa-chevron-down chevron"></i>
                     </button>
@@ -999,6 +1047,10 @@
                 <a href="{{ url_for('animal_farm_staff.my_bookings') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_staff.my_bookings' %}active{% endif %}">
                     <i class="fa-solid fa-calendar-check"></i> My Assigned Bookings
+                </a>
+                <a href="{{ url_for('animal_farm_staff.ticket_scanner') }}"
+                    class="nav-item {% if request.endpoint == 'animal_farm_staff.ticket_scanner' %}active{% endif %}">
+                    <i class="fa-solid fa-qrcode"></i> Ticket Scanner
                 </a>
                 <!-- Events Management Dropdown -->
                 <div class="nav-dropdown">
@@ -1207,7 +1259,7 @@
                 {% endif %}
                 {% endwith %}
 
-                    {% else %}
+            {% else %}
                     <!-- =================== VISITOR TOP NAVBAR LAYOUT =================== -->
                     <header style="background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; overflow: visible;">
                         <div class="container visitor-navbar" style="padding: 0 1.5rem; box-shadow: none; position: static; display:flex; align-items:center; height:60px; gap:0;">
@@ -1252,6 +1304,8 @@
                                     class="visitor-nav-link {% if request.endpoint == 'visitor.feedback' %}active{% endif %}">Feedback</a>
                                 <a href="{{ url_for('visitor.park_info') }}"
                                     class="visitor-nav-link {% if request.endpoint == 'visitor.park_info' %}active{% endif %}">Park Info</a>
+                                <a href="{{ url_for('visitor.trivia') }}"
+                                    class="visitor-nav-link {% if request.endpoint == 'visitor.trivia' %}active{% endif %}"><i class="fa-solid fa-gamepad" style="margin-right: 4px;"></i> Trivia</a>
                                 {% else %}
                                 <a href="/" class="visitor-nav-link">Back to Landing</a>
                                 {% endif %}

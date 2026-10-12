@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}E-Ticket — {{ booking.id }} | Zootique{% endblock %}
+
+{% block extra_head %}
+<style>
+  .ticket-wrapper {
+    max-width: 680px;
+    margin: 2rem auto 4rem auto;
+    padding: 0 1rem;
+  }
+  .ticket-card {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 12px 35px rgba(26, 79, 50, 0.12);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    position: relative;
+  }
+  .ticket-card::before, .ticket-card::after {
+    content: '';
+    position: absolute;
+    top: 62%;
+    width: 24px;
+    height: 24px;
+    background: #FAF7F2;
+    border-radius: 50%;
+    z-index: 10;
+  }
+  .ticket-card::before { left: -12px; }
+  .ticket-card::after { right: -12px; }
+
+  .ticket-header {
+    background: linear-gradient(135deg, #143823 0%, #1a4f32 100%);
+    color: #ffffff;
+    padding: 2rem;
+    position: relative;
+    text-align: center;
+  }
+  .ticket-zoo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #fef08a;
+    margin-bottom: 0.75rem;
+  }
+  .ticket-zoo-name {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.02em;
+  }
+  .ticket-service-name {
+    font-size: 1.05rem;
+    color: #d1fae5;
+    margin: 0.4rem 0 0 0;
+    font-weight: 500;
+  }
+  .ticket-body {
+    padding: 2.25rem 2rem;
+  }
+  .ticket-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .ticket-field-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+  }
+  .ticket-field-val {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .ticket-divider {
+    border: none;
+    border-top: 2px dashed #e2e8f0;
+    margin: 1.5rem 0 2rem 0;
+    position: relative;
+  }
+  .ticket-qr-section {
+    text-align: center;
+    padding: 1rem 0;
+    background: #f8fafc;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 1.75rem;
+  }
+  .ticket-qr-img {
+    width: 180px;
+    height: 180px;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    margin: 0.5rem auto;
+    display: block;
+  }
+  .ticket-ref-code {
+    font-family: monospace;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #1a4f32;
+    letter-spacing: 0.1em;
+  }
+  .ticket-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 800;
+  }
+  .pill-confirmed {
+    background: #dcfce7;
+    color: #15803d;
+  }
+  .ticket-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.75rem;
+  }
+  .btn-print {
+    background: #1a4f32;
+    color: #ffffff;
+    font-weight: 700;
+    padding: 0.75rem 1.75rem;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    transition: background 0.2s;
+  }
+  .btn-print:hover { background: #143823; }
+  .btn-back {
+    background: #ffffff;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    font-weight: 700;
+    padding: 0.75rem 1.4rem;
+    border-radius: 12px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  @media print {
+    body * { visibility: hidden; }
+    .ticket-card, .ticket-card * { visibility: visible; }
+    .ticket-card {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      box-shadow: none;
+      border: 1px solid #000;
+    }
+    .ticket-actions { display: none !important; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ticket-wrapper">
+  <div class="ticket-card">
+    <!-- Header -->
+    <div class="ticket-header">
+      <div class="ticket-zoo-badge">
+        <i class="fa-solid fa-tree"></i> {{ zoo.name if zoo else 'Official Park Ticket' }}
+      </div>
+      <h1 class="ticket-zoo-name">{{ booking.service_name or 'Park Admission' }}</h1>
+      <p class="ticket-service-name">
+        <i class="fa-solid fa-location-dot"></i> {{ zoo.location if (zoo and zoo.location) else 'Wildlife Sanctuary' }}
+      </p>
+    </div>
+
+    <!-- Body -->
+    <div class="ticket-body">
+      <div class="ticket-grid">
+        <div>
+          <div class="ticket-field-label">Visitor Name</div>
+          <div class="ticket-field-val"><i class="fa-solid fa-user"></i> {{ booking.visitor_name }}</div>
+        </div>
+        <div>
+          <div class="ticket-field-label">Booking Status</div>
+          <div class="ticket-field-val">
+            <span class="ticket-status-pill pill-confirmed">
+              <i class="fa-solid fa-circle-check"></i> {{ booking.status|capitalize }}
+            </span>
+          </div>
+        </div>
+        <div>
+          <div class="ticket-field-label">Visit Date</div>
+          <div class="ticket-field-val"><i class="fa-regular fa-calendar"></i> {{ booking.date }}</div>
+        </div>
+        <div>
+          <div class="ticket-field-label">Time Slot</div>
+          <div class="ticket-field-val"><i class="fa-regular fa-clock"></i> {{ booking.time or 'Full Day Entry' }}</div>
+        </div>
+        <div>
+          <div class="ticket-field-label">Number of Guests</div>
+          <div class="ticket-field-val"><i class="fa-solid fa-users"></i> {{ booking.guests or 1 }} Guest(s)</div>
+        </div>
+        <div>
+          <div class="ticket-field-label">Total Amount Paid</div>
+          <div class="ticket-field-val" style="color: #1a4f32;">
+            &#8369;{{ '%.2f'|format(payment.amount if payment else (booking.amount or (service.price if service else 0.0))) }}
+          </div>
+        </div>
+      </div>
+
+      <hr class="ticket-divider">
+
+      <!-- QR Code Section -->
+      <div class="ticket-qr-section">
+        <div class="ticket-field-label" style="margin-bottom:0.4rem;">Present at Entrance Gate</div>
+        <img class="ticket-qr-img"
+             src="{{ qr_code }}"
+             alt="QR Ticket Code for {{ booking.id }}">
+        <div class="ticket-ref-code">{{ booking.id }}</div>
+        <div style="font-size:0.8rem; color:#64748b; margin-top:0.35rem;">
+          Fast scan enabled &bull; Valid only on scheduled date
+        </div>
+      </div>
+
+      <!-- Guidelines -->
+      <div style="background:#fefce8; border:1px solid #fef08a; border-radius:10px; padding:0.85rem 1rem; font-size:0.82rem; color:#713f12; line-height:1.45;">
+        <i class="fa-solid fa-circle-info" style="color:#ca8a04; margin-right:4px;"></i>
+        Please arrive 15 minutes before your time slot. Have a valid government-issued ID matching the visitor name.
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="ticket-actions">
+    <button class="btn-print" onclick="window.print()">
+      <i class="fa-solid fa-print"></i> Print / Save Ticket
+    </button>
+    <a href="{{ url_for('visitor.bookings') }}" class="btn-back">
+      <i class="fa-solid fa-arrow-left"></i> My Bookings
+    </a>
+  </div>
+</div>
+{% endblock %}

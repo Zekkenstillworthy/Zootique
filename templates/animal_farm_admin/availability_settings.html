@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Availability Settings{% endblock %}
+{% block content %}
+<main class="container" style="max-width:900px;padding:2rem 1rem;">
+  <h1>Availability Settings</h1>
+  <p>These defaults apply to all booking services at {{ zoo.name }}.</p>
+  {% if not can_edit %}<p class="alert alert-warning">Editing requires subscription tier {{ required_tier }} or higher.</p>{% endif %}
+  <form method="post" style="display:grid;gap:1rem;background:#fff;padding:1.5rem;border-radius:12px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Opening time <input type="time" name="opening_time" value="{{ service.opening_time if service else '08:00' }}" required></label>
+    <label>Closing time <input type="time" name="closing_time" value="{{ service.closing_time if service else '17:00' }}" required></label>
+    <label>Slot duration (minutes) <input type="number" name="slot_duration_minutes" min="30" value="{{ service.slot_duration_minutes if service else 60 }}" required></label>
+    <label>Daily capacity <input type="number" name="daily_capacity" min="1" value="{{ service.daily_capacity if service else 50 }}" required></label>
+    <label>Slot capacity <input type="number" name="slot_capacity" min="1" value="{{ service.slot_capacity if service else 15 }}" required></label>
+    <label>Maximum advance booking days <input type="number" name="max_advance_days" min="1" value="{{ settings.max_advance_days }}" required></label>
+    <fieldset>
+      <legend>Closed days</legend>
+      {% for day, label in [(0,'Monday'),(1,'Tuesday'),(2,'Wednesday'),(3,'Thursday'),(4,'Friday'),(5,'Saturday'),(6,'Sunday')] %}
+      <label style="margin-right:1rem;"><input type="checkbox" name="closure_days" value="{{ day }}" {% if day in settings.closure_days %}checked{% endif %}> {{ label }}</label>
+      {% endfor %}
+    </fieldset>
+    <button type="submit" {% if not can_edit %}disabled{% endif %}>Save availability</button>
+  </form>
+</main>
+{% endblock %}

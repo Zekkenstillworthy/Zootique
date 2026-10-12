@@ -64,6 +64,21 @@
                 </div>
             </div>
 
+            <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:1.25rem;">
+                <h3 style="margin:0 0 .4rem; color:#1a4f32;">Loyalty balance</h3>
+                <p style="margin:0 0 1rem; color:#64748b;">Persistent balance: <strong>{{ loyalty_account.balance if loyalty_account else 0 }}</strong> points</p>
+                {% if loyalty_transactions %}
+                <div style="display:grid; gap:.5rem;">
+                    {% for transaction in loyalty_transactions %}
+                    <div style="display:flex; justify-content:space-between; gap:1rem; border-top:1px solid #f1f5f9; padding-top:.5rem;">
+                        <span>{{ transaction.description }}</span>
+                        <strong style="color:{{ '#15803d' if transaction.points > 0 else '#b91c1c' }}">{{ '+' if transaction.points > 0 else '' }}{{ transaction.points }}</strong>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}<span style="color:#64748b;">No loyalty transactions yet.</span>{% endif %}
+            </div>
+
             <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
                 <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 0.9rem; color: #1e293b; margin-bottom: 0.8rem;">
                     <span>Complete Your Profile</span> <span>75% Complete</span>
@@ -89,6 +104,7 @@
 
                 {% if edit %}
                 <form method="post" action="{{ url_for('visitor.profile', tab='profile') }}" enctype="multipart/form-data" style="display:grid; grid-template-columns: 1fr 1fr; gap: 1.2rem;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="profile">
                     <div>
                         <label style="display:block; font-size:0.75rem; color:#94a3b8; font-weight: 800; margin-bottom: 0.4rem;">Full Name</label>
@@ -173,6 +189,7 @@
                 <h3 style="margin:0 0 0.5rem 0; font-size: 1.2rem; color: #1a4f32;">Security</h3>
                 <div style="color:#64748b; margin-bottom:1rem;">Manage your password and sign-in protection.</div>
                 <form method="post" action="{{ url_for('visitor.profile', tab='security') }}" style="display:grid; gap:1rem; max-width: 560px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="security">
                     <div>
                         <label style="display:block; font-size:0.75rem; color:#94a3b8; font-weight: 800; margin-bottom: 0.4rem;">Current Password</label>
@@ -196,6 +213,7 @@
                 <h3 style="margin:0 0 0.5rem 0; font-size: 1.2rem; color: #1a4f32;">Notifications</h3>
                 <div style="color:#64748b; margin-bottom:1rem;">Choose how you want to receive booking and promo updates.</div>
                 <form method="post" action="{{ url_for('visitor.profile', tab='notifications') }}" style="display:grid; gap:1rem; max-width: 560px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="notifications">
                     <label style="display:flex; gap:0.75rem; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;">
                         <input type="checkbox" name="email_bookings" {% if notification_prefs.email_bookings %}checked{% endif %}>
@@ -218,14 +236,62 @@
             </div>
             {% elif show_tab == 'visits' %}
             <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">
-                <h3 style="margin:0 0 0.5rem 0; font-size: 1.2rem; color: #1a4f32;">My Visits & Points</h3>
-                <div style="color:#64748b; margin-bottom:1rem;">Track your visit history and rewards balance.</div>
-                <div style="display:flex; gap:1rem; flex-wrap:wrap;">
-                    <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px; font-weight:700;">Visits: {{ bookings_count or 0 }}</div>
-                    <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px; font-weight:700;">Points: {{ points or 0 }}</div>
-                    <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px; font-weight:700;">Reviews: {{ reviews_count or 0 }}</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1rem;">
+                    <div>
+                        <h3 style="margin:0 0 0.25rem 0; font-size: 1.25rem; color: #1a4f32; font-family:'Outfit',sans-serif; font-weight:800;">My Visits, Points &amp; Badges</h3>
+                        <div style="color:#64748b; font-size:0.9rem;">Track your park visits, eco-rewards balance, and unlocked safari achievements.</div>
+                    </div>
+                    <a href="{{ url_for('visitor.trivia') }}" class="btn" style="background:#1a4f32; color:white; border-radius:10px; font-weight:800; font-size:0.88rem; padding:0.6rem 1.1rem; text-decoration:none; display:inline-flex; align-items:center; gap:0.45rem;">
+                        <i class="fa-solid fa-gamepad"></i> Play Trivia Arena
+                    </a>
                 </div>
-                <div style="margin-top:1rem; display:grid; gap:0.75rem;">
+
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:1rem; margin-bottom:1.75rem;">
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:1.1rem; border-radius:12px;">
+                        <div style="color:#64748b; font-size:0.8rem; font-weight:700; text-transform:uppercase;">Visits Completed</div>
+                        <div style="font-size:1.6rem; font-weight:900; color:#1a4f32; margin-top:0.25rem;">{{ bookings_count or 0 }}</div>
+                    </div>
+                    <div style="background:#fffbeb; border:1.5px solid #fde68a; padding:1.1rem; border-radius:12px;">
+                        <div style="color:#b45309; font-size:0.8rem; font-weight:700; text-transform:uppercase;">Wild Points</div>
+                        <div style="font-size:1.6rem; font-weight:900; color:#d97706; margin-top:0.25rem;">👑 {{ points or 0 }}</div>
+                    </div>
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:1.1rem; border-radius:12px;">
+                        <div style="color:#64748b; font-size:0.8rem; font-weight:700; text-transform:uppercase;">Reviews Shared</div>
+                        <div style="font-size:1.6rem; font-weight:900; color:#1a4f32; margin-top:0.25rem;">{{ reviews_count or 0 }}</div>
+                    </div>
+                </div>
+
+                <!-- UNLOCKED BADGES SHOWCASE -->
+                <div style="margin-bottom:2rem;">
+                    <h4 style="font-size:1.05rem; font-weight:800; color:#1a4f32; margin:0 0 0.85rem 0; display:flex; align-items:center; gap:0.5rem;">
+                        <i class="fa-solid fa-medal" style="color:#f59e0b;"></i> Safari Badges
+                    </h4>
+                    {% if unlocked_badges %}
+                    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:0.85rem;">
+                        {% for badge in unlocked_badges %}
+                        <div style="background:linear-gradient(135deg, #fffbeb 0%, #ffffff 100%); border:1.5px solid #fde68a; border-radius:12px; padding:1rem; display:flex; align-items:center; gap:0.85rem; box-shadow:0 2px 8px rgba(245,158,11,0.08);">
+                            <div style="width:42px; height:42px; border-radius:50%; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:1.25rem; flex-shrink:0;">
+                                <i class="{{ badge.badge_icon }}"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight:800; color:#1e293b; font-size:0.92rem;">{{ badge.badge_name }}</div>
+                                <div style="font-size:0.75rem; color:#64748b; margin-top:1px;">{{ badge.badge_description or 'Trivia Milestone' }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1.25rem; text-align:center; color:#64748b;">
+                        <i class="fa-solid fa-lock" style="font-size:1.5rem; margin-bottom:0.4rem; color:#94a3b8; display:block;"></i>
+                        <span style="font-weight:700;">No badges unlocked yet.</span>
+                        <div style="font-size:0.85rem; margin-top:0.25rem;">Answer wildlife questions in the <a href="{{ url_for('visitor.trivia') }}" style="color:#1a4f32; font-weight:800; text-decoration:none;">Trivia Arena</a> to earn your first badge!</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- RECENT REVIEWS -->
+                <h4 style="font-size:1.05rem; font-weight:800; color:#1a4f32; margin:0 0 0.75rem 0;">Visitor Reviews</h4>
+                <div style="display:grid; gap:0.75rem;">
                     {% for review in recent_reviews %}
                     <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;">
                         <div style="font-weight:800; color:#1e293b;">{{ review.visitor_name or 'Review' }}</div>
@@ -236,6 +302,7 @@
                     {% endfor %}
                 </div>
             </div>
+
             {% elif show_tab == 'payments' %}
             <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">
                 <h3 style="margin:0 0 0.5rem 0; font-size: 1.2rem; color: #1a4f32;">Payment Methods</h3>

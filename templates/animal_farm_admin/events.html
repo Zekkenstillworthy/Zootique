@@ -21,6 +21,20 @@
   <span id="zfToastMsg">Event saved successfully.</span>
 </div>
 
+{% if not can_edit_feature('events') %}
+<div style="margin-bottom: 20px; background: #fffbeb; border: 1.5px solid #f59e0b; padding: 14px 18px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+  <div style="display:flex; align-items:center; gap:10px;">
+    <i class="fa-solid fa-lock" style="color:#d97706; font-size:18px;"></i>
+    <span style="font-size:14px; color:#92400e; font-weight:600;">
+      <strong>Read-Only Mode:</strong> An active subscription with Super Admin is required to create, edit, or delete events.
+    </span>
+  </div>
+  <a href="{{ url_for('animal_farm_admin.subscriptions') }}" class="btn btn-primary btn-sm" style="white-space:nowrap;">
+    <i class="fa-solid fa-rocket"></i> Subscribe Now
+  </a>
+</div>
+{% endif %}
+
 <div class="two-col" style="--two-col-template: 1fr 1fr; {% if selected_tab == 'list' %}--two-col-template: 1fr;{% elif selected_tab == 'add' %}--two-col-template: 1fr;{% endif %}">
     
     {% if selected_tab in ['add', 'all'] %}
@@ -122,10 +136,10 @@
                 <a href="?tab=list" class="zf-btn-cancel" id="eventCancelBtn" onclick="if(window.location.search.includes('tab=add')){resetEventForm();}">
                     Cancel
                 </a>
-                <button type="submit" class="zf-btn-save zf-btn-primary" id="eventSubmitBtn">
+                <button type="submit" class="zf-btn-save zf-btn-primary" id="eventSubmitBtn" {% if not can_edit_feature('events') %}disabled title="Active subscription required to save events" style="opacity:0.6; cursor:not-allowed;"{% endif %}>
                     <span class="zf-spinner"></span>
                     <i class="fa-solid fa-floppy-disk zf-save-label"></i>
-                    <span class="zf-save-label" id="eventBtnText">Save Event</span>
+                    <span class="zf-save-label" id="eventBtnText">{% if not can_edit_feature('events') %}🔒 Subscribe to Save{% else %}Save Event{% endif %}</span>
                 </button>
             </div>
         </form>
@@ -178,11 +192,11 @@
                                 <td style="text-align:right; padding-right:16px;">
                                     <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
                                         <button class="zf-icon-btn" type="button" title="Edit Event"
-                                                onclick='fillEventForm({{ e.id|tojson }}, {{ e.name|tojson }}, {{ (e.type or "")|tojson }}, {{ (e.time or "")|tojson }}, {{ (e.location or "")|tojson }}, {{ (e.image_url or "")|tojson }})'>
+                                                {% if not can_edit_feature('events') %}disabled title="Active subscription required to edit" style="opacity:0.5; cursor:not-allowed;"{% else %}onclick='fillEventForm({{ e.id|tojson }}, {{ e.name|tojson }}, {{ (e.type or "")|tojson }}, {{ (e.time or "")|tojson }}, {{ (e.location or "")|tojson }}, {{ (e.image_url or "")|tojson }})'{% endif %}>
                                             <i class="fa-solid fa-pen"></i>
                                         </button>
                                         <form method="post" action="{{ url_for('animal_farm_admin.delete_event', event_id=e.id) }}" style="display:inline;" onsubmit="return confirm('Delete this event?');">
-                                            <button class="zf-icon-btn danger" type="submit" title="Delete Event">
+                                            <button class="zf-icon-btn danger" type="submit" title="Delete Event" {% if not can_edit_feature('events') %}disabled title="Active subscription required to delete" style="opacity:0.5; cursor:not-allowed;"{% endif %}>
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
                                         </form>

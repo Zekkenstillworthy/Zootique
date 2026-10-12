@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Notifications | Staff{% endblock %}
+{% block page_title %}Staff Notifications{% endblock %}
+{% block content %}
+<div class="card-panel">
+  <div class="card-header"><h2>NOTIFICATIONS <span class="badge badge-role">{{ unread }} unread</span></h2></div>
+  <div class="card-body" style="display:grid; gap:10px;">
+    {% for item in notifications %}
+      <div style="border:1px solid var(--border-light); border-radius:8px; padding:12px; {% if not item.read_at %}background:#f0fdf4;{% endif %}">
+        <strong>{{ item.message }}</strong><div style="color:var(--text-muted); font-size:12px;">{{ item.created_at.strftime('%b %d, %Y %I:%M %p') }}</div>
+      </div>
+    {% else %}<p>No notifications yet.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

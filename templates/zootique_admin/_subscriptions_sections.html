@@ -126,7 +126,7 @@
 
           <div>
             <label>Plan Name</label>
-            <input type="text" name="name" value="{{ edit_plan.name if edit_plan else '' }}" placeholder="Basic Field, Habitat Pro, ..." required>
+            <input type="text" name="name" value="{{ edit_plan.name if edit_plan else '' }}" placeholder="Standard or Pro" required>
           </div>
 
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
@@ -145,7 +145,7 @@
 
           <div>
             <label>Features (one per line)</label>
-            <textarea name="features" rows="7" placeholder="Up to 500 Animals\n3 Admin Users\nBasic Reporting">{{ edit_plan.features if edit_plan and edit_plan.features else '' }}</textarea>
+            <textarea name="features" rows="7" placeholder="Up to 500 Animals\n3 Admin Users\nStandard Reporting">{{ edit_plan.features if edit_plan and edit_plan.features else '' }}</textarea>
           </div>
 
           <div style="display:flex; gap:8px; flex-wrap:wrap;">

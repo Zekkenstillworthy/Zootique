@@ -490,7 +490,7 @@
         <div class="zoo-location">
           <i class="fa-solid fa-location-dot"></i> {{ zoo.location }}
         </div>
-        <p class="zoo-desc">{{ zoo.description }}</p>
+        <p class="zoo-desc">{{ zoo.description|public_text }}</p>
 
         <div class="zoo-card-footer">
           <div class="price-group">

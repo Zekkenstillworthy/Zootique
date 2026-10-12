@@ -5,3 +5,4 @@ psycopg[binary]
 python-dotenv==1.0.1
 supabase>=2.4.0
 tzdata
+qrcode[pil]>=7.4

@@ -48,26 +48,58 @@
             <h3 style="margin:0 0 0.8rem 0; color:#1a4f32;">Payment</h3>
             <div style="font-size:0.9rem; color:#64748b; margin-bottom:0.8rem;">Total Amount</div>
             <div style="font-size:1.6rem; font-weight:900; color:#1a4f32; margin-bottom:1rem;">₱{{ "{:,.2f}".format(booking.amount or 0) }}</div>
+            <div style="font-size:0.78rem; color:#64748b; margin-bottom:0.9rem;">
+                Payment provider: <strong>Simulated checkout</strong> for local development.
+            </div>
 
             {% if (booking.payment_status or 'unpaid')|lower == 'paid' %}
             <div style="padding:0.8rem; border-radius:10px; background:#dcfce7; color:#166534; font-weight:800;">
                 Already paid{% if booking.payment_reference %} · Ref {{ booking.payment_reference }}{% endif %}
             </div>
             {% else %}
-            <form method="post" action="{{ url_for('visitor.checkout') }}" style="display:grid; gap:0.8rem;">
+            <form method="post" action="{{ url_for('visitor.checkout') }}" style="display:grid; gap:1.25rem;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="booking_id" value="{{ booking.id }}">
                 <div>
-                    <label style="display:block; font-size:0.8rem; font-weight:800; color:#475569; margin-bottom:0.35rem;">Payment Method</label>
-                    <select name="payment_method" required style="width:100%; padding:0.75rem 0.9rem; border:1px solid #cbd5e1; border-radius:8px;">
+                    <label style="display:block; font-size:0.85rem; font-weight:800; color:#475569; margin-bottom:0.6rem;">Select Payment Method</label>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:0.65rem;">
+                        {% set method_meta = {
+                            'gcash': ('fa-mobile-screen-button', 'GCash'),
+                            'maya': ('fa-wallet', 'Maya'),
+                            'card': ('fa-credit-card', 'Credit / Debit Card'),
+                            'cash_on_arrival': ('fa-store', 'Pay at Zoo'),
+                            'cash': ('fa-store', 'Pay at Zoo')
+                        } %}
                         {% for m in supported_methods %}
-                        <option value="{{ m }}">{{ m|replace('_', ' ')|title }}</option>
+                        {% set meta = method_meta.get(m, ('fa-money-bill', m|replace('_', ' ')|title)) %}
+                        <label class="checkout-pay-card{% if loop.first %} is-selected{% endif %}"
+                               onclick="selectCheckoutMethod(this)"
+                               style="border: 1.5px solid {% if loop.first %}#1a4f32{% else %}#e2e8f0{% endif %}; background: {% if loop.first %}#e8f5ec{% else %}#ffffff{% endif %}; border-radius: 12px; padding: 0.9rem 0.6rem; display: flex; flex-direction: column; align-items: center; gap: 0.45rem; cursor: pointer; transition: all 0.2s;">
+                            <input type="radio" name="payment_method" value="{{ m }}" {% if loop.first %}checked{% endif %} style="display:none;">
+                            <i class="fa-solid {{ meta[0] }}" style="font-size: 1.35rem; color: #1a4f32;"></i>
+                            <span style="font-size: 0.8rem; font-weight: 700; color: #1e293b; text-align: center; line-height: 1.2;">{{ meta[1] }}</span>
+                        </label>
                         {% endfor %}
-                    </select>
+                    </div>
                 </div>
-                <button type="submit" style="background:#1a4f32; color:white; border:none; border-radius:8px; padding:0.75rem 1rem; font-weight:900;">
-                    Pay and Confirm Booking
+                <button type="submit" style="background:#1a4f32; color:white; border:none; border-radius:10px; padding:0.85rem 1rem; font-weight:900; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem;">
+                    <i class="fa-solid fa-lock"></i> Pay and Confirm Booking
                 </button>
             </form>
+            <script>
+            function selectCheckoutMethod(el) {
+                document.querySelectorAll('.checkout-pay-card').forEach(c => {
+                    c.classList.remove('is-selected');
+                    c.style.borderColor = '#e2e8f0';
+                    c.style.background = '#ffffff';
+                });
+                el.classList.add('is-selected');
+                el.style.borderColor = '#1a4f32';
+                el.style.background = '#e8f5ec';
+                const radio = el.querySelector('input[type="radio"]');
+                if (radio) radio.checked = true;
+            }
+            </script>
             {% endif %}
         </div>
     </div>

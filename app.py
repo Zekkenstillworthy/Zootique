@@ -1,12 +1,13 @@
 from datetime import timedelta
 
-from flask import Flask, jsonify, redirect, render_template, request, send_from_directory, session, url_for
+from flask import Flask, abort, flash, jsonify, redirect, render_template, request, send_from_directory, session, url_for
 from blueprints.visitor.routes import visitor_bp
 import importlib
 import os
 import secrets
 
 from flask_migrate import Migrate
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from models import db
 
@@ -64,6 +65,13 @@ def create_app() -> Flask:
         if session.get("user_id") is not None or has_any_role:
             session.permanent = True
             session.modified = True
+
+    @app.errorhandler(RequestEntityTooLarge)
+    def handle_oversized_request(error):
+        if request.path in {"/auth/register-step-1", "/auth/register-admin-step1"}:
+            flash("Each registration document must be no larger than 8 MB.", "error")
+            return redirect(url_for("auth.register_admin_step1"))
+        return "The submitted data is too large.", 413
 
     @app.context_processor
     def inject_csrf_token():
@@ -138,8 +146,8 @@ def create_app() -> Flask:
 
     with app.app_context():
         backend = db.engine.url.get_backend_name().lower()
-        if backend != "postgresql":
-            raise RuntimeError(f"Unsupported database backend '{backend}'. Zootique is configured for Postgres only.")
+        # if backend != "postgresql":
+        #     raise RuntimeError(f"Unsupported database backend '{backend}'. Zootique is configured for Postgres only.")
 
         # In production (Vercel) skip the eager connection probe.
         # Supabase validates the connection on first use via pool_pre_ping.
@@ -238,6 +246,24 @@ def create_app() -> Flask:
     app.register_blueprint(zoo_staff_bp, url_prefix="/animal-farm-staff")
     app.register_blueprint(api_bp, url_prefix="/api")
 
+    @app.context_processor
+    def inject_global_notifications():
+        user_id = session.get("user_id")
+        if not user_id:
+            return {"visitor_notifications": [], "visitor_unread_count": 0}
+        try:
+            from models import Notification
+            notifs = (
+                Notification.query.filter_by(user_id=int(user_id))
+                .order_by(Notification.created_at.desc())
+                .limit(15)
+                .all()
+            )
+            unread_count = sum(1 for n in notifs if not n.read_at)
+            return {"visitor_notifications": notifs, "visitor_unread_count": unread_count}
+        except Exception:
+            return {"visitor_notifications": [], "visitor_unread_count": 0}
+
     # --- Friendly URL aliases---
     @app.get("/zoo_admin")
     @app.get("/zoo_admin/")
@@ -288,8 +314,23 @@ def create_app() -> Flask:
             return jsonify({"error": "server_error", "message": "Unexpected server error."}), 500
         return "500 Internal Server Error", 500
 
+    @app.get("/uploads/establishment_registrations/<path:filename>")
+    def registration_uploaded_file(filename: str):
+        auth_by_role = session.get("auth_by_role") or {}
+        is_super_admin = session.get("role") == "zootique_admin" or (
+            isinstance(auth_by_role, dict) and isinstance(auth_by_role.get("zootique_admin"), dict)
+        )
+        if not is_super_admin:
+            abort(403)
+        return send_from_directory(
+            os.path.join(app.config["UPLOAD_FOLDER"], "establishment_registrations"),
+            filename,
+        )
+
     @app.get("/uploads/<path:filename>")
     def uploaded_file(filename: str):
+        if filename.startswith("establishment_registrations/"):
+            abort(403)
         return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
     return app
@@ -300,4 +341,3 @@ app = create_app()
 
 if __name__ == "__main__":
     app.run(debug=True)
-

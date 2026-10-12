@@ -10,7 +10,7 @@
     <div class="card-content">
         <h2 style="margin-bottom: 0.5rem;">{{ zoo.name }}</h2>
         <p style="color: var(--accent-color); font-weight: bold; margin-bottom: 1rem;">{{ zoo.type }} | {{ zoo.location }}</p>
-        <p style="line-height: 1.8; color: #555; margin-bottom: 2rem;">{{ zoo.description }}</p>
+        <p style="line-height: 1.8; color: #555; margin-bottom: 2rem;">{{ zoo.description|public_text }}</p>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
             <div>

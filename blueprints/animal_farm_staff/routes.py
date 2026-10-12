@@ -2,15 +2,16 @@ from __future__ import annotations
 
 import os
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from werkzeug.utils import secure_filename
 
 from services.storage import save_uploaded_image as _save_uploaded_image
 
-from models import Animal, Booking, Event, Feedback, StaffTask, User, Zoo, ZooZone, db
+from models import Animal, Booking, BookingTicket, BookingTicketScan, Event, Feedback, Notification, StaffTask, User, Zoo, ZooZone, Service, db
 from services.auth_guard import require_role_guard
+from services.tickets import verify_ticket
 
 zoo_staff_bp = Blueprint('animal_farm_staff', __name__)
 
@@ -115,6 +116,11 @@ def my_bookings():
 
     bookings = query.order_by(Booking.created_at.desc()).limit(300).all()
     all_bookings = Booking.query.filter_by(zoo_id=zoo.id, assigned_staff_user_id=user.id).all()
+    today_value = datetime.utcnow().date().isoformat()
+    today_bookings = [b for b in all_bookings if (b.date or '') == today_value]
+    today_guests = sum(int(b.guests or 0) for b in today_bookings if (b.status or '').lower() not in {'cancelled', 'refunded'})
+    daily_capacity = sum(int(s.daily_capacity or 0) for s in Service.query.filter_by(zoo_id=zoo.id).all())
+    today_remaining = max(0, daily_capacity - today_guests) if daily_capacity else None
 
     total = len(all_bookings)
     confirmed = sum(1 for b in all_bookings if (b.status or '').lower() == 'confirmed')
@@ -130,6 +136,9 @@ def my_bookings():
         confirmed=confirmed,
         pending=pending,
         cancelled=cancelled,
+        today_bookings=today_bookings,
+        today_guests=today_guests,
+        today_remaining=today_remaining,
     )
 
 
@@ -160,6 +169,109 @@ def update_assigned_booking_status(booking_id: str):
     flash('Booking status updated.', 'success')
     return redirect(url_for('animal_farm_staff.my_bookings'))
 
+
+@zoo_staff_bp.route('/ticket-scanner', methods=['GET', 'POST'])
+def ticket_scanner():
+        user = _current_user()
+        zoo = _current_zoo()
+        result = None
+        payload = (request.form.get('payload') if request.method == 'POST' else request.args.get('payload') or '').strip()
+        if request.method == 'POST':
+            if not payload:
+                flash('Scan or enter a ticket payload.', 'error')
+            else:
+                result = _validate_ticket_payload(payload, user, zoo)
+        recent_scans = (
+            BookingTicketScan.query.filter_by(zoo_id=zoo.id)
+            .order_by(BookingTicketScan.scanned_at.desc())
+            .limit(50)
+            .all()
+        ) if zoo else []
+        return render_template(
+            'animal_farm_staff/ticket_scanner.html',
+            zoo=zoo,
+            result=result,
+            recent_scans=recent_scans,
+            payload=payload,
+        )
+
+
+def _validate_ticket_payload(payload: str, user: User | None, zoo: Zoo | None):
+        if not user or not zoo:
+            return {'ok': False, 'message': 'Your account is not linked to an establishment.'}
+        try:
+            ticket = verify_ticket(payload)
+        except ValueError as exc:
+            db.session.add(BookingTicketScan(
+                zoo_id=zoo.id,
+                staff_user_id=user.id,
+                result='rejected',
+                reason=str(exc),
+            ))
+            db.session.commit()
+            return {'ok': False, 'message': str(exc)}
+
+        booking = ticket.booking
+        if not booking or booking.zoo_id != zoo.id:
+            reason = 'This ticket does not belong to your establishment.'
+            db.session.add(BookingTicketScan(
+                ticket_id=ticket.id, booking_id=booking.id if booking else None,
+                zoo_id=zoo.id, staff_user_id=user.id, result='rejected', reason=reason,
+            ))
+            db.session.commit()
+            return {'ok': False, 'message': reason}
+        if ticket.status != 'issued':
+            reason = f'Ticket is already {ticket.status.replace("_", " ")}.'
+            db.session.add(BookingTicketScan(
+                ticket_id=ticket.id, booking_id=booking.id, zoo_id=zoo.id,
+                staff_user_id=user.id, result='rejected', reason=reason,
+            ))
+            db.session.commit()
+            return {'ok': False, 'message': reason, 'booking': booking}
+        if (booking.status or '').lower() in {'cancelled', 'refunded'} or (booking.payment_status or '').lower() not in {'paid', 'cash_paid'}:
+            reason = 'The booking is not eligible for entrance.'
+            db.session.add(BookingTicketScan(
+                ticket_id=ticket.id, booking_id=booking.id, zoo_id=zoo.id,
+                staff_user_id=user.id, result='rejected', reason=reason,
+            ))
+            db.session.commit()
+            return {'ok': False, 'message': reason, 'booking': booking}
+        ticket.status = 'checked_in'
+        ticket.checked_in_at = datetime.utcnow()
+        ticket.checked_in_by = user.id
+        db.session.add(BookingTicketScan(
+            ticket_id=ticket.id, booking_id=booking.id, zoo_id=zoo.id,
+            staff_user_id=user.id, result='checked_in', reason='Ticket accepted at entrance.',
+        ))
+        db.session.commit()
+        return {'ok': True, 'message': 'Ticket accepted. Visitor checked in.', 'booking': booking}
+
+
+@zoo_staff_bp.post('/ticket-scanner/<int:ticket_id>/reverse')
+def reverse_ticket_checkin(ticket_id: int):
+        user = _current_user()
+        zoo = _current_zoo()
+        ticket = BookingTicket.query.filter_by(id=ticket_id).first()
+        if not user or not zoo or not ticket or not ticket.booking or ticket.booking.zoo_id != zoo.id:
+            flash('Ticket not found for this establishment.', 'error')
+            return redirect(url_for('animal_farm_staff.ticket_scanner'))
+        reason = (request.form.get('reason') or '').strip()
+        if len(reason) < 5:
+            flash('A reversal reason of at least five characters is required.', 'error')
+            return redirect(url_for('animal_farm_staff.ticket_scanner'))
+        if ticket.status != 'checked_in':
+            flash('Only checked-in tickets can be reversed.', 'error')
+            return redirect(url_for('animal_farm_staff.ticket_scanner'))
+        ticket.status = 'issued'
+        ticket.checked_in_at = None
+        ticket.checked_in_by = None
+        db.session.add(BookingTicketScan(
+            ticket_id=ticket.id, booking_id=ticket.booking_id, zoo_id=zoo.id,
+            staff_user_id=user.id, result='reversal', reason=reason,
+        ))
+        db.session.commit()
+        flash('Ticket check-in reversed.', 'success')
+        return redirect(url_for('animal_farm_staff.ticket_scanner'))
 
 @zoo_staff_bp.route('/events', methods=['GET', 'POST'])
 def events_management():
@@ -258,7 +370,12 @@ def map_zones():
 
 @zoo_staff_bp.route('/notifications')
 def notifications():
-    return redirect(url_for('animal_farm_staff.dashboard'))
+    user = _current_user()
+    if not user:
+        return redirect(url_for('auth.login', module_name='zoo_staff'))
+    items = Notification.query.filter_by(user_id=user.id).order_by(Notification.created_at.desc()).limit(100).all()
+    unread = sum(1 for item in items if item.read_at is None)
+    return render_template('animal_farm_staff/notifications.html', notifications=items, unread=unread)
 
 
 @zoo_staff_bp.route('/profile', methods=['GET', 'POST'])

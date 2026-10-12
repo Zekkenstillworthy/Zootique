@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Verify Registration Email{% endblock %}
+{% block content %}
+<main class="container" style="max-width:620px; padding:4rem 1rem;">
+  <section class="card-panel">
+    <div class="card-header"><h2>VERIFY APPLICANT EMAIL</h2></div>
+    <div class="card-body">
+      <p>Enter the verification token from the email sent to <strong>{{ registration.admin_email }}</strong>. The application will only enter the review queue after verification.</p>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}<div class="alert alert-{{ category }}">{{ message }}</div>{% endfor %}
+      {% endwith %}
+      <form method="post" style="display:grid; gap:1rem;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="registration_id" value="{{ registration.id }}">
+        <label>Verification token
+          <input name="token" required autocomplete="one-time-code" style="width:100%; padding:12px;">
+        </label>
+        <button class="btn btn-primary" type="submit">Verify and submit application</button>
+      </form>
+    </div>
+  </section>
+</main>
+{% endblock %}

@@ -150,6 +150,18 @@
         <h3>Renewal Deadline</h3>
       </div>
     </div>
+    {% if current_plan_context %}
+    <div class="card-panel" style="margin:0;">
+      <div class="card-header"><h2>Current plan limits</h2></div>
+      <div class="card-body" style="font-size:13px;">
+        Staff accounts: {{ current_plan_context.limits.staff_accounts if current_plan_context.limits.staff_accounts >= 0 else 'Unlimited' }}
+        · Zones: {{ current_plan_context.limits.zones if current_plan_context.limits.zones >= 0 else 'Unlimited' }}
+        · Animals: {{ current_plan_context.limits.animals if current_plan_context.limits.animals >= 0 else 'Unlimited' }}
+        · Bookings/month: {{ current_plan_context.limits.bookings_per_month if current_plan_context.limits.bookings_per_month >= 0 else 'Unlimited' }}
+        · Promo bundles: {{ current_plan_context.limits.promo_bundles if current_plan_context.limits.promo_bundles >= 0 else 'Unlimited' }}
+      </div>
+    </div>
+    {% endif %}
   {% endif %}
 
   {# ── Plan Selection Grid ── #}
@@ -181,10 +193,7 @@
 
             <div>
               <div class="sub-plan-tier">
-                {% if plan.tier_level == 0 %}Free
-                {% elif plan.tier_level == 1 %}Standard Tier
-                {% elif plan.tier_level == 2 %}Pro Tier
-                {% else %}Tier {{ plan.tier_level }}{% endif %}
+                {{ plan_contexts[plan.id].tier_label }}
               </div>
               <div class="sub-plan-name">{{ plan.name }}</div>
               <div class="sub-plan-price">
@@ -194,6 +203,9 @@
             </div>
 
             <div class="sub-plan-features">
+              <div style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">
+                {{ plan_contexts[plan.id].description }}
+              </div>
               {% if plan.features %}
                 {% for line in (plan.features or '').splitlines() %}
                   {% if line.strip() %}
@@ -225,7 +237,7 @@
               {% else %}
                 <form method="post"
                   action="{{ url_for('animal_farm_admin.self_subscribe') }}"
-                  onsubmit="return confirm('Subscribe to the {{ plan.name }} plan?');">
+                  onsubmit="return confirm('Subscribe to the {{ plan.name }} plan at ₱{{ "{:,.2f}".format(plan.price) }} per {{ plan.duration }}?');">
                   <input type="hidden" name="plan_id" value="{{ plan.id }}">
                   <button class="btn btn-primary btn-sm" type="submit" style="width:100%;">
                     {% if subscription and subscription.status == 'active' %}
@@ -252,6 +264,17 @@
         <i class="fa-solid fa-circle-info" style="margin-right:4px;"></i>
         Subscriptions are reviewed and activated by a Super Administrator.
         Features unlock once your plan is marked active.
+      </div>
+      <div style="margin-top:18px; border-top:1px solid var(--border-light); padding-top:14px;">
+        <strong style="font-size:13px;">Feature access by tier</strong>
+        <div style="display:grid; gap:6px; margin-top:8px;">
+          {% for plan in plans %}
+          <div style="font-size:12px; color:var(--text-muted);">
+            <strong style="color:var(--text);">{{ plan.name }} — {{ plan_contexts[plan.id].tier_label }}:</strong>
+            {{ plan_contexts[plan.id].features|join(', ') }}
+          </div>
+          {% endfor %}
+        </div>
       </div>
     </div>
   </div>

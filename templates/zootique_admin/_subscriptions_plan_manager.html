@@ -13,8 +13,25 @@
         <div>
           <label>Plan Name</label>
           <input type="text" name="name" value="{{ edit_plan.name if edit_plan else '' }}"
-            placeholder="Basic Field, Habitat Pro, ..." required>
+            placeholder="Standard or Pro" required>
         </div>
+        {% set plan_limits = edit_plan_limits or {} %}
+        <fieldset class="plan-limits-editor">
+          <legend>Limits</legend>
+          <div class="plan-limits-grid">
+            {% for key, label in [('staff_accounts', 'Staff accounts'), ('zones', 'Zones'), ('animals', 'Animals'), ('bookings_per_month', 'Bookings per month'), ('promo_bundles', 'Promo bundles')] %}
+            {% set limit_value = plan_limits.get(key, 0) %}
+            <label class="plan-limit-field">
+              <span>{{ label }}</span>
+              <input type="number" name="limit_{{ key }}" min="0" step="1" value="{{ limit_value if limit_value >= 0 else 0 }}">
+              <span class="plan-limit-unlimited">
+                <input type="checkbox" name="limit_{{ key }}_unlimited" {% if limit_value < 0 %}checked{% endif %}> Unlimited
+              </span>
+            </label>
+            {% endfor %}
+          </div>
+          <small>Use Unlimited for a limit with no cap.</small>
+        </fieldset>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
           <div>
@@ -34,9 +51,18 @@
         </div>
 
         <div>
+          <label>Access Tier</label>
+          <select name="tier_level" required>
+            <option value="0" {% if edit_plan and edit_plan.tier_level == 0 %}selected{% endif %}>Free Tier</option>
+            <option value="1" {% if not edit_plan or edit_plan.tier_level == 1 %}selected{% endif %}>Standard Tier</option>
+            <option value="2" {% if edit_plan and edit_plan.tier_level == 2 %}selected{% endif %}>Pro Tier</option>
+          </select>
+        </div>
+
+        <div>
           <label>Features (one per line)</label>
           <textarea name="features" rows="7"
-            placeholder="Up to 500 Animals\n3 Admin Users\nBasic Reporting">{{ edit_plan.features if edit_plan and edit_plan.features else '' }}</textarea>
+            placeholder="Up to 500 Animals\n3 Admin Users\nStandard Reporting">{{ edit_plan.features if edit_plan and edit_plan.features else '' }}</textarea>
         </div>
 
         <div style="display:flex; gap:8px; flex-wrap:wrap;">

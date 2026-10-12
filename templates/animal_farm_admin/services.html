@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Services Management | Animal Farm Admin{% endblock %}
 {% block page_title %}Services Management{% endblock %}
@@ -11,6 +11,20 @@
   <i class="fa-solid fa-circle-check"></i>
   <span id="zfToastMsg">Service saved successfully.</span>
 </div>
+
+{% if not can_edit_feature('services') %}
+<div style="margin-bottom: 20px; background: #fffbeb; border: 1.5px solid #f59e0b; padding: 14px 18px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+  <div style="display:flex; align-items:center; gap:10px;">
+    <i class="fa-solid fa-lock" style="color:#d97706; font-size:18px;"></i>
+    <span style="font-size:14px; color:#92400e; font-weight:600;">
+      <strong>Read-Only Mode:</strong> An active subscription with Super Admin is required to add, edit, or delete services.
+    </span>
+  </div>
+  <a href="{{ url_for('animal_farm_admin.subscriptions') }}" class="btn btn-primary btn-sm" style="white-space:nowrap;">
+    <i class="fa-solid fa-rocket"></i> Subscribe Now
+  </a>
+</div>
+{% endif %}
 
 <div class="two-col" style="--two-col-template: 1fr 1fr; {% if selected_tab == 'list' %}--two-col-template: 1fr;{% elif selected_tab == 'add' %}--two-col-template: 1fr;{% endif %}">
 
@@ -90,6 +104,30 @@
 
         <div class="zf-section">
           <div class="zf-section-label">
+            <i class="fa-solid fa-clock"></i> Schedule &amp; Capacity
+          </div>
+          <div class="zf-grid-2">
+            <div class="zf-field">
+              <label class="zf-label" for="service_opening_time">Opening Time</label>
+              <input type="time" id="service_opening_time" name="opening_time" class="zf-control" value="08:00">
+            </div>
+            <div class="zf-field">
+              <label class="zf-label" for="service_closing_time">Closing Time</label>
+              <input type="time" id="service_closing_time" name="closing_time" class="zf-control" value="17:00">
+            </div>
+            <div class="zf-field">
+              <label class="zf-label" for="service_daily_capacity">Daily Capacity</label>
+              <input type="number" id="service_daily_capacity" name="daily_capacity" class="zf-control" placeholder="50" min="1" value="50">
+            </div>
+            <div class="zf-field">
+              <label class="zf-label" for="service_slot_capacity">Slot Capacity</label>
+              <input type="number" id="service_slot_capacity" name="slot_capacity" class="zf-control" placeholder="15" min="1" value="15">
+            </div>
+          </div>
+        </div>
+
+        <div class="zf-section">
+          <div class="zf-section-label">
             <i class="fa-solid fa-image"></i> Details &amp; Media
           </div>
           <div class="zf-grid-2">
@@ -135,10 +173,10 @@
         <a href="?tab=list" class="zf-btn-cancel" id="serviceCancelBtn">
           <i class="fa-solid fa-xmark"></i> Cancel
         </a>
-        <button type="submit" class="zf-btn-save" id="serviceSaveBtn">
+        <button type="submit" class="zf-btn-save" id="serviceSaveBtn" {% if not can_edit_feature('services') %}disabled title="Active subscription required to save services" style="opacity:0.6; cursor:not-allowed;"{% endif %}>
           <span class="zf-spinner"></span>
           <i class="fa-solid fa-floppy-disk zf-save-label"></i>
-          <span class="zf-save-label" id="serviceSaveBtnLabel">Save Service</span>
+          <span class="zf-save-label" id="serviceSaveBtnLabel">{% if not can_edit_feature('services') %}🔒 Subscribe to Save{% else %}Save Service{% endif %}</span>
         </button>
       </div>
 
@@ -180,11 +218,11 @@
                 <td>{{ (s.description or '-')|truncate(80) }}</td>
                 <td>
                   <button class="btn btn-outline btn-sm" type="button"
-                      onclick='fillServiceForm({{ s.id|tojson }}, {{ s.name|tojson }}, {{ (s.price or 0)|tojson }}, {{ (s.description or "")|tojson }}, {{ (s.category or "")|tojson }}, {{ (s.service_status or "")|tojson }})'>
+                      {% if not can_edit_feature('services') %}disabled title="Active subscription required to edit" style="opacity:0.5; cursor:not-allowed;"{% else %}onclick='fillServiceForm({{ s.id|tojson }}, {{ s.name|tojson }}, {{ (s.price or 0)|tojson }}, {{ (s.description or "")|tojson }}, {{ (s.category or "")|tojson }}, {{ (s.service_status or "")|tojson }}, {{ (s.opening_time or "08:00")|tojson }}, {{ (s.closing_time or "17:00")|tojson }}, {{ (s.daily_capacity or 50)|tojson }}, {{ (s.slot_capacity or 15)|tojson }})'{% endif %}>
                     <i class="fa-solid fa-pen"></i> Edit
                   </button>
                   <form method="post" action="{{ url_for('animal_farm_admin.delete_service', service_id=s.id) }}" style="display:inline;" onsubmit="return confirm('Delete this service?');">
-                    <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
+                    <button class="btn btn-ghost btn-sm" type="submit" {% if not can_edit_feature('services') %}disabled title="Active subscription required to delete" style="opacity:0.5; cursor:not-allowed;"{% endif %}><i class="fa-solid fa-trash"></i> Delete</button>
                   </form>
                 </td>
               </tr>
@@ -211,7 +249,7 @@
     if (labelEl) labelEl.textContent = editing ? 'Update Service'  : 'Save Service';
   }
 
-  window.fillServiceForm = function(id, name, price, description, category, svcStatus) {
+  window.fillServiceForm = function(id, name, price, description, category, svcStatus, openingTime, closingTime, dailyCap, slotCap) {
     var form = document.getElementById('serviceForm');
     if (!form) return;
     document.getElementById('service_id').value = id;
@@ -224,6 +262,18 @@
 
     var stSel = document.getElementById('service_status');
     if (stSel) stSel.value = svcStatus || '';
+
+    var opEl = document.getElementById('service_opening_time');
+    if (opEl) opEl.value = openingTime || '08:00';
+
+    var clEl = document.getElementById('service_closing_time');
+    if (clEl) clEl.value = closingTime || '17:00';
+
+    var dcEl = document.getElementById('service_daily_capacity');
+    if (dcEl) dcEl.value = dailyCap || 50;
+
+    var scEl = document.getElementById('service_slot_capacity');
+    if (scEl) scEl.value = slotCap || 15;
 
     setMode(true);
     clearAllErrors();

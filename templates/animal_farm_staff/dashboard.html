@@ -80,36 +80,79 @@
         </div>
     </div>
 
-    <!-- Right: Feeding Schedule & Status -->
-    <div class="card-panel">
-        <div class="card-header">
-            <h2><i class="fa-solid fa-utensils" style="margin-right:8px;"></i> Feeding Schedule Zones</h2>
-        </div>
-        <div class="card-body" style="padding: 20px;">
-            <div class="service-icons">
-                <a href="{{ url_for('animal_farm_staff.feeding_schedule') }}" class="mini-box" style="text-decoration: none; color: inherit;">
-                    <i class="fa-solid fa-horse"></i>
-                    <p style="font-size: 13px; font-weight: 700; margin-top: 6px;">Equines</p>
-                </a>
-                <a href="{{ url_for('animal_farm_staff.feeding_schedule') }}" class="mini-box" style="text-decoration: none; color: inherit;">
-                    <i class="fa-solid fa-hippo"></i>
-                    <p style="font-size: 13px; font-weight: 700; margin-top: 6px;">Mammals</p>
-                </a>
-                <a href="{{ url_for('animal_farm_staff.feeding_schedule') }}" class="mini-box" style="text-decoration: none; color: inherit;">
-                    <i class="fa-solid fa-crow"></i>
-                    <p style="font-size: 13px; font-weight: 700; margin-top: 6px;">Aviary</p>
-                </a>
-                <a href="{{ url_for('animal_farm_staff.feeding_schedule') }}" class="mini-box" style="text-decoration: none; color: inherit;">
-                    <i class="fa-solid fa-cow"></i>
-                    <p style="font-size: 13px; font-weight: 700; margin-top: 6px;">Grazing</p>
-                </a>
+    <!-- Right: Quick Actions & Status -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- Ticket Scanner Quick Action -->
+        <div class="card-panel">
+            <div class="card-header">
+                <h2><i class="fa-solid fa-qrcode" style="margin-right:8px;"></i> Quick Scan Ticket</h2>
+                <div class="card-header-actions">
+                    <a href="{{ url_for('animal_farm_staff.ticket_scanner') }}" class="btn btn-outline btn-sm">Scanner Log</a>
+                </div>
             </div>
-            
-            <div class="zf-alert zf-alert-warning" style="margin-top: 20px; margin-bottom: 0;">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                <div>
-                    <strong>Veterinary Notice:</strong>
-                    <div style="font-size: 12px; margin-top: 2px;">Ensure all quarantine sections have sanitized water and verify diet supplements with medical records before feeding.</div>
+            <div class="card-body" style="padding: 20px;">
+                <form method="post" action="{{ url_for('animal_farm_staff.ticket_scanner') }}" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="zf-field" style="margin-bottom: 0;">
+                        <input class="zf-control" name="payload" required placeholder="Paste or scan QR payload here" autocomplete="off" autofocus>
+                    </div>
+                    <button class="btn btn-primary" type="submit" style="width: 100%; justify-content: center;">
+                        <i class="fa-solid fa-check"></i> Validate Entry
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Incident Reporter Quick Action -->
+        <div class="card-panel">
+            <div class="card-header">
+                <h2><i class="fa-solid fa-triangle-exclamation" style="margin-right:8px;"></i> Report Incident</h2>
+                <div class="card-header-actions">
+                    <a href="{{ url_for('animal_farm_staff.report_incident') }}" class="btn btn-outline btn-sm">All Reports</a>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 20px;">
+                <form method="post" action="{{ url_for('animal_farm_staff.report_incident') }}" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="zf-field" style="margin-bottom: 0;">
+                        <input type="text" name="title" class="zf-control" placeholder="Short description of incident" required>
+                    </div>
+                    <div class="zf-field" style="margin-bottom: 0;">
+                        <select name="severity" class="zf-control">
+                            <option value="General">General</option>
+                            <option value="Warning">Warning</option>
+                            <option value="Urgent">Urgent</option>
+                            <option value="Emergency">Emergency</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-danger" type="submit" style="width: 100%; justify-content: center;">
+                        <i class="fa-solid fa-paper-plane"></i> Submit Report
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Feeding Schedule -->
+        <div class="card-panel">
+            <div class="card-header">
+                <h2><i class="fa-solid fa-utensils" style="margin-right:8px;"></i> Feeding Zones</h2>
+            </div>
+            <div class="card-body" style="padding: 20px;">
+                <div class="service-icons">
+                    <a href="{{ url_for('animal_farm_staff.feeding_schedule') }}" class="mini-box" style="text-decoration: none; color: inherit;">
+                        <i class="fa-solid fa-horse"></i>
+                        <p style="font-size: 13px; font-weight: 700; margin-top: 6px;">Equines</p>
+                    </a>
+                    <a href="{{ url_for('animal_farm_staff.feeding_schedule') }}" class="mini-box" style="text-decoration: none; color: inherit;">
+                        <i class="fa-solid fa-hippo"></i>
+                        <p style="font-size: 13px; font-weight: 700; margin-top: 6px;">Mammals</p>
+                    </a>
+                    <a href="{{ url_for('animal_farm_staff.feeding_schedule') }}" class="mini-box" style="text-decoration: none; color: inherit;">
+                        <i class="fa-solid fa-crow"></i>
+                        <p style="font-size: 13px; font-weight: 700; margin-top: 6px;">Aviary</p>
+                    </a>
+                    <a href="{{ url_for('animal_farm_staff.feeding_schedule') }}" class="mini-box" style="text-decoration: none; color: inherit;">
+                        <i class="fa-solid fa-cow"></i>
+                        <p style="font-size: 13px; font-weight: 700; margin-top: 6px;">Grazing</p>
+                    </a>
                 </div>
             </div>
         </div>

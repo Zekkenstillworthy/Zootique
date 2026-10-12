@@ -4,6 +4,20 @@
 {% block page_title %}Park Rules{% endblock %}
 
 {% block content %}
+{% if not can_edit_feature('park_rules') %}
+<div style="margin-bottom: 20px; background: #fffbeb; border: 1.5px solid #f59e0b; padding: 14px 18px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+  <div style="display:flex; align-items:center; gap:10px;">
+    <i class="fa-solid fa-lock" style="color:#d97706; font-size:18px;"></i>
+    <span style="font-size:14px; color:#92400e; font-weight:600;">
+      <strong>Read-Only Mode:</strong> An active subscription with Super Admin is required to add, edit, or delete park rules.
+    </span>
+  </div>
+  <a href="{{ url_for('animal_farm_admin.subscriptions') }}" class="btn btn-primary btn-sm" style="white-space:nowrap;">
+    <i class="fa-solid fa-rocket"></i> Subscribe Now
+  </a>
+</div>
+{% endif %}
+
 <div class="two-col" style="--two-col-template: 1fr 1.4fr;">
   <div class="zf-form-card">
     <div class="zf-form-header">
@@ -14,12 +28,25 @@
       <input type="hidden" name="rule_id" id="rule_id">
       <div class="zf-form-body">
         <div class="zf-field">
+          <label class="zf-label" for="rule_category">Category Selection</label>
+          <select class="zf-control" id="rule_category" onchange="onRuleCategorySelect(this.value)">
+            <option value="">-- Choose Common Preset or Custom --</option>
+            <option value="Do Not Feed Animals|Guests must not feed animals unless accompanied by authorized zoo handlers.">Animal Care: Do Not Feed Animals</option>
+            <option value="No Flash Photography|Flash photography can startle wildlife and is strictly prohibited near enclosures.">Safety: No Flash Photography</option>
+            <option value="Stay on Marked Pathways|For your protection and habitat preservation, remain behind barrier fences.">Safety: Stay on Marked Pathways</option>
+            <option value="Children Must Be Supervised|Minors must be accompanied by an adult guardian at all times in the park.">Supervision: Children Must Be Supervised</option>
+            <option value="No Smoking or Vaping|Our park is a smoke-free natural sanctuary. Smoking is prohibited.">Sanctuary: No Smoking or Vaping</option>
+            <option value="No Outside Pets Allowed|Outside pets are not permitted to prevent disease transmission and animal distress.">Biosecurity: No Outside Pets Allowed</option>
+            <option value="Custom">Custom Rule</option>
+          </select>
+        </div>
+        <div class="zf-field">
           <label class="zf-label" for="rule_title">Title <span class="zf-req">*</span></label>
-          <input class="zf-control" type="text" id="rule_title" name="title" maxlength="160" required>
+          <input class="zf-control" type="text" id="rule_title" name="title" maxlength="160" required placeholder="e.g. Do Not Feed Animals">
         </div>
         <div class="zf-field">
           <label class="zf-label" for="rule_description">Description <span class="zf-req">*</span></label>
-          <textarea class="zf-control" id="rule_description" name="description" rows="5" required></textarea>
+          <textarea class="zf-control" id="rule_description" name="description" rows="4" required placeholder="Detail the rule and etiquette expected from park visitors..."></textarea>
         </div>
         <div class="zf-field">
           <label class="zf-label" for="rule_order">Display order</label>
@@ -28,7 +55,9 @@
       </div>
       <div class="zf-actions">
         <button class="zf-btn-cancel" type="button" onclick="resetRuleForm()">Clear</button>
-        <button class="zf-btn-save" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Rule</button>
+        <button class="zf-btn-save" type="submit" {% if not can_edit_feature('park_rules') %}disabled title="Active subscription required to save rules" style="opacity:0.6; cursor:not-allowed;"{% endif %}>
+          <i class="fa-solid fa-floppy-disk"></i> {% if not can_edit_feature('park_rules') %}🔒 Subscribe to Save{% else %}Save Rule{% endif %}
+        </button>
       </div>
     </form>
   </div>
@@ -48,9 +77,9 @@
               <td><strong>{{ rule.title }}</strong></td>
               <td>{{ rule.description|truncate(100) }}</td>
               <td style="white-space:nowrap;">
-                <button class="btn btn-outline btn-sm" type="button" onclick='editRule({{ rule.id|tojson }}, {{ rule.title|tojson }}, {{ rule.description|tojson }}, {{ rule.display_order|tojson }})'><i class="fa-solid fa-pen"></i> Edit</button>
+                <button class="btn btn-outline btn-sm" type="button" {% if not can_edit_feature('park_rules') %}disabled title="Active subscription required to edit" style="opacity:0.5; cursor:not-allowed;"{% else %}onclick='editRule({{ rule.id|tojson }}, {{ rule.title|tojson }}, {{ rule.description|tojson }}, {{ rule.display_order|tojson }})'{% endif %}><i class="fa-solid fa-pen"></i> Edit</button>
                 <form method="post" action="{{ url_for('animal_farm_admin.delete_park_rule', rule_id=rule.id) }}" style="display:inline;" onsubmit="return confirm('Delete this park rule?');">
-                  <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Delete</button>
+                  <button class="btn btn-ghost btn-sm" type="submit" {% if not can_edit_feature('park_rules') %}disabled title="Active subscription required to delete" style="opacity:0.5; cursor:not-allowed;"{% endif %}><i class="fa-solid fa-trash"></i> Delete</button>
                 </form>
               </td>
             </tr>
@@ -64,6 +93,14 @@
   </div>
 </div>
 <script>
+function onRuleCategorySelect(val) {
+  if (!val || val === 'Custom') return;
+  var parts = val.split('|');
+  if (parts.length >= 2) {
+    document.getElementById('rule_title').value = parts[0];
+    document.getElementById('rule_description').value = parts[1];
+  }
+}
 function editRule(id, title, description, displayOrder) {
   document.getElementById('rule_id').value = id;
   document.getElementById('rule_title').value = title || '';
@@ -78,6 +115,8 @@ function resetRuleForm() {
   document.getElementById('rule_title').value = '';
   document.getElementById('rule_description').value = '';
   document.getElementById('rule_order').value = 0;
+  var cat = document.getElementById('rule_category');
+  if (cat) cat.value = '';
   document.getElementById('ruleFormTitle').textContent = 'Add Park Rule';
   document.getElementById('ruleFormBadge').textContent = 'New';
 }

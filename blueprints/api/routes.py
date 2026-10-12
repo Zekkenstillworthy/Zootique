@@ -39,11 +39,25 @@ from services import (
     feedback_aliases_for_user,
     is_feedback_owned_by_user,
     process_booking_checkout,
+        validate_booking_details,
     renew_zoo_subscription,
     update_visitor_feedback,
 )
+from services.cancellation import cancel_visitor_booking
 
 api_bp = Blueprint("api", __name__)
+
+
+@api_bp.before_request
+def require_api_csrf():
+    if request.method not in {"POST", "PUT", "PATCH", "DELETE"} or request.path == "/api/auth/login":
+        return None
+
+    expected = session.get("_csrf_token")
+    provided = request.headers.get("X-CSRF-Token") or request.form.get("csrf_token")
+    if not expected or not provided or not secrets.compare_digest(str(expected), str(provided)):
+        return _error("Invalid or missing CSRF token.", 400, "csrf_error")
+    return None
 
 
 def _error(message: str, status: int = 400, code: str = "bad_request"):
@@ -251,6 +265,12 @@ def _serialize_feedback(feedback: Feedback):
     }
 
 
+def _serialize_public_feedback(feedback: Feedback):
+    payload = _serialize_feedback(feedback)
+    payload.pop("user_id", None)
+    return payload
+
+
 def _serialize_system_feedback(feedback: ZooAdminFeedback):
     latest_reply = None
     if feedback.replies:
@@ -319,6 +339,15 @@ def api_login():
         return jsonify({"user": _serialize_user(user)})
     except ValueError as exc:
         return _error(str(exc), 400, "validation_error")
+
+
+@api_bp.get("/auth/csrf")
+def api_csrf_token():
+    token = session.get("_csrf_token")
+    if not token:
+        token = secrets.token_urlsafe(24)
+        session["_csrf_token"] = token
+    return jsonify({"csrf_token": token})
 
 
 @api_bp.post("/auth/logout")
@@ -413,10 +442,19 @@ def visitor_create_booking():
         date_value = _str_field(payload, "date", required=True)
         time_value = _str_field(payload, "time", required=True)
         guests = _int_field(payload, "guests", minimum=1) or 1
+        validate_booking_details(date_value=date_value, time_value=time_value, guests=guests)
 
         service = db.session.get(Service, service_id)
         if not service:
             return _error("Service not found.", 404, "not_found")
+
+        selected_zoo_id = session.get("selected_zoo_id")
+        try:
+            selected_zoo_id = int(selected_zoo_id) if selected_zoo_id is not None else None
+        except (TypeError, ValueError):
+            selected_zoo_id = None
+        if not selected_zoo_id or int(service.zoo_id or 0) != selected_zoo_id:
+            return _error("Select the establishment where this service is offered.", 400, "validation_error")
 
         booking = Booking(
             id=_generate_booking_id(),
@@ -429,13 +467,15 @@ def visitor_create_booking():
             time=time_value,
             guests=guests,
             status="Pending",
-            amount=float(service.price or 0),
+            amount=float(service.price or 0) * guests,
             payment_status="unpaid",
         )
         db.session.add(booking)
         db.session.commit()
         return jsonify({"booking": _serialize_booking(booking)}), 201
     except ValueError as exc:
+        return _error(str(exc), 400, "validation_error")
+    except BookingValidationError as exc:
         return _error(str(exc), 400, "validation_error")
 
 
@@ -456,6 +496,14 @@ def visitor_reschedule_booking(booking_id: str):
     if not booking:
         return _error("Booking not found.", 404, "not_found")
 
+    selected_zoo_id = session.get("selected_zoo_id")
+    try:
+        selected_zoo_id = int(selected_zoo_id) if selected_zoo_id is not None else None
+    except (TypeError, ValueError):
+        selected_zoo_id = None
+    if not selected_zoo_id or int(booking.zoo_id or 0) != selected_zoo_id:
+        return _error("Booking is outside the selected establishment.", 403, "forbidden")
+
     if (booking.status or "").lower() == "cancelled":
         return _error("Cancelled bookings cannot be rescheduled.", 400, "validation_error")
 
@@ -464,15 +512,21 @@ def visitor_reschedule_booking(booking_id: str):
         date_value = _str_field(payload, "date", required=True)
         time_value = _str_field(payload, "time", required=True)
         guests = _int_field(payload, "guests", minimum=1)
+        validate_booking_details(date_value=date_value, time_value=time_value, guests=guests or booking.guests or 1)
 
         booking.date = date_value
         booking.time = time_value
         if guests:
             booking.guests = guests
+        service = db.session.get(Service, booking.service_id) if booking.service_id else None
+        if service:
+            booking.amount = float(service.price or 0) * (booking.guests or 1)
         booking.status = "Pending"
         db.session.commit()
         return jsonify({"booking": _serialize_booking(booking)})
     except ValueError as exc:
+        return _error(str(exc), 400, "validation_error")
+    except BookingValidationError as exc:
         return _error(str(exc), 400, "validation_error")
 
 
@@ -493,7 +547,7 @@ def visitor_cancel_booking(booking_id: str):
     if not booking:
         return _error("Booking not found.", 404, "not_found")
 
-    booking.status = "Cancelled"
+    cancel_visitor_booking(booking=booking, user=user)
     db.session.commit()
     return jsonify({"booking": _serialize_booking(booking)})
 
@@ -549,6 +603,17 @@ def visitor_feedback_list():
 
     zoo_id = request.args.get("zoo_id", type=int)
     only_mine = (request.args.get("only_mine") or "").strip().lower() in {"1", "true", "yes"}
+    selected_zoo_id = session.get("selected_zoo_id")
+    if selected_zoo_id is not None:
+        try:
+            selected_zoo_id = int(selected_zoo_id)
+        except (TypeError, ValueError):
+            selected_zoo_id = None
+    if selected_zoo_id and zoo_id and zoo_id != selected_zoo_id:
+        return _error("Feedback is limited to the selected establishment.", 403, "forbidden")
+    if not selected_zoo_id:
+        return _error("Select an establishment before viewing feedback.", 400, "validation_error")
+    zoo_id = selected_zoo_id
 
     query = Feedback.query
     if zoo_id:
@@ -559,7 +624,7 @@ def visitor_feedback_list():
         query = query.filter(or_(Feedback.user_id == user.id, Feedback.visitor_name.in_(aliases)))
 
     feedbacks = query.order_by(Feedback.id.desc()).limit(300).all()
-    return jsonify({"feedbacks": [_serialize_feedback(item) for item in feedbacks]})
+    return jsonify({"feedbacks": [_serialize_public_feedback(item) for item in feedbacks]})
 
 
 @api_bp.post("/visitor/feedback")

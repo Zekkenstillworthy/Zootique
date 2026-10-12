@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Payment Methods{% endblock %}
+{% block content %}
+<main class="container" style="max-width:900px;padding:2rem 1rem;">
+  <h1>Payment Methods</h1>
+  <p>Choose which simulated checkout methods visitors can use for {{ zoo.name }}.</p>
+  {% if not can_edit %}<p class="alert alert-warning">Editing requires an active subscription tier {{ required_tier }} or higher.</p>{% endif %}
+  <form method="post" style="display:grid;gap:1rem;background:#fff;padding:1.5rem;border-radius:12px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% for method in methods %}
+    <label style="display:flex;gap:.75rem;align-items:center;">
+      <input type="checkbox" name="methods" value="{{ method }}" {% if method in enabled_methods %}checked{% endif %} {% if not can_edit %}disabled{% endif %}>
+      {{ method|replace('_', ' ')|title }}
+    </label>
+    {% endfor %}
+    <button type="submit" {% if not can_edit %}disabled{% endif %}>Save payment methods</button>
+  </form>
+</main>
+{% endblock %}

@@ -4,7 +4,10 @@ from .booking_service import (
     BookingAuthorizationError,
     process_booking_checkout,
     assign_booking_to_staff,
+    validate_booking_details,
+    reserve_booking_capacity,
 )
+from .payment import PaymentProviderError, get_payment_provider
 from .subscription_service import (
     SubscriptionServiceError,
     SubscriptionValidationError,
@@ -18,6 +21,8 @@ from .subscription_guard import (
     get_zoo_active_subscription,
     get_zoo_subscription_tier,
     paywall_redirect,
+    can_edit_feature,
+    paywall_edit_error,
     FEATURE_TIERS,
 )
 from .feedback_service import (
@@ -37,6 +42,10 @@ __all__ = [
     "BookingAuthorizationError",
     "process_booking_checkout",
     "assign_booking_to_staff",
+    "validate_booking_details",
+    "reserve_booking_capacity",
+    "PaymentProviderError",
+    "get_payment_provider",
     "SubscriptionServiceError",
     "SubscriptionValidationError",
     "renew_zoo_subscription",
@@ -47,6 +56,8 @@ __all__ = [
     "get_zoo_active_subscription",
     "get_zoo_subscription_tier",
     "paywall_redirect",
+    "can_edit_feature",
+    "paywall_edit_error",
     "FEATURE_TIERS",
     "FeedbackServiceError",
     "FeedbackValidationError",

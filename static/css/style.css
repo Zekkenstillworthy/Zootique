@@ -100,14 +100,15 @@ body.superadmin .sidebar {
 }
 
 body.superadmin .sidebar-nav {
-  padding: 20px 10px;
+  padding: 20px 8px;
 }
 
 body.superadmin .nav-item {
   color: rgba(255,255,255,0.7);
-  margin: 6px 10px;
+  margin: 0 0 4px;
   border-radius: 8px;
-  padding: 14px 16px;
+  padding: 0 12px;
+  min-height: 44px;
   font-size: 11px;
   font-weight: 500;
   text-transform: uppercase;
@@ -115,7 +116,7 @@ body.superadmin .nav-item {
 }
 
 body.superadmin .nav-item i {
-  width: 24px;
+  width: 20px;
   font-size: 15px;
   opacity: 1;
 }
@@ -496,6 +497,87 @@ body.superadmin [data-sa-settings] .sa-tab.is-active {
   color: color-mix(in srgb, var(--primary) 70%, #ffffff 30%);
 }
 
+.sa-plan-limits {
+  display: grid;
+  gap: 3px;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sa-plan-limits strong {
+  color: var(--text-secondary);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sa-plan-card.is-featured .sa-plan-limits {
+  border-color: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.8);
+}
+
+.sa-plan-card.is-featured .sa-plan-limits strong {
+  color: #ffffff;
+}
+
+.plan-limits-editor {
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.plan-limits-editor legend {
+  padding: 0 5px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.plan-limits-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.plan-limit-field {
+  display: grid;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.plan-limit-field input[type="number"] {
+  width: 100%;
+}
+
+.plan-limit-unlimited {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.plan-limits-editor small {
+  display: block;
+  margin-top: 10px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+@media (max-width: 640px) {
+  .plan-limits-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .sa-plan-card.is-featured {
   background: var(--primary);
   border-color: rgba(255,255,255,0.14);
@@ -533,6 +615,31 @@ body {
 .app-container {
   display: flex;
   min-height: 100vh;
+}
+
+/*
+ * The admin shell contains a few legacy sidebar fragments outside the
+ * container in the rendered DOM. Keep those fragments from becoming a
+ * normal flow item so the main column remains beside the fixed sidebar.
+ */
+body[data-blueprint="zootique_admin"],
+body[data-blueprint="animal_farm_admin"],
+body[data-blueprint="animal_farm_staff"] {
+  display: flex;
+  min-height: 100vh;
+}
+
+body[data-blueprint="zootique_admin"] .app-container,
+body[data-blueprint="animal_farm_admin"] .app-container,
+body[data-blueprint="animal_farm_staff"] .app-container {
+  display: contents;
+}
+
+body[data-blueprint="zootique_admin"] .main-content,
+body[data-blueprint="animal_farm_admin"] .main-content,
+body[data-blueprint="animal_farm_staff"] .main-content {
+  flex: 1;
+  min-width: 0;
 }
 
 /* ============================
@@ -582,7 +689,7 @@ body {
 /* Nav */
 .sidebar-nav {
   flex: 1;
-  padding: 10px 0;
+  padding: 20px 8px;
   overflow-y: auto;
   scrollbar-width: none;
 }
@@ -592,19 +699,20 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 18px;
+  padding: 0 12px;
   min-height: 44px;
+  margin: 0 0 4px;
   color: rgba(255,255,255,0.65);
   text-decoration: none;
   font-size: 13px;
   font-weight: 500;
-  border-radius: 0;
+  border-radius: 8px;
   transition: background var(--transition), color var(--transition);
   position: relative;
   white-space: nowrap;
 }
 .nav-item i {
-  width: 16px;
+  width: 20px;
   text-align: center;
   font-size: 13px;
   flex-shrink: 0;
@@ -627,12 +735,7 @@ body.superadmin .nav-item:focus-visible {
   font-weight: 600;
 }
 .nav-item.active::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 3px;
-  background: var(--accent);
-  border-radius: 0 2px 2px 0;
+  display: none;
 }
 /* Bottom Nature Photo */
 .sidebar-photo-bottom {
@@ -2637,7 +2740,12 @@ textarea.zf-control {
 
 /* ---- Sidebar pinned logout ---- */
 .sidebar-logout {
-  flex-shrink: 0;
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  z-index: 101;
+  width: var(--sidebar-width);
+  background: var(--sidebar-bg);
   border-top: 1px solid var(--sidebar-border);
   padding: 6px 0;
 }
@@ -2942,5 +3050,3 @@ textarea.zf-control {
   margin: 0 auto;
   width: 100%;
 }
-
-

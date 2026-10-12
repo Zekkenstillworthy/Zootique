@@ -34,6 +34,20 @@
     </div>
 </div>
 
+{% if not can_edit_feature('promotions') %}
+<div style="margin-bottom: 20px; background: #fffbeb; border: 1.5px solid #f59e0b; padding: 14px 18px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+  <div style="display:flex; align-items:center; gap:10px;">
+    <i class="fa-solid fa-lock" style="color:#d97706; font-size:18px;"></i>
+    <span style="font-size:14px; color:#92400e; font-weight:600;">
+      <strong>Read-Only Mode:</strong> An active subscription with Super Admin is required to create, edit, or delete promotions.
+    </span>
+  </div>
+  <a href="{{ url_for('animal_farm_admin.subscriptions') }}" class="btn btn-primary btn-sm" style="white-space:nowrap;">
+    <i class="fa-solid fa-rocket"></i> Subscribe Now
+  </a>
+</div>
+{% endif %}
+
 <div class="two-col" style="--two-col-template: 1fr 1fr; {% if selected_tab == 'list' %}--two-col-template: 1fr;{% elif selected_tab == 'add' %}--two-col-template: 1fr;{% endif %}">
     
     {% if selected_tab in ['add', 'all'] %}
@@ -119,10 +133,10 @@
 
             <div class="zf-actions zf-form-footer">
                 <button type="button" class="zf-btn-cancel" id="promoCancelBtn" onclick="resetPromoForm()">Cancel</button>
-                <button type="submit" class="zf-btn-save zf-btn-primary" id="promoSubmitBtn">
+                <button type="submit" class="zf-btn-save zf-btn-primary" id="promoSubmitBtn" {% if not can_edit_feature('promotions') %}disabled title="Active subscription required to save promotions" style="opacity:0.6; cursor:not-allowed;"{% endif %}>
                     <span class="zf-spinner"></span>
                     <i class="fa-solid fa-floppy-disk zf-save-label"></i>
-                    <span class="zf-save-label" id="promoBtnText">Save Promotion</span>
+                    <span class="zf-save-label" id="promoBtnText">{% if not can_edit_feature('promotions') %}🔒 Subscribe to Save{% else %}Save Promotion{% endif %}</span>
                 </button>
             </div>
         </form>
@@ -184,11 +198,11 @@
                                 <td style="text-align:right; padding-right:16px;">
                                     <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
                                         <button class="zf-icon-btn" type="button" title="Edit Promotion"
-                                                onclick='fillPromoForm({{ p.id|tojson }}, {{ p.name|tojson }}, {{ (p.promo_type or "")|tojson }}, {{ p.code|tojson }}, {{ (p.discount or "")|tojson }}, {{ (p.valid_until or "")|tojson }}, {{ (p.image_url or "")|tojson }})'>
+                                                {% if not can_edit_feature('promotions') %}disabled title="Active subscription required to edit" style="opacity:0.5; cursor:not-allowed;"{% else %}onclick='fillPromoForm({{ p.id|tojson }}, {{ p.name|tojson }}, {{ (p.promo_type or "")|tojson }}, {{ p.code|tojson }}, {{ (p.discount or "")|tojson }}, {{ (p.valid_until or "")|tojson }}, {{ (p.image_url or "")|tojson }})'{% endif %}>
                                             <i class="fa-solid fa-pen"></i>
                                         </button>
                                         <form method="post" action="{{ url_for('animal_farm_admin.delete_promotion', promo_id=p.id) }}" style="display:inline;" onsubmit="return confirm('Delete this promotion?');">
-                                            <button class="zf-icon-btn danger" type="submit" title="Delete Promotion">
+                                            <button class="zf-icon-btn danger" type="submit" title="Delete Promotion" {% if not can_edit_feature('promotions') %}disabled title="Active subscription required to delete" style="opacity:0.5; cursor:not-allowed;"{% endif %}>
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
                                         </form>

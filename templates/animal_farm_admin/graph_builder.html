@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Graph Builder | Animal Farm Admin{% endblock %}
+{% block page_title %}Graph Builder{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-header"><h2><i class="fa-solid fa-chart-pie"></i> Create a dashboard graph</h2></div>
+  <div class="card-body">
+    {% if not can_edit %}<div class="alert alert-warning">This page is view-only until you subscribe to the required plan (Tier {{ required_tier }}).</div>{% endif %}
+    <form method="post" action="{{ url_for('animal_farm_admin.save_graph') }}" class="form-grid"{% if not can_edit %} onsubmit="return false;"{% endif %}>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Name<input name="name" maxlength="120" required placeholder="Monthly revenue"></label>
+      <label>Chart type<select name="chart_type">{% for value in chart_types %}<option value="{{ value }}">{{ value|title }}</option>{% endfor %}</select></label>
+      <label>Data source<select name="data_source">{% for value in data_sources %}<option value="{{ value }}">{{ value|title }}</option>{% endfor %}</select></label>
+      <label>Date range<select name="date_range">{% for value in date_ranges %}<option value="{{ value }}">{{ value|replace('_', ' ')|title }}</option>{% endfor %}</select></label>
+      <label>Group by<select name="group_by">{% for value in groups %}<option value="{{ value }}">{{ value|title }}</option>{% endfor %}</select></label>
+      <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" name="is_visible" checked> Show on dashboard</label>
+      <div><button class="btn btn-primary" type="submit" {% if not can_edit %}disabled{% endif %}><i class="fa-solid fa-plus"></i> Save graph</button></div>
+    </form>
+  </div>
+</div>
+
+{% for graph in graphs %}
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+    <h2>{{ graph.name }}</h2>
+    <form method="post" action="{{ url_for('animal_farm_admin.delete_graph', graph_id=graph.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-danger btn-sm" type="submit" {% if not can_edit %}disabled{% endif %}>Delete</button>
+    </form>
+  </div>
+  <div class="card-body">
+    <p style="color:var(--text-muted);">{{ graph.data_source|title }} · {{ graph.chart_type|title }} · {{ graph.date_range|replace('_', ' ')|title }}</p>
+    {% set data = graph_data.get(graph.id) %}
+    {% if graph.is_visible and data %}
+    <canvas id="chart-{{ graph.id }}" height="80"></canvas>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        if (!window.ChartJsLoaded) {
+            const script = document.createElement('script');
+            script.src = "https://cdn.jsdelivr.net/npm/chart.js";
+            script.onload = initChart;
+            document.head.appendChild(script);
+            window.ChartJsLoaded = true;
+        } else {
+            initChart();
+        }
+
+        function initChart() {
+            // Wait for Chart to be defined if it's still loading
+            if (typeof Chart === 'undefined') {
+                setTimeout(initChart, 50);
+                return;
+            }
+            const ctx = document.getElementById('chart-{{ graph.id }}').getContext('2d');
+            new Chart(ctx, {
+              type: '{{ "line" if graph.chart_type == "line" else ("pie" if graph.chart_type == "pie" else "bar") }}',
+              data: {
+                labels: {{ data.labels | tojson }},
+                datasets: [{
+                  label: '{{ graph.name }}',
+                  data: {{ data.values | tojson }},
+                  backgroundColor: ['rgba(45, 140, 90, 0.7)', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6'],
+                  borderColor: 'rgba(45, 140, 90, 1)',
+                  borderWidth: 1
+                }]
+              },
+              options: {
+                responsive: true,
+                scales: {
+                  y: { beginAtZero: true, display: '{{ graph.chart_type }}' !== 'pie' }
+                }
+              }
+            });
+        }
+      });
+    </script>
+    {% else %}<p>No visible graph data.</p>{% endif %}
+  </div>
+</div>
+{% else %}
+<div class="card"><div class="card-body"><p>No saved graphs yet.</p></div></div>
+{% endfor %}
+{% endblock %}

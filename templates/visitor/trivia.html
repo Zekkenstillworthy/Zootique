@@ -1,0 +1,773 @@
+{% extends "base.html" %}
+
+{% block title %}Safari Trivia & Challenges | Zootique{% endblock %}
+
+{% block extra_head %}
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Canvas Confetti for Celebration Effects -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+<style>
+  :root {
+    --tv-forest: #143823;
+    --tv-forest-dark: #0b1f15;
+    --tv-forest-light: #EEF7F2;
+    --tv-forest-sage: #4E7058;
+    --tv-terracotta: #C85A32;
+    --tv-terracotta-soft: #FAF0EB;
+    --tv-cream-bg: #FAF7F2;
+    --tv-cream-card: #FFFFFF;
+    --tv-border: #E8E2D8;
+    --tv-amber: #D97706;
+    --tv-amber-soft: #FEF7ED;
+    --tv-emerald: #10B981;
+    --tv-emerald-soft: #ECFDF5;
+    --tv-crimson: #EF4444;
+    --tv-crimson-soft: #FEF2F2;
+    --tv-gold: #F59E0B;
+    --tv-text-main: #1E293B;
+    --tv-text-muted: #64748B;
+  }
+
+  .trivia-page-wrapper {
+    background-color: var(--tv-cream-bg);
+    min-height: calc(100vh - 72px);
+    padding: 2.5rem 0 4.5rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: var(--tv-text-main);
+  }
+
+  /* ── Hero Header ── */
+  .tv-hero {
+    margin-bottom: 2rem;
+  }
+  .tv-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--tv-terracotta);
+    background: var(--tv-terracotta-soft);
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    margin-bottom: 0.75rem;
+  }
+  .tv-hero-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .tv-hero-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.35rem;
+    font-weight: 800;
+    color: var(--tv-forest);
+    margin: 0 0 0.35rem;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+  .tv-hero-desc {
+    color: var(--tv-text-muted);
+    font-size: 0.98rem;
+    margin: 0;
+    max-width: 600px;
+    line-height: 1.5;
+  }
+
+  /* ── Stats Strip ── */
+  .tv-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2.25rem;
+  }
+  .tv-stat-card {
+    background: #ffffff;
+    border: 1.5px solid var(--tv-border);
+    border-radius: 16px;
+    padding: 1.25rem 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 3px 12px rgba(20, 56, 35, 0.04);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .tv-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(20, 56, 35, 0.08);
+  }
+  .tv-stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+  .tv-icon-gold { background: #FEF3C7; color: #D97706; }
+  .tv-icon-green { background: #DCFCE7; color: #16A34A; }
+  .tv-icon-terra { background: #FEE2E2; color: #DC2626; }
+  .tv-icon-purple { background: #F3E8FF; color: #9333EA; }
+
+  .tv-stat-val {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: var(--tv-forest);
+    line-height: 1.1;
+  }
+  .tv-stat-lbl {
+    font-size: 0.8rem;
+    color: var(--tv-text-muted);
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  /* ── Filter Pills ── */
+  .tv-filter-bar {
+    display: flex;
+    gap: 0.6rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.75rem;
+    scrollbar-width: thin;
+  }
+  .tv-filter-btn {
+    background: #ffffff;
+    border: 1.5px solid var(--tv-border);
+    color: var(--tv-text-muted);
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0.5rem 1.1rem;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    transition: all 0.2s;
+  }
+  .tv-filter-btn:hover {
+    border-color: var(--tv-forest);
+    color: var(--tv-forest);
+  }
+  .tv-filter-btn.active {
+    background: var(--tv-forest);
+    border-color: var(--tv-forest);
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(20, 56, 35, 0.25);
+  }
+
+  /* ── Interactive Quiz Arena Card ── */
+  .tv-arena-card {
+    background: #ffffff;
+    border: 1.5px solid var(--tv-border);
+    border-radius: 20px;
+    padding: 2.25rem 2.5rem;
+    box-shadow: 0 6px 24px rgba(20, 56, 35, 0.06);
+    margin-bottom: 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .tv-arena-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+  .tv-badge-cat {
+    background: var(--tv-forest-light);
+    color: var(--tv-forest);
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 0.35rem 0.85rem;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .tv-badge-diff {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 0.3rem 0.75rem;
+    border-radius: 8px;
+    letter-spacing: 0.05em;
+  }
+  .diff-easy { background: var(--tv-emerald-soft); color: var(--tv-emerald); }
+  .diff-medium { background: var(--tv-amber-soft); color: var(--tv-amber); }
+  .diff-hard { background: var(--tv-crimson-soft); color: var(--tv-crimson); }
+
+  .tv-question-text {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: var(--tv-forest-dark);
+    margin: 0 0 1.75rem;
+    line-height: 1.35;
+  }
+
+  .tv-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+  }
+  .tv-option-btn {
+    background: var(--tv-cream-bg);
+    border: 2px solid var(--tv-border);
+    border-radius: 14px;
+    padding: 1.1rem 1.3rem;
+    text-align: left;
+    font-size: 0.96rem;
+    font-weight: 600;
+    color: var(--tv-text-main);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 100%;
+    position: relative;
+  }
+  .tv-option-btn:hover:not(:disabled) {
+    background: #ffffff;
+    border-color: var(--tv-forest);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(20, 56, 35, 0.08);
+  }
+  .tv-option-btn:disabled {
+    cursor: default;
+  }
+  .tv-opt-letter {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1.5px solid var(--tv-border);
+    color: var(--tv-forest);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .tv-option-btn:hover:not(:disabled) .tv-opt-letter {
+    background: var(--tv-forest);
+    color: #ffffff;
+    border-color: var(--tv-forest);
+  }
+
+  /* Answer feedback states */
+  .tv-option-btn.is-correct {
+    background: var(--tv-emerald-soft) !important;
+    border-color: var(--tv-emerald) !important;
+    color: #065F46 !important;
+  }
+  .tv-option-btn.is-correct .tv-opt-letter {
+    background: var(--tv-emerald) !important;
+    color: #ffffff !important;
+    border-color: var(--tv-emerald) !important;
+  }
+  .tv-option-btn.is-wrong {
+    background: var(--tv-crimson-soft) !important;
+    border-color: var(--tv-crimson) !important;
+    color: #991B1B !important;
+  }
+  .tv-option-btn.is-wrong .tv-opt-letter {
+    background: var(--tv-crimson) !important;
+    color: #ffffff !important;
+    border-color: var(--tv-crimson) !important;
+  }
+
+  /* ── Explanation & Fun Fact Box ── */
+  .tv-explanation-box {
+    background: var(--tv-amber-soft);
+    border: 1.5px solid #FDE68A;
+    border-radius: 14px;
+    padding: 1.25rem 1.4rem;
+    margin-bottom: 1.75rem;
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+  .tv-exp-title {
+    font-weight: 800;
+    color: #92400E;
+    font-size: 0.92rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+  }
+  .tv-exp-text {
+    font-size: 0.92rem;
+    color: #78350F;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  /* ── Arena Footer ── */
+  .tv-arena-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    border-top: 1px solid var(--tv-border);
+    padding-top: 1.25rem;
+  }
+  .tv-reward-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.88rem;
+    color: var(--tv-forest);
+    font-weight: 700;
+  }
+  .tv-btn-next {
+    background: var(--tv-forest);
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 800;
+    font-size: 0.92rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 14px rgba(20, 56, 35, 0.24);
+    transition: all 0.2s;
+  }
+  .tv-btn-next:hover {
+    background: #0f2d1c;
+    transform: translateY(-2px);
+  }
+
+  /* ── Badges Section ── */
+  .tv-badges-section {
+    margin-top: 3.5rem;
+  }
+  .tv-badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1.25rem;
+  }
+  .tv-badge-card {
+    background: #ffffff;
+    border: 1.5px solid var(--tv-border);
+    border-radius: 16px;
+    padding: 1.4rem;
+    text-align: center;
+    position: relative;
+    transition: all 0.2s;
+  }
+  .tv-badge-card.unlocked {
+    border-color: #FCD34D;
+    background: linear-gradient(180deg, #FFFBEB 0%, #FFFFFF 100%);
+    box-shadow: 0 4px 18px rgba(245, 158, 11, 0.12);
+  }
+  .tv-badge-card.locked {
+    opacity: 0.6;
+    background: #f8fafc;
+  }
+  .tv-badge-icon-wrap {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    margin: 0 auto 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.65rem;
+  }
+  .tv-badge-card.unlocked .tv-badge-icon-wrap {
+    background: #FEF3C7;
+    color: #D97706;
+    border: 2px solid #F59E0B;
+  }
+  .tv-badge-card.locked .tv-badge-icon-wrap {
+    background: #E2E8F0;
+    color: #94A3B8;
+  }
+  .tv-badge-title {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: var(--tv-forest);
+    margin: 0 0 0.3rem;
+  }
+  .tv-badge-desc {
+    font-size: 0.82rem;
+    color: var(--tv-text-muted);
+    line-height: 1.4;
+    margin: 0 0 0.75rem;
+  }
+  .tv-badge-status {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    display: inline-block;
+  }
+  .tv-badge-card.unlocked .tv-badge-status {
+    background: #DCFCE7;
+    color: #16A34A;
+  }
+  .tv-badge-card.locked .tv-badge-status {
+    background: #E2E8F0;
+    color: #64748B;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 640px) {
+    .tv-arena-card { padding: 1.5rem; }
+    .tv-hero-title { font-size: 1.85rem; }
+    .tv-options-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="trivia-page-wrapper">
+  <div class="container">
+
+    <!-- HERO HEADER -->
+    <div class="tv-hero">
+      <div class="tv-eyebrow">
+        <i class="fa-solid fa-gamepad"></i> Wildlife Gamification &amp; Trivia
+      </div>
+      <div class="tv-hero-row">
+        <div>
+          <h1 class="tv-hero-title">Wildlife Safari Trivia Arena</h1>
+          <p class="tv-hero-desc">Put your nature knowledge to the test, learn fascinating animal fun facts, and earn Wild Points redeemable for park discounts.</p>
+        </div>
+        <div>
+          <a href="{{ url_for('visitor.profile', tab='visits') }}" class="tv-btn-next" style="background:#ffffff; color:var(--tv-forest); border:1.5px solid var(--tv-border); box-shadow:none;">
+            <i class="fa-solid fa-trophy" style="color:var(--tv-gold);"></i> My Badges &amp; Points
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS STRIP -->
+    <div class="tv-stats-grid">
+      <div class="tv-stat-card">
+        <div class="tv-stat-icon tv-icon-gold">
+          <i class="fa-solid fa-crown"></i>
+        </div>
+        <div>
+          <div class="tv-stat-val" id="hudTotalPoints">{{ total_points }}</div>
+          <div class="tv-stat-lbl">Wild Points Balance</div>
+        </div>
+      </div>
+
+      <div class="tv-stat-card">
+        <div class="tv-stat-icon tv-icon-green">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div>
+          <div class="tv-stat-val" id="hudCorrectCount">{{ correct_count }}</div>
+          <div class="tv-stat-lbl">Trivia Solved</div>
+        </div>
+      </div>
+
+      <div class="tv-stat-card">
+        <div class="tv-stat-icon tv-icon-terra">
+          <i class="fa-solid fa-fire"></i>
+        </div>
+        <div>
+          <div class="tv-stat-val" id="hudStreak">{{ current_streak }}</div>
+          <div class="tv-stat-lbl">Current Streak</div>
+        </div>
+      </div>
+
+      <div class="tv-stat-card">
+        <div class="tv-stat-icon tv-icon-purple">
+          <i class="fa-solid fa-medal"></i>
+        </div>
+        <div>
+          <div class="tv-stat-val" id="hudBadgesCount">{{ unlocked_badges|length }} / {{ all_badges|length }}</div>
+          <div class="tv-stat-lbl">Badges Unlocked</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CATEGORY FILTER PILLS -->
+    <div class="tv-filter-bar" id="categoryFilterBar">
+      <button class="tv-filter-btn active" data-category="all" onclick="filterCategory('all', this)">
+        <i class="fa-solid fa-globe"></i> All Trivia
+      </button>
+      {% for cat in categories %}
+      <button class="tv-filter-btn" data-category="{{ cat }}" onclick="filterCategory('{{ cat }}', this)">
+        <i class="fa-solid fa-paw"></i> {{ cat }}
+      </button>
+      {% endfor %}
+    </div>
+
+    <!-- QUIZ ARENA CARD -->
+    <div class="tv-arena-card" id="quizArena">
+      <div class="tv-arena-header">
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <span class="tv-badge-cat" id="qCategory">
+            <i class="fa-solid fa-paw"></i> <span id="qCategoryText">Loading...</span>
+          </span>
+          <span class="tv-badge-diff" id="qDifficulty">Medium</span>
+        </div>
+        <div class="tv-reward-hint">
+          <i class="fa-solid fa-star" style="color:var(--tv-gold);"></i>
+          <span id="qPointsReward">+15 Wild Points</span>
+        </div>
+      </div>
+
+      <h2 class="tv-question-text" id="qQuestionText">
+        Loading wildlife questions...
+      </h2>
+
+      <!-- OPTIONS GRID -->
+      <div class="tv-options-grid" id="qOptionsContainer">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- EXPLANATION / FUN FACT REVEAL -->
+      <div class="tv-explanation-box" id="qExplanationBox">
+        <div class="tv-exp-title">
+          <i class="fa-solid fa-lightbulb" style="color:var(--tv-gold);"></i> Did You Know?
+        </div>
+        <p class="tv-exp-text" id="qExplanationText"></p>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="tv-arena-footer">
+        <div style="color:var(--tv-text-muted); font-size:0.85rem; font-weight:600;">
+          Question <span id="qIndexText">1</span> of <span id="qTotalText">0</span>
+        </div>
+        <button type="button" class="tv-btn-next" id="btnNextQuestion" style="display:none;" onclick="loadNextQuestion()">
+          Next Challenge <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- BADGES REWARD SECTION -->
+    <div class="tv-badges-section">
+      <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:0.5rem; flex-wrap:wrap; gap:1rem;">
+        <div>
+          <h2 style="font-family:'Outfit',sans-serif; font-size:1.75rem; font-weight:800; color:var(--tv-forest); margin:0 0 0.3rem;">
+            Safari Achievements &amp; Badges
+          </h2>
+          <p style="color:var(--tv-text-muted); margin:0; font-size:0.92rem;">Unlock rare explorer badges as you master animal trivia and conservation challenges.</p>
+        </div>
+      </div>
+
+      <div class="tv-badges-grid">
+        {% set unlocked_keys = unlocked_badges|map(attribute='badge_key')|list %}
+        {% for b in all_badges %}
+        {% set is_unlocked = b.badge_key in unlocked_keys %}
+        <div class="tv-badge-card {% if is_unlocked %}unlocked{% else %}locked{% endif %}" id="badgeCard_{{ b.badge_key }}">
+          <div class="tv-badge-icon-wrap">
+            <i class="{{ b.badge_icon }}"></i>
+          </div>
+          <h3 class="tv-badge-title">{{ b.badge_name }}</h3>
+          <p class="tv-badge-desc">{{ b.badge_description }}</p>
+          <span class="tv-badge-status">
+            {% if is_unlocked %}
+              <i class="fa-solid fa-check"></i> Unlocked
+            {% else %}
+              <i class="fa-solid fa-lock"></i> Locked
+            {% endif %}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  const rawQuestions = {{ questions_json|safe }};
+  let currentFilteredList = [...rawQuestions];
+  let currentIndex = 0;
+  let activeQuestion = null;
+  let answeredState = false;
+  let streak = {{ current_streak }};
+
+  function triggerConfetti() {
+    if (typeof confetti === 'function') {
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.75 },
+        colors: ['#10B981', '#F59E0B', '#143823', '#C85A32']
+      });
+    }
+  }
+
+  window.filterCategory = function(category, btn) {
+    document.querySelectorAll('.tv-filter-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    if (category === 'all') {
+      currentFilteredList = [...rawQuestions];
+    } else {
+      currentFilteredList = rawQuestions.filter(q => q.category === category);
+    }
+    currentIndex = 0;
+    renderCurrentQuestion();
+  };
+
+  function renderCurrentQuestion() {
+    const qTotal = document.getElementById('qTotalText');
+    const qIndex = document.getElementById('qIndexText');
+    const qCat = document.getElementById('qCategoryText');
+    const qDiff = document.getElementById('qDifficulty');
+    const qPoints = document.getElementById('qPointsReward');
+    const qText = document.getElementById('qQuestionText');
+    const optionsContainer = document.getElementById('qOptionsContainer');
+    const expBox = document.getElementById('qExplanationBox');
+    const btnNext = document.getElementById('btnNextQuestion');
+
+    expBox.style.display = 'none';
+    btnNext.style.display = 'none';
+    answeredState = false;
+
+    if (!currentFilteredList || currentFilteredList.length === 0) {
+      qText.textContent = "No trivia questions available in this category yet.";
+      optionsContainer.innerHTML = "";
+      return;
+    }
+
+    if (currentIndex >= currentFilteredList.length) {
+      currentIndex = 0;
+    }
+
+    activeQuestion = currentFilteredList[currentIndex];
+    qTotal.textContent = currentFilteredList.length;
+    qIndex.textContent = currentIndex + 1;
+    qCat.textContent = activeQuestion.category;
+    qDiff.textContent = activeQuestion.difficulty.toUpperCase();
+    qDiff.className = 'tv-badge-diff diff-' + activeQuestion.difficulty.toLowerCase();
+    qPoints.textContent = '+' + activeQuestion.points_reward + ' Wild Points';
+    qText.textContent = activeQuestion.question;
+
+    optionsContainer.innerHTML = '';
+    const letters = ['A', 'B', 'C', 'D'];
+    activeQuestion.options.forEach((opt, idx) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'tv-option-btn';
+      btn.innerHTML = `<span class="tv-opt-letter">${letters[idx] || (idx+1)}</span><span>${opt}</span>`;
+      btn.onclick = () => submitAnswer(idx, btn);
+      optionsContainer.appendChild(btn);
+    });
+  }
+
+  function submitAnswer(chosenIndex, clickedBtn) {
+    if (answeredState || !activeQuestion) return;
+    answeredState = true;
+
+    // Disable all options immediately
+    const allButtons = document.querySelectorAll('.tv-option-btn');
+    allButtons.forEach(b => b.disabled = true);
+
+    fetch('/visitor/api/trivia/submit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify({
+        question_id: activeQuestion.id,
+        selected_option: chosenIndex
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) {
+        alert(data.error || 'Failed to submit answer.');
+        return;
+      }
+
+      // Highlight options
+      allButtons.forEach((btn, idx) => {
+        if (idx === data.correct_index) {
+          btn.classList.add('is-correct');
+        } else if (idx === chosenIndex && !data.is_correct) {
+          btn.classList.add('is-wrong');
+        }
+      });
+
+      // Show fun facts / explanation
+      const expBox = document.getElementById('qExplanationBox');
+      const expText = document.getElementById('qExplanationText');
+      if (data.explanation) {
+        expText.textContent = data.explanation;
+        expBox.style.display = 'block';
+      }
+
+      // Update HUD stats
+      if (data.is_correct) {
+        triggerConfetti();
+        streak++;
+        document.getElementById('hudTotalPoints').textContent = data.total_points;
+        document.getElementById('hudCorrectCount').textContent = data.correct_count;
+        document.getElementById('hudStreak').textContent = streak;
+      } else {
+        streak = 0;
+        document.getElementById('hudStreak').textContent = 0;
+      }
+
+      // Check newly unlocked badges
+      if (data.newly_unlocked_badges && data.newly_unlocked_badges.length > 0) {
+        data.newly_unlocked_badges.forEach(bKey => {
+          const card = document.getElementById('badgeCard_' + bKey);
+          if (card) {
+            card.classList.remove('locked');
+            card.classList.add('unlocked');
+            const statusBadge = card.querySelector('.tv-badge-status');
+            if (statusBadge) statusBadge.innerHTML = '<i class="fa-solid fa-check"></i> Unlocked';
+          }
+        });
+      }
+
+      document.getElementById('btnNextQuestion').style.display = 'inline-flex';
+    })
+    .catch(err => {
+      console.error('Trivia submission error:', err);
+      document.getElementById('btnNextQuestion').style.display = 'inline-flex';
+    });
+  }
+
+  window.loadNextQuestion = function() {
+    currentIndex = (currentIndex + 1) % currentFilteredList.length;
+    renderCurrentQuestion();
+  };
+
+  // Initial render
+  renderCurrentQuestion();
+})();
+</script>
+{% endblock %}

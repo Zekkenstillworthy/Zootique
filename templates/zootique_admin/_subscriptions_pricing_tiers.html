@@ -15,7 +15,7 @@
     {% for tier in plan_tiers %}
       {% set plan_obj = (plans | selectattr('id', 'equalto', tier.id) | first) %}
       <div class="sa-plan-card {% if tier.is_popular %}is-featured{% endif %}">
-        <div class="sa-plan-tier">{% if loop.index == 1 %}Standard Tier{% elif loop.index == 2 %}Advanced Tier{% else %}Elite Tier{% endif %}</div>
+        <div class="sa-plan-tier">{{ tier.tier_label }}</div>
         <div class="sa-plan-name">{{ tier.name }}</div>
         <div class="sa-plan-price">₱{{ "{:,.0f}".format(tier.price or 0) }} <small>{{ tier.duration_label }}</small></div>
         <div class="sa-plan-features">
@@ -28,6 +28,14 @@
           {% else %}
             <div class="sa-plan-feature"><i class="fa-solid fa-circle-check"></i> <span>{{ tier.description }}</span></div>
           {% endif %}
+          <div class="sa-plan-limits">
+            <strong>Limits</strong>
+            <span>Staff: {{ tier.limits.staff_accounts if tier.limits.staff_accounts >= 0 else 'Unlimited' }}</span>
+            <span>Zones: {{ tier.limits.zones if tier.limits.zones >= 0 else 'Unlimited' }}</span>
+            <span>Animals: {{ tier.limits.animals if tier.limits.animals >= 0 else 'Unlimited' }}</span>
+            <span>Bookings/month: {{ tier.limits.bookings_per_month if tier.limits.bookings_per_month >= 0 else 'Unlimited' }}</span>
+            <span>Promo bundles: {{ tier.limits.promo_bundles if tier.limits.promo_bundles >= 0 else 'Unlimited' }}</span>
+          </div>
         </div>
         <div style="margin-top:14px;">
           <button class="btn btn-ghost btn-open-plan-modal"
@@ -36,7 +44,9 @@
             data-name="{{ tier.name }}"
             data-price="{{ tier.price }}"
             data-duration="{% if plan_obj %}{{ plan_obj.duration }}{% else %}monthly{% endif %}"
-            data-features="{% if plan_obj %}{{ plan_obj.features }}{% endif %}">
+            data-tier="{{ tier.tier_level }}"
+            data-features="{% if plan_obj %}{{ plan_obj.features }}{% endif %}"
+            data-limits='{{ tier.limits|tojson }}'>
             <i class="fa-regular fa-pen-to-square"></i> Edit Features
           </button>
         </div>
@@ -67,8 +77,9 @@
         </thead>
         <tbody>
           {% for p in plans %}
+          {% set p_tier = (plan_tiers | selectattr('id', 'equalto', p.id) | first) %}
           <tr>
-            <td class="fw-600">{{ p.name }}</td>
+            <td class="fw-600">{{ p.name }} <span class="sa-pill">{{ tier_label(p.tier_level) if tier_label is defined else '' }}</span></td>
             <td style="text-align:right; font-weight:900;">₱{{ "{:,.2f}".format(p.price) }}</td>
             <td style="text-transform:capitalize;">{{ p.duration }}</td>
             <td style="color:var(--text-muted); font-size:12px;">{{ (p.features or '—')|replace('\n', ', ') }}</td>
@@ -80,7 +91,9 @@
                   data-name="{{ p.name }}"
                   data-price="{{ p.price }}"
                   data-duration="{{ p.duration }}"
-                  data-features="{{ p.features or '' }}">
+                  data-features="{{ p.features or '' }}"
+                  data-tier="{{ p.tier_level }}"
+                  data-limits='{{ p_tier.limits|tojson if p_tier else "{}" }}'>
                   <i class="fa-regular fa-pen-to-square"></i> Edit
                 </button>
                 <form method="post" action="{{ url_for('zootique_admin.delete_subscription_plan', plan_id=p.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete {{ p.name }}?');">
@@ -112,10 +125,11 @@
     <div class="card-body" style="padding: 1.25rem 1.5rem;">
       <form id="planModalForm" method="post" action="{{ url_for('zootique_admin.save_subscription_plan') }}" style="display:flex; flex-direction:column; gap:14px;">
         <input type="hidden" id="modalPlanId" name="plan_id" value="">
+        <input type="hidden" id="modalPlanLimits" name="limits" value="">
 
         <div>
           <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-muted, #64748b); margin-bottom:4px;">Plan Name</label>
-          <input type="text" id="modalPlanName" name="name" placeholder="Basic Field, Habitat Pro, ..." required style="width:100%;">
+          <input type="text" id="modalPlanName" name="name" placeholder="Standard or Pro" required style="width:100%;">
         </div>
 
         <div class="form-grid-2">
@@ -133,9 +147,32 @@
         </div>
 
         <div>
-          <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-muted, #64748b); margin-bottom:4px;">Features (one per line)</label>
-          <textarea id="modalPlanFeatures" name="features" rows="6" placeholder="Up to 500 Animals&#10;3 Admin Users&#10;Basic Reporting" style="width:100%; font-family:inherit;"></textarea>
+          <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-muted, #64748b); margin-bottom:4px;">Access Tier</label>
+          <select name="tier_level" required style="width:100%;">
+            <option value="0">Free Tier</option>
+            <option value="1" selected>Standard Tier</option>
+            <option value="2">Pro Tier</option>
+          </select>
         </div>
+
+        <div>
+          <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-muted, #64748b); margin-bottom:4px;">Features (one per line)</label>
+          <textarea id="modalPlanFeatures" name="features" rows="6" placeholder="Up to 500 Animals&#10;3 Admin Users&#10;Standard Reporting" style="width:100%; font-family:inherit;"></textarea>
+        </div>
+
+        <fieldset class="plan-limits-editor">
+          <legend>Limits</legend>
+          <div class="plan-limits-grid">
+            {% for key, label in [('staff_accounts', 'Staff accounts'), ('zones', 'Zones'), ('animals', 'Animals'), ('bookings_per_month', 'Bookings per month'), ('promo_bundles', 'Promo bundles')] %}
+            <label class="plan-limit-field">
+              <span>{{ label }}</span>
+              <input type="number" min="-1" step="1" data-limit-key="{{ key }}" value="0">
+              <span class="plan-limit-unlimited"><input type="checkbox" data-limit-unlimited="{{ key }}"> Unlimited</span>
+            </label>
+            {% endfor %}
+          </div>
+          <small>Use Unlimited for a limit with no cap.</small>
+        </fieldset>
 
         <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:6px;">
           <button class="btn btn-ghost" type="button" onclick="closePlanModal()">Cancel</button>
@@ -147,7 +184,7 @@
 </div>
 
 <script>
-window.openPlanModal = function(id = '', name = '', price = '', duration = 'monthly', features = '') {
+window.openPlanModal = function(id = '', name = '', price = '', duration = 'monthly', features = '', tier = '1', limits = {}) {
   const modal = document.getElementById('planManagerModal');
   const title = document.getElementById('planModalTitle');
   const planId = document.getElementById('modalPlanId');
@@ -155,6 +192,8 @@ window.openPlanModal = function(id = '', name = '', price = '', duration = 'mont
   const planPrice = document.getElementById('modalPlanPrice');
   const planDuration = document.getElementById('modalPlanDuration');
   const planFeatures = document.getElementById('modalPlanFeatures');
+  const planLimits = document.getElementById('modalPlanLimits');
+  const planTier = document.querySelector('#planModalForm select[name="tier_level"]');
 
   if (!modal) return;
 
@@ -165,6 +204,7 @@ window.openPlanModal = function(id = '', name = '', price = '', duration = 'mont
     planPrice.value = price;
     planDuration.value = duration || 'monthly';
     planFeatures.value = features;
+    if (planTier) planTier.value = tier || '1';
   } else {
     title.innerText = 'PLAN MANAGER — Add Plan';
     planId.value = '';
@@ -172,9 +212,31 @@ window.openPlanModal = function(id = '', name = '', price = '', duration = 'mont
     planPrice.value = '';
     planDuration.value = 'monthly';
     planFeatures.value = '';
+    if (planTier) planTier.value = '1';
   }
 
+  const parsedLimits = typeof limits === 'string' ? JSON.parse(limits || '{}') : (limits || {});
+  document.querySelectorAll('[data-limit-key]').forEach(input => {
+    const key = input.dataset.limitKey;
+    const value = Number.isFinite(Number(parsedLimits[key])) ? Number(parsedLimits[key]) : 0;
+    input.value = value >= 0 ? value : 0;
+    const unlimited = document.querySelector(`[data-limit-unlimited="${key}"]`);
+    if (unlimited) unlimited.checked = value < 0;
+    input.disabled = value < 0;
+  });
+  syncModalLimits();
   modal.style.display = 'flex';
+};
+
+window.syncModalLimits = function() {
+  const limits = {};
+  document.querySelectorAll('[data-limit-key]').forEach(input => {
+    const key = input.dataset.limitKey;
+    const unlimited = document.querySelector(`[data-limit-unlimited="${key}"]`);
+    limits[key] = unlimited && unlimited.checked ? -1 : Math.max(0, Number(input.value) || 0);
+  });
+  const target = document.getElementById('modalPlanLimits');
+  if (target) target.value = JSON.stringify(limits);
 };
 
 window.closePlanModal = function() {
@@ -192,11 +254,19 @@ document.addEventListener('click', function(e) {
       btn.getAttribute('data-price') || '',
       btn.getAttribute('data-duration') || 'monthly',
       btn.getAttribute('data-features') || ''
+      ,btn.getAttribute('data-tier') || '1',
+      btn.getAttribute('data-limits') || '{}'
     );
   }
 });
 
 document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('[data-limit-key]').forEach(input => input.addEventListener('input', syncModalLimits));
+  document.querySelectorAll('[data-limit-unlimited]').forEach(toggle => toggle.addEventListener('change', function() {
+    const input = document.querySelector(`[data-limit-key="${this.dataset.limitUnlimited}"]`);
+    if (input) input.disabled = this.checked;
+    syncModalLimits();
+  }));
   const modal = document.getElementById('planManagerModal');
   if (modal) {
     modal.addEventListener('click', function(e) {

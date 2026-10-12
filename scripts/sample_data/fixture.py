@@ -46,7 +46,7 @@ def _zoo(slug: str, name: str, zoo_type: str, location: str, description: str, h
         "name": name,
         "type": zoo_type,
         "location": location,
-        "description": f"{description} {SAMPLE_MARKER}",
+        "description": description,
         "zones": _zones(habitat, habitat_description),
         "animals": [{"name": name_, "species": species, "zone": habitat, "status": "Healthy", "image": None} for name_, species in animals],
         "services": [{"name": name_, "price": price, "description": description_, "image": None} for name_, price, description_ in services],

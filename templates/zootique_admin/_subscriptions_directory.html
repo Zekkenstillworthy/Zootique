@@ -74,10 +74,12 @@
           {% for sub in subscriptions %}
           <tr>
             <td class="fw-600">{{ sub.zoo_name }}</td>
-            <td style="font-weight:700;">{{ sub.plan_name }}</td>
+            <td style="font-weight:700;">{{ sub.plan_name }}<div style="font-size:11px;color:var(--text-muted);">{{ sub.tier_label }}</div></td>
             <td>
               {% if sub.status == 'Active' %}
               <span class="sa-pill sa-pill--ok">ACTIVE</span>
+              {% elif sub.status == 'Pending' %}
+              <span class="sa-pill sa-pill--warn">PENDING APPROVAL</span>
               {% elif sub.status == 'Pending' %}
               <span class="sa-pill" style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d;">PENDING</span>
               {% else %}

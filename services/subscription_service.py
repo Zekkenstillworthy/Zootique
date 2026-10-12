@@ -29,6 +29,8 @@ def renew_zoo_subscription(*, subscription: ZooSubscription, months: int | None 
     plan = subscription.plan
     if not plan or not plan.is_active:
         raise SubscriptionValidationError("Subscription plan is not active.")
+    if float(plan.price or 0) < 0:
+        raise SubscriptionValidationError("Subscription plan price cannot be negative.")
 
     cycle_months = months or int(plan.duration_months or 1)
     if cycle_months < 1:
@@ -166,6 +168,18 @@ def approve_pending_subscription(*, subscription: ZooSubscription) -> tuple[ZooS
         raise SubscriptionValidationError("Subscription is not pending approval.")
 
     now = datetime.utcnow()
+    previous_active = (
+        ZooSubscription.query
+        .filter(
+            ZooSubscription.zoo_id == subscription.zoo_id,
+            ZooSubscription.id != subscription.id,
+            ZooSubscription.status == "active",
+        )
+        .all()
+    )
+    for previous in previous_active:
+        previous.status = "expired"
+        previous.end_date = now
     subscription.status = "active"
     subscription.start_date = now
     subscription.end_date = now + _months_to_duration(
@@ -184,4 +198,3 @@ def approve_pending_subscription(*, subscription: ZooSubscription) -> tuple[ZooS
     db.session.add(payment)
     db.session.commit()
     return subscription, payment
-

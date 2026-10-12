@@ -822,6 +822,185 @@
             .lp-cf-row { grid-template-columns: 1fr; }
             .lp-contact-form-card { padding: 1.5rem 1.25rem; }
         }
+
+        /* =============================================
+           REGISTER YOUR ZOO SECTION
+        ============================================= */
+        .lp-register-section {
+            padding: 5rem 1.5rem;
+            background: #fdfbf7;
+            border-top: 1px solid #ede8de;
+            border-bottom: 1px solid #ede8de;
+        }
+        .lp-register-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .lp-register-header {
+            text-align: center;
+            max-width: 720px;
+            margin: 0 auto 3rem auto;
+        }
+        .lp-section-kicker {
+            display: inline-block;
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #C85A32;
+            margin-bottom: 0.4rem;
+        }
+        .lp-register-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.3rem;
+            font-weight: 800;
+            color: #1a4f32;
+            margin: 0.5rem 0 1rem 0;
+        }
+        .lp-register-intro {
+            font-size: 1.05rem;
+            color: #64748b;
+            line-height: 1.6;
+            margin: 0;
+        }
+        .lp-reg-steps-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        .lp-reg-step-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 2rem 1.25rem 1.5rem 1.25rem;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .lp-reg-step-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(26, 79, 50, 0.08);
+            border-color: #cbd5e1;
+        }
+        .lp-reg-step-num {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 28px;
+            height: 28px;
+            background: #1a4f32;
+            color: #ffffff;
+            font-size: 0.8rem;
+            font-weight: 800;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(26, 79, 50, 0.3);
+        }
+        .lp-reg-step-icon {
+            width: 52px;
+            height: 52px;
+            background: #e8f5ec;
+            color: #1a4f32;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+            margin: 0.5rem auto 1rem auto;
+        }
+        .lp-reg-step-card h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin: 0 0 0.5rem 0;
+        }
+        .lp-reg-step-card p {
+            font-size: 0.88rem;
+            color: #64748b;
+            line-height: 1.5;
+            margin: 0;
+        }
+        .lp-reg-docs-banner {
+            background: linear-gradient(135deg, #143823 0%, #1a4f32 100%);
+            border-radius: 16px;
+            padding: 2.25rem 2.5rem;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+            box-shadow: 0 10px 30px rgba(20, 56, 35, 0.2);
+        }
+        .lp-reg-docs-text h4 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin: 0 0 0.5rem 0;
+            color: #fef08a;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .lp-reg-docs-text p {
+            color: #d1fae5;
+            font-size: 0.92rem;
+            margin: 0 0 1rem 0;
+        }
+        .lp-reg-docs-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.6rem 1.5rem;
+        }
+        .lp-reg-docs-list li {
+            font-size: 0.88rem;
+            color: #f1f5f9;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        .lp-reg-docs-list li i {
+            color: #86efac;
+            margin-top: 2px;
+        }
+        .lp-reg-docs-cta {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.6rem;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .lp-btn-lg {
+            padding: 0.9rem 1.5rem;
+            font-size: 1rem;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+            background: #C85A32;
+            border-color: #C85A32;
+        }
+        .lp-btn-lg:hover {
+            background: #b04e2a;
+            border-color: #b04e2a;
+        }
+        .lp-reg-note {
+            font-size: 0.78rem;
+            color: #cbd5e1;
+        }
+        @media (max-width: 900px) {
+            .lp-reg-steps-grid { grid-template-columns: repeat(2, 1fr); }
+            .lp-reg-docs-banner { flex-direction: column; text-align: left; }
+            .lp-reg-docs-list { grid-template-columns: 1fr; }
+            .lp-reg-docs-cta { align-items: stretch; width: 100%; }
+        }
+        @media (max-width: 600px) {
+            .lp-reg-steps-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -836,6 +1015,7 @@
         <nav class="lp-links" id="lpMobileNav" aria-label="Landing navigation">
             <a class="lp-link" href="#home">Home</a>
             <a class="lp-link" href="#about">About Us</a>
+            <a class="lp-link" href="#register">Register Zoo</a>
             <a class="lp-link" href="#contact">Contact</a>
             <!-- These are only visible in the mobile dropdown -->
             <div class="lp-mobile-action" style="border-top: 1px solid #e2e8f0; padding-top: 0.75rem; margin-top: 0.5rem; gap: 0.75rem;">
@@ -938,7 +1118,7 @@
                             <a class="lp-btn-hero-primary"
                                href="{{ url_for('visitor.zoo_detail', zoo_id=zoo.id) }}"
                                aria-label="Explore {{ zoo.name }}">
-                                <i class="fa-solid fa-compass"></i> Explore {{ zoo.name }} &rarr;
+                                <i class="fa-solid fa-compass"></i> Explore & Book &rarr;
                             </a>
                             <a class="lp-btn-hero-secondary"
                                href="{{ url_for('auth.register_selection') }}">
@@ -1080,6 +1260,67 @@
                 {% endif %}
             </div>
             {% endif %}
+        </div>
+    </section>
+
+    <!-- ===== REGISTER YOUR ZOO SECTION ===== -->
+    <section id="register" class="lp-register-section">
+        <div class="lp-register-inner">
+            <div class="lp-register-header">
+                <span class="lp-section-kicker">For Zoo &amp; Wildlife Park Owners</span>
+                <h2 class="lp-register-title">Register Your Establishment on Zootique</h2>
+                <p class="lp-register-intro">
+                    Scale your park operations, enable seamless visitor bookings, manage staff tasks, and reach thousands of guests nationwide with our dedicated multi-tenant platform.
+                </p>
+            </div>
+
+            <!-- 4-step Timeline -->
+            <div class="lp-reg-steps-grid">
+                <div class="lp-reg-step-card">
+                    <div class="lp-reg-step-num">1</div>
+                    <div class="lp-reg-step-icon"><i class="fa-solid fa-user-plus"></i></div>
+                    <h3>Create Admin Account</h3>
+                    <p>Provide your establishment details, location, and account credentials for your primary administrator.</p>
+                </div>
+                <div class="lp-reg-step-card">
+                    <div class="lp-reg-step-num">2</div>
+                    <div class="lp-reg-step-icon"><i class="fa-solid fa-file-arrow-up"></i></div>
+                    <h3>Upload Documents</h3>
+                    <p>Submit 4 regulatory documents: Business Permit, Wildlife/Zoo License, Proof of Address, and Representative ID.</p>
+                </div>
+                <div class="lp-reg-step-card">
+                    <div class="lp-reg-step-num">3</div>
+                    <div class="lp-reg-step-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                    <h3>Super Admin Verification</h3>
+                    <p>Our compliance team verifies your legitimacy and credentials. You receive an automated approval notification.</p>
+                </div>
+                <div class="lp-reg-step-card">
+                    <div class="lp-reg-step-num">4</div>
+                    <div class="lp-reg-step-icon"><i class="fa-solid fa-champagne-glasses"></i></div>
+                    <h3>Go Live &amp; Manage</h3>
+                    <p>Log in, configure your zones, animals, ticketing services, and start accepting visitor bookings immediately.</p>
+                </div>
+            </div>
+
+            <!-- Documents Checklist & Callout Box -->
+            <div class="lp-reg-docs-banner">
+                <div class="lp-reg-docs-text">
+                    <h4><i class="fa-solid fa-clipboard-check"></i> Required Verification Documents</h4>
+                    <p>Have digital copies (PDF, JPG, PNG) ready before starting:</p>
+                    <ul class="lp-reg-docs-list">
+                        <li><i class="fa-solid fa-circle-check"></i> <div><strong>Mayor's / Business Permit</strong> &mdash; Current municipal registration</div></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <div><strong>Wildlife Exhibition / Zoo License</strong> &mdash; DENR or government wildlife authority accreditation</div></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <div><strong>Proof of Establishment Address</strong> &mdash; Utility bill or lease agreement</div></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <div><strong>Authorized Representative ID</strong> &mdash; Government-issued ID with photo</div></li>
+                    </ul>
+                </div>
+                <div class="lp-reg-docs-cta">
+                    <a href="{{ url_for('auth.register_admin_step1') }}" class="lp-btn lp-btn-start lp-btn-lg">
+                        <i class="fa-solid fa-building-columns"></i> Start Registration &rarr;
+                    </a>
+                    <span class="lp-reg-note">Free verification &bull; Takes ~5 minutes</span>
+                </div>
+            </div>
         </div>
     </section>
 

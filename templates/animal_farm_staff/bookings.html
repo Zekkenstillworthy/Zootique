@@ -11,6 +11,16 @@
             <div class="stat-icon icon-blue"><i class="fa-solid fa-calendar-check"></i></div>
             <span class="value">{{ total }}</span><h3>Total Assigned</h3>
         </div>
+        <div class="card-panel">
+            <div class="card-header"><h2><i class="fa-solid fa-calendar-day"></i> Today's Roster</h2></div>
+            <div class="card-body" style="display:flex; gap:16px; flex-wrap:wrap;">
+                <span class="badge badge-role">{{ today_bookings|length }} bookings today</span>
+                <span class="badge badge-neutral">{{ today_guests }} visitors scheduled</span>
+                <span class="badge {% if today_remaining is not none and today_remaining == 0 %}badge-cancelled{% else %}badge-confirmed{% endif %}">
+                    {% if today_remaining is none %}Capacity not configured{% else %}{{ today_remaining }} spots remaining{% endif %}
+                </span>
+            </div>
+        </div>
         <div class="stat-card">
             <div class="stat-icon icon-green"><i class="fa-solid fa-circle-check"></i></div>
             <span class="value">{{ confirmed }}</span><h3>Confirmed</h3>

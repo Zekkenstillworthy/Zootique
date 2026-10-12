@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Booking Bundles | Zoo Admin{% endblock %}
+{% block page_title %}Booking Bundles{% endblock %}
+{% block content %}
+<div style="display:grid;gap:20px;">
+  <div class="card-panel">
+    <div class="card-header"><h2>Create bundle</h2></div>
+    <div class="card-body">
+      {% if not can_edit %}<div class="alert alert-warning">This page is view-only until you subscribe to the required plan (Tier {{ required_tier }}).</div>{% endif %}
+      <form method="post" action="{{ url_for('animal_farm_admin.create_booking_bundle') }}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;"{% if not can_edit %} onsubmit="return false;"{% endif %}>
+        <input class="zf-control" name="name" required placeholder="Bundle name">
+        <select class="zf-control" name="service_id"><option value="">All services</option>{% for service in services %}<option value="{{ service.id }}">{{ service.name }}</option>{% endfor %}</select>
+        <input class="zf-control" name="min_guests" type="number" min="1" value="1" placeholder="Minimum guests">
+        <input class="zf-control" name="max_guests" type="number" min="1" value="50" placeholder="Maximum guests">
+        <input class="zf-control" name="price" type="number" min="0" step="0.01" required placeholder="Package price">
+        <select class="zf-control" name="discount_type"><option value="none">No discount</option><option value="fixed">Fixed discount</option><option value="percent">Percentage discount</option></select>
+        <input class="zf-control" name="discount_value" type="number" min="0" step="0.01" value="0" placeholder="Discount value">
+        <input class="zf-control" name="valid_from" type="date"><input class="zf-control" name="valid_until" type="date">
+        <input class="zf-control" name="eligibility" placeholder="Eligibility (optional)">
+        <textarea class="zf-control" name="description" placeholder="Description"></textarea>
+        <label><input type="checkbox" name="is_active" checked> Active</label>
+        <button class="btn btn-primary" type="submit" {% if not can_edit %}disabled{% endif %}>Create bundle</button>
+      </form>
+    </div>
+  </div>
+  <div class="card-panel"><div class="card-header"><h2>Configured bundles</h2></div><div class="card-body" style="padding:0;"><div class="zf-table-wrap"><table class="table-striped"><thead><tr><th>Name</th><th>Service</th><th>Guests</th><th>Price</th><th>Validity</th><th>Status</th><th>Action</th></tr></thead><tbody>
+  {% for bundle in bundles %}<tr><td><strong>{{ bundle.name }}</strong><br><small>{{ bundle.description or '' }}</small></td><td>{{ bundle.service.name if bundle.service else 'All services' }}</td><td>{{ bundle.min_guests }}-{{ bundle.max_guests }}</td><td>₱{{ '%.2f'|format(bundle.price) }}</td><td>{{ bundle.valid_from or 'Any' }} – {{ bundle.valid_until or 'Any' }}</td><td>{{ 'Active' if bundle.is_active else 'Inactive' }}</td><td>{% if can_edit %}<form method="post" action="{{ url_for('animal_farm_admin.toggle_booking_bundle', bundle_id=bundle.id) }}"><button class="btn btn-sm btn-outline" type="submit">{{ 'Deactivate' if bundle.is_active else 'Activate' }}</button></form>{% else %}<span class="text-muted">View only</span>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="7">No bundles configured.</td></tr>{% endfor %}
+  </tbody></table></div></div></div>
+</div>
+{% endblock %}

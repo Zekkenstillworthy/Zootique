@@ -41,6 +41,17 @@ With `DATABASE_URL` set:
 
 - `python app.py`
 
+The application does not create sample, demo, or fixture records during startup,
+deployment, or request handling. Run a seed script explicitly only when a local
+or test database needs sample data:
+
+- `python scripts/seed_demo_data.py --reset`
+- `python scripts/seed_full_demo.py --reset`
+- `python scripts/seed_trivia_data.py`
+
+Database schema changes remain an explicit migration step; the application does
+not create tables automatically.
+
 Optional environment variables:
 
 - `SECRET_KEY` (recommended)
@@ -55,3 +66,15 @@ To create (or ensure) a Super Admin account on your Postgres database:
 - `python scripts/ensure_zootique_admin.py --email admin@example.com --password "change-me" --full-name "Super Admin"`
 
 If you omit `--password`, the script will generate a secure temporary password and print it.
+Round-two browser smoke checks can be run with `python tests/e2e/round_two_smoke.py`
+while the local Flask app is running.
+
+Round-three live-database verification uses the existing PostgreSQL database only:
+
+1. `python tests/cleanup_test_data.py`
+2. `python tests/e2e/round_two_smoke.py`
+3. `python -m unittest discover -s tests -v`
+4. `python tests/cleanup_test_data.py`
+
+The cleanup command removes only rows with the documented `e2e-`, `CP-`, or
+`CANCEL-POLICY` test prefixes.

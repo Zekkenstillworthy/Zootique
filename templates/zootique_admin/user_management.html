@@ -89,16 +89,19 @@
                 </a>
 
                 <form method="post" action="{{ url_for('zootique_admin.reset_user_password', user_id=u.id) }}" style="display:inline;" onsubmit="return confirm('Generate a temporary password reset?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button class="zf-icon-btn" type="submit" title="Reset Password"><i class="fa-solid fa-key"></i></button>
                 </form>
 
                 <form method="post" action="{{ url_for('zootique_admin.toggle_user_status', user_id=u.id) }}" style="display:inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button class="zf-icon-btn" type="submit" title="{% if u.status == 'Active' %}Suspend User{% else %}Activate User{% endif %}">
                     {% if u.status == 'Active' %}<i class="fa-solid fa-user-slash" style="color:#d97706;"></i>{% else %}<i class="fa-solid fa-user-check" style="color:#16a34a;"></i>{% endif %}
                   </button>
                 </form>
 
                 <form method="post" action="{{ url_for('zootique_admin.delete_user', user_id=u.id) }}" onsubmit="return confirm('Delete this user?');" style="display:inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button class="zf-icon-btn danger" type="submit" title="Delete User"><i class="fa-solid fa-trash"></i></button>
                 </form>
               </div>

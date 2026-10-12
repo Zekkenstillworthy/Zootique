@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Email Log | Super Admin{% endblock %}
+{% block page_title %}Platform Email Log{% endblock %}
+{% block content %}
+<div class="card-panel">
+  <div class="card-header"><h2>DELIVERY ATTEMPTS</h2></div>
+  <div class="card-body" style="overflow:auto;">
+    <table class="table-striped">
+      <thead><tr><th>Time</th><th>Recipient</th><th>Subject</th><th>Body</th><th>Type</th><th>Result</th><th>Error</th></tr></thead>
+      <tbody>
+      {% for attempt in attempts %}
+        <tr><td>{{ attempt.attempted_at.strftime('%Y-%m-%d %H:%M') }}</td><td>{{ attempt.recipient }}</td><td>{{ attempt.subject }}</td><td style="white-space:pre-wrap;min-width:280px;">{{ attempt.body }}</td><td>{{ attempt.notification_type|replace('_', ' ')|title }}</td><td>{{ attempt.status|capitalize }}</td><td>{{ attempt.error_message or '—' }}</td></tr>
+      {% else %}<tr><td colspan="7">No email attempts recorded.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

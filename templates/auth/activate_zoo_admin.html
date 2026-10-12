@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Activate Zoo Admin{% endblock %}
+{% block content %}
+<main class="container" style="max-width:620px; padding:4rem 1rem;">
+  <section class="card-panel">
+    <div class="card-header"><h2>ACTIVATE ADMINISTRATOR ACCOUNT</h2></div>
+    <div class="card-body">
+      <p>Set a password to activate the administrator account for <strong>{{ registration.establishment_name }}</strong>.</p>
+      <form method="post" style="display:grid; gap:1rem;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="registration_id" value="{{ registration.id }}">
+        <input type="hidden" name="token" value="{{ token }}">
+        <label>New password <input type="password" name="password" minlength="8" required style="width:100%; padding:12px;"></label>
+        <button class="btn btn-primary" type="submit">Activate account</button>
+      </form>
+    </div>
+  </section>
+</main>
+{% endblock %}

@@ -27,7 +27,7 @@
                 <i class="fa-solid fa-circle-info"></i> Live park guide</div>
             <h1 style="font-size: 3.5rem; margin-bottom: 1rem; line-height: 1.1;">{{ zoo.name if zoo else 'Selected
                 Park' }} Information</h1>
-            <p style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 2rem;">{{ zoo.description if zoo and
+            <p style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 2rem;">{{ zoo.description|public_text if zoo and
                 zoo.description else 'Explore the latest visitor information for this zoo.' }}</p>
 
             <div
@@ -88,6 +88,7 @@
         <a href="#getting-here"
             style="color: #1a4f32; font-weight: bold; text-decoration: none; border-bottom: 2px solid #1a4f32; padding-bottom: 0.5rem;">Getting
             Here</a>
+        <a href="#park-zones" style="color: #64748b; font-weight: 600; text-decoration: none;">Zones &amp; Habitats</a>
         <a href="#park-rules" style="color: #64748b; font-weight: 600; text-decoration: none;">Park Rules</a>
         <a href="#accessibility" style="color: #64748b; font-weight: 600; text-decoration: none;">Accessibility</a>
         <a href="#contact" style="color: #64748b; font-weight: 600; text-decoration: none;">Contact Us</a>
@@ -135,6 +136,46 @@
                         </div>
                     </div>
                 </div>
+            </section>
+
+            <!-- PARK ZONES & HABITATS -->
+            <section id="park-zones" style="margin-bottom: 4rem;">
+                <h2 style="font-size: 1.8rem; color: #1a4f32; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-map-marked-alt" style="color: #fca000;"></i> Park Zones &amp; Resident Animals
+                </h2>
+                <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 1.5rem;">
+                    Click any zone to discover the resident animals living in that habitat.
+                </p>
+
+                {% if zones and zones|length > 0 %}
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.25rem;">
+                    {% for z in zones %}
+                    <div class="park-zone-card" onclick="openZoneAnimals({{ z.id }}, '{{ z.name|e }}', '{{ (z.description or '')|e }}')"
+                         style="background: white; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 1.25rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.03);"
+                         onmouseover="this.style.borderColor='#1a4f32'; this.style.transform='translateY(-2px)'"
+                         onmouseout="this.style.borderColor='#e2e8f0'; this.style.transform='none'">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem;">
+                            <span style="font-size: 1.1rem; font-weight: 800; color: #1a4f32;">{{ z.name }}</span>
+                            <span style="width: 32px; height: 32px; border-radius: 50%; background: #e8f5ec; color: #1a4f32; display: flex; align-items: center; justify-content: center; font-size: 0.85rem;">
+                                <i class="fa-solid fa-compass"></i>
+                            </span>
+                        </div>
+                        <p style="color: #64748b; font-size: 0.85rem; line-height: 1.45; margin: 0 0 1rem 0; min-height: 2.9em;">
+                            {{ z.description or 'Explore habitat and animals in this designated park zone.' }}
+                        </p>
+                        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem; font-weight: 700; color: #C85A32;">
+                            <span>Explore Animals</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="background: white; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 1.5rem; text-align: center; color: #64748b;">
+                    <i class="fa-solid fa-map-location" style="font-size: 1.8rem; color: #94a3b8; margin-bottom: 0.5rem; display: block;"></i>
+                    Interactive zones are currently being configured for this park. Check back soon!
+                </div>
+                {% endif %}
             </section>
 
             <!-- PARK RULES -->
@@ -205,4 +246,67 @@
 
     </div>
 </div>
+
+<!-- ZONE ANIMALS POPUP MODAL -->
+<div id="zoneAnimalsModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center; padding:1rem; backdrop-filter:blur(4px);">
+  <div style="background:white; border-radius:18px; max-width:620px; width:100%; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 20px 40px rgba(0,0,0,0.25); overflow:hidden;">
+    <div style="padding:1.25rem 1.5rem; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; background:#f8fafc;">
+      <div>
+        <h3 id="modalZoneTitle" style="margin:0; font-size:1.25rem; color:#1a4f32; font-weight:800;"></h3>
+        <p id="modalZoneDesc" style="margin:0.2rem 0 0 0; font-size:0.85rem; color:#64748b;"></p>
+      </div>
+      <button onclick="closeZoneModal()" style="background:transparent; border:none; font-size:1.5rem; color:#64748b; cursor:pointer; line-height:1;">&times;</button>
+    </div>
+    <div style="padding:1.25rem 1.5rem; overflow-y:auto; flex:1;">
+      <div id="modalLoading" style="text-align:center; padding:2rem; color:#64748b;">
+        <i class="fa-solid fa-spinner fa-spin" style="font-size:1.8rem; color:#1a4f32;"></i>
+        <p style="margin-top:0.5rem; font-size:0.88rem;">Loading resident animals...</p>
+      </div>
+      <div id="modalAnimalsGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:1rem;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openZoneAnimals(zoneId, zoneName, zoneDesc) {
+  const modal = document.getElementById('zoneAnimalsModal');
+  document.getElementById('modalZoneTitle').textContent = zoneName;
+  document.getElementById('modalZoneDesc').textContent = zoneDesc || 'Resident animals living in this habitat zone.';
+  document.getElementById('modalLoading').style.display = 'block';
+  document.getElementById('modalAnimalsGrid').innerHTML = '';
+  modal.style.display = 'flex';
+
+  fetch('/api/zones/' + zoneId + '/animals')
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('modalLoading').style.display = 'none';
+      const grid = document.getElementById('modalAnimalsGrid');
+      if (!data.animals || data.animals.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#64748b; padding:1.5rem;">No animals currently listed in this zone.</div>';
+        return;
+      }
+      grid.innerHTML = data.animals.map(a => `
+        <a href="${a.detail_url}" style="text-decoration:none; color:inherit; display:flex; gap:0.75rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:0.75rem; transition:transform 0.15s, box-shadow 0.15s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.06)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'">
+          ${a.image_url ? `<img src="${a.image_url}" alt="${a.name}" style="width:64px; height:64px; border-radius:10px; object-fit:cover; flex-shrink:0;">` : `<div style="width:64px; height:64px; border-radius:10px; background:#e8f5ec; color:#1a4f32; display:flex; align-items:center; justify-content:center; font-size:1.5rem; flex-shrink:0;"><i class="fa-solid fa-paw"></i></div>`}
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:800; font-size:0.95rem; color:#1a4f32;">${a.name} <span style="font-size:0.75rem; color:#64748b; font-weight:normal;">(${a.age || 'Unknown'})</span></div>
+            <div style="font-size:0.8rem; color:#64748b; font-style:italic;">${a.species || 'Wildlife'}</div>
+            <span style="display:inline-block; margin-top:0.35rem; font-size:0.72rem; padding:0.15rem 0.55rem; border-radius:999px; background:#dcfce7; color:#15803d; font-weight:700;">${a.status || 'Healthy'}</span>
+          </div>
+        </a>
+      `).join('');
+    })
+    .catch(() => {
+      document.getElementById('modalLoading').style.display = 'none';
+      document.getElementById('modalAnimalsGrid').innerHTML = '<div style="grid-column:1/-1; color:#dc2626; text-align:center; padding:1rem;">Failed to load animals. Please try again.</div>';
+    });
+}
+function closeZoneModal() {
+  document.getElementById('zoneAnimalsModal').style.display = 'none';
+}
+window.addEventListener('click', function(e) {
+  const modal = document.getElementById('zoneAnimalsModal');
+  if (e.target === modal) closeZoneModal();
+});
+</script>
 {% endblock %}

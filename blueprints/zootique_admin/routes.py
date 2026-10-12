@@ -3,9 +3,13 @@ from __future__ import annotations
 import os
 import secrets
 import json
+import hashlib
+import json
 from datetime import datetime, timedelta
 
-from flask import Blueprint, current_app, render_template, redirect, url_for, request, flash, session
+from flask import Blueprint, current_app, render_template, redirect, url_for, request, flash, session, send_file, abort
+from io import BytesIO
+from urllib.request import urlopen
 from sqlalchemy import case
 from werkzeug.utils import secure_filename
 
@@ -24,6 +28,8 @@ from models import (
     ZooAdminFeedback,
     ZooAdminFeedbackReply,
     EstablishmentType,
+    LoyaltySetting,
+    RegistrationEmailAttempt,
 )
 from services import (
     SubscriptionValidationError,
@@ -33,9 +39,57 @@ from services import (
     approve_pending_subscription,
 )
 from services.auth_guard import require_role_guard
-from services.registration_notifications import send_registration_approved, send_registration_rejected
+from services.subscription_catalog import infer_tier_level, plan_context, sort_plans, tier_label
+from services.registration_notifications import (
+    send_registration_approved,
+    send_registration_rejected,
+    send_establishment_confirmation,
+    send_registration_resubmission,
+)
 
 admin_bp = Blueprint("zootique_admin", __name__)
+
+DOCUMENT_FIELDS = {
+    "business_permit": ("Business/Establishment Permit", "business_permit_url"),
+    "wildlife_license": ("Zoo or Wildlife Exhibition License", "wildlife_license_url"),
+    "proof_of_address": ("Proof of Address", "proof_of_address_url"),
+    "representative_id": ("Authorized Representative ID", "representative_id_url"),
+}
+
+
+@admin_bp.before_request
+def require_admin_csrf():
+    if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+        expected = session.get("_csrf_token")
+        provided = request.form.get("csrf_token") or request.headers.get("X-CSRF-Token")
+        if not expected or not provided or not secrets.compare_digest(str(expected), str(provided)):
+            abort(400, description="Invalid or missing CSRF token.")
+
+
+@admin_bp.route('/loyalty-settings', methods=['GET', 'POST'])
+def loyalty_settings():
+    setting = LoyaltySetting.query.first()
+    if not setting:
+        setting = LoyaltySetting()
+        db.session.add(setting)
+        db.session.flush()
+    if request.method == 'POST':
+        try:
+            setting.points_per_currency = float(request.form.get('points_per_currency', '1'))
+            setting.minimum_redemption_points = int(request.form.get('minimum_redemption_points', '100'))
+            setting.currency_per_point = float(request.form.get('currency_per_point', '0.01'))
+            setting.maximum_redemption_percent = float(request.form.get('maximum_redemption_percent', '50'))
+            setting.expiration_days = request.form.get('expiration_days', type=int)
+            setting.trivia_enabled = bool(request.form.get('trivia_enabled'))
+            setting.booking_enabled = bool(request.form.get('booking_enabled'))
+            if setting.points_per_currency < 0 or setting.minimum_redemption_points < 1 or setting.currency_per_point <= 0 or not 0 < setting.maximum_redemption_percent <= 100:
+                raise ValueError('Loyalty values are outside the allowed range.')
+            db.session.commit()
+            flash('Loyalty conversion settings saved.', 'success')
+        except (TypeError, ValueError) as exc:
+            db.session.rollback()
+            flash(str(exc), 'error')
+    return render_template('zootique_admin/loyalty_settings.html', setting=setting)
 
 
 @admin_bp.before_request
@@ -280,13 +334,15 @@ def dashboard():
 @admin_bp.get('/registrations')
 def registrations():
     status = (request.args.get('status') or 'pending').strip().lower()
-    allowed_statuses = {'pending', 'approved', 'rejected', 'all'}
+    allowed_statuses = {'pending', 'approved', 'rejected', 'legacy', 'all'}
     if status not in allowed_statuses:
         status = 'pending'
 
     query = EstablishmentRegistration.query
-    if status != 'all':
-        query = query.filter_by(status=status)
+    if status == 'legacy':
+        query = query.filter_by(is_legacy_migration=True)
+    elif status != 'all':
+        query = query.filter_by(status=status, is_legacy_migration=False)
     registrations = query.order_by(
         case((EstablishmentRegistration.status == 'pending', 0), else_=1),
         EstablishmentRegistration.created_at.desc(),
@@ -304,7 +360,139 @@ def registration_detail(registration_id: int):
     if not registration:
         flash('Registration not found.', 'error')
         return redirect(url_for('zootique_admin.registrations'))
-    return render_template('zootique_admin/registration_detail.html', registration=registration)
+    email_attempts = (
+        RegistrationEmailAttempt.query
+        .filter_by(registration_id=registration.id)
+        .order_by(RegistrationEmailAttempt.attempted_at.desc())
+        .limit(30)
+        .all()
+    )
+    reviews = registration.document_reviews or {}
+    documents = [
+        {"key": key, "label": label, "url": getattr(registration, field), "review": reviews.get(key, {})}
+        for key, (label, field) in DOCUMENT_FIELDS.items()
+    ]
+    uploaded_count = sum(bool(item["url"]) for item in documents)
+    verified_count = sum(bool(item["url"]) and item["review"].get("status") == "verified" for item in documents)
+    attempts_by_type = {}
+    for attempt in email_attempts:
+        attempts_by_type.setdefault(attempt.notification_type, []).append(attempt)
+    for attempts in attempts_by_type.values():
+        attempts.sort(key=lambda item: item.attempted_at or datetime.min, reverse=True)
+    existing_user = User.query.filter_by(email=registration.admin_email).first() if registration.admin_email else None
+    existing_zoo = Zoo.query.filter(db.func.lower(Zoo.name) == (registration.establishment_name or "").lower()).first()
+    all_documents_verified = registration.is_legacy_migration or all(
+        item["url"] and item["review"].get("status") == "verified" for item in documents
+    )
+    return render_template(
+        'zootique_admin/registration_detail.html',
+        registration=registration,
+        email_attempts=email_attempts,
+        attempts_by_type=attempts_by_type,
+        documents=documents,
+        uploaded_count=uploaded_count,
+        verified_count=verified_count,
+        existing_user=existing_user,
+        existing_zoo=existing_zoo,
+        all_documents_verified=all_documents_verified,
+    )
+
+
+@admin_bp.post('/registrations/<int:registration_id>/documents')
+def review_registration_documents(registration_id: int):
+    registration = db.session.get(EstablishmentRegistration, registration_id)
+    if not registration:
+        abort(404)
+    reviews = dict(registration.document_reviews or {})
+    for key, (label, field) in DOCUMENT_FIELDS.items():
+        if request.form.get(f"{key}_status") not in {"verified", "needs_resubmission"}:
+            continue
+        reviews[key] = {
+            "status": request.form[f"{key}_status"],
+            "note": (request.form.get(f"{key}_note") or "").strip()[:300],
+            "updated_at": datetime.utcnow().isoformat(),
+        }
+    registration.document_reviews = reviews
+    db.session.commit()
+    flash("Document review statuses saved.", "success")
+    return redirect(url_for("zootique_admin.registration_detail", registration_id=registration.id))
+
+
+@admin_bp.get('/registrations/<int:registration_id>/documents/<document_key>')
+def registration_document(registration_id: int, document_key: str):
+    registration = db.session.get(EstablishmentRegistration, registration_id)
+    item = DOCUMENT_FIELDS.get(document_key)
+    if not registration or not item:
+        abort(404)
+    document_url = getattr(registration, item[1])
+    if not document_url:
+        abort(404)
+    if document_url.startswith("/uploads/"):
+        path = document_url.removeprefix("/uploads/")
+        root = os.path.abspath(current_app.config["UPLOAD_FOLDER"])
+        target = os.path.abspath(os.path.join(root, *path.split("/")))
+        if not target.startswith(root + os.sep):
+            abort(404)
+        return send_file(target, as_attachment=request.args.get("download") == "1")
+    try:
+        with urlopen(document_url, timeout=10) as response:
+            return send_file(
+                BytesIO(response.read()),
+                mimetype=response.headers.get_content_type(),
+                as_attachment=request.args.get("download") == "1",
+                download_name=os.path.basename(document_url.split("?", 1)[0]) or "registration-document",
+            )
+    except Exception:
+        current_app.logger.exception("Unable to proxy registration document %s", registration.id)
+        abort(404)
+
+
+@admin_bp.post('/registrations/<int:registration_id>/resubmission')
+def request_registration_resubmission(registration_id: int):
+    registration = db.session.get(EstablishmentRegistration, registration_id)
+    if not registration:
+        abort(404)
+    requested_keys = set(request.form.getlist("document_key"))
+    missing = [
+        label for key, (label, field) in DOCUMENT_FIELDS.items()
+        if (requested_keys and key in requested_keys)
+        or (not requested_keys and (not getattr(registration, field) or (registration.document_reviews or {}).get(key, {}).get("status") == "needs_resubmission"))
+    ]
+    if not missing:
+        flash("All documents are uploaded and do not need resubmission.", "error")
+    else:
+        sent = send_registration_resubmission(registration, missing)
+        db.session.commit()
+        flash("Resubmission request logged and sent." if sent else "Resubmission request logged; SMTP is not configured.", "success")
+    return redirect(url_for("zootique_admin.registration_detail", registration_id=registration.id))
+
+
+@admin_bp.post('/registrations/<int:registration_id>/resend/<email_kind>')
+def resend_registration_email(registration_id: int, email_kind: str):
+    registration = db.session.get(EstablishmentRegistration, registration_id)
+    if not registration or email_kind not in {"applicant", "establishment"}:
+        abort(404)
+    if email_kind == "establishment" and registration.status != "approved":
+        flash("Establishment confirmation can only be resent after approval.", "error")
+        return redirect(url_for("zootique_admin.registration_detail", registration_id=registration.id))
+    if email_kind == "establishment":
+        sent = send_establishment_confirmation(registration, approved=registration.status == "approved")
+    else:
+        sent = send_registration_rejected(registration) if registration.status == "rejected" else send_registration_approved(registration)
+    db.session.commit()
+    flash("Email attempt logged and sent." if sent else "Email attempt logged; SMTP is not configured.", "success")
+    return redirect(url_for("zootique_admin.registration_detail", registration_id=registration.id))
+
+
+@admin_bp.get('/email-log')
+def email_log():
+    attempts = (
+        RegistrationEmailAttempt.query
+        .order_by(RegistrationEmailAttempt.attempted_at.desc())
+        .limit(250)
+        .all()
+    )
+    return render_template('zootique_admin/email_log.html', attempts=attempts)
 
 
 @admin_bp.post('/registrations/<int:registration_id>/approve')
@@ -319,8 +507,18 @@ def approve_registration(registration_id: int):
     if not registration.admin_email or not registration.admin_password_hash:
         flash('This registration is missing administrator account details.', 'error')
         return redirect(url_for('zootique_admin.registration_detail', registration_id=registration.id))
-    if User.query.filter_by(email=registration.admin_email).first():
-        flash('The administrator email is already in use.', 'error')
+    reviews = registration.document_reviews or {}
+    all_verified = all(
+        getattr(registration, field) and reviews.get(key, {}).get("status") == "verified"
+        for key, (_, field) in DOCUMENT_FIELDS.items()
+    )
+    if not all_verified and not (registration.is_legacy_migration and request.form.get("approve_without_documents") == "1"):
+        flash("All required documents must be uploaded and marked Verified before approval.", "error")
+        return redirect(url_for('zootique_admin.registration_detail', registration_id=registration.id))
+    existing_user = User.query.filter_by(email=registration.admin_email).first()
+    existing_zoo = Zoo.query.filter(db.func.lower(Zoo.name) == (registration.establishment_name or "").lower()).first()
+    if existing_user or existing_zoo:
+        flash('Account already exists for this email or establishment; no duplicate was created.', 'error')
         return redirect(url_for('zootique_admin.registration_detail', registration_id=registration.id))
 
     reviewer = _current_user()
@@ -339,9 +537,13 @@ def approve_registration(registration_id: int):
             role='zoo_admin',
             zoo_id=new_zoo.id,
             password_hash=registration.admin_password_hash,
+            status='pending_activation',
         )
         db.session.add(new_user)
         registration.zoo_id = new_zoo.id
+        activation_token = secrets.token_urlsafe(32)
+        registration.activation_token_hash = hashlib.sha256(activation_token.encode('utf-8')).hexdigest()
+        registration.activation_expires_at = datetime.utcnow() + timedelta(days=2)
         registration.status = 'approved'
         registration.approved_by = reviewer.id if reviewer else None
         registration.approved_at = datetime.utcnow()
@@ -352,11 +554,15 @@ def approve_registration(registration_id: int):
         flash('Approval failed. No account or establishment was created.', 'error')
         return redirect(url_for('zootique_admin.registration_detail', registration_id=registration.id))
 
-    try:
-        send_registration_approved(registration)
-    except Exception:
-        current_app.logger.exception('Approval email failed for registration %s', registration.id)
-    flash('Registration approved and administrator account created.', 'success')
+    applicant_sent = send_registration_approved(registration, activation_token=activation_token)
+    establishment_sent = send_establishment_confirmation(registration, approved=True)
+    registration.acknowledgement_email_status = 'sent' if applicant_sent else 'failed'
+    registration.confirmation_email_status = 'sent' if establishment_sent else 'failed'
+    db.session.commit()
+    if applicant_sent and establishment_sent:
+        flash('Registration approved and both confirmation emails were sent.', 'success')
+    else:
+        flash('Registration approved, but one or more confirmation emails failed. Review the email attempts.', 'error')
     return redirect(url_for('zootique_admin.registration_detail', registration_id=registration.id))
 
 
@@ -371,16 +577,25 @@ def reject_registration(registration_id: int):
         return redirect(url_for('zootique_admin.registration_detail', registration_id=registration.id))
 
     reviewer = _current_user()
+    reason = (request.form.get('rejection_reason') or '').strip()
+    note = (request.form.get('rejection_note') or '').strip()
+    if reason not in {"documents_incomplete", "documents_invalid", "duplicate", "other"}:
+        flash("Select a rejection reason.", "error")
+        return redirect(url_for('zootique_admin.registration_detail', registration_id=registration.id))
     registration.status = 'rejected'
     registration.rejected_by = reviewer.id if reviewer else None
     registration.rejected_at = datetime.utcnow()
-    registration.rejection_note = (request.form.get('rejection_note') or '').strip() or None
+    registration.rejection_note = f"{reason.replace('_', ' ').title()}: {note}" if note else reason.replace('_', ' ').title()
     db.session.commit()
-    try:
-        send_registration_rejected(registration)
-    except Exception:
-        current_app.logger.exception('Rejection email failed for registration %s', registration.id)
-    flash('Registration rejected.', 'success')
+    applicant_sent = send_registration_rejected(registration)
+    establishment_sent = send_establishment_confirmation(registration, approved=False)
+    registration.acknowledgement_email_status = 'sent' if applicant_sent else 'failed'
+    registration.confirmation_email_status = 'sent' if establishment_sent else 'failed'
+    db.session.commit()
+    if applicant_sent and establishment_sent:
+        flash('Registration rejected and both notification emails were sent.', 'success')
+    else:
+        flash('Registration rejected, but one or more notification emails failed. Review the email attempts.', 'error')
     return redirect(url_for('zootique_admin.registration_detail', registration_id=registration.id))
 
 
@@ -391,6 +606,14 @@ def layout_manager():
 def _build_subscription_management_context(edit_plan_id: str | None = None):
     now = datetime.utcnow()
     edit_plan = db.session.get(SubscriptionPlan, int(edit_plan_id)) if (edit_plan_id and edit_plan_id.isdigit()) else None
+    edit_plan_limits = {}
+    if edit_plan and edit_plan.limits:
+        try:
+            parsed_limits = json.loads(edit_plan.limits)
+            if isinstance(parsed_limits, dict):
+                edit_plan_limits = {str(key): int(value) for key, value in parsed_limits.items()}
+        except (TypeError, ValueError, json.JSONDecodeError):
+            edit_plan_limits = {}
 
     subscriptions = (
         db.session.query(ZooSubscription)
@@ -452,6 +675,8 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
             'zoo_name': s.zoo.name,
             'plan_id': s.plan.id,
             'plan_name': s.plan.name,
+            'tier_level': int(s.plan.tier_level or 1),
+            'tier_label': tier_label(s.plan.tier_level),
             'status': status_label,
             'start_date': s.start_date.date().isoformat(),
             'end_date': s.end_date.date().isoformat(),
@@ -459,7 +684,7 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
             'latest_payment_amount': float(latest_payment.amount) if latest_payment else 0,
         })
 
-    plans = SubscriptionPlan.query.order_by(SubscriptionPlan.price.asc()).all()
+    plans = sort_plans(SubscriptionPlan.query.all())
 
     total_subs = len(subscriptions)
     churn_rate = (expired_count / total_subs) * 100 if total_subs else 0.0
@@ -481,10 +706,8 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
         duration_label = "/mo" if duration == "monthly" else "/yr"
 
         plan_tiers.append({
-            "id": plan.id,
-            "name": plan.name,
-            "description": short_desc,
-            "price": float(plan.price or 0),
+            **plan_context(plan),
+            "description": short_desc or plan_context(plan)["description"],
             "duration_label": duration_label,
             "is_popular": bool(popular_plan_id and plan.id == popular_plan_id),
         })
@@ -502,7 +725,9 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
             "total": int(total_subs),
         },
         "plan_tiers": plan_tiers,
+        "tier_label": tier_label,
         "edit_plan": edit_plan,
+        "edit_plan_limits": edit_plan_limits,
     }
 
 def _render_subscription_view(full_template: str, partial_template: str, context: dict):
@@ -652,6 +877,19 @@ def save_subscription_plan():
     price = request.form.get('price')
     duration = (request.form.get('duration') or '').strip().lower()
     features = (request.form.get('features') or '').strip()
+    tier_level_raw = (request.form.get('tier_level') or '').strip()
+    limits_raw = (request.form.get('limits') or '').strip()
+    if not limits_raw:
+        limit_fields = ('staff_accounts', 'zones', 'animals', 'bookings_per_month', 'promo_bundles')
+        submitted_limits = {}
+        for key in limit_fields:
+            raw_value = (request.form.get(f'limit_{key}') or '').strip()
+            if request.form.get(f'limit_{key}_unlimited'):
+                submitted_limits[key] = -1
+            elif raw_value:
+                submitted_limits[key] = raw_value
+        if submitted_limits:
+            limits_raw = json.dumps(submitted_limits)
 
     if not name:
         flash('Plan name is required.', 'error')
@@ -661,9 +899,28 @@ def save_subscription_plan():
     except (TypeError, ValueError):
         flash('Price must be a number.', 'error')
         return redirect(url_for('zootique_admin.manage_subscriptions'))
+    if price_value < 0:
+        flash('Price cannot be negative.', 'error')
+        return redirect(url_for('zootique_admin.manage_subscriptions'))
     if duration not in ('monthly', 'yearly'):
         flash('Duration must be monthly or yearly.', 'error')
         return redirect(url_for('zootique_admin.manage_subscriptions'))
+    try:
+        tier_level = infer_tier_level(name, int(tier_level_raw) if tier_level_raw else None)
+    except ValueError:
+        flash('Tier level must be a valid catalog tier.', 'error')
+        return redirect(url_for('zootique_admin.manage_subscriptions'))
+    if limits_raw:
+        try:
+            limits = json.loads(limits_raw)
+            if not isinstance(limits, dict):
+                raise ValueError
+            limits = {str(key): int(value) for key, value in limits.items()}
+        except (TypeError, ValueError, json.JSONDecodeError):
+            flash('Limits must be a valid JSON object of numeric values.', 'error')
+            return redirect(url_for('zootique_admin.manage_subscriptions'))
+    else:
+        limits = None
 
     duration_months = 1 if duration == 'monthly' else 12
 
@@ -676,11 +933,22 @@ def save_subscription_plan():
         plan = SubscriptionPlan()
         db.session.add(plan)
 
+    duplicate_query = SubscriptionPlan.query.filter(SubscriptionPlan.name.ilike(name))
+    if plan.id:
+        duplicate_query = duplicate_query.filter(SubscriptionPlan.id != plan.id)
+    duplicate = duplicate_query.first()
+    if duplicate:
+        flash('A subscription plan with that name already exists.', 'error')
+        return redirect(url_for('zootique_admin.manage_subscriptions'))
+
     plan.name = name
     plan.price = price_value
     plan.duration = duration
     plan.duration_months = duration_months
     plan.features = features
+    plan.tier_level = tier_level
+    if limits is not None:
+        plan.limits = json.dumps(limits, separators=(',', ':'))
 
     try:
         db.session.commit()

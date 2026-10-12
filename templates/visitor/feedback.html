@@ -71,6 +71,7 @@
     </div>
     <div class="zf-form-card-body">
       <form method="post" action="{{ url_for('visitor.feedback') }}" style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 1rem;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="zf-field">
           <label class="zf-label" for="fb_zoo_id">Zoo (optional)</label>
           <select id="fb_zoo_id" name="zoo_id" class="zf-control">
@@ -234,6 +235,7 @@
             <summary class="zf-btn-outline" style="list-style: none; cursor: pointer; font-size: 0.8rem; padding: 0.35rem 0.75rem;">Edit My Review</summary>
             <div style="margin-top: 0.6rem; background: var(--bg-alt, #f8fafc); border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem; width: min(100%, 460px);">
               <form method="post" action="{{ url_for('visitor.update_feedback', feedback_id=fb.id) }}" style="display: grid; gap: 0.55rem; margin: 0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="zf-field">
                   <label class="zf-label">Zoo</label>
                   <select name="zoo_id" required class="zf-control">
@@ -262,6 +264,7 @@
           </details>
 
           <form method="post" action="{{ url_for('visitor.delete_feedback', feedback_id=fb.id) }}" onsubmit="return confirm('Delete your review?');" style="margin: 0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="zf-btn-outline" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; color: var(--danger); border-color: var(--danger-bg);">Delete</button>
           </form>
         </div>
