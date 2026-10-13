@@ -1416,6 +1416,20 @@ def feedback():
     review_count = int(stats[0] or 0)
     avg_rating = float(stats[1] or 0)
 
+    # Compute real star distribution from the database
+    dist_query = db.session.query(
+        Feedback.rating,
+        func.count(Feedback.id),
+    ).group_by(Feedback.rating)
+    if selected_zoo_id:
+        dist_query = dist_query.filter(Feedback.zoo_id == selected_zoo_id)
+    dist_raw = {int(r): int(c) for r, c in dist_query.all() if r is not None}
+    total_for_dist = sum(dist_raw.values()) or 1
+    star_distribution = [
+        (star, dist_raw.get(star, 0), round(dist_raw.get(star, 0) / total_for_dist * 100))
+        for star in [5, 4, 3, 2, 1]
+    ]  # list of (star_label, count, pct)
+
     pages = max(1, int(math.ceil(review_count / per_page)) if review_count else 1)
     if page > pages:
         page = pages
@@ -1433,6 +1447,7 @@ def feedback():
         zoos=zoos,
         review_count=review_count,
         avg_rating=avg_rating,
+        star_distribution=star_distribution,
         page=page,
         pages=pages,
         sort=sort,

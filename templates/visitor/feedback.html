@@ -1,40 +1,641 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
-{% block title %}Reviews & Feedback{% endblock %}
+{% block title %}Reviews & Feedback — Zootique Wildlife Park{% endblock %}
+
+{% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fb-forest:        #143823;
+    --fb-forest-dark:   #0D2617;
+    --fb-forest-light:  #EEF7F2;
+    --fb-forest-sage:   #4E7058;
+    --fb-amber:         #D97706;
+    --fb-amber-soft:    #FEF7ED;
+    --fb-amber-bright:  #F59E0B;
+    --fb-cream-bg:      #FAF7F2;
+    --fb-surface:       #FFFFFF;
+    --fb-border:        #E8E2D8;
+    --fb-border-subtle: #F2ECE2;
+    --fb-text:          #1E2A22;
+    --fb-muted:         #667269;
+    --fb-light:         #8E9991;
+    --fb-font-display:  'Outfit', sans-serif;
+    --fb-font-body:     'Plus Jakarta Sans', sans-serif;
+  }
+
+  body {
+    background: var(--fb-cream-bg) !important;
+    font-family: var(--fb-font-body);
+    color: var(--fb-text);
+  }
+
+  /* ── Page Wrapper ── */
+  .fb-page { padding-bottom: 5rem; }
+
+  /* ── Hero ── */
+  .fb-hero {
+    background: linear-gradient(135deg, var(--fb-forest-dark) 0%, #1a4f32 55%, #0a1f12 100%);
+    padding: 4.5rem 0 5rem;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .fb-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 70% 80% at 80% 50%, rgba(212,163,0,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .fb-hero-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    display: flex;
+    gap: 3rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .fb-hero-content { flex: 1; min-width: 0; }
+  .fb-hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--fb-amber-bright);
+    background: rgba(245,158,11,0.12);
+    border: 1px solid rgba(245,158,11,0.25);
+    padding: 0.3rem 0.8rem;
+    border-radius: 100px;
+    margin-bottom: 1.25rem;
+  }
+  .fb-hero-title {
+    font-family: var(--fb-font-display);
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin: 0 0 0.75rem;
+  }
+  .fb-hero-sub {
+    font-size: 1rem;
+    opacity: 0.8;
+    margin: 0 0 1.75rem;
+    max-width: 480px;
+  }
+  .fb-hero-meta {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+  }
+  .fb-hero-meta span { display: flex; align-items: center; gap: 0.4rem; }
+  .fb-hero-meta .meta-stars { color: var(--fb-amber-bright); }
+  .fb-hero-cta-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .fb-btn-amber {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.7rem 1.4rem;
+    background: var(--fb-amber-bright);
+    color: #1a1a1a;
+    font-weight: 800;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: background 0.18s, transform 0.18s, box-shadow 0.18s;
+    box-shadow: 0 4px 14px rgba(245,158,11,0.35);
+  }
+  .fb-btn-amber:hover { background: #e08f00; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(245,158,11,0.4); }
+  .fb-btn-ghost {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    padding: 0.7rem 1.4rem;
+    border: 1.5px solid rgba(255,255,255,0.35);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: background 0.18s;
+  }
+  .fb-btn-ghost:hover { background: rgba(255,255,255,0.08); }
+
+  /* ── Rating Card (Hero Sidebar) ── */
+  .fb-rating-card {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 18px;
+    padding: 1.75rem;
+    min-width: 240px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .fb-rating-big {
+    font-family: var(--fb-font-display);
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+  .fb-rating-stars {
+    color: var(--fb-amber-bright);
+    font-size: 1.15rem;
+    margin-bottom: 0.4rem;
+    letter-spacing: 2px;
+  }
+  .fb-rating-sub { font-size: 0.8rem; opacity: 0.65; margin-bottom: 1.25rem; }
+  .fb-bar-row {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.73rem; text-align: left;
+    margin-bottom: 0.35rem;
+  }
+  .fb-bar-label { width: 22px; color: rgba(255,255,255,0.7); flex-shrink: 0; }
+  .fb-bar-track { flex: 1; height: 5px; background: rgba(255,255,255,0.15); border-radius: 99px; overflow: hidden; }
+  .fb-bar-fill { height: 100%; background: var(--fb-amber-bright); border-radius: 99px; transition: width 0.6s ease; }
+  .fb-bar-pct { width: 28px; color: rgba(255,255,255,0.55); text-align: right; flex-shrink: 0; }
+
+  /* ── Container ── */
+  .fb-container { max-width: 1180px; margin: 0 auto; padding: 0 1.5rem; }
+
+  /* ── Stats Row ── */
+  .fb-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+    margin: 2.5rem 0 2rem;
+  }
+  .fb-stat-card {
+    background: var(--fb-surface);
+    border: 1px solid var(--fb-border);
+    border-radius: 16px;
+    padding: 1.5rem 1.75rem;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(20,56,35,0.04);
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .fb-stat-card:hover { box-shadow: 0 6px 20px rgba(20,56,35,0.09); transform: translateY(-2px); }
+  .fb-stat-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--fb-muted); margin-bottom: 0.5rem; }
+  .fb-stat-value { font-family: var(--fb-font-display); font-size: 2.2rem; font-weight: 800; color: var(--fb-forest); line-height: 1; margin-bottom: 0.35rem; }
+  .fb-stat-sub { font-size: 0.8rem; color: var(--fb-muted); }
+  .fb-stat-stars { color: var(--fb-amber-bright); font-size: 1rem; letter-spacing: 2px; }
+
+  /* ── Section header ── */
+  .fb-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 2.5rem 0 1.25rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .fb-section-title {
+    font-family: var(--fb-font-display);
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--fb-forest);
+    margin: 0;
+  }
+
+  /* ── Write Review Form ── */
+  .fb-form-card {
+    background: var(--fb-surface);
+    border: 1px solid var(--fb-border);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(20,56,35,0.06);
+    margin-bottom: 2.5rem;
+  }
+  .fb-form-header {
+    background: linear-gradient(135deg, var(--fb-forest) 0%, #1e5c3a 100%);
+    padding: 1.25rem 1.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .fb-form-header-icon {
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; color: #fff; flex-shrink: 0;
+  }
+  .fb-form-header h2 {
+    font-family: var(--fb-font-display);
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 0.15rem;
+  }
+  .fb-form-header p { font-size: 0.8rem; color: rgba(255,255,255,0.65); margin: 0; }
+  .fb-form-body { padding: 1.75rem; }
+
+  /* Interactive Star Rating */
+  .fb-star-selector {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+  .fb-star-btn {
+    background: none; border: none; padding: 0;
+    font-size: 2.2rem;
+    color: #D1D5DB;
+    cursor: pointer;
+    transition: color 0.12s, transform 0.12s;
+    line-height: 1;
+  }
+  .fb-star-btn:hover,
+  .fb-star-btn.is-hovered,
+  .fb-star-btn.is-selected { color: var(--fb-amber-bright); transform: scale(1.15); }
+  .fb-star-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--fb-muted);
+    margin-bottom: 1.25rem;
+    min-height: 1.2em;
+    transition: color 0.15s;
+  }
+  .fb-star-label.has-rating { color: var(--fb-amber); }
+
+  /* Zoo pill selector */
+  .fb-zoo-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .fb-zoo-pill {
+    display: none; /* hidden radio */
+  }
+  .fb-zoo-pill + label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.9rem;
+    border: 1.5px solid var(--fb-border);
+    border-radius: 100px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--fb-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--fb-surface);
+  }
+  .fb-zoo-pill:checked + label,
+  .fb-zoo-pill + label:hover {
+    background: var(--fb-forest-light);
+    border-color: var(--fb-forest);
+    color: var(--fb-forest);
+  }
+
+  /* Textarea with char counter */
+  .fb-field-group { margin-bottom: 1.25rem; position: relative; }
+  .fb-field-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--fb-forest);
+    margin-bottom: 0.45rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .fb-field-req { color: #C85A32; }
+  .fb-textarea {
+    width: 100%;
+    border: 1.5px solid var(--fb-border);
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    font-size: 0.92rem;
+    font-family: var(--fb-font-body);
+    resize: vertical;
+    min-height: 100px;
+    background: #FDFBF8;
+    color: var(--fb-text);
+    transition: border-color 0.18s, box-shadow 0.18s;
+    box-sizing: border-box;
+  }
+  .fb-textarea:focus {
+    outline: none;
+    border-color: var(--fb-forest);
+    box-shadow: 0 0 0 3px rgba(20,56,35,0.1);
+  }
+  .fb-char-counter {
+    position: absolute; right: 0.75rem; bottom: 0.6rem;
+    font-size: 0.7rem; color: var(--fb-light);
+    pointer-events: none;
+  }
+  .fb-char-counter.near-limit { color: var(--fb-amber); }
+  .fb-char-counter.at-limit { color: #C85A32; }
+
+  .fb-submit-row { display: flex; justify-content: flex-end; align-items: center; gap: 1rem; margin-top: 0.5rem; }
+  .fb-btn-submit {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    padding: 0.75rem 1.6rem;
+    background: var(--fb-forest);
+    color: #fff;
+    font-weight: 800; font-size: 0.92rem;
+    border: none; border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.18s, transform 0.15s, box-shadow 0.18s;
+    box-shadow: 0 4px 14px rgba(20,56,35,0.25);
+  }
+  .fb-btn-submit:hover { background: var(--fb-forest-dark); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(20,56,35,0.32); }
+  .fb-submit-note { font-size: 0.78rem; color: var(--fb-muted); }
+
+  /* ── Quick Review Nudge Card ── */
+  .fb-nudge-card {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border: 1px solid #fcd34d;
+    border-left: 5px solid var(--fb-amber-bright);
+    border-radius: 16px;
+    padding: 1.4rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 2.5rem;
+    position: relative;
+  }
+  .fb-nudge-dismiss {
+    position: absolute; top: 0.85rem; right: 1rem;
+    font-size: 0.75rem; color: var(--fb-light);
+    cursor: pointer; background: none; border: none; padding: 0;
+  }
+  .fb-nudge-dismiss:hover { color: var(--fb-muted); }
+  .fb-nudge-title {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-weight: 800; font-size: 0.95rem;
+    color: #92400e;
+    margin-bottom: 0.3rem;
+  }
+  .fb-nudge-sub { font-size: 0.82rem; color: #78350f; margin-bottom: 0.75rem; }
+  .fb-nudge-stars { display: flex; gap: 0.25rem; }
+  .fb-nudge-star {
+    font-size: 1.5rem;
+    color: #d1d5db;
+    cursor: pointer;
+    transition: color 0.1s, transform 0.1s;
+    background: none; border: none; padding: 0;
+  }
+  .fb-nudge-star.is-hovered, .fb-nudge-star.is-selected { color: var(--fb-amber-bright); transform: scale(1.2); }
+  .fb-nudge-sub-hint { font-size: 0.72rem; color: #92400e; margin-top: 0.35rem; opacity: 0.7; }
+  .fb-btn-review-full {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.6rem 1.2rem;
+    background: var(--fb-amber-bright); color: #1a1a1a;
+    font-weight: 800; font-size: 0.85rem;
+    border-radius: 10px; text-decoration: none;
+    transition: background 0.15s; flex-shrink: 0;
+  }
+  .fb-btn-review-full:hover { background: #e08f00; }
+
+  /* ── Community Sentiment ── */
+  .fb-sentiment-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1.8fr 1.2fr;
+    gap: 0;
+    background: var(--fb-surface);
+    border: 1px solid var(--fb-border);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(20,56,35,0.04);
+    margin-bottom: 2.5rem;
+  }
+  .fb-sentiment-col { padding: 1.75rem 1.5rem; }
+  .fb-sentiment-col + .fb-sentiment-col { border-left: 1px solid var(--fb-border-subtle); }
+  .fb-sentiment-col-title {
+    font-family: var(--fb-font-display);
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fb-muted);
+    margin-bottom: 1rem;
+  }
+  .fb-sent-avg { font-family: var(--fb-font-display); font-size: 3rem; font-weight: 800; color: var(--fb-forest); line-height: 1; }
+  .fb-sent-stars { color: var(--fb-amber-bright); font-size: 1.1rem; letter-spacing: 2px; margin: 0.35rem 0; }
+  .fb-sent-count { font-size: 0.78rem; color: var(--fb-muted); margin-bottom: 1.1rem; }
+  .fb-sent-bar-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.73rem; margin-bottom: 0.4rem; }
+  .fb-sent-bar-lbl { width: 22px; color: var(--fb-muted); flex-shrink: 0; }
+  .fb-sent-bar-track { flex: 1; height: 5px; background: var(--fb-border); border-radius: 99px; overflow: hidden; }
+  .fb-sent-bar-fill { height: 100%; background: var(--fb-forest); border-radius: 99px; }
+  .fb-sent-bar-pct { width: 28px; text-align: right; color: var(--fb-light); }
+  .fb-topic-row { margin-bottom: 0.85rem; }
+  .fb-topic-label { font-size: 0.78rem; font-weight: 800; margin-bottom: 0.35rem; }
+  .fb-topic-label.positive { color: #16a34a; }
+  .fb-topic-label.neutral  { color: var(--fb-amber); }
+  .fb-topic-label.negative { color: #dc2626; }
+  .fb-topic-item { font-size: 0.8rem; color: var(--fb-muted); margin-bottom: 0.2rem; }
+  .fb-word-cloud {
+    display: flex; flex-wrap: wrap; gap: 0.45rem;
+  }
+  .fb-word-chip {
+    padding: 0.3rem 0.75rem;
+    border-radius: 100px;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+  .fb-word-chip.positive { background: var(--fb-forest-light); color: var(--fb-forest); }
+  .fb-word-chip.neutral  { background: var(--fb-amber-soft); color: #78350f; }
+  .fb-word-chip.negative { background: #fef2f2; color: #b91c1c; }
+
+  /* ── Filter Bar ── */
+  .fb-filter-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .fb-filter-selects { display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap; }
+  .fb-control {
+    padding: 0.5rem 1rem;
+    border: 1.5px solid var(--fb-border);
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-family: var(--fb-font-body);
+    color: var(--fb-text);
+    background: var(--fb-surface);
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .fb-control:focus { outline: none; border-color: var(--fb-forest); }
+  .fb-btn-apply {
+    padding: 0.5rem 1.1rem;
+    background: var(--fb-forest);
+    color: #fff;
+    border: none; border-radius: 10px;
+    font-size: 0.85rem; font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .fb-btn-apply:hover { background: var(--fb-forest-dark); }
+
+  /* ── Review Cards ── */
+  .fb-reviews-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  .fb-review-card {
+    background: var(--fb-surface);
+    border: 1px solid var(--fb-border);
+    border-radius: 18px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 4px rgba(20,56,35,0.04);
+    transition: box-shadow 0.22s, transform 0.22s;
+  }
+  .fb-review-card:hover { box-shadow: 0 8px 28px rgba(20,56,35,0.11); transform: translateY(-3px); }
+  .fb-review-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.9rem; }
+  .fb-reviewer-info { display: flex; gap: 0.75rem; align-items: center; }
+  .fb-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--fb-forest) 0%, #2a6e4a 100%);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 0.9rem;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(20,56,35,0.2);
+  }
+  .fb-reviewer-name { font-weight: 700; font-size: 0.9rem; color: var(--fb-text); margin-bottom: 0.15rem; }
+  .fb-reviewer-meta { font-size: 0.75rem; color: var(--fb-muted); }
+  .fb-review-stars { color: var(--fb-amber-bright); font-size: 0.85rem; white-space: nowrap; letter-spacing: 1px; flex-shrink: 0; }
+  .fb-review-text {
+    font-size: 0.9rem;
+    color: #475569;
+    line-height: 1.65;
+    margin: 0 0 0.9rem;
+  }
+  .fb-review-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .fb-btn-edit {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.35rem 0.75rem;
+    border: 1.5px solid var(--fb-border);
+    border-radius: 8px;
+    font-size: 0.78rem; font-weight: 700;
+    color: var(--fb-muted); background: none;
+    cursor: pointer; transition: all 0.15s;
+    list-style: none;
+  }
+  .fb-btn-edit:hover { background: var(--fb-forest-light); border-color: var(--fb-forest); color: var(--fb-forest); }
+  .fb-btn-delete {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.35rem 0.75rem;
+    border: 1.5px solid #fecaca;
+    border-radius: 8px;
+    font-size: 0.78rem; font-weight: 700;
+    color: #dc2626; background: none;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .fb-btn-delete:hover { background: #fef2f2; }
+  .fb-edit-box {
+    background: var(--fb-cream-bg);
+    border: 1px solid var(--fb-border);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: 0.75rem;
+    display: grid; gap: 0.6rem;
+  }
+  .fb-edit-control {
+    width: 100%; padding: 0.55rem 0.85rem;
+    border: 1.5px solid var(--fb-border);
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-family: var(--fb-font-body);
+    background: #fff;
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+  }
+  .fb-edit-control:focus { outline: none; border-color: var(--fb-forest); }
+  .fb-btn-save {
+    justify-self: end;
+    padding: 0.45rem 1rem;
+    background: var(--fb-forest);
+    color: #fff;
+    font-size: 0.82rem; font-weight: 700;
+    border: none; border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .fb-btn-save:hover { background: var(--fb-forest-dark); }
+  .fb-edit-hint { font-size: 0.72rem; color: var(--fb-muted); }
+
+  /* ── Empty State ── */
+  .fb-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+  .fb-empty-icon {
+    width: 72px; height: 72px;
+    background: var(--fb-forest-light);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.75rem; color: var(--fb-forest);
+    margin: 0 auto 1.25rem;
+  }
+  .fb-empty h4 { font-family: var(--fb-font-display); font-size: 1.2rem; font-weight: 800; color: var(--fb-forest); margin: 0 0 0.5rem; }
+  .fb-empty p { font-size: 0.9rem; color: var(--fb-muted); margin: 0 0 1.25rem; }
+
+  /* ── Pagination ── */
+  .fb-pagination {
+    display: flex; justify-content: center; align-items: center;
+    gap: 0.75rem; margin-top: 2.5rem;
+  }
+  .fb-page-btn {
+    padding: 0.55rem 1.25rem;
+    border: 1.5px solid var(--fb-border);
+    border-radius: 10px;
+    font-size: 0.85rem; font-weight: 700;
+    color: var(--fb-forest); background: var(--fb-surface);
+    text-decoration: none; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .fb-page-btn:hover:not(.disabled) { background: var(--fb-forest-light); border-color: var(--fb-forest); }
+  .fb-page-btn.primary { background: var(--fb-forest); color: #fff; }
+  .fb-page-btn.primary:hover { background: var(--fb-forest-dark); }
+  .fb-page-btn.disabled { opacity: 0.38; cursor: not-allowed; pointer-events: none; }
+  .fb-page-info { font-size: 0.82rem; font-weight: 700; color: var(--fb-muted); }
+
+  /* ── Flash messages ── */
+  .fb-flash { display: flex; align-items: flex-start; gap: 0.65rem; padding: 0.9rem 1.25rem; border-radius: 12px; margin: 1.25rem 0; font-size: 0.88rem; font-weight: 600; }
+  .fb-flash.success { background: #dcfce7; border: 1px solid #bbf7d0; color: #166534; }
+  .fb-flash.error   { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+
+  @media (max-width: 768px) {
+    .fb-reviews-grid { grid-template-columns: 1fr; }
+    .fb-stats-row { grid-template-columns: 1fr 1fr; }
+    .fb-stats-row .fb-stat-card:last-child { grid-column: 1 / -1; }
+    .fb-sentiment-grid { grid-template-columns: 1fr; }
+    .fb-sentiment-col + .fb-sentiment-col { border-left: none; border-top: 1px solid var(--fb-border-subtle); }
+    .fb-hero-inner { flex-direction: column; }
+    .fb-rating-card { width: 100%; }
+    .fb-zoo-pills { gap: 0.4rem; }
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<!-- PAGE HERO -->
-<div style="background: linear-gradient(135deg, var(--primary) 0%, #0b2516 100%); color: white; padding: 3.5rem 0 5rem;">
-  <div class="container">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; flex-wrap: wrap;">
-      <div style="max-width: 600px;">
-        <div style="color: #fca000; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; margin-bottom: 1.25rem;">
+<div class="fb-page">
+
+  {# ── HERO ── #}
+  <div class="fb-hero">
+    <div class="fb-hero-inner">
+      <div class="fb-hero-content">
+        <div class="fb-hero-eyebrow">
           <i class="fa-solid fa-star"></i> Visitor Reviews
         </div>
-        <h1 style="font-size: clamp(2rem, 5vw, 3.25rem); margin: 0 0 1rem; line-height: 1.1;">Reviews &amp; Feedback</h1>
-        <p style="font-size: 1.05rem; opacity: 0.9; margin-bottom: 2rem;">Real experiences from real visitors — share yours and inspire others to discover Zootique</p>
-        <div style="display: flex; gap: 1.5rem; align-items: center; font-size: 0.85rem; margin-bottom: 2rem; font-weight: 600; flex-wrap: wrap;">
-          <span style="color: #fef08a;">⭐ {{ "%.1f"|format(avg_rating or 0) }} Overall Rating</span>
-          <span><i class="fa-solid fa-comment"></i> {{ review_count or 0 }} Reviews</span>
-          <span style="color: #4ade80;"><i class="fa-solid fa-check-circle"></i> DB-backed reviews</span>
-        </div>
-        <div style="color: #fef08a; font-size: 0.85rem; font-weight: bold; margin-bottom: 2rem;">🏆 #1 Rated Wildlife Park</div>
-        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-          <a href="#write-review" class="zf-btn-primary" style="background: #fca000; color: #1e293b; border-color: #fca000;">
-            <i class="fa-solid fa-pen"></i> Write a Review
-          </a>
-          <a href="#recent-reviews" class="zf-btn-outline" style="border-color: rgba(255,255,255,0.5); color: white;">
-            <i class="fa-solid fa-book-open"></i> Read Recent Reviews
-          </a>
-        </div>
-      </div>
-
-      <!-- Floating rating card -->
-      <div style="background: white; border-radius: 12px; width: 300px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.25); overflow: hidden; flex-shrink: 0;">
-        <div style="background: var(--primary-dark, #1a4f32); color: white; padding: 0.75rem 1rem; font-size: 0.85rem; font-weight: 700;">Overall Rating (DB)</div>
-        <div style="padding: 1.5rem; text-align: center;">
-          <div style="font-size: 3rem; font-weight: 800; color: var(--primary); margin-bottom: 0.2rem;">{{ "%.1f"|format(avg_rating or 0) }}</div>
-          <div style="color: #fca000; font-size: 1.2rem; margin-bottom: 0.5rem;">
+        <h1 class="fb-hero-title">Reviews &amp; Feedback</h1>
+        <p class="fb-hero-sub">Real experiences from real visitors — share yours and inspire others to discover Zootique.</p>
+        <div class="fb-hero-meta">
+          <span class="meta-stars">
             {% set stars = (avg_rating or 0) %}
             {% for i in range(1,6) %}
               {% if stars >= i %}<i class="fa-solid fa-star"></i>
@@ -42,262 +643,472 @@
               {% else %}<i class="fa-regular fa-star"></i>
               {% endif %}
             {% endfor %}
-          </div>
-          <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 1.25rem;">Based on {{ review_count or 0 }} reviews</div>
-          <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.75rem; text-align: left;">
-            {% for label, pct in [('5★','68%'),('4★','20%'),('3★','8%'),('2★','3%'),('1★','1%')] %}
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <span style="width: 20px;">{{ label }}</span>
-              <div style="flex:1; height: 5px; background: #e2e8f0; border-radius: 3px;">
-                <div style="width: {{ pct }}; height: 100%; background: var(--primary); border-radius: 3px;"></div>
-              </div>
-              <span style="color: #64748b; width: 28px;">{{ pct }}</span>
-            </div>
-            {% endfor %}
-          </div>
+            <span style="color:#fff;margin-left:6px;font-weight:800;">{{ "%.1f"|format(avg_rating or 0) }}</span>
+          </span>
+          <span><i class="fa-solid fa-comment"></i> {{ review_count or 0 }} Review{% if (review_count or 0) != 1 %}s{% endif %}</span>
+          <span style="color:#86efac;"><i class="fa-solid fa-shield-check"></i> Verified community reviews</span>
         </div>
+        <div class="fb-hero-cta-row">
+          <a href="#write-review" class="fb-btn-amber">
+            <i class="fa-solid fa-pen-nib"></i> Write a Review
+          </a>
+          <a href="#recent-reviews" class="fb-btn-ghost">
+            <i class="fa-solid fa-book-open"></i> Read Reviews
+          </a>
+        </div>
+      </div>
+
+      {# Rating card sidebar #}
+      <div class="fb-rating-card">
+        <div class="fb-rating-big">{{ "%.1f"|format(avg_rating or 0) }}</div>
+        <div class="fb-rating-stars">
+          {% set stars = (avg_rating or 0) %}
+          {% for i in range(1,6) %}
+            {% if stars >= i %}<i class="fa-solid fa-star"></i>
+            {% elif stars >= i - 0.5 %}<i class="fa-solid fa-star-half-stroke"></i>
+            {% else %}<i class="fa-regular fa-star"></i>
+            {% endif %}
+          {% endfor %}
+        </div>
+        <div class="fb-rating-sub">Based on {{ review_count or 0 }} review{% if (review_count or 0) != 1 %}s{% endif %}</div>
+        {% for star, count, pct in star_distribution %}
+        <div class="fb-bar-row">
+          <span class="fb-bar-label">{{ star }}★</span>
+          <div class="fb-bar-track">
+            <div class="fb-bar-fill" style="width:{{ pct }}%;"></div>
+          </div>
+          <span class="fb-bar-pct">{{ pct }}%</span>
+        </div>
+        {% endfor %}
       </div>
     </div>
   </div>
-</div>
 
-<div class="container" style="padding: 2rem 0;">
+  <div class="fb-container">
 
-  <!-- WRITE REVIEW FORM -->
-  <div id="write-review" class="zf-form-card" style="margin-bottom: 2rem;">
-    <div class="zf-form-card-header">
-      <span><i class="fa-solid fa-pen" style="margin-right: 6px; color: var(--primary);"></i>Write a Review</span>
-      <span style="color: var(--text-muted); font-size: 0.82rem; font-weight: 400;">Submits to the database</span>
-    </div>
-    <div class="zf-form-card-body">
-      <form method="post" action="{{ url_for('visitor.feedback') }}" style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 1rem;">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="zf-field">
-          <label class="zf-label" for="fb_zoo_id">Zoo (optional)</label>
-          <select id="fb_zoo_id" name="zoo_id" class="zf-control">
-            <option value="" selected>All / Not specified</option>
-            {% for z in zoos %}
-            <option value="{{ z.id }}">{{ z.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="zf-field">
-          <label class="zf-label" for="fb_rating">Rating <span class="zf-req">*</span></label>
-          <select id="fb_rating" name="rating" required class="zf-control">
-            <option value="" selected disabled>Select…</option>
-            <option value="5">5 — Excellent</option>
-            <option value="4">4 — Great</option>
-            <option value="3">3 — Okay</option>
-            <option value="2">2 — Poor</option>
-            <option value="1">1 — Terrible</option>
-          </select>
-        </div>
-        <div class="zf-field" style="grid-column: 1 / -1;">
-          <label class="zf-label" for="fb_comment">Comment <span class="zf-req">*</span></label>
-          <textarea id="fb_comment" name="comment" required rows="4" placeholder="Share your experience…" class="zf-control" style="resize: vertical;"></textarea>
-        </div>
-        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end;">
-          <button type="submit" id="btn-submit-review" class="zf-btn-primary">
-            <i class="fa-solid fa-paper-plane"></i> Submit Review
-          </button>
-        </div>
-      </form>
-      <div style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.8rem;">Note: you must be signed in as a Visitor to submit.</div>
-    </div>
-  </div>
-
-  <!-- QUICK REVIEW PROMPT -->
-  <div style="background: white; border: 1px solid #eab308; border-radius: 12px; padding: 1.5rem 1.5rem 1.5rem 2rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; position: relative; flex-wrap: wrap;">
-    <div style="position: absolute; top: 0; left: 0; width: 5px; height: 100%; background: #eab308; border-radius: 12px 0 0 12px;"></div>
-    <div>
-      <div style="display: flex; align-items: center; gap: 0.5rem; color: #d97706; font-weight: 700; margin-bottom: 0.4rem;">
-        <i class="fa-solid fa-star"></i> How was your Lion Feeding Show on April 25?
+    {# Flash messages #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+      <div class="fb-flash {{ category }}" role="alert">
+        <i class="fa-solid fa-{% if category == 'success' %}circle-check{% else %}circle-exclamation{% endif %}"></i>
+        <span>{{ message }}</span>
       </div>
-      <div style="color: #64748b; font-size: 0.85rem; margin-bottom: 0.75rem;">Share your experience and earn 50 loyalty points!</div>
-      <div style="color: #cbd5e1; font-size: 1.4rem; display: flex; gap: 0.35rem;">
-        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-      </div>
-      <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.3rem;">Click stars to rate</div>
-    </div>
-    <div style="text-align: right; flex-shrink: 0;">
-      <div style="color: #94a3b8; font-size: 0.75rem; margin-bottom: 0.75rem; cursor: pointer;">Dismiss</div>
-      <a href="#write-review" class="zf-btn-primary" style="background: #f59e0b; border-color: #f59e0b; font-size: 0.85rem;">Write Full Review</a>
-    </div>
-  </div>
+      {% endfor %}
+    {% endwith %}
 
-  <!-- COMMUNITY SENTIMENT -->
-  <div class="zf-form-card" style="margin-bottom: 3rem;">
-    <div class="zf-form-card-header">Community Sentiment</div>
-    <div class="zf-form-card-body" style="display: grid; grid-template-columns: 1.5fr 2fr 1.5fr; gap: 2rem;">
-      <!-- Left: rating breakdown -->
-      <div style="text-align: center; border-right: 1px solid var(--border); padding-right: 2rem;">
-        <div style="font-size: 3rem; font-weight: 800; color: var(--primary);">4.6</div>
-        <div style="color: #fca000; font-size: 1.2rem; margin-bottom: 0.5rem;">
-          <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i>
-        </div>
-        <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 1rem;">1,847 verified reviews</div>
-        <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.75rem; text-align: left;">
-          {% for label, pct in [('5★','68%'),('4★','20%'),('3★','8%'),('2★','3%'),('1★','1%')] %}
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <span>{{ label }}</span>
-            <div style="flex:1; height: 5px; background: #e2e8f0; border-radius: 3px;">
-              <div style="width: {{ pct }}; height: 100%; background: var(--primary); border-radius: 3px;"></div>
-            </div>
-            <span style="color: #64748b; width: 28px;">{{ pct }}</span>
-          </div>
+    {# ── STATS ROW ── #}
+    <div class="fb-stats-row">
+      <div class="fb-stat-card">
+        <div class="fb-stat-label"><i class="fa-solid fa-star"></i> Overall Rating</div>
+        <div class="fb-stat-value">{{ "%.1f"|format(avg_rating or 0) }}</div>
+        <div class="fb-stat-stars">
+          {% set stars = (avg_rating or 0) %}
+          {% for i in range(1,6) %}
+            {% if stars >= i %}<i class="fa-solid fa-star"></i>
+            {% elif stars >= i - 0.5 %}<i class="fa-solid fa-star-half-stroke"></i>
+            {% else %}<i class="fa-regular fa-star"></i>
+            {% endif %}
           {% endfor %}
         </div>
       </div>
+      <div class="fb-stat-card">
+        <div class="fb-stat-label"><i class="fa-solid fa-comment-dots"></i> Total Reviews</div>
+        <div class="fb-stat-value">{{ review_count or 0 }}</div>
+        <div class="fb-stat-sub">Community submissions</div>
+      </div>
+      <div class="fb-stat-card">
+        <div class="fb-stat-label"><i class="fa-solid fa-trophy"></i> Most Loved</div>
+        <div class="fb-stat-value" style="font-size:1.5rem;padding-top:0.3rem;">Animal Encounters</div>
+        <div class="fb-stat-sub">74% positive mentions</div>
+      </div>
+    </div>
 
-      <!-- Mid: sentiment breakdown -->
+    {# ── QUICK REVIEW NUDGE ── #}
+    <div class="fb-nudge-card" id="quick-review-nudge">
+      <button type="button" class="fb-nudge-dismiss" id="nudge-dismiss-btn" aria-label="Dismiss">✕ Dismiss</button>
       <div>
-        <h4 style="margin: 0 0 1rem; font-size: 0.95rem;">What Visitors Are Saying</h4>
-        <div style="margin-bottom: 1rem;">
-          <div style="font-size: 0.8rem; font-weight: 700; color: var(--primary); margin-bottom: 0.4rem;">👍 Most Praised Topics:</div>
-          <div style="font-size: 0.8rem; color: #475569;">Friendly Staff — 78% positive</div>
-          <div style="font-size: 0.8rem; color: #475569;">Animal Encounters — 74% positive</div>
-          <div style="font-size: 0.8rem; color: #475569;">Park Cleanliness — 71% positive</div>
+        <div class="fb-nudge-title">
+          <i class="fa-solid fa-star"></i> How was your recent wildlife visit?
         </div>
-        <div style="margin-bottom: 1rem;">
-          <div style="font-size: 0.8rem; font-weight: 700; color: #d97706; margin-bottom: 0.4rem;">🤟 Commonly Mentioned:</div>
-          <div style="font-size: 0.8rem; color: #475569;">Queue Times — 45% neutral</div>
-          <div style="font-size: 0.8rem; color: #475569;">Food Options — 38% neutral</div>
+        <div class="fb-nudge-sub">Share your experience and earn <strong>50 loyalty points!</strong></div>
+        <div class="fb-nudge-stars" id="nudge-stars" role="group" aria-label="Quick star rating">
+          {% for i in range(1,6) %}
+          <button type="button" class="fb-nudge-star" data-value="{{ i }}" aria-label="{{ i }} star{% if i > 1 %}s{% endif %}">★</button>
+          {% endfor %}
+        </div>
+        <div class="fb-nudge-sub-hint" id="nudge-hint">Click a star to rate quickly</div>
+      </div>
+      <a href="#write-review" class="fb-btn-review-full">
+        <i class="fa-solid fa-pen"></i> Write Full Review
+      </a>
+    </div>
+
+    {# ── WRITE REVIEW FORM ── #}
+    <div id="write-review" class="fb-form-card">
+      <div class="fb-form-header">
+        <div class="fb-form-header-icon">
+          <i class="fa-solid fa-pen-nib"></i>
         </div>
         <div>
-          <div style="font-size: 0.8rem; font-weight: 700; color: var(--danger, #ef4444); margin-bottom: 0.4rem;">👎 Areas for Improvement:</div>
-          <div style="font-size: 0.8rem; color: #475569;">Weekday Crowds — 18% negative</div>
+          <h2>Write a Review</h2>
+          <p>Your review helps other visitors plan their perfect wildlife adventure.</p>
+        </div>
+      </div>
+      <div class="fb-form-body">
+        <form method="post" action="{{ url_for('visitor.feedback') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" id="rating-hidden" name="rating" value="">
+
+          {# Star Rating #}
+          <div class="fb-field-group" style="margin-bottom:0.5rem;">
+            <span class="fb-field-label">Your Rating <span class="fb-field-req">*</span></span>
+            <div class="fb-star-selector" id="star-rating-input" role="group" aria-label="Rate your experience">
+              {% for i in range(1,6) %}
+              <button type="button" class="fb-star-btn" data-value="{{ i }}" aria-label="{{ i }} star{% if i > 1 %}s{% endif %}">★</button>
+              {% endfor %}
+            </div>
+            <div class="fb-star-label" id="star-label">Click a star to rate your experience</div>
+          </div>
+
+          {# Zoo selector as pills #}
+          <div class="fb-field-group">
+            <span class="fb-field-label">Which Zoo? <span style="font-weight:400;color:var(--fb-muted);text-transform:none;letter-spacing:0;">(optional)</span></span>
+            <div class="fb-zoo-pills">
+              <input type="radio" class="fb-zoo-pill" id="zoo-any" name="zoo_id" value="" checked>
+              <label for="zoo-any"><i class="fa-solid fa-globe" style="font-size:0.7rem;"></i> Any / All</label>
+              {% for z in zoos %}
+              <input type="radio" class="fb-zoo-pill" id="zoo-{{ z.id }}" name="zoo_id" value="{{ z.id }}">
+              <label for="zoo-{{ z.id }}">{{ z.name }}</label>
+              {% endfor %}
+            </div>
+          </div>
+
+          {# Comment #}
+          <div class="fb-field-group">
+            <label class="fb-field-label" for="fb_comment">Your Experience <span class="fb-field-req">*</span></label>
+            <div style="position:relative;">
+              <textarea
+                id="fb_comment"
+                name="comment"
+                required
+                rows="4"
+                maxlength="1000"
+                placeholder="Tell us about your visit — what did you love, what could be better?"
+                class="fb-textarea"
+                oninput="updateCharCount(this)"
+              ></textarea>
+              <span class="fb-char-counter" id="comment-counter">0 / 1000</span>
+            </div>
+          </div>
+
+          <div class="fb-submit-row">
+            <span class="fb-submit-note"><i class="fa-solid fa-lock" style="color:var(--fb-forest);"></i> You must be signed in as a Visitor to submit.</span>
+            <button type="submit" id="btn-submit-review" class="fb-btn-submit">
+              <i class="fa-solid fa-paper-plane"></i> Submit Review
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {# ── COMMUNITY SENTIMENT ── #}
+    <div class="fb-sentiment-grid">
+      <div class="fb-sentiment-col">
+        <div class="fb-sentiment-col-title">Overall Rating</div>
+        <div class="fb-sent-avg">{{ "%.1f"|format(avg_rating or 0) }}</div>
+        <div class="fb-sent-stars">
+          {% set stars = (avg_rating or 0) %}
+          {% for i in range(1,6) %}
+            {% if stars >= i %}<i class="fa-solid fa-star"></i>
+            {% elif stars >= i - 0.5 %}<i class="fa-solid fa-star-half-stroke"></i>
+            {% else %}<i class="fa-regular fa-star"></i>
+            {% endif %}
+          {% endfor %}
+        </div>
+        <div class="fb-sent-count">{{ review_count or 0 }} verified review{% if (review_count or 0) != 1 %}s{% endif %}</div>
+        {% for star, count, pct in star_distribution %}
+        <div class="fb-sent-bar-row">
+          <span class="fb-sent-bar-lbl">{{ star }}★</span>
+          <div class="fb-sent-bar-track">
+            <div class="fb-sent-bar-fill" style="width:{{ pct }}%;"></div>
+          </div>
+          <span class="fb-sent-bar-pct">{{ pct }}%</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="fb-sentiment-col">
+        <div class="fb-sentiment-col-title">What Visitors Are Saying</div>
+        <div class="fb-topic-row">
+          <div class="fb-topic-label positive"><i class="fa-solid fa-thumbs-up"></i> Most Praised</div>
+          <div class="fb-topic-item">Friendly Staff — 78% positive</div>
+          <div class="fb-topic-item">Animal Encounters — 74% positive</div>
+          <div class="fb-topic-item">Park Cleanliness — 71% positive</div>
+        </div>
+        <div class="fb-topic-row">
+          <div class="fb-topic-label neutral"><i class="fa-solid fa-hand"></i> Commonly Mentioned</div>
+          <div class="fb-topic-item">Queue Times — 45% neutral</div>
+          <div class="fb-topic-item">Food Options — 38% neutral</div>
+        </div>
+        <div class="fb-topic-row">
+          <div class="fb-topic-label negative"><i class="fa-solid fa-thumbs-down"></i> Areas for Improvement</div>
+          <div class="fb-topic-item">Weekday Crowds — 18% negative</div>
         </div>
       </div>
 
-      <!-- Right: word cloud -->
-      <div>
-        <h4 style="margin: 0 0 1rem; font-size: 0.95rem;">Frequently Mentioned</h4>
-        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; color: var(--primary); font-weight: 700;">
-          <span style="font-size: 1.15rem;">Clean</span>
-          <span style="font-size: 1.05rem;">Friendly</span>
-          <span style="font-size: 0.9rem; color: #16a34a;">Worth it</span>
-          <span style="font-size: 0.9rem; color: #16a34a;">Magical</span>
-          <span style="font-size: 0.9rem; color: #16a34a;">Educational</span>
-          <span style="font-size: 0.9rem; color: #16a34a;">Great Staff</span>
-          <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">Crowds</span>
-          <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">Parking</span>
-          <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">Queue</span>
-          <span style="font-size: 0.8rem; color: #f59e0b;">Pricey</span>
+      <div class="fb-sentiment-col">
+        <div class="fb-sentiment-col-title">Frequently Mentioned</div>
+        <div class="fb-word-cloud">
+          <span class="fb-word-chip positive">Clean</span>
+          <span class="fb-word-chip positive">Friendly</span>
+          <span class="fb-word-chip positive">Worth it</span>
+          <span class="fb-word-chip positive">Magical</span>
+          <span class="fb-word-chip positive">Educational</span>
+          <span class="fb-word-chip positive">Great Staff</span>
+          <span class="fb-word-chip neutral">Crowds</span>
+          <span class="fb-word-chip neutral">Parking</span>
+          <span class="fb-word-chip neutral">Queue</span>
+          <span class="fb-word-chip negative">Pricey</span>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- RECENT REVIEWS HEADER + FILTER -->
-  <div id="recent-reviews" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;">
-    <h2 style="font-size: 1.4rem; color: var(--primary); margin: 0;">Recent Reviews</h2>
-    <form method="get" action="{{ url_for('visitor.feedback') }}" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-      <select name="zoo_id" class="zf-control" style="width: auto; padding: 0.5rem 1rem;">
-        <option value="" {% if not selected_zoo_id %}selected{% endif %}>All Zoos</option>
-        {% for z in zoos %}
-        <option value="{{ z.id }}" {% if selected_zoo_id and selected_zoo_id == z.id %}selected{% endif %}>{{ z.name }}</option>
-        {% endfor %}
-      </select>
-      <select name="sort" class="zf-control" style="width: auto; padding: 0.5rem 1rem;">
-        <option value="recent" {% if sort == 'recent' %}selected{% endif %}>Most Recent</option>
-        <option value="highest" {% if sort == 'highest' %}selected{% endif %}>Highest Rated</option>
-      </select>
-      <button type="submit" class="zf-btn-primary" style="padding: 0.5rem 1rem;">Apply</button>
-    </form>
-  </div>
+    {# ── RECENT REVIEWS ── #}
+    <div id="recent-reviews" class="fb-section-header">
+      <h2 class="fb-section-title">Recent Reviews</h2>
+      <form method="get" action="{{ url_for('visitor.feedback') }}" class="fb-filter-selects">
+        <select name="zoo_id" class="fb-control" aria-label="Filter by zoo">
+          <option value="" {% if not selected_zoo_id %}selected{% endif %}>All Zoos</option>
+          {% for z in zoos %}
+          <option value="{{ z.id }}" {% if selected_zoo_id and selected_zoo_id == z.id %}selected{% endif %}>{{ z.name }}</option>
+          {% endfor %}
+        </select>
+        <select name="sort" class="fb-control" aria-label="Sort order">
+          <option value="recent"  {% if sort == 'recent'  %}selected{% endif %}>Most Recent</option>
+          <option value="highest" {% if sort == 'highest' %}selected{% endif %}>Highest Rated</option>
+        </select>
+        <button type="submit" class="fb-btn-apply">Apply</button>
+      </form>
+    </div>
 
-  <!-- REVIEW CARDS GRID -->
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-    {% for fb in feedbacks %}
-    <div class="zf-form-card" style="margin-bottom: 0;">
-      <div class="zf-form-card-body">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; gap: 1rem;">
-          <div style="display: flex; gap: 0.75rem; align-items: center;">
-            {% set nm = (fb.visitor_name or 'Visitor') %}
-            {% set initials = (nm.split(' ')[0][:1] ~ (nm.split(' ')[1][:1] if nm.split(' ')|length > 1 else ''))|upper %}
-            <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-dark, #0f291e); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">{{ initials }}</div>
+    {# ── REVIEW CARDS ── #}
+    <div class="fb-reviews-grid">
+      {% for fb in feedbacks %}
+      {% set nm = (fb.visitor_name or 'Visitor') %}
+      {% set initials = (nm.split(' ')[0][:1] ~ (nm.split(' ')[1][:1] if nm.split(' ')|length > 1 else ''))|upper %}
+      <div class="fb-review-card">
+        <div class="fb-review-top">
+          <div class="fb-reviewer-info">
+            <div class="fb-avatar">{{ initials }}</div>
             <div>
-              <div style="font-weight: 700; color: var(--text);">{{ fb.visitor_name }}</div>
-              <div style="font-size: 0.8rem; color: var(--text-muted);">{{ fb.date or '' }}{% if fb.zoo and fb.zoo.name %} · {{ fb.zoo.name }}{% endif %}</div>
+              <div class="fb-reviewer-name">{{ fb.visitor_name }}</div>
+              <div class="fb-reviewer-meta">
+                {{ fb.date or '' }}
+                {% if fb.zoo and fb.zoo.name %} · {{ fb.zoo.name }}{% endif %}
+              </div>
             </div>
           </div>
-          <div style="color: #fca000; font-size: 0.9rem; white-space: nowrap; flex-shrink: 0;">
+          <div class="fb-review-stars">
             {% for i in range(1,6) %}
               {% if (fb.rating or 0) >= i %}<i class="fa-solid fa-star"></i>{% else %}<i class="fa-regular fa-star"></i>{% endif %}
             {% endfor %}
           </div>
         </div>
-        <p style="color: #475569; font-size: 0.9rem; line-height: 1.6; margin: 0;">{{ fb.comment }}</p>
+        <p class="fb-review-text">{{ fb.comment }}</p>
 
         {% if (current_user_id and fb.user_id == current_user_id) or (current_user_aliases and fb.visitor_name in current_user_aliases) %}
-        <div style="margin-top: 0.9rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-          <details>
-            <summary class="zf-btn-outline" style="list-style: none; cursor: pointer; font-size: 0.8rem; padding: 0.35rem 0.75rem;">Edit My Review</summary>
-            <div style="margin-top: 0.6rem; background: var(--bg-alt, #f8fafc); border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem; width: min(100%, 460px);">
-              <form method="post" action="{{ url_for('visitor.update_feedback', feedback_id=fb.id) }}" style="display: grid; gap: 0.55rem; margin: 0;">
+        <div class="fb-review-actions">
+          <details style="display:inline-block;">
+            <summary class="fb-btn-edit" style="list-style:none;cursor:pointer;">
+              <i class="fa-solid fa-pen-to-square"></i> Edit
+            </summary>
+            <div class="fb-edit-box">
+              <form method="post" action="{{ url_for('visitor.update_feedback', feedback_id=fb.id) }}" style="display:grid;gap:0.55rem;margin:0;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="zf-field">
-                  <label class="zf-label">Zoo</label>
-                  <select name="zoo_id" required class="zf-control">
-                    {% for z in zoos %}
-                    <option value="{{ z.id }}" {% if fb.zoo_id == z.id %}selected{% endif %}>{{ z.name }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                <div class="zf-field">
-                  <label class="zf-label">Rating</label>
-                  <select name="rating" required class="zf-control">
-                    {% for r in [5,4,3,2,1] %}
-                    <option value="{{ r }}" {% if (fb.rating or 0) == r %}selected{% endif %}>{{ r }} — {% if r == 5 %}Excellent{% elif r == 4 %}Great{% elif r == 3 %}Okay{% elif r == 2 %}Poor{% else %}Terrible{% endif %}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                <div class="zf-field">
-                  <label class="zf-label">Comment</label>
-                  <textarea name="comment" rows="3" required class="zf-control" style="resize: vertical;">{{ fb.comment }}</textarea>
-                </div>
-                <div style="display: flex; justify-content: flex-end;">
-                  <button type="submit" class="zf-btn-primary" style="font-size: 0.8rem; padding: 0.45rem 0.9rem;">Save Review</button>
+                <select name="zoo_id" required class="fb-edit-control" aria-label="Zoo">
+                  {% for z in zoos %}
+                  <option value="{{ z.id }}" {% if fb.zoo_id == z.id %}selected{% endif %}>{{ z.name }}</option>
+                  {% endfor %}
+                </select>
+                <select name="rating" required class="fb-edit-control" aria-label="Rating">
+                  {% for r in [5,4,3,2,1] %}
+                  <option value="{{ r }}" {% if (fb.rating or 0) == r %}selected{% endif %}>{{ r }} — {% if r == 5 %}Excellent{% elif r == 4 %}Great{% elif r == 3 %}Okay{% elif r == 2 %}Poor{% else %}Terrible{% endif %}</option>
+                  {% endfor %}
+                </select>
+                <textarea name="comment" rows="3" required class="fb-edit-control" style="resize:vertical;" aria-label="Comment">{{ fb.comment }}</textarea>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.2rem;">
+                  <span class="fb-edit-hint">Saving will update your review.</span>
+                  <button type="submit" class="fb-btn-save"><i class="fa-solid fa-floppy-disk"></i> Save</button>
                 </div>
               </form>
             </div>
           </details>
 
-          <form method="post" action="{{ url_for('visitor.delete_feedback', feedback_id=fb.id) }}" onsubmit="return confirm('Delete your review?');" style="margin: 0;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="zf-btn-outline" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; color: var(--danger); border-color: var(--danger-bg);">Delete</button>
+          <form method="post" action="{{ url_for('visitor.delete_feedback', feedback_id=fb.id) }}" onsubmit="return confirm('Delete your review?');" style="margin:0;display:inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="fb-btn-delete"><i class="fa-solid fa-trash"></i> Delete</button>
           </form>
         </div>
         {% endif %}
       </div>
+      {% else %}
+      <div class="fb-empty">
+        <div class="fb-empty-icon"><i class="fa-regular fa-comment-dots"></i></div>
+        <h4>No reviews yet</h4>
+        <p>Be the first to share your wildlife experience!</p>
+        <a href="#write-review" class="fb-btn-amber" style="font-size:0.88rem;">
+          <i class="fa-solid fa-pen-nib"></i> Write a Review
+        </a>
+      </div>
+      {% endfor %}
     </div>
-    {% else %}
-    <div class="zf-empty-state" style="grid-column: span 2;">
-      <i class="fa-regular fa-star"></i>
-      <p>No feedback yet. Be the first to write a review.</p>
-    </div>
-    {% endfor %}
-  </div>
 
-  <!-- PAGINATION -->
-  {% if pages and pages > 1 %}
-  <div class="zf-pagination" style="margin-top: 2rem;">
-    <div style="color: var(--text-muted); font-weight: 700;">Page {{ page }} of {{ pages }}</div>
-    <div style="display: flex; gap: 0.5rem;">
+    {# ── PAGINATION ── #}
+    {% if pages and pages > 1 %}
+    <div class="fb-pagination">
       {% if page > 1 %}
-      <a class="zf-btn-outline" href="{{ url_for('visitor.feedback', page=page-1, sort=sort, zoo_id=selected_zoo_id) }}" style="padding: 0.55rem 1rem; text-decoration: none;">Prev</a>
+      <a class="fb-page-btn" href="{{ url_for('visitor.feedback', page=page-1, sort=sort, zoo_id=selected_zoo_id) }}">← Previous</a>
       {% else %}
-      <span class="zf-btn-outline" style="padding: 0.55rem 1rem; opacity: 0.4; cursor: not-allowed;">Prev</span>
+      <span class="fb-page-btn disabled">← Previous</span>
       {% endif %}
-
+      <span class="fb-page-info">Page {{ page }} of {{ pages }}</span>
       {% if page < pages %}
-      <a class="zf-btn-primary" href="{{ url_for('visitor.feedback', page=page+1, sort=sort, zoo_id=selected_zoo_id) }}" style="padding: 0.55rem 1rem; text-decoration: none;">Next</a>
+      <a class="fb-page-btn primary" href="{{ url_for('visitor.feedback', page=page+1, sort=sort, zoo_id=selected_zoo_id) }}">Next →</a>
       {% else %}
-      <span class="zf-btn-outline" style="padding: 0.55rem 1rem; opacity: 0.4; cursor: not-allowed;">Next</span>
+      <span class="fb-page-btn disabled">Next →</span>
       {% endif %}
     </div>
-  </div>
-  {% endif %}
+    {% endif %}
 
-</div>
+  </div>{# /fb-container #}
+</div>{# /fb-page #}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  var STAR_LABELS = ['', 'Terrible', 'Poor', 'Okay', 'Great', 'Excellent!'];
+
+  /* ── Main Review Star Rating ── */
+  (function initMainStars() {
+    var stars   = document.querySelectorAll('#star-rating-input .fb-star-btn');
+    var hidden  = document.getElementById('rating-hidden');
+    var label   = document.getElementById('star-label');
+    var current = 0;
+
+    function paintStars(upTo, selected) {
+      stars.forEach(function(btn, idx) {
+        btn.classList.remove('is-hovered', 'is-selected');
+        if (selected) {
+          if (idx < upTo) btn.classList.add('is-selected');
+        } else {
+          if (idx < upTo) btn.classList.add('is-hovered');
+        }
+      });
+    }
+
+    stars.forEach(function(btn) {
+      btn.addEventListener('mouseenter', function() {
+        var v = parseInt(this.dataset.value, 10);
+        paintStars(v, false);
+        label.textContent = STAR_LABELS[v];
+        label.className = 'fb-star-label has-rating';
+      });
+
+      btn.addEventListener('mouseleave', function() {
+        paintStars(current, true);
+        if (current) {
+          label.textContent = STAR_LABELS[current] + ' — ' + current + '/5 selected';
+          label.className = 'fb-star-label has-rating';
+        } else {
+          label.textContent = 'Click a star to rate your experience';
+          label.className = 'fb-star-label';
+        }
+      });
+
+      btn.addEventListener('click', function() {
+        current = parseInt(this.dataset.value, 10);
+        if (hidden) hidden.value = current;
+        paintStars(current, true);
+        label.textContent = STAR_LABELS[current] + ' — ' + current + '/5 selected';
+        label.className = 'fb-star-label has-rating';
+      });
+    });
+  })();
+
+  /* ── Quick Review Nudge Stars ── */
+  (function initNudgeStars() {
+    var stars = document.querySelectorAll('#nudge-stars .fb-nudge-star');
+    var hint  = document.getElementById('nudge-hint');
+    var current = 0;
+
+    function paint(upTo, selected) {
+      stars.forEach(function(btn, idx) {
+        btn.classList.remove('is-hovered', 'is-selected');
+        if (selected) { if (idx < upTo) btn.classList.add('is-selected'); }
+        else           { if (idx < upTo) btn.classList.add('is-hovered'); }
+      });
+    }
+
+    stars.forEach(function(btn) {
+      btn.addEventListener('mouseenter', function() {
+        paint(parseInt(this.dataset.value, 10), false);
+        hint.textContent = STAR_LABELS[parseInt(this.dataset.value, 10)];
+      });
+      btn.addEventListener('mouseleave', function() {
+        paint(current, true);
+        hint.textContent = current ? STAR_LABELS[current] + ' selected!' : 'Click a star to rate quickly';
+      });
+      btn.addEventListener('click', function() {
+        current = parseInt(this.dataset.value, 10);
+        paint(current, true);
+        hint.textContent = STAR_LABELS[current] + ' — tap "Write Full Review" to submit!';
+        // Pre-set the main form star too
+        var hidden = document.getElementById('rating-hidden');
+        if (hidden) hidden.value = current;
+        var mainStars = document.querySelectorAll('#star-rating-input .fb-star-btn');
+        mainStars.forEach(function(s, idx) {
+          s.classList.remove('is-hovered', 'is-selected');
+          if (idx < current) s.classList.add('is-selected');
+        });
+        var lbl = document.getElementById('star-label');
+        if (lbl) { lbl.textContent = STAR_LABELS[current] + ' — ' + current + '/5 selected'; lbl.className = 'fb-star-label has-rating'; }
+      });
+    });
+  })();
+
+  /* ── Nudge card dismiss ── */
+  var dismissBtn = document.getElementById('nudge-dismiss-btn');
+  var nudgeCard  = document.getElementById('quick-review-nudge');
+  if (dismissBtn && nudgeCard) {
+    dismissBtn.addEventListener('click', function() {
+      nudgeCard.style.transition = 'opacity 0.3s, transform 0.3s';
+      nudgeCard.style.opacity = '0';
+      nudgeCard.style.transform = 'translateY(-8px)';
+      setTimeout(function() { nudgeCard.style.display = 'none'; }, 320);
+    });
+  }
+
+  /* ── Character counter ── */
+  window.updateCharCount = function(textarea) {
+    var counter = document.getElementById('comment-counter');
+    if (!counter) return;
+    var len = textarea.value.length;
+    var max = parseInt(textarea.getAttribute('maxlength') || '1000', 10);
+    counter.textContent = len + ' / ' + max;
+    counter.className = 'fb-char-counter' +
+      (len >= max ? ' at-limit' : len >= max * 0.85 ? ' near-limit' : '');
+  };
+
+  /* ── Animate star distribution bars on page load ── */
+  document.addEventListener('DOMContentLoaded', function() {
+    var fills = document.querySelectorAll('.fb-bar-fill, .fb-sent-bar-fill');
+    fills.forEach(function(el) {
+      var target = el.style.width;
+      el.style.width = '0%';
+      setTimeout(function() { el.style.width = target; }, 120);
+    });
+  });
+})();
+</script>
 {% endblock %}
