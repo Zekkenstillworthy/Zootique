@@ -1077,11 +1077,41 @@
     </div>
 
     <div class="vb-booking-body">
+      <!-- Event auto-selection notification banner -->
+      <div id="event-booking-banner" style="display:{% if selected_event_name or selected_event_id or (selected_date and selected_event_time) %}flex{% else %}none{% endif %};background:linear-gradient(135deg, #143823 0%, #1e5233 100%);color:white;padding:1.1rem 1.35rem;border-radius:14px;margin-bottom:1.5rem;align-items:center;justify-content:space-between;gap:1rem;box-shadow:0 6px 18px rgba(20,56,35,0.18);">
+        <div style="display:flex;align-items:center;gap:0.9rem;">
+          <div style="background:rgba(255,255,255,0.15);width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fef08a;flex-shrink:0;">
+            <i class="fa-solid fa-calendar-check"></i>
+          </div>
+          <div>
+            <div style="font-weight:800;font-size:1.1rem;letter-spacing:-0.01em;" id="banner-event-name">{{ selected_event_name or 'Event Booking Selected' }}</div>
+            <div style="font-size:0.86rem;color:#d1fae5;margin-top:2px;" id="banner-event-datetime">Scheduled for {{ selected_date or '' }}{% if selected_event_time %} at {{ selected_event_time }}{% endif %}</div>
+          </div>
+        </div>
+        <span style="background:#fca000;color:#143823;font-weight:800;font-size:0.76rem;text-transform:uppercase;padding:0.4rem 0.85rem;border-radius:20px;letter-spacing:0.04em;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;">
+          <i class="fa-solid fa-check"></i> Event Locked
+        </span>
+      </div>
+
+      <script id="available-events-data" type="application/json">
+      [
+        {% for ev in events or [] %}
+        {
+          "id": {{ ev.id }},
+          "name": {{ ev.name|tojson }},
+          "time": {{ (ev.date or ev.time or '')|tojson }},
+          "type": {{ (ev.type or 'Event')|tojson }},
+          "location": {{ (ev.location or '')|tojson }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+      ]
+      </script>
+
       <form id="booking-form" method="post" action="{{ url_for('visitor.my_bookings') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <!-- Hidden synchronized inputs to preserve POST contract -->
-        <input type="hidden" id="new_date" name="date" value="" required>
-        <input type="hidden" id="new_time" name="time" value="08:00">
+        <input type="hidden" id="new_date" name="date" value="{{ selected_date or '' }}" required>
+        <input type="hidden" id="new_time" name="time" value="{{ selected_event_time or '08:00' }}">
 
         <!-- Step 1: Experience & Guests -->
         <div class="vb-top-fields">
@@ -1090,10 +1120,10 @@
               <i class="fa-solid fa-binoculars" style="color: var(--vb-terracotta);"></i>
               <span>Select Experience <span class="vb-field-req">*</span></span>
             </label>
-            <select id="new_service_id" name="service_id" required class="vb-select-control">
-              <option value="" selected disabled>Select an experience to check availability…</option>
+            <select id="new_service_id" name="service_id" required class="vb-select-control{% if selected_service_id %} has-value{% endif %}">
+              <option value="" {% if not selected_service_id %}selected{% endif %} disabled>Select an experience to check availability…</option>
               {% for service in services %}
-              <option value="{{ service.id }}">{{ service.name }} — ₱{{ "{:,.2f}".format(service.price or 0) }}</option>
+              <option value="{{ service.id }}" {% if selected_service_id == service.id %}selected{% endif %}>{{ service.name }} — ₱{{ "{:,.2f}".format(service.price or 0) }}</option>
               {% endfor %}
             </select>
           </div>
@@ -1146,7 +1176,7 @@
                 <span>Deals &amp; Promotion Code</span>
               </label>
               <div style="display:flex;gap:0.4rem;align-items:center;">
-                <input type="text" id="promo_code_input" placeholder="Paste or type promo code (e.g. SAFARI20)..."
+                <input type="text" id="promo_code_input" value="{{ selected_promo_code or '' }}" placeholder="Paste or type promo code (e.g. SAFARI20)..."
                        class="vb-input-control" style="text-transform:uppercase;font-weight:700;letter-spacing:0.04em;" autocomplete="off">
                 <button type="button" id="btn-paste-promo" class="vb-btn-promo-action" title="Paste promo code from clipboard" style="background:#f1f5f9;color:var(--vb-forest);border:1.5px solid var(--vb-border);border-radius:10px;padding:0.55rem 0.85rem;font-weight:700;font-size:0.82rem;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">
                   <i class="fa-regular fa-paste"></i> Paste
@@ -1157,14 +1187,14 @@
               </div>
               <div style="display:flex;align-items:center;gap:0.4rem;margin-top:0.35rem;">
                 <select id="new_promotion" name="promotion_code_select" class="vb-select-control" style="font-size:0.82rem;padding:0.35rem 0.6rem;height:auto;flex:1;">
-                  <option value="">Or browse active deals…</option>
+                  <option value="" {% if not selected_promo_code %}selected{% endif %}>Or browse active deals…</option>
                   {% for promotion in promotions or [] %}
-                  <option value="{{ promotion.code }}" data-discount-type="{{ promotion.discount_type or 'percent' }}" data-discount-value="{{ promotion.discount_value or 0 }}">{{ promotion.code }} — {{ promotion.name }}{% if promotion.discount_value %} ({{ promotion.discount_value }}{% if promotion.discount_type == 'percent' %}%{% else %} PHP{% endif %} off){% endif %}</option>
+                  <option value="{{ promotion.code }}" {% if selected_promo_code == promotion.code %}selected{% endif %} data-discount-type="{{ promotion.discount_type or 'percent' }}" data-discount-value="{{ promotion.discount_value or 0 }}">{{ promotion.code }} — {{ promotion.name }}{% if promotion.discount_value %} ({{ promotion.discount_value }}{% if promotion.discount_type == 'percent' %}%{% else %} PHP{% endif %} off){% endif %}</option>
                   {% endfor %}
                 </select>
               </div>
               <!-- Hidden input holding final promo code for form POST submission -->
-              <input type="hidden" id="final_promotion_code" name="promotion_code" value="">
+              <input type="hidden" id="final_promotion_code" name="promotion_code" value="{{ selected_promo_code or '' }}">
               <div id="promo-status-msg" style="display:none;margin-top:0.4rem;font-size:0.82rem;font-weight:700;border-radius:8px;padding:0.4rem 0.65rem;align-items:center;justify-content:space-between;">
                 <span id="promo-status-text"></span>
                 <button type="button" id="btn-remove-promo" style="background:none;border:none;color:inherit;cursor:pointer;padding:0 4px;font-size:0.85rem;" title="Remove promotion">&times;</button>
@@ -1596,10 +1626,22 @@
         if (!data.success) throw new Error(data.error || 'Unable to calculate quote.');
         var quote = data.quote;
         priceSummaryEl.style.display = 'flex';
-        breakdownEl.textContent = quote.lines.map(function(line) {
+        var lineSummary = quote.lines.map(function(line) {
           return line.quantity + ' × ' + line.name + ' (₱' + Number(line.total).toLocaleString('en-PH', {minimumFractionDigits: 2}) + ')';
         }).join(' · ');
-        totalEl.textContent = Number(quote.total).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+        var discountBadge = '';
+        if (quote.discount && Number(quote.discount) > 0) {
+          discountBadge = ' <span style="display:inline-flex;align-items:center;gap:4px;color:#16a34a;font-weight:800;background:#dcfce7;border:1px solid #bbf7d0;padding:2px 8px;border-radius:6px;margin-left:8px;"><i class="fa-solid fa-tag"></i> Voucher Discount: -₱' + Number(quote.discount).toLocaleString('en-PH', {minimumFractionDigits: 2}) + '</span>';
+        }
+
+        breakdownEl.innerHTML = lineSummary + discountBadge;
+
+        if (quote.discount && Number(quote.discount) > 0) {
+          totalEl.innerHTML = '<span style="font-size:0.95rem;color:#8E9991;text-decoration:line-through;margin-right:8px;font-weight:600;">₱' + Number(quote.subtotal).toLocaleString('en-PH', {minimumFractionDigits: 2}) + '</span><span>' + Number(quote.total).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</span>';
+        } else {
+          totalEl.textContent = Number(quote.total).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
       })
       .catch(function() {
         priceSummaryEl.style.display = 'none';
@@ -1765,8 +1807,10 @@
   function selectDate(dayInfo) {
     selectedDate = dayInfo.date;
     if (hiddenDate) hiddenDate.value = selectedDate;
-    // Default time to park open time (all-day entry, no time slotting)
-    selectedTime = '08:00';
+    // Default time to park open time if not already set
+    if (!selectedTime) {
+      selectedTime = '08:00';
+    }
     if (hiddenTime) hiddenTime.value = selectedTime;
     if (dayInfo && dayInfo.remaining_capacity != null) {
       maxSlotCapacity = dayInfo.remaining_capacity;
@@ -2025,14 +2069,143 @@
     } catch(e) {}
   })();
 
-  // Initial Load
+  // Initial Load and URL Parameter Processing
   document.addEventListener('DOMContentLoaded', function() {
+    var urlParams = new URLSearchParams(window.location.search);
+
+    // 1. Process Experiences / Services parameter (?service_id=12 or ?service=Elephant)
+    var urlServiceId = urlParams.get('service_id') || urlParams.get('service');
+    if (urlServiceId && serviceSelect) {
+      for (var i = 0; i < serviceSelect.options.length; i++) {
+        var opt = serviceSelect.options[i];
+        if (opt.value === String(urlServiceId) ||
+            opt.text.toLowerCase().indexOf(String(urlServiceId).toLowerCase()) !== -1) {
+          serviceSelect.selectedIndex = i;
+          selectedServiceId = opt.value;
+          syncServiceDropdown();
+          serviceSelect.dispatchEvent(new Event('change'));
+          break;
+        }
+      }
+    }
+
+    // 2. Process Events & Shows parameter (?event=... or ?event_id=... or ?event_time=...)
+    var urlEventId = urlParams.get('event_id');
+    var urlEventName = urlParams.get('event') || urlParams.get('event_name');
+    var urlEventTime = urlParams.get('event_time') || urlParams.get('time');
+    var urlEventDate = urlParams.get('date');
+
+    // Parse events JSON data if available
+    var eventsData = [];
+    var eventsScript = document.getElementById('available-events-data');
+    if (eventsScript) {
+      try {
+        eventsData = JSON.parse(eventsScript.textContent || '[]');
+      } catch(e) {}
+    }
+
+    // Match event by id or name if found
+    var matchedEvent = null;
+    if (urlEventId) {
+      matchedEvent = eventsData.find(function(ev) { return String(ev.id) === String(urlEventId); });
+    }
+    if (!matchedEvent && urlEventName) {
+      matchedEvent = eventsData.find(function(ev) {
+        return ev.name.toLowerCase().indexOf(urlEventName.toLowerCase()) !== -1 ||
+               urlEventName.toLowerCase().indexOf(ev.name.toLowerCase()) !== -1;
+      });
+    }
+
+    if (matchedEvent) {
+      if (!urlEventName) urlEventName = matchedEvent.name;
+      if (!urlEventTime && matchedEvent.time) urlEventTime = matchedEvent.time;
+    }
+
+    // Extract Date from event_time if not provided as separate date param
+    if (urlEventTime && !urlEventDate) {
+      var dateMatch = urlEventTime.match(/(\d{4}-\d{2}-\d{2})/);
+      if (dateMatch) {
+        urlEventDate = dateMatch[1];
+        urlEventTime = urlEventTime.replace(dateMatch[1], '').trim();
+      }
+    }
+
+    // Auto-select Date
+    if (urlEventDate) {
+      selectedDate = urlEventDate;
+      if (hiddenDate) hiddenDate.value = urlEventDate;
+      var dateParts = urlEventDate.split('-');
+      if (dateParts.length === 3) {
+        currentYear = parseInt(dateParts[0], 10);
+        currentMonth = parseInt(dateParts[1], 10);
+      }
+    }
+
+    // Auto-select Time
+    if (urlEventTime) {
+      selectedTime = urlEventTime;
+      if (hiddenTime) hiddenTime.value = urlEventTime;
+    }
+
+    // If an Event is selected, ensure an experience is auto-selected too
+    if ((urlEventName || urlEventId) && serviceSelect && (!serviceSelect.value || serviceSelect.value === '')) {
+      var evWords = (urlEventName || '').toLowerCase().split(/\s+/).filter(function(w) { return w.length > 3; });
+      var matchedSvcIndex = -1;
+      for (var sIdx = 1; sIdx < serviceSelect.options.length; sIdx++) {
+        var optText = serviceSelect.options[sIdx].text.toLowerCase();
+        for (var wIdx = 0; wIdx < evWords.length; wIdx++) {
+          if (optText.indexOf(evWords[wIdx]) !== -1) {
+            matchedSvcIndex = sIdx;
+            break;
+          }
+        }
+        if (matchedSvcIndex !== -1) break;
+      }
+      if (matchedSvcIndex === -1 && serviceSelect.options.length > 1) {
+        matchedSvcIndex = 1;
+      }
+      if (matchedSvcIndex !== -1) {
+        serviceSelect.selectedIndex = matchedSvcIndex;
+        selectedServiceId = serviceSelect.options[matchedSvcIndex].value;
+        syncServiceDropdown();
+        serviceSelect.dispatchEvent(new Event('change'));
+      }
+    }
+
+    // Display Event Locked banner
+    var eventBanner = document.getElementById('event-booking-banner');
+    var bannerName = document.getElementById('banner-event-name');
+    var bannerDatetime = document.getElementById('banner-event-datetime');
+    if ((urlEventName || urlEventId || (urlEventDate && urlEventTime)) && eventBanner) {
+      if (bannerName) {
+        bannerName.textContent = urlEventName || 'Event Experience';
+      }
+      if (bannerDatetime) {
+        var dtText = [];
+        if (urlEventDate) dtText.push('Date: ' + urlEventDate);
+        if (urlEventTime) dtText.push('Time: ' + urlEventTime);
+        bannerDatetime.textContent = dtText.length > 0 ? dtText.join(' · ') : 'Date & Time locked for your visit';
+      }
+      eventBanner.style.display = 'flex';
+    }
+
+    // Sync dropdown and fetch availability
     syncServiceDropdown();
     if (serviceSelect && serviceSelect.value) {
       selectedServiceId = serviceSelect.value;
     }
     fetchAvailability(currentYear, currentMonth, selectedServiceId);
     updateFormState();
+
+    // 3. Smooth scroll down to booking form if navigated via parameters or anchor
+    if (urlServiceId || urlEventName || urlEventId || urlParams.get('promo') || window.location.hash === '#new-booking') {
+      var bookingCard = document.getElementById('new-booking');
+      if (bookingCard) {
+        setTimeout(function() {
+          bookingCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
+      }
+    }
   });
 })();
 </script>

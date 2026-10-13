@@ -38,6 +38,13 @@
                         <span><i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> {{ event.location }}</span>
                         {% endif %}
                     </div>
+                    <div style="margin-top: auto; padding-top: 0.85rem; border-top: 1px solid var(--border-light); display: flex; justify-content: flex-end;">
+                        <a href="{{ url_for('visitor.my_bookings', event=event.name, event_id=event.id, event_time=(event.date or event.time or '')) }}#new-booking"
+                           class="btn"
+                           style="background: var(--primary); color: white; border: none; padding: 0.5rem 1.1rem; border-radius: 10px; font-weight: 800; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.45rem; box-shadow: 0 2px 8px rgba(20,56,35,0.2); transition: transform 0.15s ease;">
+                            <i class="fa-regular fa-calendar-check"></i> Book Event
+                        </a>
+                    </div>
                 </div>
             </div>
             {% else %}

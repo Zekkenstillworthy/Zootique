@@ -933,8 +933,7 @@
       <div class="exp-body">
         <div class="exp-name">{{ svc.name }}</div>
         <div class="exp-desc">{{ svc.description }}</div>
-        <div class="exp-price">₱{{ svc.price }} <span style="font-size:11px;font-weight:500;color:var(--muted);">per person</span></div>
-        <button class="btn-exp-book">Book Now</button>
+        <a href="{{ url_for('visitor.my_bookings', service_id=svc.id) }}#new-booking" class="btn-exp-book" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">Book Now</a>
       </div>
     </div>
     {% endfor %}

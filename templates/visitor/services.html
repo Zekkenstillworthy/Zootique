@@ -36,8 +36,8 @@
                     <div style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.4; flex: 1;">{{ service.description or '—' }}</div>
                     <div style="display:flex; justify-content:space-between; align-items:center; gap: 1rem; margin-top: 0.5rem;">
                         <div style="font-weight: 900; color: var(--primary); font-size: 1.15rem;">₱{{ '%.2f'|format(service.price or 0) }}</div>
-                        <a href="{{ url_for('visitor.my_bookings') }}#new-booking" class="btn" style="background: transparent; color: var(--primary); border: 1px solid var(--primary); padding: 0.45rem 0.9rem; border-radius: 10px; font-weight: 900; text-decoration:none;">
-                            Book
+                        <a href="{{ url_for('visitor.my_bookings', service_id=service.id) }}#new-booking" class="btn" style="background: var(--primary); color: white; border: none; padding: 0.5rem 1.1rem; border-radius: 10px; font-weight: 800; text-decoration:none; display:inline-flex; align-items:center; gap:0.4rem; box-shadow: 0 2px 8px rgba(20,56,35,0.2);">
+                            Book <i class="fa-solid fa-arrow-right" style="font-size:0.75rem;"></i>
                         </a>
                     </div>
                 </div>

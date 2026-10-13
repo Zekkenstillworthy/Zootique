@@ -35,7 +35,7 @@
           <td>{{ registration.establishment_type }}</td>
           <td>{{ registration.location }}</td>
           <td>{{ registration.created_at.strftime('%b %d, %Y %I:%M %p') if registration.created_at else 'Not available' }}</td>
-          <td><span class="badge {% if registration.is_legacy_migration %}badge-neutral{% elif registration.status == 'approved' %}badge-active{% elif registration.status == 'rejected' %}badge-pending{% endif %}">{{ 'Approved (Legacy)' if registration.is_legacy_migration else registration.status|capitalize }}</span></td>
+          <td><span class="badge {% if registration.is_legacy_migration %}badge-neutral{% elif registration.status == 'approved' %}badge-active{% elif registration.status == 'rejected' %}badge-danger{% elif registration.status == 'pending' %}badge-pending{% endif %}">{{ 'Approved (Legacy)' if registration.is_legacy_migration else registration.status|capitalize }}</span></td>
           <td style="text-align:right;"><a class="btn btn-ghost" href="{{ url_for('zootique_admin.registration_detail', registration_id=registration.id) }}">Review</a></td>
         </tr>
         {% else %}

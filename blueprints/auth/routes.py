@@ -307,7 +307,7 @@ def register_admin_step1():
                 establishment_name=zoo_name,
                 establishment_type=zoo_type,
                 location=zoo_location,
-                status='draft',
+                status='pending',
             )
             db.session.add(registration)
             db.session.flush()
@@ -404,7 +404,7 @@ def register_admin_step2():
         registration.email_verification_token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
         registration.email_verification_expires_at = datetime.utcnow() + timedelta(minutes=30)
         registration.email_verified_at = None
-        registration.status = 'draft'
+        registration.status = 'pending'
         registration.approved_by = None
         registration.approved_at = None
         registration.rejected_by = None

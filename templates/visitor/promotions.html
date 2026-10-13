@@ -59,8 +59,9 @@
                     <span>{{ promo_code }}</span>
                     <button type="button" class="promotion-copy-code" data-code="{{ promo_code }}" aria-label="Copy promo code {{ promo_code }}" title="Copy promo code" onclick="copyPromotionCode(this, event)"><i class="fa-regular fa-copy" aria-hidden="true"></i></button>
                 </div>
-                <div class="promotion-actions">
-                    <a class="promotion-primary" href="{{ url_for('visitor.promotion_detail', promotion_id=promo.id) }}"><i class="fa-solid fa-ticket"></i> View Deal</a>
+                <div class="promotion-actions" style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                    <a class="promotion-primary" href="{{ url_for('visitor.my_bookings', promo=promo_code) }}#new-booking" style="background:#1a4f32;color:white;border-radius:10px;padding:0.6rem 0.9rem;font-weight:800;font-size:0.85rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;"><i class="fa-solid fa-tag"></i> Apply &amp; Book</a>
+                    <a class="promotion-secondary" href="{{ url_for('visitor.promotion_detail', promotion_id=promo.id) }}" style="border-radius:10px;padding:0.6rem 0.85rem;font-weight:700;font-size:0.85rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;border:1.5px solid #cbd5e1;color:#334155;"><i class="fa-solid fa-eye"></i> Details</a>
                     <div class="promotion-share-wrap">
                         <button type="button" class="promotion-secondary promotion-share-button" aria-label="Share {{ promo_name }}" aria-haspopup="menu" aria-expanded="false" data-share-url="{{ url_for('visitor.promotion_detail', promotion_id=promo.id, _external=True) }}" data-share-title="{{ promo_name }}" data-share-text="{{ promo_discount or 'Special offer' }} - {{ promo_name }}" onclick="handlePromotionShare(this, event)"><i class="fa-solid fa-share-nodes"></i> Share</button>
                         <div class="promotion-share-menu" role="menu" aria-label="Share {{ promo_name }}" hidden>

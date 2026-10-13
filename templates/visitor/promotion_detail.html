@@ -41,7 +41,7 @@
                     <button type="button" class="promotion-copy-code" data-code="{{ promotion.code }}" aria-label="Copy promo code {{ promotion.code }}" title="Copy promo code" onclick="copyPromotionCode(this, event)"><i class="fa-regular fa-copy" aria-hidden="true"></i></button>
                 </div>
                 <div class="promotion-detail-actions">
-                    <a class="promotion-primary" href="{{ zoo_detail_url }}"><i class="fa-solid fa-ticket"></i> Explore &amp; book at {{ zoo.name }}</a>
+                    <a class="promotion-primary" href="{{ url_for('visitor.my_bookings', promo=promotion.code) }}#new-booking"><i class="fa-solid fa-ticket"></i> Apply Code &amp; Book at {{ zoo.name }}</a>
                     <div class="promotion-share-wrap">
                         <button type="button" class="promotion-secondary promotion-share-button" aria-label="Share {{ promotion.name }}" aria-haspopup="menu" aria-expanded="false" data-share-url="{{ promotion_url }}" data-share-title="{{ promotion.name }}" data-share-text="{{ share_description }} - {{ promotion.name }}" onclick="handlePromotionShare(this, event)"><i class="fa-solid fa-share-nodes"></i> Share</button>
                         <div class="promotion-share-menu" role="menu" aria-label="Share {{ promotion.name }}" hidden>

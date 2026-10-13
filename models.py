@@ -347,6 +347,27 @@ class Promotion(db.Model):
 
     zoo = db.relationship('Zoo', lazy=True)
 
+    @property
+    def effective_discount_value(self):
+        val = float(self.discount_value or 0.0)
+        if val <= 0 and self.discount:
+            import re
+            m = re.search(r"(\d+(?:\.\d+)?)", str(self.discount))
+            if m:
+                return float(m.group(1))
+        return val
+
+    @property
+    def effective_discount_type(self):
+        dtype = (self.discount_type or 'percent').lower()
+        if self.discount:
+            text = str(self.discount).lower()
+            if 'php' in text or '₱' in text:
+                return 'fixed'
+            elif '%' in text:
+                return 'percent'
+        return dtype
+
 class Feedback(db.Model):
     __tablename__ = 'feedbacks'
     id = db.Column(db.Integer, primary_key=True)

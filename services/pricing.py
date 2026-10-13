@@ -115,11 +115,14 @@ def calculate_booking_price(
             raise PricingError("The selected promotion is inactive.")
         if promotion.valid_until:
             try:
-                if (visit_date or date.today()) > date.fromisoformat(str(promotion.valid_until)):
-                    raise PricingError("The selected promotion has expired.")
+                expiry_date = date.fromisoformat(str(promotion.valid_until))
             except ValueError as exc:
                 raise PricingError("Promotion expiry is invalid.") from exc
-        promo_discount = _discount(subtotal, promotion.discount_type or "percent", float(promotion.discount_value or 0))
+            if (visit_date or date.today()) > expiry_date:
+                raise PricingError("The selected promotion has expired.")
+        p_type = getattr(promotion, "effective_discount_type", promotion.discount_type or "percent")
+        p_val = getattr(promotion, "effective_discount_value", float(promotion.discount_value or 0))
+        promo_discount = _discount(subtotal, p_type, p_val)
         discount += promo_discount
         subtotal -= promo_discount
 

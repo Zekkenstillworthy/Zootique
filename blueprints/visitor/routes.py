@@ -768,6 +768,7 @@ def my_bookings():
     services = _maybe_filter_by_selected_zoo(Service.query, Service).order_by(Service.name.asc()).all()
     bundles = _maybe_filter_by_selected_zoo(BookingBundle.query, BookingBundle).filter_by(is_active=True).order_by(BookingBundle.name.asc()).all()
     promotions = _maybe_filter_by_selected_zoo(Promotion.query, Promotion).order_by(Promotion.name.asc()).all()
+    events = _maybe_filter_by_selected_zoo(Event.query, Event).order_by(Event.name.asc()).all()
     add_on_services = services
     availability_settings = get_availability_settings(selected_zoo_id) if selected_zoo_id else {}
     weekday_names = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
@@ -805,6 +806,39 @@ def my_bookings():
         if next_ticket and next_ticket.token_payload else None
     )
 
+    # URL parameters for pre-selection
+    selected_service_id = request.args.get("service_id", type=int)
+    selected_promo_code = (request.args.get("promo") or request.args.get("code") or request.args.get("promotion_code") or "").strip().upper()
+    selected_event_id = request.args.get("event_id", type=int)
+    selected_event_name = (request.args.get("event") or request.args.get("event_name") or "").strip()
+    selected_event_time = (request.args.get("event_time") or request.args.get("time") or "").strip()
+    selected_date = (request.args.get("date") or "").strip()
+
+    if selected_event_id:
+        ev_obj = db.session.get(Event, selected_event_id)
+        if ev_obj:
+            if not selected_event_name:
+                selected_event_name = ev_obj.name
+            if not selected_event_time and ev_obj.time:
+                selected_event_time = ev_obj.time
+
+    if selected_event_time and not selected_date:
+        import re
+        m = re.search(r"(\d{4}-\d{2}-\d{2})", selected_event_time)
+        if m:
+            selected_date = m.group(1)
+            selected_event_time = selected_event_time.replace(m.group(1), "").strip()
+
+    if (selected_event_name or selected_event_id) and not selected_service_id and services:
+        ev_words = [w.lower() for w in (selected_event_name or "").split() if len(w) > 3]
+        for s in services:
+            s_name = s.name.lower()
+            if any(w in s_name for w in ev_words):
+                selected_service_id = s.id
+                break
+        if not selected_service_id and services:
+            selected_service_id = services[0].id
+
     return render_template(
         "visitor/bookings.html",
         bookings=bookings,
@@ -820,6 +854,7 @@ def my_bookings():
         visitor_unread_count=visitor_unread_count,
         bundles=bundles,
         promotions=promotions,
+        events=events,
         add_on_services=add_on_services,
         loyalty_balance=int(loyalty_account.balance if loyalty_account else 0),
         supported_methods=get_payment_methods(selected_zoo_id) if selected_zoo_id else ["card", "gcash", "maya", "cash_on_arrival"],
@@ -827,6 +862,11 @@ def my_bookings():
         availability_closing_time=(availability_service.closing_time if availability_service else "05:00 PM"),
         availability_closure_days=availability_closure_days,
         next_ticket_qr=next_ticket_qr,
+        selected_service_id=selected_service_id,
+        selected_promo_code=selected_promo_code,
+        selected_event_name=selected_event_name,
+        selected_event_time=selected_event_time,
+        selected_date=selected_date,
     )
 
 
@@ -843,7 +883,7 @@ def booking_quote():
     bundle = db.session.get(BookingBundle, bundle_id) if bundle_id else None
     add_on_ids = [value for value in request.args.getlist("add_on_ids", type=int) if value]
     add_ons = Service.query.filter(Service.id.in_(add_on_ids), Service.zoo_id == service.zoo_id).all() if add_on_ids else []
-    promotion_code = (request.args.get("promotion_code") or "").strip()
+    promotion_code = (request.args.get("promotion_code") or "").strip().upper()
     promotion = Promotion.query.filter_by(code=promotion_code).first() if promotion_code else None
     try:
         raw_date = (request.args.get("date") or "").strip()

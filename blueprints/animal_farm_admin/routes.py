@@ -1201,6 +1201,22 @@ def save_promotion():
     promotion.valid_until = valid_until
     promotion.promo_type = promo_type
 
+    # Automatically derive discount_type and discount_value
+    import re
+    dtype = (request.form.get('discount_type') or 'percent').lower()
+    dval = request.form.get('discount_value', type=float)
+    if discount:
+        if 'php' in discount.lower() or '₱' in discount:
+            dtype = 'fixed'
+        elif '%' in discount:
+            dtype = 'percent'
+        if dval is None or dval <= 0:
+            m = re.search(r"(\d+(?:\.\d+)?)", discount)
+            if m:
+                dval = float(m.group(1))
+    promotion.discount_type = dtype
+    promotion.discount_value = dval or 0.0
+
     if image_file and image_file.filename:
         uploaded_url = _save_uploaded_image(image_file, 'promotion_images')
         if not uploaded_url:
