@@ -82,7 +82,9 @@ def save_uploaded_image(file_storage: FileStorage | None, subfolder: str) -> str
     if supabase:
         bucket = os.environ.get("SUPABASE_STORAGE_BUCKET", "zootique-images").strip()
         try:
+            file_storage.seek(0)
             file_bytes = file_storage.read()
+            file_storage.seek(0)
             content_type = getattr(file_storage, "content_type", None) or "application/octet-stream"
             supabase.storage.from_(bucket).upload(
                 path=object_key,
@@ -95,10 +97,19 @@ def save_uploaded_image(file_storage: FileStorage | None, subfolder: str) -> str
             current_app.logger.error("Supabase Storage upload failed: %s", exc)
             return None
 
+    # Guard for Vercel serverless environment: local filesystem is read-only
+    if os.environ.get("VERCEL"):
+        current_app.logger.error(
+            "[Vercel Serverless] Supabase storage client unavailable and serverless filesystem is read-only. "
+            "Please configure SUPABASE_URL, SUPABASE_KEY, and SUPABASE_STORAGE_BUCKET in Vercel project environment settings."
+        )
+        return None
+
     # --- Local filesystem fallback (development) ---
     try:
         folder = os.path.join(current_app.config["UPLOAD_FOLDER"], *parts)
         os.makedirs(folder, exist_ok=True)
+        file_storage.seek(0)
         file_storage.save(os.path.join(folder, stored_name))
         return f"/uploads/{object_key}"
     except Exception as exc:
@@ -127,7 +138,9 @@ def save_uploaded_document(file_storage: FileStorage | None, subfolder: str) -> 
     if supabase:
         bucket = os.environ.get("SUPABASE_STORAGE_BUCKET", "zootique-images").strip()
         try:
+            file_storage.seek(0)
             file_bytes = file_storage.read()
+            file_storage.seek(0)
             content_type = getattr(file_storage, "content_type", None) or "application/octet-stream"
             supabase.storage.from_(bucket).upload(
                 path=object_key,
@@ -139,9 +152,18 @@ def save_uploaded_document(file_storage: FileStorage | None, subfolder: str) -> 
             current_app.logger.error("Supabase document upload failed: %s", exc)
             return None
 
+    # Guard for Vercel serverless environment: local filesystem is read-only
+    if os.environ.get("VERCEL"):
+        current_app.logger.error(
+            "[Vercel Serverless] Supabase storage client unavailable and serverless filesystem is read-only. "
+            "Please configure SUPABASE_URL, SUPABASE_KEY, and SUPABASE_STORAGE_BUCKET in Vercel project environment settings."
+        )
+        return None
+
     try:
         folder = os.path.join(current_app.config["UPLOAD_FOLDER"], *parts)
         os.makedirs(folder, exist_ok=True)
+        file_storage.seek(0)
         file_storage.save(os.path.join(folder, stored_name))
         return f"/uploads/{object_key}"
     except Exception as exc:

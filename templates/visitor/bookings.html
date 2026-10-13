@@ -1067,7 +1067,7 @@
         </div>
         <div>
           <h2 class="vb-booking-title">Choose Your Wildlife Adventure</h2>
-          <div class="vb-booking-subtitle">Select an experience and pick an open date to view encounter slots</div>
+          <div class="vb-booking-subtitle">Select an experience and pick an open date for your wildlife visit (All-day access, no encounter time limit)</div>
         </div>
       </div>
       <div class="vb-live-badge">
@@ -1081,7 +1081,7 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <!-- Hidden synchronized inputs to preserve POST contract -->
         <input type="hidden" id="new_date" name="date" value="" required>
-        <input type="hidden" id="new_time" name="time" value="" required>
+        <input type="hidden" id="new_time" name="time" value="08:00">
 
         <!-- Step 1: Experience & Guests -->
         <div class="vb-top-fields">
@@ -1140,17 +1140,35 @@
           </div>
 
           <div class="vb-top-fields" style="margin-top:1rem;">
-            <div class="vb-field-group" style="flex:1;min-width:220px;">
-              <label class="vb-field-label" for="new_promotion">
+            <div class="vb-field-group" style="flex:1.2;min-width:280px;">
+              <label class="vb-field-label" for="promo_code_input">
                 <i class="fa-solid fa-ticket" style="color:var(--vb-terracotta);"></i>
-                <span>Promotion</span>
+                <span>Deals &amp; Promotion Code</span>
               </label>
-              <select id="new_promotion" name="promotion_code" class="vb-select-control">
-                <option value="">No promotion</option>
-                {% for promotion in promotions or [] %}
-                <option value="{{ promotion.code }}" data-discount-type="{{ promotion.discount_type or 'percent' }}" data-discount-value="{{ promotion.discount_value or 0 }}">{{ promotion.name }}{% if promotion.discount_value %} — {{ promotion.discount_value }}{% if promotion.discount_type == 'percent' %}%{% else %} PHP{% endif %}{% endif %}</option>
-                {% endfor %}
-              </select>
+              <div style="display:flex;gap:0.4rem;align-items:center;">
+                <input type="text" id="promo_code_input" placeholder="Paste or type promo code (e.g. SAFARI20)..."
+                       class="vb-input-control" style="text-transform:uppercase;font-weight:700;letter-spacing:0.04em;" autocomplete="off">
+                <button type="button" id="btn-paste-promo" class="vb-btn-promo-action" title="Paste promo code from clipboard" style="background:#f1f5f9;color:var(--vb-forest);border:1.5px solid var(--vb-border);border-radius:10px;padding:0.55rem 0.85rem;font-weight:700;font-size:0.82rem;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">
+                  <i class="fa-regular fa-paste"></i> Paste
+                </button>
+                <button type="button" id="btn-apply-promo" class="vb-btn-promo-action" style="background:var(--vb-forest);color:#ffffff;border:none;border-radius:10px;padding:0.55rem 0.95rem;font-weight:800;font-size:0.82rem;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">
+                  <i class="fa-solid fa-check"></i> Apply
+                </button>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.4rem;margin-top:0.35rem;">
+                <select id="new_promotion" name="promotion_code_select" class="vb-select-control" style="font-size:0.82rem;padding:0.35rem 0.6rem;height:auto;flex:1;">
+                  <option value="">Or browse active deals…</option>
+                  {% for promotion in promotions or [] %}
+                  <option value="{{ promotion.code }}" data-discount-type="{{ promotion.discount_type or 'percent' }}" data-discount-value="{{ promotion.discount_value or 0 }}">{{ promotion.code }} — {{ promotion.name }}{% if promotion.discount_value %} ({{ promotion.discount_value }}{% if promotion.discount_type == 'percent' %}%{% else %} PHP{% endif %} off){% endif %}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <!-- Hidden input holding final promo code for form POST submission -->
+              <input type="hidden" id="final_promotion_code" name="promotion_code" value="">
+              <div id="promo-status-msg" style="display:none;margin-top:0.4rem;font-size:0.82rem;font-weight:700;border-radius:8px;padding:0.4rem 0.65rem;align-items:center;justify-content:space-between;">
+                <span id="promo-status-text"></span>
+                <button type="button" id="btn-remove-promo" style="background:none;border:none;color:inherit;cursor:pointer;padding:0 4px;font-size:0.85rem;" title="Remove promotion">&times;</button>
+              </div>
             </div>
             <div class="vb-field-group" style="flex:1;min-width:220px;">
               <label class="vb-field-label" for="new_add_on_ids">
@@ -1237,18 +1255,6 @@
           </div>
         </div>
 
-        <!-- Step 3: Interactive Time Slot Picker -->
-        <div id="vb-time-section" class="vb-time-container" style="display: none;">
-          <div class="vb-time-title-row">
-            <span class="vb-time-title"><i class="fa-regular fa-clock" style="color: var(--vb-terracotta); margin-right: 6px;"></i>Select Encounter Time <span class="vb-field-req">*</span></span>
-            <span id="time-summary-badge" class="vb-time-badge" style="display: none;">
-              <span id="time-summary-text"></span>
-            </span>
-          </div>
-          <div id="vb-time-chips-container" class="vb-time-grid">
-            <!-- Dynamically populated time chips -->
-          </div>
-        </div>
 
         <!-- Step 4: Payment Method Selector -->
         <div id="vb-payment-section" style="margin-top:1.5rem;">
@@ -1527,27 +1533,18 @@
   var calTitle = document.getElementById('cal-month-year');
   var prevBtn = document.getElementById('cal-prev-btn');
   var nextBtn = document.getElementById('cal-next-btn');
-  var timeSection = document.getElementById('vb-time-section');
-  var timeChipsContainer = document.getElementById('vb-time-chips-container');
   var selectionSummary = document.getElementById('booking-selection-summary');
-  var timeBadge = document.getElementById('time-summary-badge');
-  var timeBadgeText = document.getElementById('time-summary-text');
   var guestsWarning = document.getElementById('guests-warning');
   var warningMaxSlots = document.getElementById('warning-max-slots');
 
   function updateFormState() {
     var hasService = !!(serviceSelect && serviceSelect.value);
     var hasDate = !!selectedDate;
-    var hasTime = !!selectedTime;
     var guests = parseInt((guestsInput && guestsInput.value) || '1', 10);
     var isGuestsValid = guests >= 1 && guests <= maxSlotCapacity;
 
     if (confirmBtn) {
-      confirmBtn.disabled = !(hasService && hasDate && hasTime && isGuestsValid);
-    }
-
-    if ((!hasService || !hasDate) && timeSection) {
-      timeSection.style.display = 'none';
+      confirmBtn.disabled = !(hasService && hasDate && isGuestsValid);
     }
 
     // Dynamic helper message
@@ -1555,11 +1552,9 @@
       if (!hasService && !hasDate) {
         selectionSummary.innerHTML = '<span><i class="fa-solid fa-paw" style="color:var(--vb-forest);margin-right:6px;"></i>Select an experience to check availability.</span>';
       } else if (!hasService && hasDate) {
-        selectionSummary.innerHTML = '<span style="color:var(--vb-terracotta);font-weight:700;"><i class="fa-solid fa-arrow-up" style="margin-right:6px;"></i>Date selected. Please choose an experience above to see available times.</span>';
+        selectionSummary.innerHTML = '<span style="color:var(--vb-terracotta);font-weight:700;"><i class="fa-solid fa-arrow-up" style="margin-right:6px;"></i>Date selected. Please choose an experience above.</span>';
       } else if (hasService && !hasDate) {
-        selectionSummary.innerHTML = '<span><i class="fa-solid fa-calendar-days" style="color:var(--vb-forest);margin-right:6px;"></i>Pick an open date to see available times.</span>';
-      } else if (hasService && hasDate && !hasTime) {
-        selectionSummary.innerHTML = '<span><i class="fa-solid fa-clock" style="color:var(--vb-forest);margin-right:6px;"></i>Choose an encounter time slot below.</span>';
+        selectionSummary.innerHTML = '<span><i class="fa-solid fa-calendar-days" style="color:var(--vb-forest);margin-right:6px;"></i>Pick an open date to confirm your booking.</span>';
       } else {
         selectionSummary.innerHTML = '';
       }
@@ -1581,12 +1576,15 @@
       priceSummaryEl.style.display = 'none';
       return;
     }
+    var activePromo = (document.getElementById('final_promotion_code') && document.getElementById('final_promotion_code').value) ||
+                      (document.getElementById('promo_code_input') && document.getElementById('promo_code_input').value) ||
+                      (promotionSelect && promotionSelect.value) || '';
     var params = new URLSearchParams({
       service_id: svcId,
       guests: String(guests),
       date: hiddenDate ? hiddenDate.value : '',
       bundle_id: bundleSelect ? bundleSelect.value : '',
-      promotion_code: promotionSelect ? promotionSelect.value : '',
+      promotion_code: activePromo.trim(),
       loyalty_points: loyaltyInput ? loyaltyInput.value : ''
     });
     if (addOnSelect) Array.prototype.forEach.call(addOnSelect.selectedOptions, function(option) {
@@ -1764,16 +1762,17 @@
       calGrid.appendChild(cell);
     });
 
-    if (selectedDate && data.days[selectedDate] && selectedServiceId) {
-      renderTimeSlots(data.days[selectedDate].slots || []);
-    }
-  }
-
   function selectDate(dayInfo) {
     selectedDate = dayInfo.date;
     if (hiddenDate) hiddenDate.value = selectedDate;
-    selectedTime = '';
-    if (hiddenTime) hiddenTime.value = '';
+    // Default time to park open time (all-day entry, no time slotting)
+    selectedTime = '08:00';
+    if (hiddenTime) hiddenTime.value = selectedTime;
+    if (dayInfo && dayInfo.remaining_capacity != null) {
+      maxSlotCapacity = dayInfo.remaining_capacity;
+      if (guestsInput) guestsInput.max = maxSlotCapacity;
+      validateGuests();
+    }
 
     var allCells = calGrid.querySelectorAll('.vb-cal-day');
     allCells.forEach(function(c) {
@@ -1783,85 +1782,6 @@
         c.classList.add('is-selected');
       }
     });
-
-    if (selectedServiceId) {
-      renderTimeSlots(dayInfo.slots || []);
-      if (window.innerWidth < 768 && timeSection) {
-        setTimeout(function() {
-          timeSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 100);
-      }
-    } else {
-      if (timeSection) timeSection.style.display = 'none';
-    }
-
-    updateFormState();
-  }
-
-  function renderTimeSlots(slots) {
-    if (!timeSection || !timeChipsContainer) return;
-
-    if (!slots || slots.length === 0) {
-      timeSection.style.display = 'none';
-      return;
-    }
-
-    timeSection.style.display = 'block';
-    timeChipsContainer.innerHTML = '';
-    if (timeBadge) timeBadge.style.display = 'none';
-
-    slots.forEach(function(slot) {
-      var chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className = 'vb-time-chip';
-      if (!slot.is_available) {
-        chip.classList.add('is-full');
-        chip.disabled = true;
-        chip.setAttribute('aria-disabled', 'true');
-      } else if (selectedTime && slot.time === selectedTime) {
-        chip.classList.add('is-selected');
-      }
-
-      var timeSpan = document.createElement('span');
-      timeSpan.className = 'vb-chip-time';
-      timeSpan.textContent = slot.time;
-      chip.appendChild(timeSpan);
-
-      var subSpan = document.createElement('span');
-      subSpan.className = 'vb-chip-sub';
-      subSpan.textContent = slot.is_available ? (slot.remaining + ' slots left') : 'Full';
-      chip.appendChild(subSpan);
-
-      chip.setAttribute('aria-label', slot.time + ' - ' + (slot.is_available ? (slot.remaining + ' slots available') : 'Fully Booked'));
-
-      if (slot.is_available) {
-        chip.addEventListener('click', function() {
-          selectTime(slot, chip);
-        });
-      }
-
-      timeChipsContainer.appendChild(chip);
-    });
-  }
-
-  function selectTime(slot, chipEl) {
-    selectedTime = slot.time;
-    if (hiddenTime) hiddenTime.value = selectedTime;
-    maxSlotCapacity = slot.remaining;
-
-    var allChips = timeChipsContainer.querySelectorAll('.vb-time-chip');
-    allChips.forEach(function(c) { c.classList.remove('is-selected'); });
-    chipEl.classList.add('is-selected');
-
-    if (timeBadge && timeBadgeText) {
-      timeBadge.style.display = 'inline-flex';
-      timeBadgeText.textContent = slot.time + ' (' + slot.remaining + ' slots available)';
-    }
-
-    if (guestsInput) {
-      guestsInput.max = slot.remaining;
-      validateGuests();
-    }
 
     updateFormState();
   }
@@ -2002,6 +1922,108 @@
       fetchAvailability(currentYear, currentMonth, selectedServiceId);
     });
   }
+
+  // Promotion / Promo Code Entry & Paste Handlers
+  (function initPromoCodeHandlers() {
+    var promoInput = document.getElementById('promo_code_input');
+    var promoPasteBtn = document.getElementById('btn-paste-promo');
+    var promoApplyBtn = document.getElementById('btn-apply-promo');
+    var promoRemoveBtn = document.getElementById('btn-remove-promo');
+    var promoSelect = document.getElementById('new_promotion');
+    var finalPromoCode = document.getElementById('final_promotion_code');
+    var promoStatusMsg = document.getElementById('promo-status-msg');
+    var promoStatusText = document.getElementById('promo-status-text');
+
+    function setPromoCode(code) {
+      code = (code || '').trim().toUpperCase();
+      if (promoInput) promoInput.value = code;
+      if (finalPromoCode) finalPromoCode.value = code;
+      if (promoSelect) {
+        // Try to match dropdown option
+        var matched = false;
+        for (var i = 0; i < promoSelect.options.length; i++) {
+          if (promoSelect.options[i].value.toUpperCase() === code) {
+            promoSelect.selectedIndex = i;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched && !code) promoSelect.selectedIndex = 0;
+      }
+      if (code) {
+        if (promoStatusMsg && promoStatusText) {
+          promoStatusMsg.style.display = 'flex';
+          promoStatusMsg.style.background = '#DCFCE7';
+          promoStatusMsg.style.color = '#166534';
+          promoStatusMsg.style.border = '1px solid #BBF7D0';
+          promoStatusText.innerHTML = '<i class="fa-solid fa-circle-check" style="margin-right:6px;"></i>Code <strong>' + code + '</strong> applied';
+        }
+      } else {
+        if (promoStatusMsg) promoStatusMsg.style.display = 'none';
+        if (promoSelect) promoSelect.selectedIndex = 0;
+      }
+      updatePriceSummary();
+    }
+
+    if (promoPasteBtn) {
+      promoPasteBtn.addEventListener('click', function() {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          navigator.clipboard.readText().then(function(text) {
+            text = (text || '').trim();
+            if (text) {
+              setPromoCode(text);
+            } else if (promoInput) {
+              promoInput.focus();
+            }
+          }).catch(function() {
+            if (promoInput) promoInput.focus();
+          });
+        } else if (promoInput) {
+          promoInput.focus();
+        }
+      });
+    }
+
+    if (promoApplyBtn) {
+      promoApplyBtn.addEventListener('click', function() {
+        var val = (promoInput && promoInput.value) || '';
+        setPromoCode(val);
+      });
+    }
+
+    if (promoInput) {
+      promoInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          setPromoCode(promoInput.value);
+        }
+      });
+      promoInput.addEventListener('input', function() {
+        if (finalPromoCode) finalPromoCode.value = promoInput.value.trim().toUpperCase();
+      });
+    }
+
+    if (promoSelect) {
+      promoSelect.addEventListener('change', function() {
+        setPromoCode(promoSelect.value);
+      });
+    }
+
+    if (promoRemoveBtn) {
+      promoRemoveBtn.addEventListener('click', function() {
+        setPromoCode('');
+      });
+    }
+
+    // Auto-apply promo from URL query string if present (?promo=CODE or ?code=CODE)
+    try {
+      var urlParams = new URLSearchParams(window.location.search);
+      var urlPromo = urlParams.get('promo') || urlParams.get('code') || urlParams.get('promotion_code');
+      if (urlPromo) {
+        setPromoCode(urlPromo);
+      }
+    } catch(e) {}
+  })();
 
   // Initial Load
   document.addEventListener('DOMContentLoaded', function() {

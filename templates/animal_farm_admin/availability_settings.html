@@ -1,25 +1,155 @@
 {% extends "base.html" %}
-{% block title %}Availability Settings{% endblock %}
+{% block title %}Park Availability &amp; Visitor Limit | {{ zoo.name }}{% endblock %}
+
 {% block content %}
-<main class="container" style="max-width:900px;padding:2rem 1rem;">
-  <h1>Availability Settings</h1>
-  <p>These defaults apply to all booking services at {{ zoo.name }}.</p>
-  {% if not can_edit %}<p class="alert alert-warning">Editing requires subscription tier {{ required_tier }} or higher.</p>{% endif %}
-  <form method="post" style="display:grid;gap:1rem;background:#fff;padding:1.5rem;border-radius:12px;">
+<div style="max-width: 860px; margin: 0 auto; padding: 1.5rem 1rem 3rem;">
+
+  <!-- Header Banner -->
+  <div style="background: linear-gradient(135deg, #143823 0%, #1e5233 100%); border-radius: 16px; padding: 1.75rem 2rem; color: #ffffff; margin-bottom: 1.75rem; box-shadow: 0 4px 20px rgba(20,56,35,0.15); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <div style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #86efac; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 6px;">
+        <i class="fa-solid fa-sliders"></i> Park Capacity &amp; Hours
+      </div>
+      <h1 style="font-size: 1.65rem; font-weight: 800; margin: 0 0 0.4rem; color: #ffffff;">Daily Visitor Limit &amp; Availability</h1>
+      <p style="margin: 0; font-size: 0.9rem; color: #cbd5e1; max-width: 580px; line-height: 1.45;">
+        Configure your daily visitor admittance ceiling and operating hours for <strong>{{ zoo.name }}</strong>. Visitors have all-day access with no encounter time limits.
+      </p>
+    </div>
+    <div style="background: rgba(255,255,255,0.12); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 0.85rem 1.25rem; text-align: center;">
+      <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: #e2e8f0; font-weight: 600;">Current Daily Limit</div>
+      <div style="font-size: 1.75rem; font-weight: 800; color: #ffffff;">{{ daily_visitor_limit or 50 }} <span style="font-size: 0.85rem; font-weight: 500; color: #86efac;">visitors/day</span></div>
+    </div>
+  </div>
+
+  {% if not can_edit %}
+  <div style="background: #fef3c7; border: 1.5px solid #fde68a; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 12px; color: #92400e;">
+    <i class="fa-solid fa-lock" style="font-size: 1.25rem;"></i>
+    <div>
+      <strong>Editing locked:</strong> Updating availability and capacity requires an active Tier {{ required_tier }} subscription or higher.
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Policy Badge -->
+  <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 0.85rem 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; color: #166534; font-size: 0.88rem;">
+    <i class="fa-solid fa-infinity" style="font-size: 1.15rem; color: #16a34a;"></i>
+    <div>
+      <strong>All-Day Access Policy:</strong> Encounter time limits are disabled. Guests can arrive at their convenience and enjoy the park for the full operating day up to your daily capacity ceiling.
+    </div>
+  </div>
+
+  <form method="post" style="display: flex; flex-direction: column; gap: 1.5rem;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <label>Opening time <input type="time" name="opening_time" value="{{ service.opening_time if service else '08:00' }}" required></label>
-    <label>Closing time <input type="time" name="closing_time" value="{{ service.closing_time if service else '17:00' }}" required></label>
-    <label>Slot duration (minutes) <input type="number" name="slot_duration_minutes" min="30" value="{{ service.slot_duration_minutes if service else 60 }}" required></label>
-    <label>Daily capacity <input type="number" name="daily_capacity" min="1" value="{{ service.daily_capacity if service else 50 }}" required></label>
-    <label>Slot capacity <input type="number" name="slot_capacity" min="1" value="{{ service.slot_capacity if service else 15 }}" required></label>
-    <label>Maximum advance booking days <input type="number" name="max_advance_days" min="1" value="{{ settings.max_advance_days }}" required></label>
-    <fieldset>
-      <legend>Closed days</legend>
-      {% for day, label in [(0,'Monday'),(1,'Tuesday'),(2,'Wednesday'),(3,'Thursday'),(4,'Friday'),(5,'Saturday'),(6,'Sunday')] %}
-      <label style="margin-right:1rem;"><input type="checkbox" name="closure_days" value="{{ day }}" {% if day in settings.closure_days %}checked{% endif %}> {{ label }}</label>
-      {% endfor %}
-    </fieldset>
-    <button type="submit" {% if not can_edit %}disabled{% endif %}>Save availability</button>
+
+    <!-- Card 1: Daily Visitor Limit (Primary Setting) -->
+    <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 1.5rem 1.75rem; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+        <div style="width: 36px; height: 36px; border-radius: 10px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <div>
+          <h2 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0;">Limit of Visitors in a Day</h2>
+          <div style="font-size: 0.82rem; color: #64748b;">Maximum total guests admitted per calendar day across all bookings</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; align-items: center;">
+        <div>
+          <label for="daily_capacity" style="display: block; font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 0.4rem;">
+            Daily Visitor Limit <span style="color: #dc2626;">*</span>
+          </label>
+          <div style="position: relative;">
+            <input type="number" id="daily_capacity" name="daily_capacity" min="1" max="10000"
+                   value="{{ daily_visitor_limit or 50 }}" required
+                   style="width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; font-size: 1.1rem; font-weight: 800; color: #0f172a; border: 2px solid #cbd5e1; border-radius: 10px; box-sizing: border-box; outline: none; transition: border-color 0.2s;"
+                   onfocus="this.style.borderColor='#143823'" onblur="this.style.borderColor='#cbd5e1'">
+            <i class="fa-solid fa-person-shelter" style="position: absolute; left: 0.9rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 1rem;"></i>
+          </div>
+          <small style="color: #64748b; font-size: 0.78rem; display: block; margin-top: 0.35rem;">
+            Online booking requests will automatically close once this limit is reached for a given date.
+          </small>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 1rem; font-size: 0.82rem; color: #475569; line-height: 1.5;">
+          <div style="font-weight: 700; color: #0f172a; margin-bottom: 0.25rem;"><i class="fa-solid fa-lightbulb" style="color: #eab308; margin-right: 4px;"></i> Recommended Guidelines</div>
+          Ensure this limit reflects your staff-to-animal ratio and trail capacity for optimal guest experience and animal welfare.
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Operating Hours & Booking Window -->
+    <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 1.5rem 1.75rem; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+        <div style="width: 36px; height: 36px; border-radius: 10px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+          <i class="fa-regular fa-clock"></i>
+        </div>
+        <div>
+          <h2 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0;">Park Operating Hours &amp; Booking Horizon</h2>
+          <div style="font-size: 0.82rem; color: #64748b;">Daily park gates schedule and booking horizon</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem;">
+        <div>
+          <label for="opening_time" style="display: block; font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 0.4rem;">
+            Gates Open (Opening Time) <span style="color: #dc2626;">*</span>
+          </label>
+          <input type="time" id="opening_time" name="opening_time" value="{{ service.opening_time if service and service.opening_time else '08:00' }}" required
+                 style="width: 100%; padding: 0.75rem 1rem; font-size: 0.95rem; font-weight: 700; color: #0f172a; border: 1.5px solid #cbd5e1; border-radius: 10px; box-sizing: border-box;">
+        </div>
+
+        <div>
+          <label for="closing_time" style="display: block; font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 0.4rem;">
+            Gates Close (Closing Time) <span style="color: #dc2626;">*</span>
+          </label>
+          <input type="time" id="closing_time" name="closing_time" value="{{ service.closing_time if service and service.closing_time else '17:00' }}" required
+                 style="width: 100%; padding: 0.75rem 1rem; font-size: 0.95rem; font-weight: 700; color: #0f172a; border: 1.5px solid #cbd5e1; border-radius: 10px; box-sizing: border-box;">
+        </div>
+
+        <div>
+          <label for="max_advance_days" style="display: block; font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 0.4rem;">
+            Advance Booking Window (Days) <span style="color: #dc2626;">*</span>
+          </label>
+          <input type="number" id="max_advance_days" name="max_advance_days" min="1" max="365" value="{{ settings.max_advance_days or 90 }}" required
+                 style="width: 100%; padding: 0.75rem 1rem; font-size: 0.95rem; font-weight: 700; color: #0f172a; border: 1.5px solid #cbd5e1; border-radius: 10px; box-sizing: border-box;">
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Weekly Closure Days -->
+    <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 1.5rem 1.75rem; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+        <div style="width: 36px; height: 36px; border-radius: 10px; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+          <i class="fa-regular fa-calendar-xmark"></i>
+        </div>
+        <div>
+          <h2 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0;">Weekly Closed Days</h2>
+          <div style="font-size: 0.82rem; color: #64748b;">Days of the week when the park is closed to public visitors (e.g., maintenance/rest days)</div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+        {% for day, label in [(0,'Monday'),(1,'Tuesday'),(2,'Wednesday'),(3,'Thursday'),(4,'Friday'),(5,'Saturday'),(6,'Sunday')] %}
+        <label style="display: inline-flex; align-items: center; gap: 8px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 0.65rem 1.1rem; font-weight: 700; font-size: 0.88rem; color: #334155; cursor: pointer; transition: all 0.2s;">
+          <input type="checkbox" name="closure_days" value="{{ day }}" {% if day in settings.closure_days %}checked{% endif %}
+                 style="accent-color: #dc2626; width: 16px; height: 16px; cursor: pointer;">
+          <span>{{ label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Submit Section -->
+    <div style="display: flex; justify-content: flex-end; gap: 1rem; align-items: center;">
+      <a href="{{ url_for('animal_farm_admin.services_management') }}" style="color: #64748b; font-weight: 700; text-decoration: none; font-size: 0.9rem;">
+        Back to Services
+      </a>
+      <button type="submit" {% if not can_edit %}disabled{% endif %}
+              style="background: #143823; color: #ffffff; border: none; border-radius: 12px; padding: 0.85rem 2rem; font-weight: 800; font-size: 0.95rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(20,56,35,0.25); opacity: {% if not can_edit %}0.6{% else %}1{% endif %};">
+        <i class="fa-solid fa-floppy-disk"></i> Save Availability &amp; Visitor Limit
+      </button>
+    </div>
   </form>
-</main>
+
+</div>
 {% endblock %}

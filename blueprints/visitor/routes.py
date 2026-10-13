@@ -657,7 +657,7 @@ def my_bookings():
             flash("Selected service was not found.", "error")
             return redirect(url_for("visitor.my_bookings"))
         bundle = db.session.get(BookingBundle, bundle_id) if bundle_id else None
-        promotion_code = (request.form.get("promotion_code") or "").strip()
+        promotion_code = (request.form.get("promotion_code") or request.form.get("promotion_code_select") or "").strip().upper()
         promotion = Promotion.query.filter_by(code=promotion_code).first() if promotion_code else None
         add_ons = Service.query.filter(
             Service.id.in_(add_on_ids),
@@ -671,8 +671,7 @@ def my_bookings():
             flash("Please choose a date.", "error")
             return redirect(url_for("visitor.my_bookings"))
         if not time:
-            flash("Please choose a time.", "error")
-            return redirect(url_for("visitor.my_bookings"))
+            time = (service.opening_time or "09:00 AM").strip()
         if guests < 1:
             guests = 1
         try:

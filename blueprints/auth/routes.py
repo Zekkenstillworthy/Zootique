@@ -319,6 +319,12 @@ def register_admin_step1():
         registration.establishment_contact_email = contact_email
         registration.establishment_contact_phone = contact_phone or None
 
+        session['reg_registration_id'] = registration.id
+        session['reg_zoo_name'] = zoo_name
+        session['reg_zoo_type'] = zoo_type
+        session['reg_zoo_location'] = zoo_location
+
+        upload_errors = []
         for document_key, (label, column_name) in REGISTRATION_DOCUMENTS.items():
             document = request.files.get(document_key)
             remove_document = request.form.get(f'remove_{document_key}') == '1'
@@ -328,26 +334,23 @@ def register_admin_step1():
                 current_url = None
             if document and document.filename:
                 if not _valid_registration_document(document):
-                    db.session.rollback()
-                    flash(f'{label} must be a PDF, JPG, or PNG file no larger than 8 MB.', 'error')
-                    return redirect(url_for('auth.register_admin_step1'))
+                    upload_errors.append(f'{label} must be a PDF, JPG, or PNG file no larger than 8 MB.')
+                    continue
                 uploaded_url = save_uploaded_document(document, f'establishment_registrations/{registration.id}')
                 if not uploaded_url:
-                    db.session.rollback()
-                    flash(f'Unable to upload {label}. Please try again.', 'error')
-                    return redirect(url_for('auth.register_admin_step1'))
+                    upload_errors.append(f'Unable to upload {label}. Please try again or check cloud storage settings.')
+                    continue
                 setattr(registration, column_name, uploaded_url)
             elif not current_url:
-                db.session.rollback()
-                flash('Please attach all four required establishment documents.', 'error')
-                return redirect(url_for('auth.register_admin_step1'))
+                upload_errors.append(f'Please attach {label}.')
 
         db.session.commit()
-        session['reg_registration_id'] = registration.id
 
-        session['reg_zoo_name'] = zoo_name
-        session['reg_zoo_type'] = zoo_type
-        session['reg_zoo_location'] = zoo_location
+        if upload_errors:
+            for err in upload_errors:
+                flash(err, 'error')
+            return redirect(url_for('auth.register_admin_step1'))
+
         return redirect(url_for('auth.register_admin_step2'))
 
     types = EstablishmentType.query.filter_by(is_active=True).order_by(EstablishmentType.name.asc()).all()

@@ -23,14 +23,17 @@ class BookingAuthorizationError(BookingServiceError):
 SUPPORTED_PAYMENT_METHODS = {"card", "gcash", "maya", "cash_on_arrival"}
 
 
-def _time_to_minutes(value: str) -> int:
+def _time_to_minutes(value: str, default_minutes: int = 540) -> int:
+    val = (value or "").strip()
+    if not val or val.lower() in {"all-day", "all day", "flexible", "all-day pass"}:
+        return default_minutes
     for fmt in ("%I:%M %p", "%H:%M"):
         try:
-            parsed = datetime.strptime(value.strip().upper(), fmt)
+            parsed = datetime.strptime(val.upper(), fmt)
             return parsed.hour * 60 + parsed.minute
         except ValueError:
             continue
-    raise BookingValidationError("Booking time must be a valid service time slot.")
+    return default_minutes
 
 
 def reserve_booking_capacity(*, service, booking_date: date, booking_time: str, guests: int) -> None:
@@ -41,14 +44,11 @@ def reserve_booking_capacity(*, service, booking_date: date, booking_time: str, 
         raise BookingValidationError("Guests must be at least one.")
     opening = (service.opening_time or "08:00").strip()
     closing = (service.closing_time or "17:00").strip()
-    selected_minutes = _time_to_minutes(booking_time)
-    opening_minutes = _time_to_minutes(opening)
-    closing_minutes = _time_to_minutes(closing)
-    if selected_minutes < opening_minutes or selected_minutes >= closing_minutes:
+    opening_minutes = _time_to_minutes(opening, 480)
+    closing_minutes = _time_to_minutes(closing, 1020)
+    selected_minutes = _time_to_minutes(booking_time, opening_minutes)
+    if selected_minutes < opening_minutes or selected_minutes > closing_minutes:
         raise BookingValidationError("Selected time is outside the service operating hours.")
-    duration = max(30, int(service.slot_duration_minutes or 60))
-    if (selected_minutes - opening_minutes) % duration:
-        raise BookingValidationError("Selected time is not a valid service time slot.")
 
     locked_service = db.session.query(type(service)).filter_by(id=service.id).with_for_update().first()
     if not locked_service:
@@ -63,17 +63,7 @@ def reserve_booking_capacity(*, service, booking_date: date, booking_time: str, 
     daily_booked = sum(int(booking.guests or 0) for booking in bookings)
     daily_capacity = int(locked_service.daily_capacity or 0)
     if daily_capacity and daily_booked + guests > daily_capacity:
-        raise BookingValidationError("There is not enough remaining capacity for this date.")
-
-    slot_capacity = int(locked_service.slot_capacity or 0)
-    slot_booked = 0
-    selected_normalized = booking_time.replace(" ", "").lower()
-    for booking in bookings:
-        existing = str(booking.time or "").replace(" ", "").lower()
-        if existing == selected_normalized:
-            slot_booked += int(booking.guests or 0)
-    if slot_capacity and slot_booked + guests > slot_capacity:
-        raise BookingValidationError("There is not enough remaining capacity for this time slot.")
+        raise BookingValidationError("Daily visitor limit reached for this date. There is not enough remaining capacity.")
 
 
 def _normalize_payment_method(method: str | None) -> str:
@@ -95,8 +85,9 @@ def validate_booking_details(*, date_value: str, time_value: str, guests: int) -
 
     if visit_date < date.today():
         raise BookingValidationError("Booking date cannot be in the past.")
+    # Arrival time defaults to opening time if not provided
     if not (time_value or "").strip():
-        raise BookingValidationError("Booking time is required.")
+        time_value = "09:00 AM"
     if guests < 1 or guests > 50:
         raise BookingValidationError("Guests must be between 1 and 50.")
 

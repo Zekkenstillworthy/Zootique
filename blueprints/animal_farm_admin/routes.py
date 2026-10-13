@@ -238,35 +238,35 @@ def availability_settings():
             datetime.strptime(closing, '%H:%M')
             if opening >= closing:
                 raise ValueError('Closing time must be later than opening time.')
-            slot_duration = int(request.form.get('slot_duration_minutes') or 60)
-            daily_capacity = int(request.form.get('daily_capacity') or 0)
-            slot_capacity = int(request.form.get('slot_capacity') or 0)
+            daily_capacity = int(request.form.get('daily_capacity') or 50)
             max_advance_days = int(request.form.get('max_advance_days') or 90)
-            if slot_duration < 30 or daily_capacity < 1 or slot_capacity < 1 or max_advance_days < 1:
-                raise ValueError('Duration, capacities, and booking window must be positive.')
+            if daily_capacity < 1 or max_advance_days < 1:
+                raise ValueError('Daily visitor limit and advance booking days must be positive.')
             closure_days = sorted({int(value) for value in request.form.getlist('closure_days') if value.isdigit() and 0 <= int(value) <= 6})
             for service in services:
                 service.opening_time = opening
                 service.closing_time = closing
-                service.slot_duration_minutes = slot_duration
                 service.daily_capacity = daily_capacity
-                service.slot_capacity = slot_capacity
+                service.slot_capacity = daily_capacity
             save_zoo_setting(zoo.id, 'availability', {
                 'closure_days': closure_days,
                 'max_advance_days': max_advance_days,
+                'daily_capacity': daily_capacity,
             })
             db.session.commit()
-            flash('Availability settings updated.', 'success')
+            flash('Daily visitor limit and availability settings updated successfully.', 'success')
         except (TypeError, ValueError) as exc:
             db.session.rollback()
             flash(str(exc), 'error')
     settings = get_availability_settings(zoo.id)
     reference = services[0] if services else None
+    daily_visitor_limit = (reference.daily_capacity if reference and reference.daily_capacity else settings.get('daily_capacity', 50))
     return render_template(
         'animal_farm_admin/availability_settings.html',
         zoo=zoo,
         service=reference,
         settings=settings,
+        daily_visitor_limit=daily_visitor_limit,
         can_edit=can_edit_feature(zoo, 'availability_settings'),
         required_tier=FEATURE_TIERS.get('availability_settings', 1),
     )
