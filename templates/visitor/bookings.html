@@ -1679,11 +1679,14 @@
         currentYear = data.year;
         currentMonth = data.month_number;
         if (selectedDate && (!data.days[selectedDate] || !data.days[selectedDate].is_selectable)) {
-          selectedDate = '';
-          selectedTime = '';
-          if (hiddenDate) hiddenDate.value = '';
-          if (hiddenTime) hiddenTime.value = '';
-          if (timeSection) timeSection.style.display = 'none';
+          // If not an event-locked date, reset selection
+          var hasLockedEvent = !!(document.getElementById('banner-event-name') && document.getElementById('event-booking-banner') && document.getElementById('event-booking-banner').style.display !== 'none');
+          if (!hasLockedEvent) {
+            selectedDate = '';
+            selectedTime = '';
+            if (hiddenDate) hiddenDate.value = '';
+            if (hiddenTime) hiddenTime.value = '';
+          }
         }
         renderCalendar(data);
         updateFormState();
