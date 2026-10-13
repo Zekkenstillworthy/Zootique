@@ -1877,9 +1877,10 @@
       }
       syncServiceDropdown();
       selectedServiceId = this.value;
-      selectedTime = '';
-      if (hiddenTime) hiddenTime.value = '';
-      if (timeSection) timeSection.style.display = 'none';
+      if (!selectedTime) {
+        selectedTime = '08:00';
+        if (hiddenTime) hiddenTime.value = '08:00';
+      }
       currentMonthData = null;
       fetchAvailability(currentYear, currentMonth, selectedServiceId);
       updateFormState();
@@ -2059,6 +2060,8 @@
       });
     }
 
+    window.setBookingPromoCode = setPromoCode;
+
     // Auto-apply promo from URL query string if present (?promo=CODE or ?code=CODE)
     try {
       var urlParams = new URLSearchParams(window.location.search);
@@ -2195,6 +2198,15 @@
       selectedServiceId = serviceSelect.value;
     }
     fetchAvailability(currentYear, currentMonth, selectedServiceId);
+
+    // 3. Process Promotion code parameter
+    var urlPromo = urlParams.get('promo') || urlParams.get('code') || urlParams.get('promotion_code');
+    if (urlPromo && window.setBookingPromoCode) {
+      window.setBookingPromoCode(urlPromo);
+    } else if (document.getElementById('final_promotion_code') && document.getElementById('final_promotion_code').value && window.setBookingPromoCode) {
+      window.setBookingPromoCode(document.getElementById('final_promotion_code').value);
+    }
+
     updateFormState();
 
     // 3. Smooth scroll down to booking form if navigated via parameters or anchor

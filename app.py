@@ -126,13 +126,21 @@ def create_app() -> Flask:
 
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    # pool_pre_ping recycles dead connections; pool_size/max_overflow kept small
-    # because Vercel serverless functions are short-lived.
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        "pool_pre_ping": True,
-        "pool_size": 1,
-        "max_overflow": 0,
-    }
+    # pool_pre_ping recycles dead connections; pool_size/max_overflow sized to support concurrent requests.
+    if env_name in {"development", "dev", "testing", "test"}:
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "pool_pre_ping": True,
+            "pool_size": 10,
+            "max_overflow": 20,
+            "pool_recycle": 300,
+        }
+    else:
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "pool_pre_ping": True,
+            "pool_size": 5,
+            "max_overflow": 10,
+            "pool_recycle": 300,
+        }
     app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "uploads")
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
