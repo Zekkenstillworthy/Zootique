@@ -318,8 +318,10 @@
 
 <script>
 // ── Modal helpers ──
-const overlay  = document.getElementById('adminModalOverlay');
-const modal    = document.getElementById('adminModal');
+// IMPORTANT: The .animate parent has CSS transform which breaks position:fixed.
+// We teleport the modal to <body> to escape that stacking context.
+const overlay = document.getElementById('adminModalOverlay');
+document.body.appendChild(overlay);
 
 function openAdminModal(user) {
   var isEdit = user && user.id;
