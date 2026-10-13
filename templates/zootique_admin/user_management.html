@@ -10,12 +10,118 @@
   {% if u.status == 'Active' %}{% set ns.active = ns.active + 1 %}{% else %}{% set ns.suspended = ns.suspended + 1 %}{% endif %}
 {% endfor %}
 
+<!-- ── Modal Styles ── -->
+<style>
+  .um-modal-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(10, 24, 15, 0.55);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 1rem;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.22s ease;
+  }
+  .um-modal-overlay.open {
+    opacity: 1; pointer-events: all;
+  }
+  .um-modal {
+    background: #fff;
+    border-radius: 20px;
+    width: 100%; max-width: 680px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 64px rgba(10,24,15,0.28);
+    transform: translateY(24px) scale(0.97);
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.22s ease;
+    opacity: 0;
+  }
+  .um-modal-overlay.open .um-modal {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  .um-modal-header {
+    background: linear-gradient(135deg, #143823 0%, #1e5c3a 100%);
+    border-radius: 20px 20px 0 0;
+    padding: 1.4rem 1.75rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  }
+  .um-modal-header-left { display: flex; align-items: center; gap: 0.75rem; }
+  .um-modal-header-icon {
+    width: 42px; height: 42px; border-radius: 11px;
+    background: rgba(255,255,255,0.12);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1rem; flex-shrink: 0;
+  }
+  .um-modal-header h2 { font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0 0 0.15rem; }
+  .um-modal-header p  { font-size: 0.78rem; color: rgba(255,255,255,0.6); margin: 0; }
+  .um-modal-badge {
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+    color: #fff; font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.08em; padding: 0.25rem 0.65rem; border-radius: 100px;
+  }
+  .um-modal-close {
+    background: rgba(255,255,255,0.12); border: none; border-radius: 10px;
+    width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.75); font-size: 1rem; cursor: pointer; flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+  }
+  .um-modal-close:hover { background: rgba(255,255,255,0.22); color: #fff; }
+  .um-modal-body { padding: 1.75rem; }
+  .um-modal-footer {
+    padding: 1.25rem 1.75rem;
+    border-top: 1px solid #f0ece5;
+    display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem;
+  }
+  .um-section-label {
+    font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.09em; color: #667269;
+    display: flex; align-items: center; gap: 0.4rem;
+    margin-bottom: 1rem; padding-bottom: 0.6rem;
+    border-bottom: 1px solid #f0ece5;
+  }
+  .um-grid-2 {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+  }
+  .um-full { grid-column: 1 / -1; }
+  .um-field label {
+    display: block; font-size: 0.78rem; font-weight: 700; color: #143823;
+    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;
+  }
+  .um-field .zf-req { color: #C85A32; }
+  .um-btn-cancel {
+    padding: 0.6rem 1.2rem;
+    border: 1.5px solid #E8E2D8; border-radius: 10px;
+    background: none; font-size: 0.88rem; font-weight: 700;
+    color: #667269; cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    text-decoration: none; display: inline-flex; align-items: center;
+  }
+  .um-btn-cancel:hover { background: #f9f5ef; border-color: #ccc; }
+  .um-btn-save {
+    padding: 0.6rem 1.4rem;
+    background: #143823; color: #fff;
+    border: none; border-radius: 10px;
+    font-size: 0.88rem; font-weight: 800;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
+    box-shadow: 0 4px 14px rgba(20,56,35,0.25);
+    transition: background 0.15s, transform 0.15s;
+  }
+  .um-btn-save:hover { background: #0D2617; transform: translateY(-1px); }
+  @media (max-width: 600px) {
+    .um-grid-2 { grid-template-columns: 1fr; }
+    .um-full { grid-column: unset; }
+  }
+</style>
+
+<!-- ── Page Header ── -->
 <div class="zf-page-header">
   <div class="zf-page-title-group">
     <h2 class="zf-page-title">Personnel &amp; Administrator Directory</h2>
     <p class="zf-page-subtitle">Manage global access and establishment permissions across all accredited wildlife facilities.</p>
   </div>
-  <a class="btn btn-primary" href="#sa_user_form"><i class="fa-solid fa-user-plus"></i> Add Administrator</a>
+  <button class="btn btn-primary" id="btnOpenAddModal" onclick="openAdminModal()">
+    <i class="fa-solid fa-user-plus"></i> Add Administrator
+  </button>
 </div>
 
 <!-- Stats Strip -->
@@ -84,9 +190,17 @@
             </td>
             <td style="text-align:right; padding-right:16px;">
               <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
-                <a class="zf-icon-btn" href="{{ url_for('zootique_admin.user_management', edit_user=u.id) }}#sa_user_form" title="Edit Administrator">
+                <!-- Edit button opens modal pre-filled -->
+                <button class="zf-icon-btn" title="Edit Administrator"
+                  onclick="openAdminModal({
+                    id: {{ u.id }},
+                    full_name: {{ u.full_name | tojson }},
+                    email: {{ u.email | tojson }},
+                    zoo_id: {{ u.zoo_id | tojson if u.zoo_id else 'null' }},
+                    status: {{ (u.status or 'Active') | tojson }}
+                  })">
                   <i class="fa-solid fa-pen"></i>
-                </a>
+                </button>
 
                 <form method="post" action="{{ url_for('zootique_admin.reset_user_password', user_id=u.id) }}" style="display:inline;" onsubmit="return confirm('Generate a temporary password reset?');">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -113,7 +227,7 @@
               <div class="zf-empty-state">
                 <i class="fa-solid fa-users-slash zf-empty-icon"></i>
                 <div class="zf-empty-title">No Administrators Found</div>
-                <div class="zf-empty-desc">Invite or add Zoo Administrators below to delegate park operations.</div>
+                <div class="zf-empty-desc">Click "Add Administrator" to create the first Zoo Administrator account.</div>
               </div>
             </td>
           </tr>
@@ -124,83 +238,161 @@
   </div>
 </div>
 
-<!-- Add / Edit Admin Form Card -->
-<div class="zf-form-card" id="sa_user_form" style="scroll-margin-top: 90px; max-width: 860px;">
-  <div class="zf-form-header">
-    <h2 class="zf-form-title">
-      <i class="fa-solid fa-user-shield"></i>
-      <span>{% if edit_user %}Edit Zoo Administrator{% else %}Add New Zoo Administrator{% endif %}</span>
-    </h2>
-    <span class="zf-form-badge">{% if edit_user %}Edit{% else %}New{% endif %}</span>
-  </div>
-
-  <form method="post" action="{{ url_for('zootique_admin.save_user') }}">
-    <div class="zf-form-body">
-      {% if edit_user %}
-        <input type="hidden" name="user_id" value="{{ edit_user.id }}">
-      {% endif %}
-
-      <div class="zf-section">
-        <div class="zf-section-label">
-          <i class="fa-solid fa-id-card"></i> Administrator Credentials
+<!-- ══════════════════════════════════════════
+     MODAL: Add / Edit Zoo Administrator
+════════════════════════════════════════════ -->
+<div class="um-modal-overlay" id="adminModalOverlay" role="dialog" aria-modal="true" aria-labelledby="adminModalTitle">
+  <div class="um-modal" id="adminModal">
+    <div class="um-modal-header">
+      <div class="um-modal-header-left">
+        <div class="um-modal-header-icon">
+          <i class="fa-solid fa-user-shield"></i>
         </div>
-        <div class="zf-grid-2">
-          <div class="zf-field">
-            <label class="zf-label" for="sa_usr_fullname">Full Name <span class="zf-req">*</span></label>
-            <input type="text" id="sa_usr_fullname" name="full_name" class="zf-control" value="{{ edit_user.full_name if edit_user else '' }}" placeholder="e.g. Roberto Silva" required>
-          </div>
-          <div class="zf-field">
-            <label class="zf-label" for="sa_usr_email">Email Address <span class="zf-req">*</span></label>
-            <input type="email" id="sa_usr_email" name="email" class="zf-control" value="{{ edit_user.email if edit_user else '' }}" placeholder="admin@park.ph" required>
-          </div>
-          <div class="zf-field">
-            <label class="zf-label" for="sa_usr_zoo">Assigned Zoo Facility <span class="zf-req">*</span></label>
-            <select id="sa_usr_zoo" name="zoo_id" class="zf-control" required>
-              <option value="">Select Zoo Facility...</option>
-              {% for z in zoos %}
-                <option value="{{ z.id }}" {% if edit_user and edit_user.zoo_id == z.id %}selected{% endif %}>{{ z.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="zf-field">
-            <label class="zf-label" for="sa_usr_status">Account Status</label>
-            <select id="sa_usr_status" name="status" class="zf-control">
-              <option value="active" {% if not edit_user or (edit_user.status or '')|lower == 'active' %}selected{% endif %}>Active</option>
-              <option value="suspended" {% if edit_user and (edit_user.status or '')|lower == 'suspended' %}selected{% endif %}>Suspended</option>
-            </select>
-          </div>
-          <div class="zf-field zf-full">
-            <label class="zf-label" for="sa_usr_pwd">Password {% if edit_user %}(Optional){% else %}<span class="zf-req">*</span>{% endif %}</label>
-            <input type="password" id="sa_usr_pwd" name="password" class="zf-control" placeholder="{% if edit_user %}Leave blank to preserve existing password{% else %}Set initial secure password{% endif %}" {% if not edit_user %}required{% endif %}>
-          </div>
+        <div>
+          <h2 id="adminModalTitle">Add New Zoo Administrator</h2>
+          <p id="adminModalSubtitle">Fill in the details to create a new administrator account.</p>
         </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.6rem;">
+        <span class="um-modal-badge" id="adminModalBadge">New</span>
+        <button class="um-modal-close" onclick="closeAdminModal()" aria-label="Close modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
     </div>
 
-    <div class="zf-form-footer">
-      {% if edit_user %}
-        <a class="zf-btn-cancel" href="{{ url_for('zootique_admin.user_management') }}" style="text-decoration:none;">Cancel</a>
-      {% endif %}
-      <button class="zf-btn-primary" type="submit">
-        <i class="fa-solid fa-floppy-disk"></i> {% if edit_user %}Update Administrator{% else %}Create Administrator{% endif %}
-      </button>
-    </div>
-  </form>
+    <form method="post" action="{{ url_for('zootique_admin.save_user') }}" id="adminModalForm">
+      <div class="um-modal-body">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="user_id" id="modal_user_id" value="">
+
+        <div class="um-section-label">
+          <i class="fa-solid fa-id-card"></i> Administrator Credentials
+        </div>
+
+        <div class="um-grid-2">
+          <div class="zf-field um-field">
+            <label for="modal_fullname">Full Name <span class="zf-req">*</span></label>
+            <input type="text" id="modal_fullname" name="full_name" class="zf-control"
+              placeholder="e.g. Roberto Silva" required>
+          </div>
+          <div class="zf-field um-field">
+            <label for="modal_email">Email Address <span class="zf-req">*</span></label>
+            <input type="email" id="modal_email" name="email" class="zf-control"
+              placeholder="admin@park.ph" required>
+          </div>
+          <div class="zf-field um-field">
+            <label for="modal_zoo">Assigned Zoo Facility <span class="zf-req">*</span></label>
+            <select id="modal_zoo" name="zoo_id" class="zf-control" required>
+              <option value="">Select Zoo Facility...</option>
+              {% for z in zoos %}
+                <option value="{{ z.id }}">{{ z.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="zf-field um-field">
+            <label for="modal_status">Account Status</label>
+            <select id="modal_status" name="status" class="zf-control">
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </div>
+          <div class="zf-field um-field um-full">
+            <label for="modal_pwd">Password <span class="zf-req" id="modal_pwd_req">*</span></label>
+            <input type="password" id="modal_pwd" name="password" class="zf-control"
+              placeholder="Set initial secure password">
+          </div>
+        </div>
+      </div>
+
+      <div class="um-modal-footer">
+        <button type="button" class="um-btn-cancel" onclick="closeAdminModal()">Cancel</button>
+        <button type="submit" class="um-btn-save">
+          <i class="fa-solid fa-floppy-disk"></i>
+          <span id="adminModalSubmitLabel">Create Administrator</span>
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script>
-// Client-side search filtering
+// ── Modal helpers ──
+const overlay  = document.getElementById('adminModalOverlay');
+const modal    = document.getElementById('adminModal');
+
+function openAdminModal(user) {
+  var isEdit = user && user.id;
+
+  // Titles / badges
+  document.getElementById('adminModalTitle').textContent    = isEdit ? 'Edit Zoo Administrator' : 'Add New Zoo Administrator';
+  document.getElementById('adminModalSubtitle').textContent = isEdit ? 'Update this administrator\'s details below.' : 'Fill in the details to create a new administrator account.';
+  document.getElementById('adminModalBadge').textContent    = isEdit ? 'Edit' : 'New';
+  document.getElementById('adminModalSubmitLabel').textContent = isEdit ? 'Update Administrator' : 'Create Administrator';
+
+  // Reset form
+  document.getElementById('adminModalForm').reset();
+
+  if (isEdit) {
+    document.getElementById('modal_user_id').value = user.id;
+    document.getElementById('modal_fullname').value = user.full_name || '';
+    document.getElementById('modal_email').value    = user.email || '';
+    if (user.zoo_id) document.getElementById('modal_zoo').value = user.zoo_id;
+    document.getElementById('modal_status').value   = (user.status || 'Active').toLowerCase();
+    // Password optional on edit
+    document.getElementById('modal_pwd').required = false;
+    document.getElementById('modal_pwd').placeholder = 'Leave blank to keep existing password';
+    document.getElementById('modal_pwd_req').style.display = 'none';
+  } else {
+    document.getElementById('modal_user_id').value  = '';
+    document.getElementById('modal_pwd').required   = true;
+    document.getElementById('modal_pwd').placeholder = 'Set initial secure password';
+    document.getElementById('modal_pwd_req').style.display = '';
+  }
+
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(function() { document.getElementById('modal_fullname').focus(); }, 260);
+}
+
+function closeAdminModal() {
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Close on backdrop click
+overlay.addEventListener('click', function(e) {
+  if (e.target === overlay) closeAdminModal();
+});
+
+// Close on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && overlay.classList.contains('open')) closeAdminModal();
+});
+
+// Auto-open if server redirected with edit_user (Jinja)
+{% if edit_user %}
+openAdminModal({
+  id: {{ edit_user.id }},
+  full_name: {{ edit_user.full_name | tojson }},
+  email: {{ edit_user.email | tojson }},
+  zoo_id: {{ edit_user.zoo_id | tojson if edit_user.zoo_id else 'null' }},
+  status: {{ (edit_user.status or 'Active') | tojson }}
+});
+{% endif %}
+
+// ── Client-side search filtering ──
 const searchInput = document.getElementById('saUserSearch');
-const userTable = document.getElementById('saUserTable');
+const userTable   = document.getElementById('saUserTable');
 if (searchInput && userTable) {
   searchInput.addEventListener('input', function() {
     const q = this.value.toLowerCase().trim();
     const rows = userTable.querySelectorAll('tbody tr');
     rows.forEach(r => {
-      const text = r.textContent.toLowerCase();
-      r.style.display = text.includes(q) ? '' : 'none';
+      r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
     });
   });
 }
 </script>
+
 {% endblock %}
