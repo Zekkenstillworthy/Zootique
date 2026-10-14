@@ -42,6 +42,9 @@ class Zoo(db.Model):
     landing_map_description = db.Column(db.Text, nullable=True)
     landing_map_image_url = db.Column(db.String(500), nullable=True)
     landing_map_updated_at = db.Column(db.DateTime, nullable=True)
+    landing_promo_title = db.Column(db.String(160), nullable=True)
+    landing_promo_description = db.Column(db.Text, nullable=True)
+    landing_promo_image_url = db.Column(db.String(500), nullable=True)
     cancellation_refund_hours = db.Column(db.Integer, nullable=False, default=24)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     

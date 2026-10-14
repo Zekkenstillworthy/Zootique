@@ -215,11 +215,11 @@ def create_app() -> Flask:
                 )
                 hero_zoos.append({
                     "id": zoo.id,
-                    "name": zoo.name,
+                    "name": zoo.landing_promo_title or zoo.name,
                     "type": (zoo.type or "Zoo Park").strip(),
                     "location": zoo.location or "",
-                    "description": zoo.description or "Discover curated wildlife experiences.",
-                    "image_url": zoo.image_url or "",
+                    "description": zoo.landing_promo_description or zoo.description or "Discover curated wildlife experiences.",
+                    "image_url": zoo.landing_promo_image_url or zoo.image_url or "",
                     "rating": round(float(rating_val), 1),
                     "price": float(min_price or 0),
                     "animal_count": int(animal_count or 0),

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}My Assigned Bookings | Staff{% endblock %}
-{% block page_title %}My Assigned Bookings{% endblock %}
+{% block title %}Bookings | Staff{% endblock %}
+{% block page_title %}Bookings{% endblock %}
 
 {% block content %}
 <div style="display:grid; gap:20px;">
@@ -9,7 +9,7 @@
     <div class="stats-grid" style="--stats-cols: 4;">
         <div class="stat-card">
             <div class="stat-icon icon-blue"><i class="fa-solid fa-calendar-check"></i></div>
-            <span class="value">{{ total }}</span><h3>Total Assigned</h3>
+            <span class="value">{{ total }}</span><h3>Total Bookings</h3>
         </div>
         <div class="card-panel">
             <div class="card-header"><h2><i class="fa-solid fa-calendar-day"></i> Today's Roster</h2></div>
@@ -38,7 +38,7 @@
     <!-- Filter & Table Card -->
     <div class="card-panel">
         <div class="card-header">
-            <h2><i class="fa-solid fa-ticket" style="margin-right:8px;"></i> Assigned Bookings — {{ zoo.name }}</h2>
+            <h2><i class="fa-solid fa-ticket" style="margin-right:8px;"></i> Zoo Bookings — {{ zoo.name }}</h2>
             <div class="card-header-actions">
                 <span class="badge badge-role">{{ bookings|length }} Filtered</span>
             </div>
@@ -47,7 +47,7 @@
         <div class="zf-filter-bar">
             <div class="zf-filter-group">
                 <span style="font-size:13px; font-weight:700; color:var(--text);"><i class="fa-solid fa-filter" style="color:var(--primary); margin-right:4px;"></i> Status:</span>
-                {% for s in ['', 'Confirmed', 'Pending', 'Cancelled'] %}
+                {% for s in ['', 'Confirmed', 'Pending', 'Cancelled', 'Finished'] %}
                 <a href="{{ url_for('animal_farm_staff.my_bookings') }}{% if s %}?status={{ s }}{% endif %}"
                    class="btn btn-sm {% if selected_status == s %}btn-primary{% else %}btn-outline{% endif %}"
                    style="border-radius:20px; text-decoration:none;">
@@ -96,6 +96,7 @@
                                 {% if s == 'confirmed' %}<span class="badge badge-confirmed">Confirmed</span>
                                 {% elif s == 'pending' %}<span class="badge badge-pending">Pending</span>
                                 {% elif s == 'cancelled' %}<span class="badge badge-cancelled">Cancelled</span>
+                                {% elif s == 'finished' %}<span class="badge badge-completed">Finished</span>
                                 {% else %}<span class="badge badge-neutral">{{ b.status }}</span>{% endif %}
                             </td>
                             <td style="text-align:right; padding-right:16px;">
@@ -104,6 +105,7 @@
                                         <option value="Pending" {% if (b.status or 'Pending') == 'Pending' %}selected{% endif %}>Pending</option>
                                         <option value="Confirmed" {% if b.status == 'Confirmed' %}selected{% endif %}>Confirmed</option>
                                         <option value="Cancelled" {% if b.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                                        <option value="Finished" {% if b.status == 'Finished' %}selected{% endif %}>Finished</option>
                                     </select>
                                     <button class="btn btn-primary btn-sm" type="submit" style="height:34px;">Update</button>
                                 </form>
@@ -115,7 +117,7 @@
                                 <div class="zf-empty-state">
                                     <i class="fa-regular fa-calendar-xmark zf-empty-icon"></i>
                                     <div class="zf-empty-title">No Bookings Found</div>
-                                    <div class="zf-empty-desc">No bookings have been assigned to your profile{% if selected_status %} with status "{{ selected_status }}"{% endif %}.</div>
+                                    <div class="zf-empty-desc">No bookings have been found for {{ zoo.name }}{% if selected_status %} with status "{{ selected_status }}"{% endif %}.</div>
                                 </div>
                             </td>
                         </tr>

@@ -108,14 +108,14 @@ def my_bookings():
         return redirect(url_for('animal_farm_staff.dashboard'))
 
     selected_status = (request.args.get('status') or '').strip()
-    query = Booking.query.filter_by(zoo_id=zoo.id, assigned_staff_user_id=user.id)
-    if selected_status in {'Confirmed', 'Pending', 'Cancelled'}:
+    query = Booking.query.filter_by(zoo_id=zoo.id)
+    if selected_status in {'Confirmed', 'Pending', 'Cancelled', 'Finished'}:
         query = query.filter_by(status=selected_status)
     else:
         selected_status = ''
 
     bookings = query.order_by(Booking.created_at.desc()).limit(300).all()
-    all_bookings = Booking.query.filter_by(zoo_id=zoo.id, assigned_staff_user_id=user.id).all()
+    all_bookings = Booking.query.filter_by(zoo_id=zoo.id).all()
     today_value = datetime.utcnow().date().isoformat()
     today_bookings = [b for b in all_bookings if (b.date or '') == today_value]
     today_guests = sum(int(b.guests or 0) for b in today_bookings if (b.status or '').lower() not in {'cancelled', 'refunded'})
@@ -153,14 +153,13 @@ def update_assigned_booking_status(booking_id: str):
     booking = Booking.query.filter_by(
         id=booking_id,
         zoo_id=zoo.id,
-        assigned_staff_user_id=user.id,
     ).first()
     if not booking:
-        flash('Assigned booking not found.', 'error')
+        flash('Booking not found.', 'error')
         return redirect(url_for('animal_farm_staff.my_bookings'))
 
     new_status = (request.form.get('status') or '').strip()
-    if new_status not in {'Pending', 'Confirmed', 'Cancelled'}:
+    if new_status not in {'Pending', 'Confirmed', 'Cancelled', 'Finished'}:
         flash('Invalid booking status.', 'error')
         return redirect(url_for('animal_farm_staff.my_bookings'))
 

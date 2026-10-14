@@ -1013,13 +1013,9 @@
                     </button>
                     <div class="nav-dropdown-menu {% if request.endpoint == 'animal_farm_admin.staff_management' %}open{% endif %}"
                         id="afa-staff-dropdown">
-                        <a href="{{ url_for('animal_farm_admin.staff_management') }}?tab=assign" data-sm-tab="assign"
-                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.staff_management' and request.args.get('tab', 'assign') == 'assign' %}active{% endif %}">
-                            <i class="fa-solid fa-clipboard-list"></i> Assign Task
-                        </a>
                         <a href="{{ url_for('animal_farm_admin.staff_management') }}?tab=accounts"
                             data-sm-tab="accounts"
-                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.staff_management' and request.args.get('tab') == 'accounts' %}active{% endif %}">
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.staff_management' and request.args.get('tab', 'accounts') == 'accounts' %}active{% endif %}">
                             <i class="fa-solid fa-users"></i> Staff Accounts
                         </a>
                         <a href="{{ url_for('animal_farm_admin.staff_management') }}?tab=tasks" data-sm-tab="tasks"
@@ -1061,7 +1057,7 @@
                 </a>
                 <a href="{{ url_for('animal_farm_staff.my_bookings') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_staff.my_bookings' %}active{% endif %}">
-                    <i class="fa-solid fa-calendar-check"></i> My Assigned Bookings
+                    <i class="fa-solid fa-calendar-check"></i> Bookings
                 </a>
                 <a href="{{ url_for('animal_farm_staff.ticket_scanner') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_staff.ticket_scanner' %}active{% endif %}">
@@ -1580,10 +1576,10 @@
 
                 // Staff Management: client-side tab switching (no page reload)
                 if (currentUrl.includes('/staff-management')) {
-                    const SM_TABS = ['assign', 'accounts', 'tasks'];
+                    const SM_TABS = ['accounts', 'tasks', 'assign'];
 
                     function switchSmTab(tab) {
-                        if (!SM_TABS.includes(tab)) tab = 'assign';
+                        if (!SM_TABS.includes(tab)) tab = 'accounts';
                         SM_TABS.forEach(function (t) {
                             const el = document.getElementById('sm-tab-' + t);
                             if (el) el.style.display = (t === tab) ? '' : 'none';
@@ -1598,8 +1594,8 @@
 
                     window.switchSmTab = switchSmTab;
 
-                    // Show initial tab
-                    switchSmTab(urlParams.get('tab') || 'assign');
+                    // Show initial tab (defaults to accounts)
+                    switchSmTab(urlParams.get('tab') || 'accounts');
 
                     // Intercept sidebar sub-item clicks
                     document.querySelectorAll('[data-sm-tab]').forEach(function (link) {
@@ -1612,7 +1608,7 @@
 
                     // Browser back/forward
                     window.addEventListener('popstate', function (e) {
-                        const t = (e.state && e.state.smTab) || new URLSearchParams(window.location.search).get('tab') || 'assign';
+                        const t = (e.state && e.state.smTab) || new URLSearchParams(window.location.search).get('tab') || 'accounts';
                         switchSmTab(t);
                     });
                 }

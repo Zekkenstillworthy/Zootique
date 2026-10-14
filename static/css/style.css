@@ -689,11 +689,25 @@ body[data-blueprint="animal_farm_staff"] .main-content {
 /* Nav */
 .sidebar-nav {
   flex: 1;
-  padding: 20px 8px;
+  padding: 16px 8px;
   overflow-y: auto;
-  scrollbar-width: none;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
 }
-.sidebar-nav::-webkit-scrollbar { display: none; }
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+}
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
 
 .nav-item {
   display: flex;

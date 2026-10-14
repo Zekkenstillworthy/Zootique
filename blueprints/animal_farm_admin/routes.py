@@ -405,21 +405,11 @@ def booking_management():
         return redirect(url_for('animal_farm_admin.dashboard'))
 
     status = request.args.get('status')
-    assigned_to = (request.args.get('assigned_to') or '').strip()
     query = Booking.query.filter_by(zoo_id=zoo.id)
     valid_statuses = {'Pending', 'Confirmed', 'Cancelled', 'Finished'}
     if status and status in valid_statuses:
         query = query.filter_by(status=status)
-    if assigned_to.isdigit():
-        query = query.filter_by(assigned_staff_user_id=int(assigned_to))
     bookings = query.order_by(Booking.created_at.desc()).limit(200).all()
-
-    staff_members = (
-        User.query
-        .filter_by(role='zoo_staff', zoo_id=zoo.id)
-        .order_by(User.full_name.asc())
-        .all()
-    )
 
     services = (
         Service.query
@@ -433,9 +423,7 @@ def booking_management():
         zoo=zoo,
         bookings=bookings,
         selected_status=status,
-        staff_members=staff_members,
         services=services,
-        selected_assigned_to=assigned_to,
     )
 
 
@@ -592,12 +580,6 @@ def create_booking():
     if amount is None and service:
         amount = float(service.price or 0)
 
-    assigned_staff_user_id = None
-    if staff_user_id_raw and staff_user_id_raw.isdigit():
-        staff_user = User.query.filter_by(id=int(staff_user_id_raw), role='zoo_staff', zoo_id=zoo.id).first()
-        if staff_user:
-            assigned_staff_user_id = staff_user.id
-
     import secrets
     booking = Booking(
         id=secrets.token_hex(8),
@@ -609,7 +591,7 @@ def create_booking():
         guests=guests,
         amount=amount or 0,
         status=status if status in {'Pending', 'Confirmed', 'Cancelled', 'Finished'} else 'Pending',
-        assigned_staff_user_id=assigned_staff_user_id,
+        assigned_staff_user_id=None,
     )
     db.session.add(booking)
 
@@ -641,7 +623,6 @@ def update_booking(booking_id: str):
     guests = request.form.get('guests', type=int) or 1
     amount_raw = (request.form.get('amount') or '').strip()
     status = (request.form.get('status') or '').strip()
-    staff_user_id_raw = (request.form.get('assigned_staff_user_id') or '').strip()
     image_file = request.files.get('image_file')
 
     if not date:
@@ -666,17 +647,6 @@ def update_booking(booking_id: str):
             flash('Selected service was not found.', 'error')
             return redirect(url_for('animal_farm_admin.booking_management'))
 
-    assigned_staff_user_id = None
-    if staff_user_id_raw:
-        if not staff_user_id_raw.isdigit():
-            flash('Invalid staff selection.', 'error')
-            return redirect(url_for('animal_farm_admin.booking_management'))
-        staff_user = User.query.filter_by(id=int(staff_user_id_raw), role='zoo_staff', zoo_id=zoo.id).first()
-        if not staff_user:
-            flash('Selected staff member was not found.', 'error')
-            return redirect(url_for('animal_farm_admin.booking_management'))
-        assigned_staff_user_id = staff_user.id
-
     amount = None
     if amount_raw:
         try:
@@ -690,7 +660,6 @@ def update_booking(booking_id: str):
     booking.guests = guests
     if status:
         booking.status = status
-    booking.assigned_staff_user_id = assigned_staff_user_id
 
     if service:
         booking.service_id = service.id
@@ -816,7 +785,10 @@ def save_establishment_profile():
     zoo_type = (request.form.get('type') or '').strip() or None
     location = (request.form.get('location') or '').strip() or None
     description = (request.form.get('description') or '').strip() or None
+    landing_promo_title = (request.form.get('landing_promo_title') or '').strip() or None
+    landing_promo_description = (request.form.get('landing_promo_description') or '').strip() or None
     image_file = request.files.get('image_file')
+    promo_image_file = request.files.get('landing_promo_image_file')
 
     if not name:
         flash('Establishment name is required.', 'error')
@@ -826,15 +798,23 @@ def save_establishment_profile():
     zoo.type = zoo_type
     zoo.location = location
     zoo.description = description
+    zoo.landing_promo_title = landing_promo_title
+    zoo.landing_promo_description = landing_promo_description
 
     if image_file and image_file.filename:
         uploaded_url = _save_uploaded_image(image_file, 'zoo_images')
         if not uploaded_url:
             return redirect(url_for('animal_farm_admin.establishment_profile'))
         zoo.image_url = uploaded_url
+
+    if promo_image_file and promo_image_file.filename:
+        uploaded_promo_url = _save_uploaded_image(promo_image_file, 'zoo_promo_banners')
+        if uploaded_promo_url:
+            zoo.landing_promo_image_url = uploaded_promo_url
+
     db.session.commit()
 
-    flash('Establishment profile updated.', 'success')
+    flash('Establishment profile and promotional slider updated.', 'success')
     return redirect(url_for('animal_farm_admin.establishment_profile'))
 
 

@@ -86,6 +86,51 @@
 
                 <div class="zf-section">
                     <div class="zf-section-label">
+                        <i class="fa-solid fa-bullhorn"></i> Landing Page Promotional Slider
+                    </div>
+                    <div class="zf-grid-2">
+                        <div class="zf-field zf-full">
+                            <label class="zf-label" for="landing_promo_title">Promotional Slide Heading</label>
+                            <input type="text" id="landing_promo_title" name="landing_promo_title" class="zf-control"
+                                   value="{{ zoo.landing_promo_title or '' }}" placeholder="Defaults to establishment name (e.g., Discover Safari World)">
+                            <span class="zf-hint">Headline text featured on the public landing page hero slider</span>
+                        </div>
+
+                        <div class="zf-field zf-full">
+                            <label class="zf-label" for="landing_promo_description">Promotional Short Information</label>
+                            <textarea id="landing_promo_description" name="landing_promo_description" class="zf-control" rows="3"
+                                      placeholder="Brief promotional tagline or short summary displayed on the homepage slider...">{{ zoo.landing_promo_description or '' }}</textarea>
+                            <span class="zf-hint">Short description shown beneath the headline on the main landing carousel</span>
+                        </div>
+
+                        <div class="zf-field zf-full">
+                            <label class="zf-label">Promotional Slide Banner Image</label>
+                            {% if zoo.landing_promo_image_url %}
+                            <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 12px;">
+                                <img src="{{ zoo.landing_promo_image_url }}" alt="Current promo banner"
+                                     style="width: 140px; height: 75px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border);">
+                                <span class="zf-hint" style="margin: 0;">Current active promotional slide banner</span>
+                            </div>
+                            {% endif %}
+                            <div class="zf-upload-zone" id="promoDropZone">
+                                <i class="fa-solid fa-cloud-arrow-up zf-upload-icon"></i>
+                                <div class="zf-upload-text"><strong>Drag and drop</strong> promotional banner here, or</div>
+                                <label class="zf-upload-btn" for="promo_cover_img">
+                                    <i class="fa-solid fa-folder-open"></i> Browse Picture
+                                </label>
+                                <input type="file" id="promo_cover_img" name="landing_promo_image_file" accept="image/*" class="zf-file-input">
+                                <div class="zf-upload-hint">Landscape aspect ratio recommended (1920x1080). Leave empty to keep current.</div>
+                                <div class="zf-preview-wrap" id="promoPreviewWrap">
+                                    <img id="promoImagePreview" src="" alt="Promo Preview">
+                                    <button type="button" class="zf-remove-btn" id="promoRemoveImgBtn">&times;</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="zf-section">
+                    <div class="zf-section-label">
                         <i class="fa-solid fa-image"></i> Facility Cover Photo
                     </div>
                     <div class="zf-field zf-full">
@@ -131,7 +176,6 @@ const fileInput = document.getElementById('profile_cover_img');
 const previewWrap = document.getElementById('profilePreviewWrap');
 const imagePreview = document.getElementById('profileImagePreview');
 const removeImgBtn = document.getElementById('profileRemoveImgBtn');
-const dropZone = document.getElementById('profileDropZone');
 
 if (fileInput) {
     fileInput.addEventListener('change', function(e) {
@@ -151,6 +195,33 @@ if (removeImgBtn) {
         fileInput.value = '';
         imagePreview.src = '';
         previewWrap.style.display = 'none';
+    });
+}
+
+// Promo banner upload preview
+const promoFileInput = document.getElementById('promo_cover_img');
+const promoPreviewWrap = document.getElementById('promoPreviewWrap');
+const promoImagePreview = document.getElementById('promoImagePreview');
+const promoRemoveImgBtn = document.getElementById('promoRemoveImgBtn');
+
+if (promoFileInput) {
+    promoFileInput.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                promoImagePreview.src = evt.target.result;
+                promoPreviewWrap.style.display = 'block';
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+}
+if (promoRemoveImgBtn) {
+    promoRemoveImgBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        promoFileInput.value = '';
+        promoImagePreview.src = '';
+        promoPreviewWrap.style.display = 'none';
     });
 }
 

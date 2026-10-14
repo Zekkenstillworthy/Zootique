@@ -23,12 +23,6 @@
         <option value="Cancelled" {% if selected_status=='Cancelled'%}selected{% endif %}>Cancelled</option>
         <option value="Finished"  {% if selected_status=='Finished' %}selected{% endif %}>Finished</option>
       </select>
-      <select name="assigned_to" class="zf-control" style="width:auto; height:38px; padding:6px 12px;">
-        <option value="" {% if not selected_assigned_to %}selected{% endif %}>All Staff Caretakers</option>
-        {% for s in staff_members %}
-        <option value="{{ s.id }}" {% if selected_assigned_to == (s.id|string) %}selected{% endif %}>{{ s.full_name }}</option>
-        {% endfor %}
-      </select>
       <button class="btn btn-primary btn-sm" type="submit" style="height:38px;"><i class="fa-solid fa-filter"></i> Filter</button>
     </form>
 
@@ -52,7 +46,6 @@
             <th>Guests</th>
             <th>Amount</th>
             <th>Status</th>
-            <th>Assigned Staff</th>
             <th style="width:190px; text-align:right; padding-right:16px;">Actions</th>
           </tr>
         </thead>
@@ -91,13 +84,6 @@
                 <span class="badge badge-pending">Pending</span>
               {% endif %}
             </td>
-            <td>
-              {% if b.assigned_staff_user %}
-                <div style="font-size:13px; font-weight:600; color:var(--text);">{{ b.assigned_staff_user.full_name }}</div>
-              {% else %}
-                <span style="color:var(--text-muted); font-size:13px;">Unassigned</span>
-              {% endif %}
-            </td>
             <td style="text-align:right; padding-right:16px;">
               <div style="display:inline-flex; gap:6px; justify-content:flex-end; align-items:center;">
                 {# Edit #}
@@ -109,7 +95,6 @@
                     guests:  {{ (b.guests or 1)|tojson }},
                     amount:  {{ (b.amount or 0)|tojson }},
                     service: {{ (b.service_id or '')|tojson }},
-                    staff:   {{ (b.assigned_staff_user_id or '')|tojson }},
                     status:  {{ (b.status or 'Pending')|tojson }}
                   })">
                   <i class="fa-solid fa-pen"></i>
@@ -212,16 +197,6 @@
             </select>
           </div>
 
-          <div class="zf-field zf-full">
-            <label class="zf-label" for="modal-staff">Assigned Staff Caretaker</label>
-            <select name="assigned_staff_user_id" id="modal-staff" class="zf-control">
-              <option value="">Unassigned</option>
-              {% for s in staff_members %}
-              <option value="{{ s.id }}">{{ s.full_name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
           <div class="zf-field">
             <label class="zf-label" for="modal-status">Status</label>
             <select name="status" id="modal-status" class="zf-control">
@@ -251,6 +226,9 @@
 
 <script>
   const overlay  = document.getElementById('booking-modal-overlay');
+  if (overlay && overlay.parentElement !== document.body) {
+    document.body.appendChild(overlay);
+  }
   const form     = document.getElementById('booking-modal-form');
   const modeLabel = document.getElementById('modal-mode-label');
 
@@ -274,7 +252,6 @@
       document.getElementById('modal-guests').value      = data.guests || 1;
       document.getElementById('modal-amount').value      = (data.amount ?? '');
       document.getElementById('modal-service').value     = data.service|| '';
-      document.getElementById('modal-staff').value       = data.staff  || '';
       document.getElementById('modal-status').value      = data.status || 'Pending';
     } else {
       resetBookingModal();

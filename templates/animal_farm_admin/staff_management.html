@@ -43,16 +43,6 @@
             </div>
 
             <div class="zf-field">
-              <label class="zf-label" for="task_assign_input">Assign To Staff</label>
-              <select id="task_assign_input" name="assigned_to_user_id" class="zf-control">
-                <option value="">Unassigned</option>
-                {% for s in staff %}
-                  <option value="{{ s.id }}">{{ s.full_name }} ({{ s.email }})</option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <div class="zf-field">
               <label class="zf-label" for="task_due_input">Due Date</label>
               <input id="task_due_input" type="date" name="due_date" class="zf-control">
             </div>
@@ -336,7 +326,8 @@ function fillTaskForm(id, title, description, assignedTo, dueDate, status) {
     document.getElementById('task_id_input').value = id || '';
     document.getElementById('task_title_input').value = title || '';
     document.getElementById('task_desc_input').value = description || '';
-    document.getElementById('task_assign_input').value = assignedTo || '';
+    const assignEl = document.getElementById('task_assign_input');
+    if (assignEl) assignEl.value = assignedTo || '';
     document.getElementById('task_due_input').value = dueDate || '';
     document.getElementById('task_status_input').value = status || 'pending';
 
