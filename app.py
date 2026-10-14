@@ -235,10 +235,26 @@ def create_app() -> Flask:
                     "species": int(total_animals),
                     "bookings": int(total_bookings),
                 }
+            subscription_plans = []
+            try:
+                from models import SubscriptionPlan
+                subscription_plans = SubscriptionPlan.query.filter_by(is_active=True).order_by(SubscriptionPlan.tier_level.asc(), SubscriptionPlan.price.asc()).all()
+            except Exception:
+                subscription_plans = []
+
+            from services.subscription_catalog import TIER_METADATA
         except Exception:
             hero_zoos = []
             platform_stats = None
-        return render_template("landing.html", hero_zoos=hero_zoos, stats=platform_stats)
+            subscription_plans = []
+            TIER_METADATA = {}
+        return render_template(
+            "landing.html",
+            hero_zoos=hero_zoos,
+            stats=platform_stats,
+            subscription_plans=subscription_plans,
+            tier_catalog=TIER_METADATA,
+        )
 
     app.register_blueprint(visitor_bp, url_prefix="/visitor")
 

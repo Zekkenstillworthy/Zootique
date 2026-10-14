@@ -1,128 +1,196 @@
 {% extends "base.html" %}
 
-{% block title %}E-Ticket — {{ booking.id }} | Zootique{% endblock %}
+{% block title %}Official E-Ticket — {{ booking.id }} | Zootique{% endblock %}
 
 {% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
+  :root {
+    --vb-forest: #143823;
+    --vb-forest-light: #1e5233;
+    --vb-forest-soft: #eaf3ed;
+    --vb-terracotta: #C85A32;
+    --vb-cream-bg: #FAF7F2;
+    --vb-border: #E8E2D8;
+    --vb-border-light: #F0ECE4;
+    --vb-gold: #D4A373;
+    --vb-text-dark: #1E293B;
+    --vb-text-muted: #64748B;
+    --vb-font-display: 'Outfit', sans-serif;
+    --vb-font-body: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  body {
+    background-color: var(--vb-cream-bg);
+    font-family: var(--vb-font-body);
+    color: var(--vb-text-dark);
+  }
+
   .ticket-wrapper {
     max-width: 680px;
-    margin: 2rem auto 4rem auto;
-    padding: 0 1rem;
+    margin: 2.5rem auto 4.5rem auto;
+    padding: 0 1.25rem;
   }
+
   .ticket-card {
     background: #ffffff;
-    border-radius: 20px;
-    box-shadow: 0 12px 35px rgba(26, 79, 50, 0.12);
-    border: 1px solid #e2e8f0;
+    border-radius: 24px;
+    box-shadow: 0 16px 45px rgba(20, 56, 35, 0.08);
+    border: 1px solid var(--vb-border);
     overflow: hidden;
     position: relative;
   }
+
+  /* Ticket cut-out notches */
   .ticket-card::before, .ticket-card::after {
     content: '';
     position: absolute;
-    top: 62%;
-    width: 24px;
-    height: 24px;
-    background: #FAF7F2;
+    top: 60%;
+    width: 28px;
+    height: 28px;
+    background: var(--vb-cream-bg);
     border-radius: 50%;
     z-index: 10;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
   }
-  .ticket-card::before { left: -12px; }
-  .ticket-card::after { right: -12px; }
+  .ticket-card::before { left: -14px; }
+  .ticket-card::after { right: -14px; }
 
   .ticket-header {
-    background: linear-gradient(135deg, #143823 0%, #1a4f32 100%);
+    background: linear-gradient(135deg, #143823 0%, #1e5233 100%);
     color: #ffffff;
-    padding: 2rem;
+    padding: 2.25rem 2rem 2rem 2rem;
     position: relative;
     text-align: center;
   }
+  .ticket-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: radial-gradient(circle, transparent 4px, #ffffff 5px);
+    background-size: 16px 8px;
+  }
+
   .ticket-zoo-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(8px);
-    padding: 0.35rem 0.9rem;
+    background: rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(10px);
+    padding: 0.35rem 0.95rem;
     border-radius: 999px;
-    font-size: 0.82rem;
-    font-weight: 700;
+    font-size: 0.8rem;
+    font-weight: 800;
     color: #fef08a;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     margin-bottom: 0.75rem;
   }
   .ticket-zoo-name {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.75rem;
-    font-weight: 800;
+    font-family: var(--vb-font-display);
+    font-size: 1.85rem;
+    font-weight: 900;
     margin: 0;
     letter-spacing: -0.02em;
+    line-height: 1.2;
   }
   .ticket-service-name {
     font-size: 1.05rem;
     color: #d1fae5;
-    margin: 0.4rem 0 0 0;
+    margin: 0.45rem 0 0 0;
     font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
   }
+
   .ticket-body {
-    padding: 2.25rem 2rem;
+    padding: 2.25rem 2.25rem 1.75rem 2.25rem;
   }
+
   .ticket-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1.75rem;
   }
+  @media (max-width: 480px) {
+    .ticket-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
   .ticket-field-label {
-    font-size: 0.78rem;
-    font-weight: 700;
+    font-size: 0.75rem;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #64748b;
+    letter-spacing: 0.06em;
+    color: var(--vb-text-muted);
     margin-bottom: 0.25rem;
   }
   .ticket-field-val {
     font-size: 1.05rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--vb-text-dark);
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.5rem;
   }
+  .ticket-field-val i {
+    color: var(--vb-forest);
+  }
+
   .ticket-divider {
     border: none;
-    border-top: 2px dashed #e2e8f0;
-    margin: 1.5rem 0 2rem 0;
+    border-top: 2px dashed #cbd5e1;
+    margin: 1.5rem 0 1.75rem 0;
     position: relative;
   }
+
+  /* QR Pass Section */
   .ticket-qr-section {
     text-align: center;
-    padding: 1rem 0;
-    background: #f8fafc;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    margin-bottom: 1.75rem;
+    padding: 1.5rem 1rem;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+    border-radius: 18px;
+    border: 1px solid var(--vb-border);
+    margin-bottom: 1.5rem;
   }
   .ticket-qr-img {
     width: 180px;
     height: 180px;
-    border-radius: 8px;
+    border-radius: 12px;
     background: #ffffff;
-    padding: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    margin: 0.5rem auto;
+    padding: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    margin: 0.6rem auto;
     display: block;
   }
   .ticket-ref-code {
     font-family: monospace;
-    font-size: 1.15rem;
-    font-weight: 800;
-    color: #1a4f32;
-    letter-spacing: 0.1em;
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: var(--vb-forest);
+    letter-spacing: 0.12em;
+    background: var(--vb-forest-soft);
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    display: inline-block;
+    margin-top: 0.35rem;
   }
+
   .ticket-status-pill {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.4rem;
     padding: 0.35rem 0.85rem;
     border-radius: 999px;
     font-size: 0.82rem;
@@ -132,53 +200,97 @@
     background: #dcfce7;
     color: #15803d;
   }
+  .pill-pending {
+    background: #fef3c7;
+    color: #b45309;
+  }
+
+  .ticket-guideline {
+    background: #fefce8;
+    border: 1px solid #fef08a;
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    font-size: 0.82rem;
+    color: #713f12;
+    line-height: 1.45;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  /* Actions Bar */
   .ticket-actions {
     display: flex;
     justify-content: center;
     gap: 1rem;
-    margin-top: 1.75rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
   }
   .btn-print {
-    background: #1a4f32;
+    background: linear-gradient(135deg, #143823 0%, #1e5233 100%);
     color: #ffffff;
-    font-weight: 700;
-    padding: 0.75rem 1.75rem;
-    border-radius: 12px;
+    font-family: var(--vb-font-display);
+    font-weight: 800;
+    padding: 0.85rem 1.85rem;
+    border-radius: 14px;
     border: none;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.55rem;
     font-size: 0.95rem;
-    transition: background 0.2s;
+    box-shadow: 0 6px 20px rgba(20, 56, 35, 0.25);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .btn-print:hover { background: #143823; }
+  .btn-print:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px rgba(20, 56, 35, 0.32);
+  }
   .btn-back {
     background: #ffffff;
-    color: #475569;
-    border: 1px solid #cbd5e1;
-    font-weight: 700;
-    padding: 0.75rem 1.4rem;
-    border-radius: 12px;
+    color: var(--vb-forest);
+    border: 1.5px solid var(--vb-border);
+    font-family: var(--vb-font-display);
+    font-weight: 800;
+    padding: 0.85rem 1.5rem;
+    border-radius: 14px;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.55rem;
     font-size: 0.95rem;
+    transition: all 0.2s;
+  }
+  .btn-back:hover {
+    border-color: var(--vb-forest);
+    background: var(--vb-forest-soft);
   }
 
   @media print {
-    body * { visibility: hidden; }
-    .ticket-card, .ticket-card * { visibility: visible; }
-    .ticket-card {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-      box-shadow: none;
-      border: 1px solid #000;
+    body {
+      background: #ffffff !important;
     }
-    .ticket-actions { display: none !important; }
+    nav, header, footer, .ticket-actions, .site-header, .navbar {
+      display: none !important;
+    }
+    .ticket-wrapper {
+      max-width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .ticket-card {
+      box-shadow: none !important;
+      border: 2px solid #000 !important;
+      border-radius: 0 !important;
+    }
+    .ticket-card::before, .ticket-card::after {
+      display: none !important;
+    }
+    .ticket-header {
+      background: #143823 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
   }
 </style>
 {% endblock %}
@@ -193,7 +305,7 @@
       </div>
       <h1 class="ticket-zoo-name">{{ booking.service_name or 'Park Admission' }}</h1>
       <p class="ticket-service-name">
-        <i class="fa-solid fa-location-dot"></i> {{ zoo.location if (zoo and zoo.location) else 'Wildlife Sanctuary' }}
+        <i class="fa-solid fa-location-dot"></i> {{ zoo.location if (zoo and zoo.location) else 'Wildlife Sanctuary &amp; Conservation Reserve' }}
       </p>
     </div>
 
@@ -201,32 +313,38 @@
     <div class="ticket-body">
       <div class="ticket-grid">
         <div>
-          <div class="ticket-field-label">Visitor Name</div>
+          <div class="ticket-field-label">Ticket Holder</div>
           <div class="ticket-field-val"><i class="fa-solid fa-user"></i> {{ booking.visitor_name }}</div>
         </div>
         <div>
-          <div class="ticket-field-label">Booking Status</div>
+          <div class="ticket-field-label">Verification Status</div>
           <div class="ticket-field-val">
+            {% if (booking.payment_status or '')|lower == 'paid' %}
             <span class="ticket-status-pill pill-confirmed">
-              <i class="fa-solid fa-circle-check"></i> {{ booking.status|capitalize }}
+              <i class="fa-solid fa-circle-check"></i> Confirmed &amp; Paid
             </span>
+            {% else %}
+            <span class="ticket-status-pill pill-pending">
+              <i class="fa-solid fa-clock"></i> Reservation Held
+            </span>
+            {% endif %}
           </div>
         </div>
         <div>
-          <div class="ticket-field-label">Visit Date</div>
+          <div class="ticket-field-label">Scheduled Date</div>
           <div class="ticket-field-val"><i class="fa-regular fa-calendar"></i> {{ booking.date }}</div>
         </div>
         <div>
-          <div class="ticket-field-label">Time Slot</div>
-          <div class="ticket-field-val"><i class="fa-regular fa-clock"></i> {{ booking.time or 'Full Day Entry' }}</div>
+          <div class="ticket-field-label">Entry Time Slot</div>
+          <div class="ticket-field-val"><i class="fa-regular fa-clock"></i> {{ booking.time or 'Full Day Access' }}</div>
         </div>
         <div>
-          <div class="ticket-field-label">Number of Guests</div>
+          <div class="ticket-field-label">Party Size</div>
           <div class="ticket-field-val"><i class="fa-solid fa-users"></i> {{ booking.guests or 1 }} Guest(s)</div>
         </div>
         <div>
-          <div class="ticket-field-label">Total Amount Paid</div>
-          <div class="ticket-field-val" style="color: #1a4f32;">
+          <div class="ticket-field-label">Total Amount</div>
+          <div class="ticket-field-val" style="color: var(--vb-forest); font-family: var(--vb-font-display); font-size: 1.15rem; font-weight: 800;">
             &#8369;{{ '%.2f'|format(payment.amount if payment else (booking.amount or (service.price if service else 0.0))) }}
           </div>
         </div>
@@ -236,20 +354,28 @@
 
       <!-- QR Code Section -->
       <div class="ticket-qr-section">
-        <div class="ticket-field-label" style="margin-bottom:0.4rem;">Present at Entrance Gate</div>
+        <div class="ticket-field-label">Present at Sanctuary Turnstile</div>
+        {% if qr_code %}
         <img class="ticket-qr-img"
              src="{{ qr_code }}"
              alt="QR Ticket Code for {{ booking.id }}">
+        {% else %}
+        <div style="font-size: 3rem; color: var(--vb-forest); margin: 1rem 0;">
+          <i class="fa-solid fa-ticket"></i>
+        </div>
+        {% endif %}
         <div class="ticket-ref-code">{{ booking.id }}</div>
-        <div style="font-size:0.8rem; color:#64748b; margin-top:0.35rem;">
-          Fast scan enabled &bull; Valid only on scheduled date
+        <div style="font-size:0.8rem; color:var(--vb-text-muted); margin-top:0.45rem;">
+          Instant gate scan &bull; Valid only on scheduled date for {{ booking.guests or 1 }} guest(s)
         </div>
       </div>
 
       <!-- Guidelines -->
-      <div style="background:#fefce8; border:1px solid #fef08a; border-radius:10px; padding:0.85rem 1rem; font-size:0.82rem; color:#713f12; line-height:1.45;">
-        <i class="fa-solid fa-circle-info" style="color:#ca8a04; margin-right:4px;"></i>
-        Please arrive 15 minutes before your time slot. Have a valid government-issued ID matching the visitor name.
+      <div class="ticket-guideline">
+        <i class="fa-solid fa-circle-info" style="color:#ca8a04; font-size:1rem; margin-top:1px;"></i>
+        <div>
+          Please arrive 15 minutes before your reserved time slot. Have a valid photo ID matching the visitor name. Digital presentation on mobile screen is accepted at all entrance gates.
+        </div>
       </div>
     </div>
   </div>
@@ -257,9 +383,9 @@
   <!-- Actions -->
   <div class="ticket-actions">
     <button class="btn-print" onclick="window.print()">
-      <i class="fa-solid fa-print"></i> Print / Save Ticket
+      <i class="fa-solid fa-print"></i> Print / Save as PDF
     </button>
-    <a href="{{ url_for('visitor.bookings') }}" class="btn-back">
+    <a href="{{ url_for('visitor.my_bookings') }}" class="btn-back">
       <i class="fa-solid fa-arrow-left"></i> My Bookings
     </a>
   </div>

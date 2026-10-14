@@ -15,7 +15,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
-from models import db, Zoo, Animal, Service, Booking, BookingPayment, BookingBundle, BookingTicket, Event, Promotion, Feedback, ParkRule, User, ZooZone, EstablishmentType, Notification, TriviaQuestion, VisitorTriviaLog, VisitorBadge, LoyaltyAccount, LoyaltyTransaction
+from models import db, Zoo, Animal, Service, Booking, BookingPayment, BookingBundle, BookingTicket, Event, Promotion, Feedback, ParkRule, User, ZooZone, EstablishmentType, Notification, TriviaQuestion, VisitorTriviaLog, VisitorBadge, LoyaltyAccount, LoyaltyTransaction, UserLinkedAccount
 from services import (
     BookingAuthorizationError,
     BookingValidationError,
@@ -1611,6 +1611,69 @@ def profile():
             flash("Notification preferences saved.", "success")
             return redirect(url_for("visitor.profile", tab="notifications"))
 
+        if action == "link_account":
+            provider = (request.form.get("provider") or "").strip().lower()
+            identifier = (request.form.get("account_identifier") or "").strip()
+            display_name = (request.form.get("display_name") or "").strip() or None
+
+            if provider not in {"gcash", "google", "facebook"}:
+                flash("Invalid account provider selected.", "error")
+                return redirect(url_for("visitor.profile", tab="linked-accounts"))
+
+            if not identifier:
+                if provider == "gcash":
+                    flash("Please provide a valid GCash mobile number.", "error")
+                elif provider == "google":
+                    flash("Please provide a valid Google email address.", "error")
+                else:
+                    flash("Please provide your Facebook account name or ID.", "error")
+                return redirect(url_for("visitor.profile", tab="linked-accounts"))
+
+            if provider == "gcash":
+                raw_digits = "".join(ch for ch in identifier if ch.isdigit())
+                if len(raw_digits) < 10:
+                    flash("Please enter a valid 11-digit GCash mobile number (e.g. 09171234567).", "error")
+                    return redirect(url_for("visitor.profile", tab="linked-accounts"))
+                if len(raw_digits) == 10 and raw_digits.startswith("9"):
+                    raw_digits = "0" + raw_digits
+                identifier = raw_digits
+            elif provider == "google":
+                identifier = identifier.lower()
+
+            existing_link = UserLinkedAccount.query.filter_by(user_id=user.id, provider=provider).first()
+            if existing_link:
+                existing_link.account_identifier = identifier
+                existing_link.display_name = display_name or user.full_name
+                existing_link.linked_at = datetime.utcnow()
+                existing_link.is_verified = True
+            else:
+                new_link = UserLinkedAccount(
+                    user_id=user.id,
+                    provider=provider,
+                    account_identifier=identifier,
+                    display_name=display_name or user.full_name,
+                    linked_at=datetime.utcnow(),
+                    is_verified=True,
+                )
+                db.session.add(new_link)
+
+            db.session.commit()
+            provider_titles = {"gcash": "GCash", "google": "Google", "facebook": "Facebook"}
+            flash(f"Successfully connected your {provider_titles.get(provider, provider.title())} account!", "success")
+            return redirect(url_for("visitor.profile", tab="linked-accounts"))
+
+        if action == "unlink_account":
+            provider = (request.form.get("provider") or "").strip().lower()
+            link = UserLinkedAccount.query.filter_by(user_id=user.id, provider=provider).first()
+            if link:
+                db.session.delete(link)
+                db.session.commit()
+                provider_titles = {"gcash": "GCash", "google": "Google", "facebook": "Facebook"}
+                flash(f"Your {provider_titles.get(provider, provider.title())} account has been disconnected.", "success")
+            else:
+                flash("No linked account was found for that provider.", "warning")
+            return redirect(url_for("visitor.profile", tab="linked-accounts"))
+
         flash("Unknown profile action.", "error")
         return redirect(url_for("visitor.profile", tab=show_tab))
 
@@ -1632,48 +1695,41 @@ def profile():
         "member_since": user.created_at.strftime("%B %Y") if user.created_at else "Unknown",
     }
 
-    if request.method == "POST":
-        full_name = (request.form.get("full_name") or "").strip()
-        email = (request.form.get("email") or "").strip().lower()
-        username = (request.form.get("username") or "").strip() or None
+    user_links = UserLinkedAccount.query.filter_by(user_id=user.id).all()
+    linked_providers = {}
+    for l in user_links:
+        masked_id = l.account_identifier
+        if l.provider == "gcash" and len(l.account_identifier) == 11:
+            masked_id = f"{l.account_identifier[:4]} ••• ••{l.account_identifier[-2:]}"
+        elif l.provider == "google" and "@" in l.account_identifier:
+            parts = l.account_identifier.split("@")
+            name_part = parts[0]
+            masked_name = name_part[:2] + "•••" if len(name_part) > 2 else name_part + "•••"
+            masked_id = f"{masked_name}@{parts[1]}"
 
-        if not full_name:
-            flash("Full name is required.", "error")
-            return redirect(url_for("visitor.profile", edit=1))
+        linked_providers[l.provider] = {
+            "id": l.id,
+            "provider": l.provider,
+            "raw_identifier": l.account_identifier,
+            "masked_identifier": masked_id,
+            "display_name": l.display_name,
+            "linked_at": l.linked_at.strftime("%b %d, %Y") if l.linked_at else "Unknown",
+            "is_verified": l.is_verified,
+        }
 
-        if email and email != user.email:
-            existing = User.query.filter(User.email == email, User.id != user.id).first()
-            if existing:
-                flash("That email is already in use.", "error")
-                return redirect(url_for("visitor.profile", edit=1))
-            user.email = email
-
-        if username and username != user.username:
-            existing_un = User.query.filter(User.username == username, User.id != user.id).first()
-            if existing_un:
-                flash("That username is already in use.", "error")
-                return redirect(url_for("visitor.profile", edit=1))
-            user.username = username
-
-        user.full_name = full_name
-        db.session.commit()
-
-        session["full_name"] = user.full_name
-        flash("Profile updated.", "success")
-        return redirect(url_for("visitor.profile"))
-
+    loyalty_account = LoyaltyAccount.query.filter_by(user_id=user.id).first()
+    loyalty_transactions = (
+        LoyaltyTransaction.query.filter_by(account_id=loyalty_account.id)
+        .order_by(LoyaltyTransaction.created_at.desc())
+        .limit(20).all()
+        if loyalty_account else []
+    )
     bookings_count = Booking.query.filter(_booking_owner_filter(user)).count()
     review_aliases = list(_feedback_owner_aliases(user))
     reviews_count = (
         Feedback.query
         .filter(or_(Feedback.user_id == user.id, Feedback.visitor_name.in_(review_aliases)))
         .count()
-    )
-    total_spent = (
-        db.session.query(func.sum(Booking.amount))
-        .filter(_booking_owner_filter(user))
-        .scalar()
-        or 0
     )
     points = _get_visitor_total_points(user)
     unlocked_badges = VisitorBadge.query.filter_by(user_id=user.id).order_by(VisitorBadge.unlocked_at.desc()).all()
@@ -1693,6 +1749,7 @@ def profile():
         notification_prefs=notification_prefs,
         profile_image_url=profile_image_url,
         linked_accounts=linked_accounts,
+        linked_providers=linked_providers,
         show_tab=show_tab,
         unlocked_badges=unlocked_badges,
         loyalty_account=loyalty_account,
@@ -1873,7 +1930,7 @@ def checkout():
             db.session.commit()
         except ValueError:
             db.session.rollback()
-        return redirect(url_for("visitor.my_bookings"))
+        return redirect(url_for("visitor.checkout_confirmed", booking_id=booking.id))
 
     booking_id = (request.args.get("booking_id") or "").strip()
 
@@ -1907,6 +1964,47 @@ def checkout():
 @visitor_login_required
 def checkout_booking(booking_id: str):
     return redirect(url_for("visitor.checkout", booking_id=booking_id), code=302)
+
+
+@visitor_bp.get("/checkout/confirmed")
+@visitor_login_required
+def checkout_confirmed():
+    user = _current_user()
+    if not user:
+        return redirect(url_for("auth.login", module_name="visitor"))
+    booking_id = (request.args.get("booking_id") or "").strip()
+    booking = Booking.query.filter(
+        _booking_owner_filter_by_id(user, booking_id)
+    ).first_or_404()
+
+    latest_payment = (
+        BookingPayment.query.filter_by(booking_id=booking.id, status="paid")
+        .order_by(BookingPayment.created_at.desc())
+        .first()
+    )
+    zoo = db.session.get(Zoo, booking.zoo_id) if booking.zoo_id else None
+    service = db.session.get(Service, booking.service_id) if booking.service_id else None
+    ticket = BookingTicket.query.filter_by(booking_id=booking.id).first()
+    if not ticket and (booking.payment_status or "").lower() == "paid":
+        try:
+            ticket, _ = issue_ticket(booking)
+            db.session.commit()
+        except ValueError:
+            db.session.rollback()
+            ticket = BookingTicket.query.filter_by(booking_id=booking.id).first()
+    ticket_payload = ticket.token_payload if ticket else None
+    qr_code = qr_data_uri(ticket_payload) if ticket_payload else None
+
+    return render_template(
+        "visitor/confirmed.html",
+        booking=booking,
+        payment=latest_payment,
+        zoo=zoo,
+        service=service,
+        user=user,
+        ticket=ticket,
+        qr_code=qr_code,
+    )
 
 
 @visitor_bp.get("/bookings/<booking_id>/ticket")

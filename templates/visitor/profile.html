@@ -323,12 +323,201 @@
             </div>
             {% elif show_tab == 'linked-accounts' %}
             <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">
-                <h3 style="margin:0 0 0.5rem 0; font-size: 1.2rem; color: #1a4f32;">Linked Accounts</h3>
-                <div style="color:#64748b; margin-bottom:1rem;">Connected details for this visitor account.</div>
-                <div style="display:grid; gap:1rem; max-width: 560px;">
-                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;"><strong>Email:</strong> {{ linked_accounts.email }}</div>
-                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;"><strong>Username:</strong> {{ linked_accounts.username }}</div>
-                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;"><strong>Member since:</strong> {{ linked_accounts.member_since }}</div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+                    <div>
+                        <h3 style="margin:0 0 0.4rem 0; font-size: 1.3rem; color: #1a4f32; display:flex; align-items:center; gap:0.6rem;">
+                            <i class="fa-solid fa-link" style="color:#2d6a4f;"></i> Linked Accounts
+                        </h3>
+                        <div style="color:#64748b; font-size:0.95rem;">
+                            Connect your digital wallet and social accounts for express ticket checkout and seamless authentication.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Provider Cards Grid -->
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+                    
+                    <!-- GCash Card -->
+                    <div style="background: #ffffff; border: 1px solid {{ '#93c5fd' if linked_providers.get('gcash') else '#e2e8f0' }}; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column;">
+                        <div style="background: linear-gradient(135deg, #005ce6, #0080ff); padding: 1.1rem 1.25rem; color: white; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display:flex; align-items:center; gap:0.65rem;">
+                                <div style="background:white; color:#005ce6; width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.1rem; box-shadow:0 2px 5px rgba(0,0,0,0.15);">
+                                    G
+                                </div>
+                                <div>
+                                    <div style="font-weight:800; font-size:1.05rem; letter-spacing:-0.2px;">GCash</div>
+                                    <div style="font-size:0.75rem; opacity:0.9;">E-Wallet & Express Pay</div>
+                                </div>
+                            </div>
+                            {% if linked_providers.get('gcash') %}
+                            <span style="background: #ecfdf5; color: #065f46; font-size: 0.72rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 999px; display: flex; align-items: center; gap: 0.35rem; border: 1px solid #a7f3d0;">
+                                <i class="fa-solid fa-circle-check"></i> Connected
+                            </span>
+                            {% else %}
+                            <span style="background: rgba(255,255,255,0.2); color: white; font-size: 0.72rem; font-weight: 600; padding: 0.25rem 0.65rem; border-radius: 999px;">
+                                Not Linked
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div style="padding: 1.25rem; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; gap: 1rem;">
+                            {% if linked_providers.get('gcash') %}
+                            <div>
+                                <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Mobile Number</div>
+                                <div style="font-size: 1.15rem; font-weight: 800; color: #0f172a; font-family: monospace;">{{ linked_providers.gcash.masked_identifier }}</div>
+                                <div style="font-size: 0.85rem; color: #475569; margin-top: 0.35rem;">
+                                    <i class="fa-solid fa-user-check" style="color:#005ce6;"></i> {{ linked_providers.gcash.display_name or user.full_name }}
+                                </div>
+                                <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">
+                                    <i class="fa-regular fa-clock"></i> Linked on {{ linked_providers.gcash.linked_at }}
+                                </div>
+                            </div>
+                            <button type="button" onclick="openUnlinkModal('gcash', 'GCash', '{{ linked_providers.gcash.masked_identifier }}')" style="background: #fff; border: 1px solid #cbd5e1; color: #dc2626; padding: 0.65rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.15s ease;" onmouseover="this.style.background='#fef2f2'; this.style.borderColor='#fca5a5';" onmouseout="this.style.background='#fff'; this.style.borderColor='#cbd5e1';">
+                                <i class="fa-solid fa-link-slash"></i> Disconnect GCash
+                            </button>
+                            {% else %}
+                            <div>
+                                <div style="color: #475569; font-size: 0.9rem; line-height: 1.45;">
+                                    Connect your GCash mobile number to enable instant ticket payments and seamless refunds at Zootique.
+                                </div>
+                                <div style="display:flex; align-items:center; gap:0.4rem; color:#005ce6; font-size:0.8rem; font-weight:600; margin-top:0.75rem;">
+                                    <i class="fa-solid fa-shield-halved"></i> Fast OTP verification
+                                </div>
+                            </div>
+                            <button type="button" onclick="openGcashModal()" style="background: #005ce6; border: none; color: white; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 2px 6px rgba(0,92,230,0.3); transition: background 0.15s ease;" onmouseover="this.style.background='#004bc4';" onmouseout="this.style.background='#005ce6';">
+                                <i class="fa-solid fa-mobile-screen"></i> Link GCash Account
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Google Card -->
+                    <div style="background: #ffffff; border: 1px solid {{ '#fca5a5' if linked_providers.get('google') else '#e2e8f0' }}; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column;">
+                        <div style="background: linear-gradient(135deg, #1e293b, #334155); padding: 1.1rem 1.25rem; color: white; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display:flex; align-items:center; gap:0.65rem;">
+                                <div style="background:white; width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 5px rgba(0,0,0,0.15);">
+                                    <svg width="20" height="20" viewBox="0 0 24 24">
+                                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                                        <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.16 0 9.94 0 12s.45 3.84 1.25 5.42l4.03-3.15z"/>
+                                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div style="font-weight:800; font-size:1.05rem; letter-spacing:-0.2px;">Google</div>
+                                    <div style="font-size:0.75rem; opacity:0.85;">Single Sign-On & Sync</div>
+                                </div>
+                            </div>
+                            {% if linked_providers.get('google') %}
+                            <span style="background: #ecfdf5; color: #065f46; font-size: 0.72rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 999px; display: flex; align-items: center; gap: 0.35rem; border: 1px solid #a7f3d0;">
+                                <i class="fa-solid fa-circle-check"></i> Connected
+                            </span>
+                            {% else %}
+                            <span style="background: rgba(255,255,255,0.2); color: white; font-size: 0.72rem; font-weight: 600; padding: 0.25rem 0.65rem; border-radius: 999px;">
+                                Not Linked
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div style="padding: 1.25rem; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; gap: 1rem;">
+                            {% if linked_providers.get('google') %}
+                            <div>
+                                <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Connected Email</div>
+                                <div style="font-size: 1.05rem; font-weight: 800; color: #0f172a; word-break: break-all;">{{ linked_providers.google.masked_identifier }}</div>
+                                <div style="font-size: 0.85rem; color: #475569; margin-top: 0.35rem;">
+                                    <i class="fa-solid fa-user-circle" style="color:#ea4335;"></i> {{ linked_providers.google.display_name or user.full_name }}
+                                </div>
+                                <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">
+                                    <i class="fa-regular fa-clock"></i> Linked on {{ linked_providers.google.linked_at }}
+                                </div>
+                            </div>
+                            <button type="button" onclick="openUnlinkModal('google', 'Google', '{{ linked_providers.google.masked_identifier }}')" style="background: #fff; border: 1px solid #cbd5e1; color: #dc2626; padding: 0.65rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.15s ease;" onmouseover="this.style.background='#fef2f2'; this.style.borderColor='#fca5a5';" onmouseout="this.style.background='#fff'; this.style.borderColor='#cbd5e1';">
+                                <i class="fa-solid fa-link-slash"></i> Disconnect Google
+                            </button>
+                            {% else %}
+                            <div>
+                                <div style="color: #475569; font-size: 0.9rem; line-height: 1.45;">
+                                    Connect your Google account for passwordless sign-in and automated booking notification sync.
+                                </div>
+                                <div style="display:flex; align-items:center; gap:0.4rem; color:#4285f4; font-size:0.8rem; font-weight:600; margin-top:0.75rem;">
+                                    <i class="fa-solid fa-bolt"></i> One-click authorization
+                                </div>
+                            </div>
+                            <button type="button" onclick="openGoogleModal()" style="background: #ffffff; border: 1px solid #cbd5e1; color: #1e293b; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.6rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc';" onmouseout="this.style.background='#ffffff';">
+                                <svg width="18" height="18" viewBox="0 0 24 24">
+                                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                                    <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.16 0 9.94 0 12s.45 3.84 1.25 5.42l4.03-3.15z"/>
+                                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                                </svg>
+                                Link Google Account
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Facebook Card -->
+                    <div style="background: #ffffff; border: 1px solid {{ '#93c5fd' if linked_providers.get('facebook') else '#e2e8f0' }}; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column;">
+                        <div style="background: linear-gradient(135deg, #1877f2, #0b5fc9); padding: 1.1rem 1.25rem; color: white; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display:flex; align-items:center; gap:0.65rem;">
+                                <div style="background:white; color:#1877f2; width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.25rem; box-shadow:0 2px 5px rgba(0,0,0,0.15);">
+                                    <i class="fa-brands fa-facebook"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight:800; font-size:1.05rem; letter-spacing:-0.2px;">Facebook</div>
+                                    <div style="font-size:0.75rem; opacity:0.9;">Social Community & Share</div>
+                                </div>
+                            </div>
+                            {% if linked_providers.get('facebook') %}
+                            <span style="background: #ecfdf5; color: #065f46; font-size: 0.72rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 999px; display: flex; align-items: center; gap: 0.35rem; border: 1px solid #a7f3d0;">
+                                <i class="fa-solid fa-circle-check"></i> Connected
+                            </span>
+                            {% else %}
+                            <span style="background: rgba(255,255,255,0.2); color: white; font-size: 0.72rem; font-weight: 600; padding: 0.25rem 0.65rem; border-radius: 999px;">
+                                Not Linked
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div style="padding: 1.25rem; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; gap: 1rem;">
+                            {% if linked_providers.get('facebook') %}
+                            <div>
+                                <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Connected Profile</div>
+                                <div style="font-size: 1.05rem; font-weight: 800; color: #0f172a;">{{ linked_providers.facebook.display_name or linked_providers.facebook.raw_identifier }}</div>
+                                <div style="font-size: 0.85rem; color: #475569; margin-top: 0.35rem;">
+                                    <i class="fa-solid fa-id-badge" style="color:#1877f2;"></i> {{ linked_providers.facebook.raw_identifier }}
+                                </div>
+                                <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">
+                                    <i class="fa-regular fa-clock"></i> Linked on {{ linked_providers.facebook.linked_at }}
+                                </div>
+                            </div>
+                            <button type="button" onclick="openUnlinkModal('facebook', 'Facebook', '{{ linked_providers.facebook.display_name or linked_providers.facebook.raw_identifier }}')" style="background: #fff; border: 1px solid #cbd5e1; color: #dc2626; padding: 0.65rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.15s ease;" onmouseover="this.style.background='#fef2f2'; this.style.borderColor='#fca5a5';" onmouseout="this.style.background='#fff'; this.style.borderColor='#cbd5e1';">
+                                <i class="fa-solid fa-link-slash"></i> Disconnect Facebook
+                            </button>
+                            {% else %}
+                            <div>
+                                <div style="color: #475569; font-size: 0.9rem; line-height: 1.45;">
+                                    Link your Facebook profile to share wildlife badges, park reviews, and invite friends to Zootique tours.
+                                </div>
+                                <div style="display:flex; align-items:center; gap:0.4rem; color:#1877f2; font-size:0.8rem; font-weight:600; margin-top:0.75rem;">
+                                    <i class="fa-solid fa-users"></i> Social discovery
+                                </div>
+                            </div>
+                            <button type="button" onclick="openFacebookModal()" style="background: #1877f2; border: none; color: white; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 2px 6px rgba(24,119,242,0.3); transition: background 0.15s ease;" onmouseover="this.style.background='#1464cc';" onmouseout="this.style.background='#1877f2';">
+                                <i class="fa-brands fa-facebook"></i> Link Facebook Profile
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Primary Account Overview -->
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.25rem;">
+                    <div style="font-weight: 700; color: #334155; margin-bottom: 0.75rem; font-size: 0.9rem; display:flex; align-items:center; gap:0.5rem;">
+                        <i class="fa-solid fa-circle-info" style="color:#64748b;"></i> Primary Account Identity
+                    </div>
+                    <div style="display:flex; flex-wrap:wrap; gap:2rem; font-size:0.9rem; color:#475569;">
+                        <div><strong style="color:#1e293b;">Primary Email:</strong> {{ linked_accounts.email }}</div>
+                        <div><strong style="color:#1e293b;">Username:</strong> {{ linked_accounts.username }}</div>
+                        <div><strong style="color:#1e293b;">Member Since:</strong> {{ linked_accounts.member_since }}</div>
+                    </div>
                 </div>
             </div>
             {% elif show_tab == 'danger' %}
@@ -341,4 +530,224 @@
         </div>
     </div>
 </div>
+
+<!-- ================= MODALS FOR LINKED ACCOUNTS ================= -->
+
+<!-- GCash Modal -->
+<div id="modal-link-gcash" style="position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(3px); z-index:9999; display:none; align-items:center; justify-content:center; padding:1rem;">
+    <div style="background:white; border-radius:16px; max-width:440px; width:100%; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden;">
+        <div style="background:linear-gradient(135deg, #005ce6, #0080ff); padding:1.25rem 1.5rem; color:white; display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <div style="background:white; color:#005ce6; width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.15rem;">G</div>
+                <div>
+                    <h4 style="margin:0; font-size:1.1rem; font-weight:800;">Link GCash E-Wallet</h4>
+                    <div style="font-size:0.78rem; opacity:0.9;">Secure Account Authorization</div>
+                </div>
+            </div>
+            <button type="button" onclick="closeAllModals()" style="background:transparent; border:none; color:white; font-size:1.4rem; cursor:pointer; line-height:1; opacity:0.8;">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('visitor.profile') }}" style="padding:1.5rem; display:flex; flex-direction:column; gap:1.1rem;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="link_account">
+            <input type="hidden" name="provider" value="gcash">
+
+            <div>
+                <label style="display:block; font-weight:700; font-size:0.85rem; color:#1e293b; margin-bottom:0.4rem;">GCash Registered Mobile Number</label>
+                <div style="position:relative; display:flex; align-items:center;">
+                    <span style="position:absolute; left:1rem; font-weight:700; color:#64748b; font-size:0.9rem;">+63</span>
+                    <input type="text" name="account_identifier" required placeholder="917 123 4567" maxlength="13" value="{{ linked_providers.gcash.raw_identifier if linked_providers.get('gcash') else '' }}" style="width:100%; padding:0.75rem 0.85rem 0.75rem 3.5rem; border:1px solid #cbd5e1; border-radius:8px; font-size:1rem; font-weight:600; outline:none;" onfocus="this.style.borderColor='#005ce6';" onblur="this.style.borderColor='#cbd5e1';">
+                </div>
+                <div style="font-size:0.75rem; color:#64748b; margin-top:0.35rem;">Enter the 10 or 11-digit number linked to your GCash account.</div>
+            </div>
+
+            <div>
+                <label style="display:block; font-weight:700; font-size:0.85rem; color:#1e293b; margin-bottom:0.4rem;">Account Holder Full Name</label>
+                <input type="text" name="display_name" required value="{{ user.full_name }}" placeholder="Juan Dela Cruz" style="width:100%; padding:0.75rem 0.85rem; border:1px solid #cbd5e1; border-radius:8px; font-size:0.95rem; outline:none;" onfocus="this.style.borderColor='#005ce6';" onblur="this.style.borderColor='#cbd5e1';">
+            </div>
+
+            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:0.85rem; display:flex; gap:0.6rem; align-items:center;">
+                <i class="fa-solid fa-shield-check" style="color:#16a34a; font-size:1.1rem;"></i>
+                <div style="font-size:0.8rem; color:#166534;">
+                    Instant simulation verification active. No real funds will be charged upon linking.
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:0.5rem;">
+                <button type="button" onclick="closeAllModals()" style="background:#f1f5f9; border:none; padding:0.7rem 1.25rem; border-radius:8px; font-weight:600; color:#475569; cursor:pointer;">Cancel</button>
+                <button type="submit" style="background:#005ce6; border:none; padding:0.7rem 1.5rem; border-radius:8px; font-weight:700; color:white; cursor:pointer; box-shadow:0 2px 6px rgba(0,92,230,0.35);">
+                    <i class="fa-solid fa-link"></i> Link GCash Account
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Google Modal -->
+<div id="modal-link-google" style="position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(3px); z-index:9999; display:none; align-items:center; justify-content:center; padding:1rem;">
+    <div style="background:white; border-radius:16px; max-width:440px; width:100%; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden;">
+        <div style="padding:1.5rem 1.5rem 0.5rem; text-align:center;">
+            <svg width="40" height="40" viewBox="0 0 24 24" style="margin-bottom:0.75rem;">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.16 0 9.94 0 12s.45 3.84 1.25 5.42l4.03-3.15z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+            </svg>
+            <h4 style="margin:0 0 0.35rem; font-size:1.25rem; font-weight:800; color:#1e293b;">Sign in with Google</h4>
+            <div style="font-size:0.85rem; color:#64748b;">Choose an account to connect with <strong>Zootique</strong></div>
+        </div>
+
+        <form method="POST" action="{{ url_for('visitor.profile') }}" style="padding:1.5rem; display:flex; flex-direction:column; gap:1.1rem;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="link_account">
+            <input type="hidden" name="provider" value="google">
+
+            <div>
+                <label style="display:block; font-weight:700; font-size:0.85rem; color:#1e293b; margin-bottom:0.4rem;">Google Email Address</label>
+                <input type="email" name="account_identifier" required value="{{ user.email }}" placeholder="your.name@gmail.com" style="width:100%; padding:0.75rem 0.85rem; border:1px solid #cbd5e1; border-radius:8px; font-size:0.95rem; outline:none;" onfocus="this.style.borderColor='#4285f4';" onblur="this.style.borderColor='#cbd5e1';">
+            </div>
+
+            <div>
+                <label style="display:block; font-weight:700; font-size:0.85rem; color:#1e293b; margin-bottom:0.4rem;">Google Display Name</label>
+                <input type="text" name="display_name" required value="{{ user.full_name }}" placeholder="Your Name" style="width:100%; padding:0.75rem 0.85rem; border:1px solid #cbd5e1; border-radius:8px; font-size:0.95rem; outline:none;" onfocus="this.style.borderColor='#4285f4';" onblur="this.style.borderColor='#cbd5e1';">
+            </div>
+
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:0.85rem; font-size:0.8rem; color:#64748b;">
+                By continuing, Google will share your name, email address, and language preference with Zootique.
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:0.5rem;">
+                <button type="button" onclick="closeAllModals()" style="background:#f1f5f9; border:none; padding:0.7rem 1.25rem; border-radius:8px; font-weight:600; color:#475569; cursor:pointer;">Cancel</button>
+                <button type="submit" style="background:#1e293b; border:none; padding:0.7rem 1.5rem; border-radius:8px; font-weight:700; color:white; cursor:pointer; display:flex; align-items:center; gap:0.5rem; box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+                    <i class="fa-solid fa-check"></i> Authorize & Link Google
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Facebook Modal -->
+<div id="modal-link-facebook" style="position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(3px); z-index:9999; display:none; align-items:center; justify-content:center; padding:1rem;">
+    <div style="background:white; border-radius:16px; max-width:440px; width:100%; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden;">
+        <div style="background:#1877f2; padding:1.25rem 1.5rem; color:white; display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <div style="background:white; color:#1877f2; width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                    <i class="fa-brands fa-facebook"></i>
+                </div>
+                <div>
+                    <h4 style="margin:0; font-size:1.1rem; font-weight:800;">Log in with Facebook</h4>
+                    <div style="font-size:0.78rem; opacity:0.9;">Zootique Community Integration</div>
+                </div>
+            </div>
+            <button type="button" onclick="closeAllModals()" style="background:transparent; border:none; color:white; font-size:1.4rem; cursor:pointer; line-height:1; opacity:0.8;">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('visitor.profile') }}" style="padding:1.5rem; display:flex; flex-direction:column; gap:1.1rem;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="link_account">
+            <input type="hidden" name="provider" value="facebook">
+
+            <div>
+                <label style="display:block; font-weight:700; font-size:0.85rem; color:#1e293b; margin-bottom:0.4rem;">Facebook Profile Name or Handle</label>
+                <input type="text" name="display_name" required value="{{ user.full_name }} (Facebook)" placeholder="e.g. Juan Dela Cruz" style="width:100%; padding:0.75rem 0.85rem; border:1px solid #cbd5e1; border-radius:8px; font-size:0.95rem; outline:none;" onfocus="this.style.borderColor='#1877f2';" onblur="this.style.borderColor='#cbd5e1';">
+            </div>
+
+            <div>
+                <label style="display:block; font-weight:700; font-size:0.85rem; color:#1e293b; margin-bottom:0.4rem;">Facebook Email / User ID</label>
+                <input type="text" name="account_identifier" required value="fb.{{ user.username or 'visitor' }}_{{ user.id }}" placeholder="facebook.com/profile" style="width:100%; padding:0.75rem 0.85rem; border:1px solid #cbd5e1; border-radius:8px; font-size:0.95rem; outline:none;" onfocus="this.style.borderColor='#1877f2';" onblur="this.style.borderColor='#cbd5e1';">
+            </div>
+
+            <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:0.85rem; font-size:0.8rem; color:#1e40af;">
+                Zootique will receive access to your public profile to verify badge sharing and visit recommendations.
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:0.5rem;">
+                <button type="button" onclick="closeAllModals()" style="background:#f1f5f9; border:none; padding:0.7rem 1.25rem; border-radius:8px; font-weight:600; color:#475569; cursor:pointer;">Cancel</button>
+                <button type="submit" style="background:#1877f2; border:none; padding:0.7rem 1.5rem; border-radius:8px; font-weight:700; color:white; cursor:pointer; box-shadow:0 2px 6px rgba(24,119,242,0.35);">
+                    <i class="fa-brands fa-facebook"></i> Continue with Facebook
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Unlink Confirmation Modal -->
+<div id="modal-unlink-account" style="position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(3px); z-index:9999; display:none; align-items:center; justify-content:center; padding:1rem;">
+    <div style="background:white; border-radius:16px; max-width:420px; width:100%; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden;">
+        <div style="padding:1.5rem; text-align:center;">
+            <div style="width:48px; height:48px; background:#fee2e2; color:#dc2626; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:1.3rem;">
+                <i class="fa-solid fa-link-slash"></i>
+            </div>
+            <h4 style="margin:0 0 0.4rem; font-size:1.2rem; font-weight:800; color:#1e293b;">Disconnect <span id="unlink-provider-title">Account</span>?</h4>
+            <div style="font-size:0.88rem; color:#64748b; line-height:1.45;">
+                Are you sure you want to unlink <strong id="unlink-provider-ident" style="color:#0f172a;"></strong>? You will no longer be able to use express verification or instant checkout with this service.
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('visitor.profile') }}" style="padding:0 1.5rem 1.5rem; display:flex; justify-content:center; gap:0.75rem;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="unlink_account">
+            <input type="hidden" name="provider" id="unlink-provider-input" value="">
+
+            <button type="button" onclick="closeAllModals()" style="flex:1; background:#f1f5f9; border:none; padding:0.75rem 1rem; border-radius:8px; font-weight:600; color:#475569; cursor:pointer;">Keep Account</button>
+            <button type="submit" style="flex:1; background:#dc2626; border:none; padding:0.75rem 1rem; border-radius:8px; font-weight:700; color:white; cursor:pointer; box-shadow:0 2px 6px rgba(220,38,38,0.3);">
+                Disconnect
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function closeAllModals() {
+    ['modal-link-gcash', 'modal-link-google', 'modal-link-facebook', 'modal-unlink-account'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+}
+
+function openGcashModal() {
+    closeAllModals();
+    var m = document.getElementById('modal-link-gcash');
+    if (m) m.style.display = 'flex';
+}
+
+function openGoogleModal() {
+    closeAllModals();
+    var m = document.getElementById('modal-link-google');
+    if (m) m.style.display = 'flex';
+}
+
+function openFacebookModal() {
+    closeAllModals();
+    var m = document.getElementById('modal-link-facebook');
+    if (m) m.style.display = 'flex';
+}
+
+function openUnlinkModal(providerKey, providerName, identifier) {
+    closeAllModals();
+    var input = document.getElementById('unlink-provider-input');
+    var title = document.getElementById('unlink-provider-title');
+    var ident = document.getElementById('unlink-provider-ident');
+    if (input) input.value = providerKey;
+    if (title) title.textContent = providerName;
+    if (ident) ident.textContent = identifier || providerName;
+    var m = document.getElementById('modal-unlink-account');
+    if (m) m.style.display = 'flex';
+}
+
+window.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeAllModals();
+    }
+});
+
+['modal-link-gcash', 'modal-link-google', 'modal-link-facebook', 'modal-unlink-account'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+        el.addEventListener('click', function(e) {
+            if (e.target === el) {
+                closeAllModals();
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

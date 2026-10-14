@@ -1,7 +1,7 @@
 import unittest
 
 from app import create_app
-from models import Animal, Booking, BookingPayment, User, Zoo, ZooZone, db
+from models import Animal, Booking, BookingPayment, BookingTicket, User, Zoo, ZooZone, db
 from services.booking_service import process_booking_checkout
 from services.payment import MockPaymentProvider
 
@@ -54,6 +54,14 @@ class RevisionFeatureTestCase(unittest.TestCase):
     def test_local_payment_provider_is_explicitly_simulated(self):
         self.assertEqual(MockPaymentProvider.name, "simulated")
 
+    def test_zone_gallery_images_round_trip_and_ignore_invalid_values(self):
+        with self.app.app_context():
+            zone = ZooZone(zoo_id=1, name="Gallery Test Zone")
+            zone.image_urls = ["/uploads/zone_images/one.jpg", "", 42]
+            self.assertEqual(zone.image_urls, ["/uploads/zone_images/one.jpg"])
+            zone.image_urls_json = '{"not": "a list"}'
+            self.assertEqual(zone.image_urls, [])
+
     def test_checkout_is_idempotent_for_the_same_booking_and_method(self):
         with self.app.app_context():
             user = User(
@@ -97,6 +105,72 @@ class RevisionFeatureTestCase(unittest.TestCase):
             db.session.delete(booking)
             db.session.delete(user)
             db.session.commit()
+
+    def test_checkout_redirects_to_confirmed_and_renders_receipt(self):
+        with self.app.app_context():
+            zoo = Zoo.query.order_by(Zoo.id.asc()).first()
+            user = User(
+                email="checkout-confirm-test@example.com",
+                full_name="Checkout Tester",
+                role="visitor",
+                status="active",
+            )
+            user.set_password("Password123!")
+            booking = Booking(
+                id="BK-CONFIRM-999",
+                zoo_id=zoo.id if zoo else None,
+                user=user,
+                visitor_name=user.full_name,
+                date="2099-05-10",
+                time="10:00",
+                guests=2,
+                status="Pending",
+                amount=350,
+                payment_status="unpaid",
+            )
+            db.session.add_all([user, booking])
+            db.session.commit()
+            user_id = user.id
+            booking_id = booking.id
+            zoo_id = zoo.id if zoo else None
+
+        try:
+            with self.client.session_transaction() as sess:
+                sess["user_id"] = user_id
+                sess["role"] = "visitor"
+                if zoo_id:
+                    sess["selected_zoo_id"] = zoo_id
+                sess["_csrf_token"] = "test-csrf-token"
+
+            # Post checkout payment
+            res = self.client.post(
+                "/visitor/checkout",
+                data={
+                    "csrf_token": "test-csrf-token",
+                    "booking_id": booking_id,
+                    "payment_method": "gcash",
+                },
+                follow_redirects=False,
+            )
+            self.assertEqual(res.status_code, 302)
+            self.assertIn(f"/visitor/checkout/confirmed?booking_id={booking_id}", res.headers["Location"])
+
+            # Follow to confirmation page
+            conf_res = self.client.get(f"/visitor/checkout/confirmed?booking_id={booking_id}")
+            self.assertEqual(conf_res.status_code, 200)
+            self.assertIn("Payment &amp; Booking Confirmed!", conf_res.get_data(as_text=True))
+            self.assertIn(booking_id, conf_res.get_data(as_text=True))
+        finally:
+            with self.app.app_context():
+                BookingTicket.query.filter_by(booking_id=booking_id).delete()
+                BookingPayment.query.filter_by(booking_id=booking_id).delete()
+                b = db.session.get(Booking, booking_id)
+                if b:
+                    db.session.delete(b)
+                u = db.session.get(User, user_id)
+                if u:
+                    db.session.delete(u)
+                db.session.commit()
 
 
 if __name__ == "__main__":

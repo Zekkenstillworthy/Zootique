@@ -1001,22 +1001,871 @@
         @media (max-width: 600px) {
             .lp-reg-steps-grid { grid-template-columns: 1fr; }
         }
+
+        /* =============================================
+           TAB SWITCHING
+        ============================================= */
+        .lp-link {
+            position: relative;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        .lp-link.active {
+            color: #1a4f32 !important;
+            font-weight: 800;
+        }
+        .lp-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #1a4f32;
+            border-radius: 999px;
+        }
+        .lp-tab-content {
+            display: none;
+            animation: lpFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .lp-tab-content.active {
+            display: block !important;
+        }
+        @keyframes lpFadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* =============================================
+           CATEGORY ACTIONS STRIP (5 Pills)
+        ============================================= */
+        .lp-quick-strip {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1.25rem 0;
+        }
+        .lp-quick-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+        }
+        .lp-quick-item {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .lp-quick-item:hover {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+            transform: translateY(-2px);
+        }
+        .lp-quick-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .lp-quick-text h4 {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+        .lp-quick-text p {
+            margin: 0.15rem 0 0;
+            font-size: 0.76rem;
+            color: #64748b;
+            line-height: 1.3;
+        }
+        @media (max-width: 1080px) {
+            .lp-quick-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 700px) {
+            .lp-quick-grid { grid-template-columns: 1fr; }
+        }
+
+        /* =============================================
+           DUAL PORTAL CARDS (For Visitors / For Zoo Admins)
+        ============================================= */
+        .lp-portal-section {
+            padding: 2.5rem 0 3rem;
+            background: #f8fafc;
+        }
+        .lp-portal-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.75rem;
+        }
+        .lp-portal-card {
+            border-radius: 18px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .lp-portal-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 30px rgba(0,0,0,0.08);
+        }
+        .lp-portal-card-visitor {
+            border-top: 4px solid #1a4f32;
+        }
+        .lp-portal-card-admin {
+            border-top: 4px solid #0284c7;
+        }
+        .lp-portal-body {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .lp-portal-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            margin-bottom: 1rem;
+            width: fit-content;
+        }
+        .lp-portal-badge-visitor {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        .lp-portal-badge-admin {
+            background: #f0f9ff;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+        .lp-portal-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 0.85rem;
+            line-height: 1.25;
+        }
+        .lp-portal-desc {
+            font-size: 0.95rem;
+            color: #475569;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+        .lp-portal-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .lp-portal-tag {
+            background: #f1f5f9;
+            color: #334155;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 0.35rem 0.75rem;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .lp-portal-cta {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            padding: 0.85rem 1.6rem;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            width: fit-content;
+        }
+        .lp-portal-cta-visitor {
+            background: #1a4f32;
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(26,79,50,0.3);
+        }
+        .lp-portal-cta-visitor:hover {
+            background: #133c26;
+        }
+        .lp-portal-cta-admin {
+            background: #0284c7;
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(2,132,199,0.3);
+        }
+        .lp-portal-cta-admin:hover {
+            background: #0369a1;
+        }
+        @media (max-width: 900px) {
+            .lp-portal-grid { grid-template-columns: 1fr; }
+        }
+
+        /* =============================================
+           ANIMAL FACTS ("DID YOU KNOW?") BANNER
+        ============================================= */
+        .lp-facts-banner {
+            background: linear-gradient(135deg, #092618 0%, #123d28 100%);
+            color: #ffffff;
+            padding: 3.5rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .lp-facts-banner::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 10% 20%, rgba(45,106,79,0.35) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .lp-facts-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 2.5rem;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        .lp-facts-featured {
+            display: flex;
+            align-items: center;
+            gap: 1.75rem;
+        }
+        .lp-facts-img-wrap {
+            width: 150px;
+            height: 150px;
+            border-radius: 20px;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        .lp-facts-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .lp-facts-kicker {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #6ee7b7;
+            margin-bottom: 0.35rem;
+        }
+        .lp-facts-title {
+            font-size: 1.75rem;
+            font-weight: 900;
+            margin: 0 0 0.65rem;
+            color: #ffffff;
+        }
+        .lp-facts-text {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #d1fae5;
+            margin: 0 0 1.25rem;
+            max-width: 440px;
+        }
+        .lp-facts-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #10b981;
+            color: #064e3b;
+            font-weight: 800;
+            font-size: 0.88rem;
+            padding: 0.65rem 1.25rem;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .lp-facts-btn:hover {
+            background: #34d399;
+            transform: translateX(2px);
+        }
+        .lp-facts-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        .lp-fact-pill {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 14px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+        .lp-fact-pill:hover {
+            background: rgba(255,255,255,0.14);
+            transform: translateY(-2px);
+        }
+        .lp-fact-pill img {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        .lp-fact-pill h5 {
+            margin: 0;
+            font-size: 0.92rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
+        .lp-fact-pill p {
+            margin: 0.15rem 0 0;
+            font-size: 0.75rem;
+            color: #a7f3d0;
+            line-height: 1.3;
+        }
+        @media (max-width: 900px) {
+            .lp-facts-grid { grid-template-columns: 1fr; gap: 2rem; }
+            .lp-facts-featured { flex-direction: column; text-align: center; }
+            .lp-facts-text { margin-left: auto; margin-right: auto; }
+            .lp-facts-cards { grid-template-columns: 1fr; }
+        }
+
+        /* =============================================
+           ZOO ADMIN SUBSCRIPTIONS PRICING SECTION
+        ============================================= */
+        .lp-pricing-section {
+            padding: 3.5rem 0 4rem;
+            background: #ffffff;
+        }
+        .lp-pricing-header {
+            text-align: center;
+            max-width: 680px;
+            margin: 0 auto 2.5rem;
+        }
+        .lp-pricing-kicker {
+            display: inline-block;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #1a4f32;
+            background: #ecfdf5;
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            margin-bottom: 0.75rem;
+        }
+        .lp-pricing-title {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #0f172a;
+            margin: 0 0 0.85rem;
+            letter-spacing: -0.5px;
+        }
+        .lp-pricing-subtitle {
+            font-size: 1.05rem;
+            color: #64748b;
+            line-height: 1.5;
+            margin: 0;
+        }
+        .lp-pricing-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+        .lp-toggle-btn {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 0.45rem 1.1rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .lp-toggle-btn.active {
+            background: #1a4f32;
+            color: #ffffff;
+            border-color: #1a4f32;
+        }
+        .lp-pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            align-items: stretch;
+            max-width: 1140px;
+            margin: 0 auto;
+        }
+        .lp-pricing-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 2.25rem 1.75rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+            transition: all 0.25s ease;
+        }
+        .lp-pricing-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 16px 36px rgba(0,0,0,0.08);
+            border-color: #cbd5e1;
+        }
+        .lp-pricing-card.popular {
+            border: 2px solid #1a4f32;
+            box-shadow: 0 12px 32px rgba(26,79,50,0.12);
+            position: relative;
+        }
+        .lp-popular-badge {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a4f32;
+            color: #ffffff;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            padding: 0.35rem 1rem;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+        .lp-plan-name {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 0.4rem;
+        }
+        .lp-plan-desc {
+            font-size: 0.86rem;
+            color: #64748b;
+            min-height: 42px;
+            margin: 0 0 1.25rem;
+            line-height: 1.4;
+        }
+        .lp-plan-price {
+            display: flex;
+            align-items: baseline;
+            gap: 0.25rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .lp-price-curr {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+        .lp-price-val {
+            font-size: 2.75rem;
+            font-weight: 900;
+            color: #0f172a;
+            letter-spacing: -1px;
+            line-height: 1;
+        }
+        .lp-price-period {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 600;
+        }
+        .lp-plan-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            flex-grow: 1;
+        }
+        .lp-plan-features li {
+            font-size: 0.88rem;
+            color: #334155;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.65rem;
+            line-height: 1.4;
+        }
+        .lp-plan-features li i {
+            color: #10b981;
+            font-size: 0.95rem;
+            margin-top: 0.15rem;
+            flex-shrink: 0;
+        }
+        .lp-plan-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.85rem 1.25rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 800;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+        .lp-plan-btn-outline {
+            background: #ffffff;
+            color: #1a4f32;
+            border: 2px solid #1a4f32;
+        }
+        .lp-plan-btn-outline:hover {
+            background: #f0fdf4;
+        }
+        .lp-plan-btn-solid {
+            background: #1a4f32;
+            color: #ffffff;
+            border: 2px solid #1a4f32;
+            box-shadow: 0 4px 14px rgba(26,79,50,0.25);
+        }
+        .lp-plan-btn-solid:hover {
+            background: #133c26;
+            border-color: #133c26;
+        }
+        @media (max-width: 960px) {
+            .lp-pricing-grid { grid-template-columns: 1fr; max-width: 440px; }
+        }
+
+        /* =============================================
+           HOW IT WORKS 4 STEPS
+        ============================================= */
+        .lp-steps-section {
+            padding: 3.5rem 0;
+            background: #ffffff;
+        }
+        .lp-steps-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .lp-step-item {
+            text-align: center;
+            padding: 1.75rem 1.25rem;
+            border-radius: 16px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            position: relative;
+        }
+        .lp-step-number {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: #1a4f32;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 1.15rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.1rem;
+        }
+        .lp-step-item h4 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 0.4rem;
+        }
+        .lp-step-item p {
+            font-size: 0.85rem;
+            color: #64748b;
+            line-height: 1.45;
+            margin: 0;
+        }
+        @media (max-width: 900px) {
+            .lp-steps-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 550px) {
+            .lp-steps-grid { grid-template-columns: 1fr; }
+        }
+
+        /* =============================================
+           ATTRACTIONS SHOWCASE SECTION
+        ============================================= */
+        .lp-attractions-section {
+            padding: 3.5rem 0;
+            background: #ffffff;
+        }
+        .lp-attractions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .lp-attractions-title {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #0f172a;
+            margin: 0 0 0.4rem;
+        }
+        .lp-attractions-subtitle {
+            font-size: 0.95rem;
+            color: #64748b;
+            margin: 0;
+        }
+        .lp-attractions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        .lp-zoo-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .lp-zoo-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.09);
+        }
+        .lp-zoo-img {
+            height: 180px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        .lp-zoo-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(15,23,42,0.75);
+            backdrop-filter: blur(4px);
+            color: #ffffff;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.25rem 0.65rem;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+        .lp-zoo-body {
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            justify-content: space-between;
+        }
+        .lp-zoo-name {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 0.35rem;
+        }
+        .lp-zoo-loc {
+            font-size: 0.82rem;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            margin-bottom: 0.75rem;
+        }
+        .lp-zoo-meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 0.75rem;
+            margin-top: 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        /* =============================================
+           EVENTS & PROMOTIONS SECTION
+        ============================================= */
+        .lp-events-section {
+            padding: 3.5rem 0;
+            background: #f8fafc;
+        }
+        .lp-events-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .lp-event-card {
+            background: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+        }
+        .lp-event-img {
+            height: 160px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        .lp-event-date-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: #ffffff;
+            color: #0f172a;
+            border-radius: 8px;
+            padding: 0.35rem 0.6rem;
+            font-weight: 800;
+            text-align: center;
+            font-size: 0.75rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        .lp-event-body {
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            justify-content: space-between;
+        }
+
+        /* =============================================
+           TESTIMONIALS SECTION
+        ============================================= */
+        .lp-testi-section {
+            padding: 3.5rem 0 4rem;
+            background: #ffffff;
+        }
+        .lp-testi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .lp-testi-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .lp-testi-stars {
+            color: #f59e0b;
+            font-size: 0.85rem;
+            margin-bottom: 0.85rem;
+        }
+        .lp-testi-text {
+            font-size: 0.92rem;
+            line-height: 1.55;
+            color: #334155;
+            font-style: italic;
+            margin: 0 0 1.25rem;
+            flex-grow: 1;
+        }
+        .lp-testi-author {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .lp-testi-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        @media (max-width: 900px) {
+            .lp-events-grid, .lp-testi-grid { grid-template-columns: 1fr; }
+        }
+
+        /* =============================================
+           FOOTER
+        ============================================= */
+        .lp-footer {
+            background: #091a11;
+            color: #94a3b8;
+            padding: 3.5rem 0 1.75rem;
+            border-top: 1px solid #1e3a29;
+        }
+        .lp-footer-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .lp-footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+        .lp-footer-links a {
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            transition: color 0.15s ease;
+        }
+        .lp-footer-links a:hover {
+            color: #10b981;
+        }
+        .lp-footer-social {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .lp-footer-social a {
+            color: #cbd5e1;
+            font-size: 1.1rem;
+            transition: color 0.15s ease;
+        }
+        .lp-footer-social a:hover {
+            color: #10b981;
+        }
+        .lp-footer-copy {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
     </style>
 </head>
 <body>
 
 <header class="lp-nav">
     <div class="container lp-nav-inner" style="max-width: 1100px;">
-        <a class="lp-logo" href="#home">
+        <a class="lp-logo" href="#home" onclick="switchLandingTab('home', event)">
             <img src="{{ url_for('static', filename='img/Zootique_Logo.png') }}" alt="Zootique" />
         </a>
 
         <!-- Desktop nav links (hidden on mobile) -->
         <nav class="lp-links" id="lpMobileNav" aria-label="Landing navigation">
-            <a class="lp-link" href="#home">Home</a>
-            <a class="lp-link" href="#about">About Us</a>
-            <a class="lp-link" href="#register">Register Zoo</a>
-            <a class="lp-link" href="#contact">Contact</a>
+            <a class="lp-link active" data-tab="home" href="#home" onclick="switchLandingTab('home', event)">Home</a>
+            <a class="lp-link" data-tab="about" href="#about" onclick="switchLandingTab('about', event)">About Us</a>
+            <a class="lp-link" data-tab="register" href="#register" onclick="switchLandingTab('register', event)">Register Zoo</a>
+            <a class="lp-link" data-tab="contact" href="#contact" onclick="switchLandingTab('contact', event)">Contact</a>
             <!-- These are only visible in the mobile dropdown -->
             <div class="lp-mobile-action" style="border-top: 1px solid #e2e8f0; padding-top: 0.75rem; margin-top: 0.5rem; gap: 0.75rem;">
                 <a class="lp-btn lp-btn-login" href="{{ url_for('auth.login_selection') }}" style="flex:1; text-align:center;">
@@ -1046,7 +1895,9 @@
     </div>
 </header>
 
-<main id="home">
+<main>
+    <!-- ==================== TAB: HOME ==================== -->
+    <div id="tab-home" class="lp-tab-content active">
     <section class="lp-hero" id="lpHeroSection"
              aria-label="Featured zoos and wildlife parks"
              aria-roledescription="carousel">
@@ -1191,6 +2042,372 @@
         {% endif %}
     </section>
 
+    </section>
+
+    <!-- Quick Category Actions Bar -->
+    <section class="lp-quick-strip">
+        <div class="container" style="max-width: 1140px;">
+            <div class="lp-quick-grid">
+                <a href="{{ url_for('visitor.choose_zoo') }}" class="lp-quick-item">
+                    <div class="lp-quick-icon" style="background:#ecfdf5; color:#059669;">
+                        <i class="fa-solid fa-compass"></i>
+                    </div>
+                    <div class="lp-quick-text">
+                        <h4>Explore Attractions</h4>
+                        <p>Find zoos, wildlife parks & farms</p>
+                    </div>
+                </a>
+                <a href="{{ url_for('visitor.my_bookings') }}" class="lp-quick-item">
+                    <div class="lp-quick-icon" style="background:#eff6ff; color:#2563eb;">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </div>
+                    <div class="lp-quick-text">
+                        <h4>Book a Visit</h4>
+                        <p>Choose services, dates & times</p>
+                    </div>
+                </a>
+                <a href="#events" class="lp-quick-item" onclick="document.getElementById('home-events').scrollIntoView({behavior:'smooth'}); return false;">
+                    <div class="lp-quick-icon" style="background:#faf5ff; color:#9333ea;">
+                        <i class="fa-solid fa-tags"></i>
+                    </div>
+                    <div class="lp-quick-text">
+                        <h4>Events & Promos</h4>
+                        <p>Upcoming activities & deals</p>
+                    </div>
+                </a>
+                <a href="{{ url_for('visitor.trivia') }}" class="lp-quick-item">
+                    <div class="lp-quick-icon" style="background:#fef2f2; color:#dc2626;">
+                        <i class="fa-solid fa-paw"></i>
+                    </div>
+                    <div class="lp-quick-text">
+                        <h4>Learn & Engage</h4>
+                        <p>Read animal facts & trivia</p>
+                    </div>
+                </a>
+                <a href="{{ url_for('visitor.profile') }}" class="lp-quick-item">
+                    <div class="lp-quick-icon" style="background:#fffbeb; color:#d97706;">
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                    <div class="lp-quick-text">
+                        <h4>Earn Rewards</h4>
+                        <p>Collect points & badges</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dual Portal Cards (For Visitors & For Zoo Admins) -->
+    <section class="lp-portal-section">
+        <div class="container" style="max-width: 1140px;">
+            <div class="lp-portal-grid">
+                <!-- Left: Visitors Portal -->
+                <div class="lp-portal-card lp-portal-card-visitor">
+                    <div class="lp-portal-body">
+                        <div>
+                            <span class="lp-portal-badge lp-portal-badge-visitor">
+                                <i class="fa-solid fa-users"></i> For Visitors
+                            </span>
+                            <h3 class="lp-portal-title">Your Wildlife Adventure Starts Here</h3>
+                            <p class="lp-portal-desc">
+                                Explore amazing attractions, book your favorite services, discover exciting events, learn about wildlife, and earn rewards through our engagement activities.
+                            </p>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:1.5rem; flex-wrap:wrap; margin-top:1rem;">
+                            <a href="{{ url_for('visitor.choose_zoo') }}" class="lp-portal-cta lp-portal-cta-visitor">
+                                Explore Now <i class="fa-solid fa-arrow-right"></i>
+                            </a>
+                            <div style="width:140px; height:100px; border-radius:14px; overflow:hidden; flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                                <img src="https://images.unsplash.com/photo-1534567153574-2b12153a87f0?auto=format&fit=crop&w=400&q=80" alt="Wildlife" style="width:100%; height:100%; object-fit:cover;" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Zoo Admin Portal -->
+                <div class="lp-portal-card lp-portal-card-admin">
+                    <div class="lp-portal-body">
+                        <div>
+                            <span class="lp-portal-badge lp-portal-badge-admin">
+                                <i class="fa-solid fa-shield-halved"></i> For Zoo Admins
+                            </span>
+                            <h3 class="lp-portal-title">Manage Your Zoo with Ease</h3>
+                            <p class="lp-portal-desc">
+                                Handle bookings, services, schedules, events, promotions, and visitor feedback all in one convenient dashboard. Keep your establishment updated and reach more visitors.
+                            </p>
+                            <div class="lp-portal-tags">
+                                <span class="lp-portal-tag"><i class="fa-solid fa-calendar-check" style="color:#0284c7;"></i> Manage Bookings</span>
+                                <span class="lp-portal-tag"><i class="fa-solid fa-list-check" style="color:#0284c7;"></i> Update Services</span>
+                                <span class="lp-portal-tag"><i class="fa-solid fa-bullhorn" style="color:#0284c7;"></i> Publish Events</span>
+                                <span class="lp-portal-tag"><i class="fa-solid fa-chart-line" style="color:#0284c7;"></i> View Analytics</span>
+                            </div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:1.5rem; flex-wrap:wrap; margin-top:0.5rem;">
+                            <a href="{{ url_for('auth.login', module_name='zoo_admin') }}" class="lp-portal-cta lp-portal-cta-admin">
+                                Zoo Admin Login <i class="fa-solid fa-arrow-right"></i>
+                            </a>
+                            <div style="width:140px; height:100px; border-radius:14px; overflow:hidden; flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                                <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80" alt="Admin Dashboard" style="width:100%; height:100%; object-fit:cover;" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Attractions Showcase -->
+    {% if hero_zoos %}
+    <section class="lp-attractions-section">
+        <div class="container" style="max-width: 1140px;">
+            <div class="lp-attractions-header">
+                <div>
+                    <h3 class="lp-attractions-title">Explore Our Zoos & Wildlife</h3>
+                    <p class="lp-attractions-subtitle">Discover amazing places, meet incredible animals, and experience unforgettable adventures at our registered establishments.</p>
+                </div>
+                <a href="{{ url_for('visitor.choose_zoo') }}" style="color:#1a4f32; font-weight:800; font-size:0.95rem; text-decoration:none; display:flex; align-items:center; gap:0.4rem;">
+                    View All Attractions <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="lp-attractions-grid">
+                {% for zoo in hero_zoos[:4] %}
+                <div class="lp-zoo-card">
+                    <div class="lp-zoo-img" style="background-image: url('{{ zoo.image_url if zoo.image_url else url_for('static', filename='img/zoo_wildlife.png') }}');">
+                        <span class="lp-zoo-badge">{{ zoo.type }}</span>
+                    </div>
+                    <div class="lp-zoo-body">
+                        <div>
+                            <h4 class="lp-zoo-name">{{ zoo.name }}</h4>
+                            <div class="lp-zoo-loc">
+                                <i class="fa-solid fa-location-dot" style="color:#10b981;"></i> {{ zoo.location or 'Philippines' }}
+                            </div>
+                            <p style="font-size:0.85rem; color:#64748b; line-height:1.45; margin:0 0 1rem;">
+                                {{ zoo.description[:110] }}{% if zoo.description|length > 110 %}...{% endif %}
+                            </p>
+                        </div>
+                        <div class="lp-zoo-meta-row">
+                            <div style="display:flex; align-items:center; gap:0.35rem; color:#eab308; font-weight:700;">
+                                <i class="fa-solid fa-star"></i> {{ zoo.rating }}
+                            </div>
+                            <div style="color:#1a4f32; font-weight:800;">
+                                {% if zoo.price > 0 %}From ₱{{ "{:,.0f}".format(zoo.price) }}{% else %}Free Admission{% endif %}
+                            </div>
+                        </div>
+                        <a href="{{ url_for('visitor.zoo_detail', zoo_id=zoo.id) }}" style="margin-top:0.85rem; background:#f0fdf4; color:#166534; font-weight:700; font-size:0.85rem; padding:0.6rem; border-radius:8px; text-align:center; text-decoration:none; display:block;">
+                            View Details &rarr;
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- How It Works 4 Steps -->
+    <section class="lp-steps-section">
+        <div class="container" style="max-width: 1140px;">
+            <div style="text-align:center; max-width:640px; margin:0 auto;">
+                <span style="font-size:0.78rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#1a4f32;">How It Works</span>
+                <h3 style="font-size:2rem; font-weight:900; color:#0f172a; margin:0.4rem 0 0.5rem;">Simple Steps to Your Next Adventure</h3>
+                <p style="font-size:0.95rem; color:#64748b; margin:0;">Plan and experience unforgettable wildlife adventures in 4 easy steps.</p>
+            </div>
+            <div class="lp-steps-grid">
+                <div class="lp-step-item">
+                    <div class="lp-step-number">1</div>
+                    <h4>Explore</h4>
+                    <p>Browse registered zoos, wildlife parks, sanctuaries, and interactive farm attractions.</p>
+                </div>
+                <div class="lp-step-item">
+                    <div class="lp-step-number">2</div>
+                    <h4>Book</h4>
+                    <p>Select your favorite ticket packages, dates, and experience time slots in seconds.</p>
+                </div>
+                <div class="lp-step-item">
+                    <div class="lp-step-number">3</div>
+                    <h4>Visit</h4>
+                    <p>Present your verified e-ticket QR code on arrival and enjoy your guided safari tour.</p>
+                </div>
+                <div class="lp-step-item">
+                    <div class="lp-step-number">4</div>
+                    <h4>Earn</h4>
+                    <p>Collect wildlife points, answer zoo trivia quizzes, and unlock exclusive discounts.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upcoming Events & Promotions -->
+    <section class="lp-events-section" id="home-events">
+        <div class="container" style="max-width: 1140px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+                <div>
+                    <span style="font-size:0.78rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#059669;">Upcoming Events &amp; Promotions</span>
+                    <h3 style="font-size:2rem; font-weight:900; color:#0f172a; margin:0.4rem 0 0;">Don't Miss Out!</h3>
+                    <p style="font-size:0.95rem; color:#64748b; margin:0.25rem 0 0;">Special seasonal events and partner discounts happening this month.</p>
+                </div>
+            </div>
+            <div class="lp-events-grid">
+                <div class="lp-event-card">
+                    <div class="lp-event-img" style="background-image: url('https://images.unsplash.com/photo-1547721064-da6cfb341d50?auto=format&fit=crop&w=600&q=80');">
+                        <span class="lp-event-date-badge">OCT 20</span>
+                    </div>
+                    <div class="lp-event-body">
+                        <div>
+                            <h4 style="font-size:1.15rem; font-weight:800; color:#0f172a; margin:0 0 0.4rem;">Animal Feeding Experience</h4>
+                            <div style="font-size:0.82rem; color:#64748b; margin-bottom:0.75rem;"><i class="fa-solid fa-location-dot" style="color:#10b981;"></i> Manila Wildlife Sanctuary</div>
+                            <p style="font-size:0.85rem; color:#475569; line-height:1.45; margin:0 0 1rem;">Hands-on guided feeding session with certified handlers for giraffes and friendly herbivores.</p>
+                        </div>
+                        <a href="{{ url_for('visitor.events') }}" style="color:#1a4f32; font-weight:700; font-size:0.85rem; text-decoration:none;">Learn More &rarr;</a>
+                    </div>
+                </div>
+                <div class="lp-event-card">
+                    <div class="lp-event-img" style="background-image: url('https://images.unsplash.com/photo-1552728089-57bdde30beb3?auto=format&fit=crop&w=600&q=80');">
+                        <span class="lp-event-date-badge">NOV 05</span>
+                    </div>
+                    <div class="lp-event-body">
+                        <div>
+                            <h4 style="font-size:1.15rem; font-weight:800; color:#0f172a; margin:0 0 0.4rem;">Avian &amp; Bird Watching Tour</h4>
+                            <div style="font-size:0.82rem; color:#64748b; margin-bottom:0.75rem;"><i class="fa-solid fa-location-dot" style="color:#10b981;"></i> Laguna Wildlife Park</div>
+                            <p style="font-size:0.85rem; color:#475569; line-height:1.45; margin:0 0 1rem;">Early morning avian trek spotting native Philippine hornbills, eagles, and colorful parrots.</p>
+                        </div>
+                        <a href="{{ url_for('visitor.events') }}" style="color:#1a4f32; font-weight:700; font-size:0.85rem; text-decoration:none;">Learn More &rarr;</a>
+                    </div>
+                </div>
+                <div class="lp-event-card">
+                    <div class="lp-event-img" style="background-image: url('https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?auto=format&fit=crop&w=600&q=80');">
+                        <span class="lp-event-date-badge" style="background:#fee2e2; color:#dc2626;">20% OFF</span>
+                    </div>
+                    <div class="lp-event-body">
+                        <div>
+                            <h4 style="font-size:1.15rem; font-weight:800; color:#0f172a; margin:0 0 0.4rem;">Family Safari Weekend Promo</h4>
+                            <div style="font-size:0.82rem; color:#64748b; margin-bottom:0.75rem;"><i class="fa-solid fa-location-dot" style="color:#10b981;"></i> Taal Countryside Farm</div>
+                            <p style="font-size:0.85rem; color:#475569; line-height:1.45; margin:0 0 1rem;">Discounted family bundles including petting zoo access, tram rides, and complimentary snacks.</p>
+                        </div>
+                        <a href="{{ url_for('visitor.promotions') }}" style="color:#1a4f32; font-weight:700; font-size:0.85rem; text-decoration:none;">Claim Offer &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Animal Facts "Did You Know?" Banner (Circle 2 from Pic 2) -->
+    <section class="lp-facts-banner">
+        <div class="container" style="max-width: 1140px;">
+            <div class="lp-facts-grid">
+                <!-- Left: Featured Fact with Tiger -->
+                <div class="lp-facts-featured">
+                    <div class="lp-facts-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1549480017-d76466a4b7e8?auto=format&fit=crop&w=400&q=80" alt="Tiger" />
+                    </div>
+                    <div>
+                        <span class="lp-facts-kicker">Animal Facts</span>
+                        <h3 class="lp-facts-title">Did You Know?</h3>
+                        <p class="lp-facts-text">
+                            Tigers have striped skin, not just fur. Their stripes help with camouflage, temperature regulation, and may even disrupt the vision of their prey.
+                        </p>
+                        <a href="{{ url_for('visitor.trivia') }}" class="lp-facts-btn">
+                            Explore More Facts <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Right: 4 Animal Pills -->
+                <div class="lp-facts-cards">
+                    <div class="lp-fact-pill">
+                        <img src="https://images.unsplash.com/photo-1549480017-d76466a4b7e8?auto=format&fit=crop&w=150&q=80" alt="Tigers" />
+                        <div>
+                            <h5>Tigers</h5>
+                            <p>Unique stripes act like fingerprints for camouflage.</p>
+                        </div>
+                    </div>
+                    <div class="lp-fact-pill">
+                        <img src="https://images.unsplash.com/photo-1598439210625-5067c578f3f6?auto=format&fit=crop&w=150&q=80" alt="Penguins" />
+                        <div>
+                            <h5>Penguins</h5>
+                            <p>Can drink ocean water via specialized salt-filtering glands.</p>
+                        </div>
+                    </div>
+                    <div class="lp-fact-pill">
+                        <img src="https://images.unsplash.com/photo-1547721064-da6cfb341d50?auto=format&fit=crop&w=150&q=80" alt="Giraffes" />
+                        <div>
+                            <h5>Giraffes</h5>
+                            <p>Have the exact same number of neck vertebrae as humans (7).</p>
+                        </div>
+                    </div>
+                    <div class="lp-fact-pill">
+                        <img src="https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?auto=format&fit=crop&w=150&q=80" alt="Elephants" />
+                        <div>
+                            <h5>Elephants</h5>
+                            <p>Communicate across miles using low-frequency ground rumbles.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="lp-testi-section">
+        <div class="container" style="max-width: 1140px;">
+            <div style="text-align:center; max-width:640px; margin:0 auto;">
+                <span style="font-size:0.78rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#1a4f32;">Visitor &amp; Partner Reviews</span>
+                <h3 style="font-size:2rem; font-weight:900; color:#0f172a; margin:0.4rem 0 0.5rem;">Real Experiences, Real Stories</h3>
+                <p style="font-size:0.95rem; color:#64748b; margin:0;">Hear what visitors and park administrators say about using Zootique.</p>
+            </div>
+            <div class="lp-testi-grid">
+                <div class="lp-testi-card">
+                    <div class="lp-testi-stars">
+                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                    </div>
+                    <p class="lp-testi-text">
+                        "Zootique made our family trip so easy! We found the perfect zoo, booked our tickets in advance, and even learned fun facts about the animals before we went. Highly recommended!"
+                    </p>
+                    <div class="lp-testi-author">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="Sarah L." class="lp-testi-avatar" />
+                        <div>
+                            <div style="font-weight:800; color:#0f172a; font-size:0.92rem;">Sarah L.</div>
+                            <div style="font-size:0.78rem; color:#64748b;">Visitor &amp; Wildlife Enthusiast</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="lp-testi-card">
+                    <div class="lp-testi-stars">
+                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                    </div>
+                    <p class="lp-testi-text">
+                        "As a zoo admin, Zootique helps us manage bookings, services, and events seamlessly. It's increased our visitor foot traffic by 40% and simplified daily admissions."
+                    </p>
+                    <div class="lp-testi-author">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80" alt="Mark D." class="lp-testi-avatar" />
+                        <div>
+                            <div style="font-weight:800; color:#0f172a; font-size:0.92rem;">Mark D.</div>
+                            <div style="font-size:0.78rem; color:#64748b;">Sanctuary Operations Director</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="lp-testi-card">
+                    <div class="lp-testi-stars">
+                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                    </div>
+                    <p class="lp-testi-text">
+                        "The e-ticket QR code system saved us 30 minutes in line. Plus my kids loved collecting the animal badges and answering the daily trivia quizzes on their phones!"
+                    </p>
+                    <div class="lp-testi-author">
+                        <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=100&q=80" alt="Jessica T." class="lp-testi-avatar" />
+                        <div>
+                            <div style="font-weight:800; color:#0f172a; font-size:0.92rem;">Jessica T.</div>
+                            <div style="font-size:0.78rem; color:#64748b;">Family Traveler</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    </div> <!-- /#tab-home -->
+
+    <!-- ==================== TAB: ABOUT US ==================== -->
+    <div id="tab-about" class="lp-tab-content">
     <section id="about" class="lp-section lp-about-section">
         <div class="container" style="max-width: 1140px;">
             <!-- Intro Block -->
@@ -1262,6 +2479,103 @@
             {% endif %}
         </div>
     </section>
+    </div> <!-- /#tab-about -->
+
+    <!-- ==================== TAB: REGISTER ZOO & PRICING ==================== -->
+    <div id="tab-register" class="lp-tab-content">
+    <!-- Zoo Admin Subscriptions Pricing Section -->
+    <section class="lp-pricing-section">
+        <div class="container" style="max-width: 1140px;">
+            <div class="lp-pricing-header">
+                <span class="lp-pricing-kicker">Transparent Pricing</span>
+                <h2 class="lp-pricing-title">Zoo Admin Subscription Plans</h2>
+                <p class="lp-pricing-subtitle">
+                    Empower your wildlife park or animal farm with powerful management tools. Scale from basic listings to full operational command.
+                </p>
+                <div class="lp-pricing-toggle">
+                    <button type="button" class="lp-toggle-btn active" id="btn-billing-monthly" onclick="toggleBillingCycle('monthly')">Monthly Billing</button>
+                    <button type="button" class="lp-toggle-btn" id="btn-billing-yearly" onclick="toggleBillingCycle('yearly')">
+                        Annual Billing <span style="background:#dcfce7; color:#15803d; font-size:0.7rem; padding:0.15rem 0.45rem; border-radius:999px; margin-left:0.25rem;">Save 20%</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="lp-pricing-grid">
+                <!-- Free Plan -->
+                <div class="lp-pricing-card">
+                    <div>
+                        <h3 class="lp-plan-name">Free Tier</h3>
+                        <p class="lp-plan-desc">Explore the platform and list your establishment with core visibility.</p>
+                        <div class="lp-plan-price">
+                            <span class="lp-price-curr">₱</span>
+                            <span class="lp-price-val plan-price-free">0</span>
+                            <span class="lp-price-period">/ month</span>
+                        </div>
+                        <ul class="lp-plan-features">
+                            <li><i class="fa-solid fa-circle-check"></i> Basic establishment profile &amp; listing</li>
+                            <li><i class="fa-solid fa-circle-check"></i> Public park info and visitor map link</li>
+                            <li><i class="fa-solid fa-circle-check"></i> Community reviews and feedback view</li>
+                            <li><i class="fa-solid fa-circle-check"></i> Standard email platform support</li>
+                        </ul>
+                    </div>
+                    <a href="{{ url_for('auth.register_admin_step1') }}" class="lp-plan-btn lp-plan-btn-outline">
+                        Get Started Free &rarr;
+                    </a>
+                </div>
+
+                <!-- Standard Plan (Popular) -->
+                <div class="lp-pricing-card popular">
+                    <span class="lp-popular-badge">Most Popular</span>
+                    <div>
+                        <h3 class="lp-plan-name">Standard Tier</h3>
+                        <p class="lp-plan-desc">Core zoo operations, ticket bookings, staff accounts, and revenue tracking.</p>
+                        <div class="lp-plan-price">
+                            <span class="lp-price-curr">₱</span>
+                            <span class="lp-price-val" id="price-standard" data-monthly="4,999" data-yearly="3,999">4,999</span>
+                            <span class="lp-price-period">/ month</span>
+                        </div>
+                        <ul class="lp-plan-features">
+                            <li><i class="fa-solid fa-circle-check"></i> <strong>Up to 3</strong> staff user accounts</li>
+                            <li><i class="fa-solid fa-circle-check"></i> <strong>5 Zones</strong> &amp; up to 100 animals managed</li>
+                            <li><i class="fa-solid fa-circle-check"></i> <strong>Up to 500</strong> online bookings / month</li>
+                            <li><i class="fa-solid fa-circle-check"></i> 5 promotional discount bundles</li>
+                            <li><i class="fa-solid fa-circle-check"></i> Real-time revenue &amp; payment settings</li>
+                            <li><i class="fa-solid fa-circle-check"></i> Dynamic pricing &amp; trivia quiz builder</li>
+                            <li><i class="fa-solid fa-circle-check"></i> Priority partner email &amp; ticket support</li>
+                        </ul>
+                    </div>
+                    <a href="{{ url_for('auth.register_admin_step1') }}" class="lp-plan-btn lp-plan-btn-solid">
+                        Start with Standard &rarr;
+                    </a>
+                </div>
+
+                <!-- Pro Plan -->
+                <div class="lp-pricing-card">
+                    <div>
+                        <h3 class="lp-plan-name">Pro Tier</h3>
+                        <p class="lp-plan-desc">Advanced operations, multi-zone map layouts, and unlimited scaling.</p>
+                        <div class="lp-plan-price">
+                            <span class="lp-price-curr">₱</span>
+                            <span class="lp-price-val" id="price-pro" data-monthly="9,999" data-yearly="7,999">9,999</span>
+                            <span class="lp-price-period">/ month</span>
+                        </div>
+                        <ul class="lp-plan-features">
+                            <li><i class="fa-solid fa-circle-check"></i> <strong>Unlimited</strong> staff user accounts</li>
+                            <li><i class="fa-solid fa-circle-check"></i> <strong>Unlimited</strong> zones &amp; animals</li>
+                            <li><i class="fa-solid fa-circle-check"></i> <strong>Unlimited</strong> visitor bookings &amp; promos</li>
+                            <li><i class="fa-solid fa-circle-check"></i> Interactive park map &amp; layout builder</li>
+                            <li><i class="fa-solid fa-circle-check"></i> Advanced revenue analytics &amp; graph builder</li>
+                            <li><i class="fa-solid fa-circle-check"></i> Multi-channel notifications (SMS/Email)</li>
+                            <li><i class="fa-solid fa-circle-check"></i> Dedicated Superadmin support with 24/7 SLA</li>
+                        </ul>
+                    </div>
+                    <a href="{{ url_for('auth.register_admin_step1') }}" class="lp-plan-btn lp-plan-btn-outline">
+                        Go Pro &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- ===== REGISTER YOUR ZOO SECTION ===== -->
     <section id="register" class="lp-register-section">
@@ -1323,13 +2637,13 @@
             </div>
         </div>
     </section>
+    </div> <!-- /#tab-register -->
 
+    <!-- ==================== TAB: CONTACT ==================== -->
+    <div id="tab-contact" class="lp-tab-content">
     <!-- ===== CONTACT SECTION ===== -->
-    <!-- NOTE: The form below uses a mailto: fallback. Replace the action/JS with a
-         proper POST endpoint (e.g. /api/contact) once the backend is ready. -->
     <section id="contact" class="lp-contact-section">
         <div class="lp-contact-inner">
-
             <div class="lp-contact-header">
                 <h2 class="lp-contact-title">Contact</h2>
                 <p class="lp-contact-intro">
@@ -1339,15 +2653,12 @@
             </div>
 
             <div class="lp-contact-grid">
-
                 <!-- ── Left: details ── -->
                 <div class="lp-contact-details">
-
                     <div class="lp-contact-detail-item">
                         <div class="lp-contact-detail-icon">&#9993;</div>
                         <div class="lp-contact-detail-text">
                             <h4>General Support</h4>
-                            <!-- TODO: replace with real address before going live -->
                             <a href="mailto:support@zootique.app">support@zootique.app</a>
                         </div>
                     </div>
@@ -1364,7 +2675,6 @@
                         <div class="lp-contact-detail-icon">&#128205;</div>
                         <div class="lp-contact-detail-text">
                             <h4>Based In</h4>
-                            <!-- TODO: update with actual city/address -->
                             <p>Philippines</p>
                         </div>
                     </div>
@@ -1378,7 +2688,6 @@
                                request access from your Superadmin.</p>
                         </div>
                     </div>
-
                 </div>
 
                 <!-- ── Right: form ── -->
@@ -1386,7 +2695,6 @@
                     <p class="lp-contact-form-title">Send Us a Message</p>
 
                     <form id="lpContactForm" novalidate>
-
                         <div class="lp-cf-row">
                             <div class="lp-cf-group" id="cfg-name">
                                 <label for="cf-name">Your Name <span style="color:#e53e3e">*</span></label>
@@ -1452,15 +2760,125 @@
                             Clicking "Send" opens your email client via mailto: as a fallback.<br>
                             A backend submission endpoint should replace this before launch.
                         </p>
-
                     </form>
                 </div>
             </div>
         </div>
     </section>
+    </div> <!-- /#tab-contact -->
 </main>
 
+<!-- ==================== GLOBAL FOOTER ==================== -->
+<footer class="lp-footer">
+    <div class="container" style="max-width: 1140px;">
+        <div class="lp-footer-inner">
+            <a class="lp-logo" href="#home" onclick="switchLandingTab('home', event)">
+                <img src="{{ url_for('static', filename='img/Zootique_Logo.png') }}" alt="Zootique" style="filter: brightness(0) invert(1); height: 38px;" />
+            </a>
+            <div class="lp-footer-links">
+                <a href="#about" onclick="switchLandingTab('about', event)">About Us</a>
+                <a href="#register" onclick="switchLandingTab('register', event)">Register Zoo &amp; Pricing</a>
+                <a href="#contact" onclick="switchLandingTab('contact', event)">Contact Us</a>
+                <a href="{{ url_for('visitor.trivia') }}">Wildlife Facts</a>
+                <a href="{{ url_for('auth.login_selection') }}">Portal Login</a>
+            </div>
+            <div class="lp-footer-social">
+                <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+                <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                <a href="#" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                <a href="#" aria-label="X / Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+            </div>
+        </div>
+        <div class="lp-footer-copy">
+            &copy; 2026 Zootique &bull; All Rights Reserved &bull; Wildlife Park Management &amp; Visitor Platform
+        </div>
+    </div>
+</footer>
+
 <script>
+    /* ──────────────────────────────────────────
+       Tab Switching (Home, About Us, Register Zoo, Contact)
+    ────────────────────────────────────────── */
+    function switchLandingTab(tabKey, evt) {
+        if (evt && evt.preventDefault) {
+            evt.preventDefault();
+        }
+        var validTabs = ['home', 'about', 'register', 'contact'];
+        if (!validTabs.includes(tabKey)) {
+            tabKey = 'home';
+        }
+
+        // Toggle tab contents
+        document.querySelectorAll('.lp-tab-content').forEach(function(el) {
+            el.classList.remove('active');
+        });
+        var targetContent = document.getElementById('tab-' + tabKey);
+        if (targetContent) {
+            targetContent.classList.add('active');
+        }
+
+        // Toggle active links in navbar & footer
+        document.querySelectorAll('.lp-link').forEach(function(link) {
+            if (link.getAttribute('data-tab') === tabKey) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+
+        // Close mobile nav if open
+        var nav = document.getElementById('lpMobileNav');
+        var btn = document.getElementById('lpHamburger');
+        if (nav) nav.classList.remove('show');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+        var icon = document.getElementById('lpHamburgerIcon');
+        if (icon) icon.className = 'fa-solid fa-bars';
+
+        // Update URL hash
+        if (history.replaceState) {
+            history.replaceState(null, null, '#' + tabKey);
+        } else {
+            location.hash = '#' + tabKey;
+        }
+
+        // Scroll to top smoothly
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function handleHashTab() {
+        var hash = (window.location.hash || '').replace('#', '').trim().toLowerCase();
+        if (['home', 'about', 'register', 'contact'].includes(hash)) {
+            switchLandingTab(hash);
+        } else if (hash === 'pricing') {
+            switchLandingTab('register');
+        }
+    }
+
+    window.addEventListener('hashchange', handleHashTab);
+    document.addEventListener('DOMContentLoaded', handleHashTab);
+
+    /* ──────────────────────────────────────────
+       Subscription Pricing Billing Cycle Toggle
+    ────────────────────────────────────────── */
+    function toggleBillingCycle(cycle) {
+        var monthlyBtn = document.getElementById('btn-billing-monthly');
+        var yearlyBtn  = document.getElementById('btn-billing-yearly');
+        var stdPrice   = document.getElementById('price-standard');
+        var proPrice   = document.getElementById('price-pro');
+
+        if (cycle === 'yearly') {
+            if (monthlyBtn) monthlyBtn.classList.remove('active');
+            if (yearlyBtn) yearlyBtn.classList.add('active');
+            if (stdPrice) stdPrice.textContent = stdPrice.getAttribute('data-yearly') || '3,999';
+            if (proPrice) proPrice.textContent = proPrice.getAttribute('data-yearly') || '7,999';
+        } else {
+            if (yearlyBtn) yearlyBtn.classList.remove('active');
+            if (monthlyBtn) monthlyBtn.classList.add('active');
+            if (stdPrice) stdPrice.textContent = stdPrice.getAttribute('data-monthly') || '4,999';
+            if (proPrice) proPrice.textContent = proPrice.getAttribute('data-monthly') || '9,999';
+        }
+    }
+
     /* ──────────────────────────────────────────
        Navbar
     ────────────────────────────────────────── */

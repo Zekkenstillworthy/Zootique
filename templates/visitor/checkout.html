@@ -1,113 +1,925 @@
 {% extends "base.html" %}
 
-{% block title %}Checkout{% endblock %}
+{% block title %}Secure Checkout — {{ booking.id if booking else 'Zootique' }}{% endblock %}
+
+{% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --vb-forest: #143823;
+    --vb-forest-light: #1e5233;
+    --vb-forest-soft: #eaf3ed;
+    --vb-terracotta: #C85A32;
+    --vb-terracotta-soft: #fcf1ec;
+    --vb-cream-bg: #FAF7F2;
+    --vb-card-bg: #FFFFFF;
+    --vb-border: #E8E2D8;
+    --vb-border-light: #F0ECE4;
+    --vb-gold: #D4A373;
+    --vb-text-dark: #1E293B;
+    --vb-text-muted: #64748B;
+    --vb-font-display: 'Outfit', sans-serif;
+    --vb-font-body: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  body {
+    background-color: var(--vb-cream-bg);
+    font-family: var(--vb-font-body);
+    color: var(--vb-text-dark);
+  }
+
+  .checkout-page {
+    max-width: 1120px;
+    margin: 2rem auto 4rem auto;
+    padding: 0 1.25rem;
+  }
+
+  /* Flow breadcrumbs / steps */
+  .checkout-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+  .step-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 1rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--vb-text-muted);
+    background: #ffffff;
+    border: 1px solid var(--vb-border);
+  }
+  .step-pill.completed {
+    color: var(--vb-forest);
+    border-color: #cde4d5;
+    background: var(--vb-forest-soft);
+  }
+  .step-pill.active {
+    color: #ffffff;
+    background: var(--vb-forest);
+    border-color: var(--vb-forest);
+    box-shadow: 0 4px 14px rgba(20, 56, 35, 0.2);
+  }
+  .step-divider {
+    width: 24px;
+    height: 2px;
+    background: var(--vb-border);
+  }
+
+  /* Header */
+  .checkout-header {
+    margin-bottom: 2rem;
+  }
+  .checkout-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.85rem;
+    background: var(--vb-forest-soft);
+    border: 1px solid #c8e0d1;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--vb-forest);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.6rem;
+  }
+  .checkout-title {
+    font-family: var(--vb-font-display);
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: var(--vb-forest);
+    margin: 0;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+  .checkout-subtitle {
+    color: var(--vb-text-muted);
+    font-size: 1rem;
+    margin: 0.4rem 0 0 0;
+  }
+
+  /* Pending bookings pill list */
+  .pending-strip {
+    background: #ffffff;
+    border: 1px solid var(--vb-border);
+    border-radius: 16px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.75rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.02);
+  }
+  .pending-title {
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--vb-forest);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .pending-chips {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .pending-chip {
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    transition: all 0.2s ease;
+  }
+  .pending-chip.active {
+    background: var(--vb-forest);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(20,56,35,0.22);
+  }
+  .pending-chip.inactive {
+    background: #ffffff;
+    color: var(--vb-text-dark);
+    border: 1px solid var(--vb-border);
+  }
+  .pending-chip.inactive:hover {
+    border-color: var(--vb-forest);
+    background: var(--vb-forest-soft);
+  }
+
+  /* Main Grid */
+  .checkout-grid {
+    display: grid;
+    grid-template-columns: 1.25fr 0.95fr;
+    gap: 1.75rem;
+    align-items: start;
+  }
+
+  @media (max-width: 960px) {
+    .checkout-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Cards */
+  .card-box {
+    background: #ffffff;
+    border: 1px solid var(--vb-border);
+    border-radius: 20px;
+    padding: 1.75rem;
+    box-shadow: 0 8px 30px rgba(20, 56, 35, 0.04);
+  }
+  .card-box-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--vb-border-light);
+  }
+  .card-box-title {
+    font-family: var(--vb-font-display);
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--vb-forest);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  /* Payment Methods Grid */
+  .payment-methods-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+  @media (max-width: 580px) {
+    .payment-methods-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .pay-method-card {
+    border: 2px solid var(--vb-border);
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 1rem 1.1rem;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 98px;
+    user-select: none;
+  }
+  .pay-method-card:hover {
+    border-color: #9ac2a7;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(20, 56, 35, 0.08);
+  }
+  .pay-method-card.is-selected {
+    border-color: var(--vb-forest);
+    background: linear-gradient(145deg, #ffffff 0%, var(--vb-forest-soft) 100%);
+    box-shadow: 0 8px 24px rgba(20, 56, 35, 0.12);
+  }
+  .pay-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .pay-card-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    transition: all 0.2s ease;
+  }
+  .pay-method-card.is-selected .pay-card-icon {
+    transform: scale(1.08);
+  }
+
+  /* Method Specific Brand Colors */
+  .icon-gcash { background: #007DFE15; color: #007DFE; }
+  .icon-maya { background: #00B14F18; color: #00B14F; }
+  .icon-card { background: #14382315; color: var(--vb-forest); }
+  .icon-cash { background: #C85A3215; color: var(--vb-terracotta); }
+
+  .pay-check-indicator {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: transparent;
+    transition: all 0.2s ease;
+  }
+  .pay-method-card.is-selected .pay-check-indicator {
+    background: var(--vb-forest);
+    border-color: var(--vb-forest);
+    color: #ffffff;
+  }
+
+  .pay-card-body {
+    margin-top: 0.6rem;
+  }
+  .pay-method-name {
+    font-family: var(--vb-font-display);
+    font-size: 0.98rem;
+    font-weight: 800;
+    color: var(--vb-text-dark);
+    margin: 0;
+    line-height: 1.2;
+  }
+  .pay-method-sub {
+    font-size: 0.74rem;
+    color: var(--vb-text-muted);
+    margin-top: 0.2rem;
+  }
+
+  /* Interactive Demo Payment Fields */
+  .demo-method-details {
+    background: #f8fafc;
+    border: 1.5px dashed var(--vb-border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .demo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #fef3c7;
+    color: #92400e;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.75rem;
+  }
+
+  .field-group {
+    margin-bottom: 0.85rem;
+  }
+  .field-label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--vb-text-muted);
+    margin-bottom: 0.35rem;
+  }
+  .field-input {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: var(--vb-text-dark);
+    background: #ffffff;
+    box-sizing: border-box;
+    transition: border 0.2s;
+  }
+  .field-input:focus {
+    outline: none;
+    border-color: var(--vb-forest);
+    box-shadow: 0 0 0 3px rgba(20,56,35,0.08);
+  }
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  /* Trust Guarantee Pill Box */
+  .trust-guarantee-box {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--vb-border-light);
+  }
+  @media (max-width: 580px) {
+    .trust-guarantee-box {
+      grid-template-columns: 1fr;
+    }
+  }
+  .trust-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.78rem;
+    color: var(--vb-text-muted);
+    font-weight: 600;
+  }
+  .trust-item i {
+    font-size: 1.1rem;
+    color: var(--vb-forest);
+  }
+
+  /* Right Summary Box */
+  .summary-box {
+    position: sticky;
+    top: 2rem;
+  }
+  .summary-zoo-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--vb-terracotta);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+  .summary-service-name {
+    font-family: var(--vb-font-display);
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: var(--vb-forest);
+    margin: 0 0 0.85rem 0;
+    line-height: 1.2;
+  }
+  .summary-booking-id {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    background: #f1f5f9;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 1.25rem;
+  }
+
+  .summary-details-list {
+    display: grid;
+    gap: 0.65rem;
+    padding: 1rem;
+    background: #fafaf9;
+    border-radius: 14px;
+    border: 1px solid var(--vb-border-light);
+    margin-bottom: 1.25rem;
+  }
+  .summary-detail-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.88rem;
+  }
+  .summary-detail-label {
+    color: var(--vb-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .summary-detail-value {
+    font-weight: 700;
+    color: var(--vb-text-dark);
+  }
+
+  .price-breakdown {
+    border-top: 1px dashed var(--vb-border);
+    border-bottom: 1px dashed var(--vb-border);
+    padding: 1rem 0;
+    margin-bottom: 1.25rem;
+    display: grid;
+    gap: 0.55rem;
+  }
+  .price-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.88rem;
+    color: var(--vb-text-muted);
+  }
+  .price-row.free {
+    color: #15803d;
+    font-weight: 600;
+  }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1.5rem;
+  }
+  .total-label {
+    font-family: var(--vb-font-display);
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--vb-forest);
+  }
+  .total-amount {
+    font-family: var(--vb-font-display);
+    font-size: 2.1rem;
+    font-weight: 900;
+    color: var(--vb-forest);
+    letter-spacing: -0.02em;
+  }
+
+  /* Submit Button */
+  .btn-pay-now {
+    width: 100%;
+    background: linear-gradient(135deg, #143823 0%, #1e5233 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    font-family: var(--vb-font-display);
+    font-size: 1.05rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    box-shadow: 0 6px 20px rgba(20, 56, 35, 0.28);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .btn-pay-now:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(20, 56, 35, 0.35);
+    background: linear-gradient(135deg, #102e1c 0%, #164228 100%);
+  }
+  .btn-pay-now:active {
+    transform: translateY(0);
+  }
+  .btn-pay-now:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .cancel-link {
+    display: block;
+    text-align: center;
+    margin-top: 1rem;
+    color: var(--vb-text-muted);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .cancel-link:hover {
+    color: var(--vb-forest);
+  }
+
+  /* Empty state */
+  .empty-checkout-card {
+    background: #ffffff;
+    border: 1px solid var(--vb-border);
+    border-radius: 20px;
+    padding: 3.5rem 2rem;
+    text-align: center;
+    max-width: 600px;
+    margin: 2rem auto;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.03);
+  }
+  .empty-icon-wrap {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--vb-forest-soft);
+    color: var(--vb-forest);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto 1.5rem auto;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container" style="padding: 2.5rem 0; display:grid; gap: 1.5rem;">
-    <div>
-        <h1 style="margin:0; font-size:2rem; color:#1a4f32;">Checkout</h1>
-        <p style="margin:0.4rem 0 0 0; color:#64748b;">Complete payment for your booking and confirm your ticket.</p>
+<div class="checkout-page">
+  <!-- Step Indicator -->
+  <div class="checkout-steps">
+    <div class="step-pill completed">
+      <i class="fa-solid fa-check"></i> 1. Select Experience
     </div>
+    <div class="step-divider"></div>
+    <div class="step-pill active">
+      <i class="fa-solid fa-credit-card"></i> 2. Payment & Confirmation
+    </div>
+    <div class="step-divider"></div>
+    <div class="step-pill">
+      <i class="fa-solid fa-qrcode"></i> 3. E-Ticket Pass
+    </div>
+  </div>
 
-    {% if unpaid_bookings and unpaid_bookings|length > 0 %}
-    <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:1rem 1.2rem;">
-        <div style="font-weight:800; color:#1e293b; margin-bottom:0.8rem;">Pending Payments</div>
-        <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
-            {% for b in unpaid_bookings %}
-            {% if booking and booking.id == b.id %}
-            <a href="{{ url_for('visitor.checkout', booking_id=b.id) }}"
-               style="text-decoration:none; padding:0.55rem 0.9rem; border-radius:999px; font-size:0.85rem; font-weight:800; background:#1a4f32; color:white;">
-                #{{ b.id }} · {{ b.service_name or 'Booking' }}
-            </a>
-            {% else %}
-            <a href="{{ url_for('visitor.checkout', booking_id=b.id) }}"
-               style="text-decoration:none; padding:0.55rem 0.9rem; border-radius:999px; font-size:0.85rem; font-weight:800; background:#f1f5f9; color:#334155; border:1px solid #e2e8f0;">
-                #{{ b.id }} · {{ b.service_name or 'Booking' }}
-            </a>
-            {% endif %}
-            {% endfor %}
+  {% if unpaid_bookings and unpaid_bookings|length > 0 %}
+  <!-- Multi-booking pending selector -->
+  <div class="pending-strip">
+    <div class="pending-title">
+      <i class="fa-solid fa-clock-rotate-left"></i> Unpaid Bookings Requiring Confirmation ({{ unpaid_bookings|length }})
+    </div>
+    <div class="pending-chips">
+      {% for b in unpaid_bookings %}
+      {% if booking and booking.id == b.id %}
+      <a href="{{ url_for('visitor.checkout', booking_id=b.id) }}" class="pending-chip active">
+        <i class="fa-solid fa-check-circle"></i> #{{ b.id }} · {{ b.service_name or 'Ticket' }} · ₱{{ "{:,.2f}".format(b.amount or 0) }}
+      </a>
+      {% else %}
+      <a href="{{ url_for('visitor.checkout', booking_id=b.id) }}" class="pending-chip inactive">
+        <i class="fa-regular fa-circle"></i> #{{ b.id }} · {{ b.service_name or 'Ticket' }} · ₱{{ "{:,.2f}".format(b.amount or 0) }}
+      </a>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if booking %}
+  <div class="checkout-header">
+    <div class="checkout-badge">
+      <i class="fa-solid fa-shield-halved"></i> Fast &amp; Guaranteed Reservation
+    </div>
+    <h1 class="checkout-title">Complete Your Booking Checkout</h1>
+    <p class="checkout-subtitle">Review your reservation details and select your preferred payment channel.</p>
+  </div>
+
+  <div class="checkout-grid">
+    <!-- Left Column: Payment Options & Interactive UI -->
+    <div class="card-box">
+      <div class="card-box-header">
+        <h2 class="card-box-title">
+          <i class="fa-solid fa-wallet" style="color:var(--vb-forest);"></i> Payment Method
+        </h2>
+        <span style="font-size:0.75rem; font-weight:700; color:var(--vb-forest); background:var(--vb-forest-soft); padding:0.25rem 0.6rem; border-radius:999px;">
+          Simulated Gateway
+        </span>
+      </div>
+
+      {% if (booking.payment_status or 'unpaid')|lower == 'paid' %}
+      <div style="padding:1.5rem; border-radius:14px; background:#dcfce7; border:1px solid #bbf7d0; color:#166534; font-weight:800; text-align:center;">
+        <i class="fa-solid fa-circle-check" style="font-size:2rem; margin-bottom:0.5rem; display:block;"></i>
+        This booking is already paid in full!
+        {% if booking.payment_reference %}
+        <div style="font-family:monospace; margin-top:0.4rem; font-size:0.9rem;">Reference: {{ booking.payment_reference }}</div>
+        {% endif %}
+        <div style="margin-top:1.25rem;">
+          <a href="{{ url_for('visitor.view_ticket', booking_id=booking.id) }}" class="btn-pay-now" style="text-decoration:none; display:inline-flex; width:auto; padding:0.75rem 1.5rem;">
+            <i class="fa-solid fa-qrcode"></i> View E-Ticket
+          </a>
         </div>
-    </div>
-    {% endif %}
+      </div>
+      {% else %}
 
-    {% if booking %}
-    <div style="display:grid; grid-template-columns:1.2fr 0.8fr; gap:1rem;">
-        <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:1.25rem;">
-            <h3 style="margin:0 0 0.8rem 0; color:#1a4f32;">Booking Summary</h3>
-            <div style="display:grid; gap:0.55rem; color:#334155;">
-                <div><strong>Booking ID:</strong> {{ booking.id }}</div>
-                <div><strong>Experience:</strong> {{ booking.service_name or '—' }}</div>
-                <div><strong>Date & Time:</strong> {{ booking.date or '—' }} {{ booking.time or '' }}</div>
-                <div><strong>Guests:</strong> {{ booking.guests or 1 }}</div>
-                <div><strong>Status:</strong> {{ booking.status or 'Pending' }}</div>
-                <div><strong>Payment Status:</strong> {{ (booking.payment_status or 'unpaid').title() }}</div>
+      <form id="checkout-form" method="post" action="{{ url_for('visitor.checkout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="booking_id" value="{{ booking.id }}">
+
+        {% set method_meta = {
+          'gcash': ('icon-gcash', 'fa-mobile-screen-button', 'GCash', 'Instant E-Wallet QR'),
+          'maya': ('icon-maya', 'fa-wallet', 'Maya', 'Secure Digital Wallet'),
+          'card': ('icon-card', 'fa-credit-card', 'Credit / Debit Card', 'Visa, Mastercard, JCB'),
+          'cash_on_arrival': ('icon-cash', 'fa-store', 'Pay at Zoo', 'Ticketing Gate Counter'),
+          'cash': ('icon-cash', 'fa-store', 'Pay at Zoo', 'Ticketing Gate Counter')
+        } %}
+
+        {% set active_default = preferred_payment_method if (preferred_payment_method and preferred_payment_method in supported_methods) else supported_methods[0] %}
+
+        <div class="payment-methods-grid">
+          {% for m in supported_methods %}
+          {% set meta = method_meta.get(m, ('icon-card', 'fa-money-bill', m|replace('_', ' ')|title, 'Simulated Payment')) %}
+          {% set is_selected = (m == active_default) %}
+          <div class="pay-method-card{% if is_selected %} is-selected{% endif %}"
+               data-method="{{ m }}"
+               onclick="selectPaymentMethod('{{ m }}', this)">
+            <input type="radio" name="payment_method" value="{{ m }}" {% if is_selected %}checked{% endif %} style="display:none;">
+            <div class="pay-card-top">
+              <div class="pay-card-icon {{ meta[0] }}">
+                <i class="fa-solid {{ meta[1] }}"></i>
+              </div>
+              <div class="pay-check-indicator">
+                <i class="fa-solid fa-check"></i>
+              </div>
             </div>
+            <div class="pay-card-body">
+              <div class="pay-method-name">{{ meta[2] }}</div>
+              <div class="pay-method-sub">{{ meta[3] }}</div>
+            </div>
+          </div>
+          {% endfor %}
         </div>
 
-        <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:1.25rem;">
-            <h3 style="margin:0 0 0.8rem 0; color:#1a4f32;">Payment</h3>
-            <div style="font-size:0.9rem; color:#64748b; margin-bottom:0.8rem;">Total Amount</div>
-            <div style="font-size:1.6rem; font-weight:900; color:#1a4f32; margin-bottom:1rem;">₱{{ "{:,.2f}".format(booking.amount or 0) }}</div>
-            <div style="font-size:0.78rem; color:#64748b; margin-bottom:0.9rem;">
-                Payment provider: <strong>Simulated checkout</strong> for local development.
+        <!-- Interactive Simulated Field Panels -->
+        <!-- GCash / Maya Panel -->
+        <div id="demo-wallet-panel" class="demo-method-details" style="display:none;">
+          <div class="demo-badge">
+            <i class="fa-solid fa-flask"></i> Interactive Sandbox Demo
+          </div>
+          <div style="font-size:0.85rem; font-weight:700; color:var(--vb-forest); margin-bottom:0.75rem;">
+            <span id="wallet-name-label">GCash</span> Account Details
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label">Account Holder Name</label>
+              <input type="text" class="field-input" value="{{ booking.visitor_name or 'Juan Dela Cruz' }}" placeholder="e.g. Juan Dela Cruz">
             </div>
-
-            {% if (booking.payment_status or 'unpaid')|lower == 'paid' %}
-            <div style="padding:0.8rem; border-radius:10px; background:#dcfce7; color:#166534; font-weight:800;">
-                Already paid{% if booking.payment_reference %} · Ref {{ booking.payment_reference }}{% endif %}
+            <div class="field-group">
+              <label class="field-label">Mobile Number</label>
+              <input type="tel" class="field-input" value="{{ booking.visitor_phone or '+63 917 123 4567' }}" placeholder="+63 9XX XXX XXXX">
             </div>
-            {% else %}
-            <form method="post" action="{{ url_for('visitor.checkout') }}" style="display:grid; gap:1.25rem;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="booking_id" value="{{ booking.id }}">
-                <div>
-                    <label style="display:block; font-size:0.85rem; font-weight:800; color:#475569; margin-bottom:0.6rem;">Select Payment Method</label>
-                    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:0.65rem;">
-                        {% set method_meta = {
-                            'gcash': ('fa-mobile-screen-button', 'GCash'),
-                            'maya': ('fa-wallet', 'Maya'),
-                            'card': ('fa-credit-card', 'Credit / Debit Card'),
-                            'cash_on_arrival': ('fa-store', 'Pay at Zoo'),
-                            'cash': ('fa-store', 'Pay at Zoo')
-                        } %}
-                        {% for m in supported_methods %}
-                        {% set meta = method_meta.get(m, ('fa-money-bill', m|replace('_', ' ')|title)) %}
-                        <label class="checkout-pay-card{% if loop.first %} is-selected{% endif %}"
-                               onclick="selectCheckoutMethod(this)"
-                               style="border: 1.5px solid {% if loop.first %}#1a4f32{% else %}#e2e8f0{% endif %}; background: {% if loop.first %}#e8f5ec{% else %}#ffffff{% endif %}; border-radius: 12px; padding: 0.9rem 0.6rem; display: flex; flex-direction: column; align-items: center; gap: 0.45rem; cursor: pointer; transition: all 0.2s;">
-                            <input type="radio" name="payment_method" value="{{ m }}" {% if loop.first %}checked{% endif %} style="display:none;">
-                            <i class="fa-solid {{ meta[0] }}" style="font-size: 1.35rem; color: #1a4f32;"></i>
-                            <span style="font-size: 0.8rem; font-weight: 700; color: #1e293b; text-align: center; line-height: 1.2;">{{ meta[1] }}</span>
-                        </label>
-                        {% endfor %}
-                    </div>
-                </div>
-                <button type="submit" style="background:#1a4f32; color:white; border:none; border-radius:10px; padding:0.85rem 1rem; font-weight:900; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem;">
-                    <i class="fa-solid fa-lock"></i> Pay and Confirm Booking
-                </button>
-            </form>
-            <script>
-            function selectCheckoutMethod(el) {
-                document.querySelectorAll('.checkout-pay-card').forEach(c => {
-                    c.classList.remove('is-selected');
-                    c.style.borderColor = '#e2e8f0';
-                    c.style.background = '#ffffff';
-                });
-                el.classList.add('is-selected');
-                el.style.borderColor = '#1a4f32';
-                el.style.background = '#e8f5ec';
-                const radio = el.querySelector('input[type="radio"]');
-                if (radio) radio.checked = true;
-            }
-            </script>
-            {% endif %}
+          </div>
+          <div style="font-size:0.75rem; color:var(--vb-text-muted); display:flex; align-items:center; gap:0.4rem;">
+            <i class="fa-solid fa-shield-halved" style="color:var(--vb-forest);"></i>
+            Simulated payment. An instant mock SMS confirmation will be processed upon clicking Confirm.
+          </div>
         </div>
+
+        <!-- Credit Card Panel -->
+        <div id="demo-card-panel" class="demo-method-details" style="display:none;">
+          <div class="demo-badge">
+            <i class="fa-solid fa-flask"></i> Interactive Sandbox Demo
+          </div>
+          <div style="font-size:0.85rem; font-weight:700; color:var(--vb-forest); margin-bottom:0.75rem;">
+            Cardholder &amp; Payment Verification
+          </div>
+          <div class="field-group">
+            <label class="field-label">Cardholder Name</label>
+            <input type="text" class="field-input" value="{{ booking.visitor_name or 'JUAN DELA CRUZ' }}" placeholder="Name on card">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Card Number</label>
+            <input type="text" class="field-input" value="4532 &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; 8892" placeholder="4000 0000 0000 0000">
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label">Expiry Date</label>
+              <input type="text" class="field-input" value="12/28" placeholder="MM/YY">
+            </div>
+            <div class="field-group">
+              <label class="field-label">CVV / CVC</label>
+              <input type="password" class="field-input" value="123" placeholder="3 digits" maxlength="4">
+            </div>
+          </div>
+          <div style="font-size:0.75rem; color:var(--vb-text-muted); display:flex; align-items:center; gap:0.4rem;">
+            <i class="fa-solid fa-lock" style="color:var(--vb-forest);"></i>
+            Zero liability test transaction. No actual credit card charge will be made.
+          </div>
+        </div>
+
+        <!-- Cash on Arrival Panel -->
+        <div id="demo-cash-panel" class="demo-method-details" style="display:none;">
+          <div class="demo-badge" style="background:#fed7aa; color:#9a3412;">
+            <i class="fa-solid fa-store"></i> Counter Ticketing
+          </div>
+          <div style="font-size:0.85rem; font-weight:700; color:var(--vb-forest); margin-bottom:0.5rem;">
+            Pay Upon Arrival at the Zoo Gate
+          </div>
+          <p style="font-size:0.82rem; color:var(--vb-text-muted); line-height:1.45; margin:0 0 0.5rem 0;">
+            Your ticket reservation will be held in our system. Please present your Booking Reference ID <strong>#{{ booking.id }}</strong> at the Visitor Ticketing Counter upon arrival.
+          </p>
+          <div style="font-size:0.75rem; color:#b45309; display:flex; align-items:center; gap:0.4rem;">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            Please arrive at least 15 minutes before your scheduled booking slot.
+          </div>
+        </div>
+
+        <button type="submit" id="btn-submit-pay" class="btn-pay-now">
+          <i class="fa-solid fa-lock"></i>
+          <span>Pay &amp; Confirm Booking &bull; ₱{{ "{:,.2f}".format(booking.amount or 0) }}</span>
+        </button>
+      </form>
+      {% endif %}
+
+      <!-- Trust Badges -->
+      <div class="trust-guarantee-box">
+        <div class="trust-item">
+          <i class="fa-solid fa-shield-check"></i>
+          <span>256-Bit SSL Encrypted</span>
+        </div>
+        <div class="trust-item">
+          <i class="fa-solid fa-qrcode"></i>
+          <span>Instant QR Pass Delivery</span>
+        </div>
+        <div class="trust-item">
+          <i class="fa-solid fa-leaf"></i>
+          <span>Official Park Partner</span>
+        </div>
+      </div>
     </div>
-    {% else %}
-    <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:1.5rem; color:#64748b; font-weight:700;">
-        You have no unpaid bookings right now. Visit your bookings page to create one.
-        <div style="margin-top:0.8rem;"><a href="{{ url_for('visitor.my_bookings') }}" style="color:#1a4f32; font-weight:800; text-decoration:none;">Go to My Bookings</a></div>
+
+    <!-- Right Column: Booking Summary & Price Breakdown (Sticky) -->
+    <div class="card-box summary-box">
+      <div class="summary-zoo-tag">
+        <i class="fa-solid fa-tree"></i> Verified Zoo Reservation
+      </div>
+      <h3 class="summary-service-name">{{ booking.service_name or 'Zoo General Admission' }}</h3>
+      <div class="summary-booking-id">
+        <i class="fa-solid fa-hashtag"></i> {{ booking.id }}
+      </div>
+
+      <div class="summary-details-list">
+        <div class="summary-detail-row">
+          <span class="summary-detail-label">
+            <i class="fa-regular fa-calendar"></i> Date
+          </span>
+          <span class="summary-detail-value">{{ booking.date or 'Scheduled Visit' }}</span>
+        </div>
+        <div class="summary-detail-row">
+          <span class="summary-detail-label">
+            <i class="fa-regular fa-clock"></i> Time Slot
+          </span>
+          <span class="summary-detail-value">{{ booking.time or 'Full Day Pass' }}</span>
+        </div>
+        <div class="summary-detail-row">
+          <span class="summary-detail-label">
+            <i class="fa-solid fa-users"></i> Guests
+          </span>
+          <span class="summary-detail-value">{{ booking.guests or 1 }} Guest(s)</span>
+        </div>
+        <div class="summary-detail-row">
+          <span class="summary-detail-label">
+            <i class="fa-solid fa-user"></i> Visitor
+          </span>
+          <span class="summary-detail-value">{{ booking.visitor_name or 'Visitor' }}</span>
+        </div>
+      </div>
+
+      <div class="price-breakdown">
+        <div class="price-row">
+          <span>Base Ticket Admission (×{{ booking.guests or 1 }})</span>
+          <span>₱{{ "{:,.2f}".format(booking.amount or 0) }}</span>
+        </div>
+        <div class="price-row free">
+          <span>Wildlife Conservation Levy</span>
+          <span>Included</span>
+        </div>
+        <div class="price-row free">
+          <span>Online Processing Surcharge</span>
+          <span>Waived (₱0.00)</span>
+        </div>
+      </div>
+
+      <div class="total-row">
+        <span class="total-label">Total Payable</span>
+        <span class="total-amount">₱{{ "{:,.2f}".format(booking.amount or 0) }}</span>
+      </div>
+
+      <a href="{{ url_for('visitor.my_bookings') }}" class="cancel-link">
+        <i class="fa-solid fa-arrow-left"></i> Return to My Bookings
+      </a>
     </div>
-    {% endif %}
+  </div>
+
+  {% else %}
+  <!-- Empty State if no pending bookings -->
+  <div class="empty-checkout-card">
+    <div class="empty-icon-wrap">
+      <i class="fa-solid fa-receipt"></i>
+    </div>
+    <h2 style="font-family:var(--vb-font-display); font-size:1.75rem; color:var(--vb-forest); margin:0 0 0.5rem 0;">No Pending Checkout</h2>
+    <p style="color:var(--vb-text-muted); font-size:0.95rem; line-height:1.5; margin:0 0 1.5rem 0;">
+      You do not have any pending unpaid bookings right now. Explore our wildlife experiences and reserve your adventure today!
+    </p>
+    <a href="{{ url_for('visitor.my_bookings') }}" class="btn-pay-now" style="text-decoration:none; display:inline-flex; width:auto; padding:0.85rem 1.75rem; margin:0 auto;">
+      <i class="fa-solid fa-compass"></i> Explore Bookings
+    </a>
+  </div>
+  {% endif %}
 </div>
+
+<script>
+function updateDemoPanels(method) {
+  const walletPanel = document.getElementById('demo-wallet-panel');
+  const cardPanel = document.getElementById('demo-card-panel');
+  const cashPanel = document.getElementById('demo-cash-panel');
+  const walletLabel = document.getElementById('wallet-name-label');
+  const submitBtn = document.getElementById('btn-submit-pay');
+
+  if (!walletPanel) return;
+
+  walletPanel.style.display = 'none';
+  cardPanel.style.display = 'none';
+  cashPanel.style.display = 'none';
+
+  if (method === 'gcash' || method === 'maya') {
+    walletPanel.style.display = 'block';
+    if (walletLabel) {
+      walletLabel.textContent = method === 'gcash' ? 'GCash' : 'Maya';
+    }
+    if (submitBtn) {
+      submitBtn.querySelector('span').textContent = 'Confirm & Pay ₱{{ "{:,.2f}".format(booking.amount or 0) }}';
+    }
+  } else if (method === 'card') {
+    cardPanel.style.display = 'block';
+    if (submitBtn) {
+      submitBtn.querySelector('span').textContent = 'Authorize & Pay ₱{{ "{:,.2f}".format(booking.amount or 0) }}';
+    }
+  } else if (method === 'cash_on_arrival' || method === 'cash') {
+    cashPanel.style.display = 'block';
+    if (submitBtn) {
+      submitBtn.querySelector('span').textContent = 'Confirm Reservation & Pay at Zoo';
+    }
+  }
+}
+
+function selectPaymentMethod(method, element) {
+  document.querySelectorAll('.pay-method-card').forEach(card => {
+    card.classList.remove('is-selected');
+  });
+  element.classList.add('is-selected');
+  const radio = element.querySelector('input[type="radio"]');
+  if (radio) {
+    radio.checked = true;
+  }
+  updateDemoPanels(method);
+}
+
+// Initial display on page load
+document.addEventListener('DOMContentLoaded', () => {
+  const activeCard = document.querySelector('.pay-method-card.is-selected');
+  if (activeCard) {
+    const method = activeCard.getAttribute('data-method');
+    updateDemoPanels(method);
+  }
+
+  const form = document.getElementById('checkout-form');
+  if (form) {
+    form.addEventListener('submit', () => {
+      const btn = document.getElementById('btn-submit-pay');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing Secure Payment...';
+      }
+    });
+  }
+});
+</script>
 {% endblock %}

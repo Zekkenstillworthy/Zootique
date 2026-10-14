@@ -252,8 +252,13 @@
     .visitor-map-pin i { transform: rotate(45deg); font-size: 14px; }
     .visitor-map-modal { display: none; position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.55); align-items: center; justify-content: center; padding: 20px; }
     .visitor-map-modal.open { display: flex; }
-    .visitor-map-modal-card { width: min(420px, 100%); background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.25); }
-    .visitor-map-modal-card img { display: block; width: 100%; max-height: 250px; object-fit: cover; }
+    .visitor-map-modal-card { width: min(560px, 100%); max-height: min(90vh, 720px); overflow:auto; background: white; border-radius: 8px; box-shadow: 0 12px 40px rgba(0,0,0,.25); }
+    .visitor-map-gallery { position:relative; background:#eef3ef; }
+    .visitor-map-gallery img { display:block; width:100%; height:260px; object-fit:cover; }
+    .visitor-map-gallery-empty { display:flex; align-items:center; justify-content:center; min-height:140px; padding:24px; color:var(--muted); text-align:center; }
+    .visitor-map-gallery-control { position:absolute; top:50%; transform:translateY(-50%); border:0; border-radius:50%; width:34px; height:34px; background:rgba(19,42,28,.8); color:#fff; cursor:pointer; }
+    .visitor-map-gallery-control.prev { left:12px; }
+    .visitor-map-gallery-control.next { right:12px; }
     .visitor-map-modal-body { padding: 18px 20px 20px; }
     .visitor-map-modal-title { margin: 0 0 8px; color: var(--green-dark); font-size: 21px; font-weight: 900; }
     .visitor-map-modal-description { margin: 0 0 16px; color: var(--muted); line-height: 1.5; font-size: 14px; }
@@ -962,7 +967,12 @@
 <div class="visitor-map-modal" id="visitorMapModal" role="dialog" aria-modal="true" aria-label="Zone details">
   <div class="visitor-map-modal-card">
     <button type="button" class="visitor-map-modal-close" id="visitorMapModalClose" aria-label="Close">&times;</button>
-    <img id="visitorMapModalImage" src="" alt="">
+    <div class="visitor-map-gallery" id="visitorMapGallery">
+      <img id="visitorMapModalImage" src="" alt="">
+      <div class="visitor-map-gallery-empty" id="visitorMapGalleryEmpty" hidden>No pictures have been added for this zone yet.</div>
+      <button type="button" class="visitor-map-gallery-control prev" id="visitorMapGalleryPrev" aria-label="Previous zone picture">&#8249;</button>
+      <button type="button" class="visitor-map-gallery-control next" id="visitorMapGalleryNext" aria-label="Next zone picture">&#8250;</button>
+    </div>
     <div class="visitor-map-modal-body">
       <h2 class="visitor-map-modal-title" id="visitorMapModalTitle"></h2>
       <p class="visitor-map-modal-description" id="visitorMapModalDescription"></p>
@@ -983,6 +993,7 @@ const visitorMapZones = {
     'name': zone.name,
     'description': zone.description or 'Explore this zoo zone.',
     'image_url': zone.map_image_url or '',
+    'image_urls': zone.image_urls or ([zone.map_image_url] if zone.map_image_url else []),
     'panorama_360_url': zone.panorama_360_url or '',
     'animals': (zone_animals_map|default({}))[zone.id]|default([])
   }|tojson }},
@@ -993,6 +1004,12 @@ const visitorMapModalImage = document.getElementById('visitorMapModalImage');
 const visitorMapModalTitle = document.getElementById('visitorMapModalTitle');
 const visitorMapModalDescription = document.getElementById('visitorMapModalDescription');
 const visitorMapModalPanorama = document.getElementById('visitorMapModalPanorama');
+const visitorMapGalleryEmpty = document.getElementById('visitorMapGalleryEmpty');
+const visitorMapGalleryPrev = document.getElementById('visitorMapGalleryPrev');
+const visitorMapGalleryNext = document.getElementById('visitorMapGalleryNext');
+let visitorMapGalleryImages = [];
+let visitorMapGalleryIndex = 0;
+let visitorMapPreviousFocus = null;
 
 // Move modal to document.body to escape transform stacking context of .animate parent
 // Use requestAnimationFrame to ensure it happens after DOM is fully ready
@@ -1006,9 +1023,10 @@ if (visitorMapModal) {
 function openVisitorMapZone(zoneId) {
   const zone = visitorMapZones[zoneId];
   if (!zone) return;
-  visitorMapModalImage.src = zone.image_url || '';
+  visitorMapGalleryImages = zone.image_urls && zone.image_urls.length ? zone.image_urls : [];
+  visitorMapGalleryIndex = 0;
+  renderVisitorMapGallery();
   visitorMapModalImage.alt = zone.name;
-  visitorMapModalImage.style.display = zone.image_url ? 'block' : 'none';
   visitorMapModalTitle.textContent = zone.name;
   visitorMapModalDescription.textContent = zone.description;
   visitorMapModalPanorama.style.display = zone.panorama_360_url ? 'inline-flex' : 'none';
@@ -1037,15 +1055,39 @@ function openVisitorMapZone(zoneId) {
   }
 
   visitorMapModal.classList.add('open');
+  visitorMapPreviousFocus = document.activeElement;
+  visitorMapModalClose.focus();
+}
+function renderVisitorMapGallery() {
+  const hasImages = visitorMapGalleryImages.length > 0;
+  visitorMapModalImage.hidden = !hasImages;
+  visitorMapGalleryEmpty.hidden = hasImages;
+  visitorMapGalleryPrev.hidden = visitorMapGalleryImages.length < 2;
+  visitorMapGalleryNext.hidden = visitorMapGalleryImages.length < 2;
+  if (hasImages) visitorMapModalImage.src = visitorMapGalleryImages[visitorMapGalleryIndex];
+}
+function closeVisitorMapZone() {
+  visitorMapModal.classList.remove('open');
+  visitorMapGalleryImages = [];
+  visitorMapModalImage.removeAttribute('src');
+  if (visitorMapPreviousFocus) visitorMapPreviousFocus.focus();
 }
 document.querySelectorAll('.visitor-map-pin').forEach(function(pin) {
   pin.addEventListener('click', function() { openVisitorMapZone(this.dataset.zoneId); });
 });
-document.getElementById('visitorMapModalClose')?.addEventListener('click', function() { visitorMapModal.classList.remove('open'); });
-visitorMapModal?.addEventListener('click', function(event) { if (event.target === visitorMapModal) visitorMapModal.classList.remove('open'); });
+document.getElementById('visitorMapModalClose')?.addEventListener('click', closeVisitorMapZone);
+visitorMapGalleryPrev?.addEventListener('click', function() {
+  visitorMapGalleryIndex = (visitorMapGalleryIndex - 1 + visitorMapGalleryImages.length) % visitorMapGalleryImages.length;
+  renderVisitorMapGallery();
+});
+visitorMapGalleryNext?.addEventListener('click', function() {
+  visitorMapGalleryIndex = (visitorMapGalleryIndex + 1) % visitorMapGalleryImages.length;
+  renderVisitorMapGallery();
+});
+visitorMapModal?.addEventListener('click', function(event) { if (event.target === visitorMapModal) closeVisitorMapZone(); });
 document.addEventListener('keydown', function(event) {
   if (event.key === 'Escape' && visitorMapModal?.classList.contains('open')) {
-    visitorMapModal.classList.remove('open');
+    closeVisitorMapZone();
   }
 });
 

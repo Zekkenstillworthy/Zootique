@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
+import json
 from sqlalchemy import event, inspect as sqlalchemy_inspect
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -317,6 +318,24 @@ class BookingPayment(db.Model):
     booking = db.relationship('Booking', back_populates='payments', lazy=True)
     payer = db.relationship('User', back_populates='booking_payments', lazy=True)
 
+
+class UserLinkedAccount(db.Model):
+    __tablename__ = 'user_linked_accounts'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete="CASCADE"), nullable=False, index=True)
+    provider = db.Column(db.String(50), nullable=False)  # gcash | google | facebook
+    account_identifier = db.Column(db.String(255), nullable=False)
+    display_name = db.Column(db.String(100), nullable=True)
+    linked_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    is_verified = db.Column(db.Boolean, nullable=False, default=True)
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'provider', name='uq_user_provider'),
+    )
+
+    user = db.relationship('User', backref=db.backref('linked_accounts', cascade='all, delete-orphan', lazy=True))
+
+
 class Event(db.Model):
     __tablename__ = 'events'
     id = db.Column(db.Integer, primary_key=True)
@@ -393,12 +412,32 @@ class ZooZone(db.Model):
     name = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=True)
     map_image_url = db.Column(db.String(500), nullable=True)
+    image_urls_json = db.Column(db.Text, nullable=True)
     panorama_360_url = db.Column(db.String(800), nullable=True)
     position_x = db.Column(db.Float, nullable=True)
     position_y = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     zoo = db.relationship('Zoo', back_populates='zones', lazy=True)
+
+    @property
+    def image_urls(self) -> list[str]:
+        """Return visitor-facing zone photos while tolerating legacy rows."""
+        if not self.image_urls_json:
+            return []
+        try:
+            values = json.loads(self.image_urls_json)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return []
+        if not isinstance(values, list):
+            return []
+        return [str(value) for value in values if isinstance(value, str) and value.strip()]
+
+    @image_urls.setter
+    def image_urls(self, values: list[str]) -> None:
+        self.image_urls_json = json.dumps(
+            [str(value) for value in values if isinstance(value, str) and value.strip()]
+        )
 
 
 class StaffTask(db.Model):

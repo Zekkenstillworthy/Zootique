@@ -20,6 +20,20 @@
         box-shadow:0 3px 10px rgba(19,42,28,.35);
         cursor:grab;
     }
+    if (zoneImagesInput) {
+        zoneImagesInput.addEventListener('change', function() {
+            const files = Array.from(zoneImagesInput.files || []);
+            if (files.length > 12) {
+                zoneImagesInput.value = '';
+                alert('You can select up to 12 zone pictures.');
+                return;
+            }
+            const previews = files.map(function(file) {
+                return {url: URL.createObjectURL(file), existing: false, label: file.name};
+            });
+            renderZoneGallery(previews);
+        });
+    }
     .map-editor-pin:active { cursor:grabbing; }
     .map-editor-pin i { font-size:14px; }
     .map-editor-pin span { position:absolute; left:38px; top:4px; padding:3px 6px; border-radius:4px; background:#132a1c; color:#fff; font-size:11px; white-space:nowrap; pointer-events:none; }
@@ -109,6 +123,19 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div class="zf-section">
+                <div class="zf-section-label">
+                    <i class="fa-solid fa-images"></i> Visitor Zone Pictures
+                </div>
+                <div class="zf-field zf-full">
+                    <label class="zf-label" for="zone_images">Pictures shown to visitors</label>
+                    <input id="zone_images" type="file" name="zone_images" accept="image/png,image/jpeg,image/webp" multiple aria-describedby="zoneImagesHint">
+                    <span class="zf-hint" id="zoneImagesHint">Up to 12 PNG, JPG or WEBP pictures, 5 MB each.</span>
+                    <div id="zoneGalleryPreview" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:12px;"></div>
+                    <input type="hidden" name="removed_zone_images" id="removedZoneImages" value="[]">
                 </div>
             </div>
 
@@ -298,7 +325,7 @@
                                 <td style="text-align:right; padding-right:16px;">
                                     <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
                                         <button class="zf-icon-btn" type="button" title="Edit Zone"
-                                            {% if not can_edit_feature('map_zones') %}disabled title="Pro subscription required to edit" style="opacity:0.5; cursor:not-allowed;"{% else %}onclick='fillZoneForm({{ z.id|tojson }}, {{ z.name|tojson }}, {{ (z.description or "")|tojson }}, {{ (z.panorama_360_url or "")|tojson }}, {{ (z.map_image_url or "")|tojson }})'{% endif %}>
+                                            {% if not can_edit_feature('map_zones') %}disabled title="Pro subscription required to edit" style="opacity:0.5; cursor:not-allowed;"{% else %}onclick='fillZoneForm({{ z.id|tojson }}, {{ z.name|tojson }}, {{ (z.description or "")|tojson }}, {{ (z.panorama_360_url or "")|tojson }}, {{ (z.map_image_url or "")|tojson }}, {{ z.image_urls|tojson }})'{% endif %}>
                                             <i class="fa-solid fa-pen"></i>
                                         </button>
                                         <form method="post" action="{{ url_for('animal_farm_admin.delete_zone', zone_id=z.id) }}" style="display:inline;" onsubmit="return confirm('Delete this zone?');">
@@ -336,6 +363,11 @@ const initialPinPositions = {
     "{{ z.id }}": {x: {{ z.position_x }}, y: {{ z.position_y }}},
 {% endfor %}
 };
+const initialPinZoneNames = {
+{% for z in zones %}
+    "{{ z.id }}": {{ z.name|tojson }},
+{% endfor %}
+};
 const pinEditorMap = document.getElementById('pinEditorMap');
 const pinZoneSelect = document.getElementById('pinZoneSelect');
 const placePinModeBtn = document.getElementById('placePinModeBtn');
@@ -363,19 +395,34 @@ function renderEditorPin(zoneId) {
         return;
     }
     const option = pinZoneSelect.querySelector('option[value="' + zoneId + '"]');
+    const zoneName = initialPinZoneNames[zoneId] || (option ? option.textContent : 'Zone');
     const pin = document.createElement('button');
     pin.type = 'button';
     pin.className = 'map-editor-pin';
     pin.dataset.zoneId = zoneId;
-    pin.title = option ? option.textContent : 'Zone';
+    pin.title = zoneName;
     pin.style.cssText = 'position:absolute; transform:translate(-50%, -100%); z-index:3; left:' + position.x + '%; top:' + position.y + '%;';
     pin.innerHTML = '<i class="fa-solid fa-location-dot"></i><span></span><b aria-label="Remove pin">&times;</b>';
-    pin.querySelector('span').textContent = option ? option.textContent : 'Zone';
+    pin.querySelector('span').textContent = zoneName;
     pinEditorMap.appendChild(pin);
+}
+
+function addUnplacedZoneOption(zoneId) {
+    if (!pinZoneSelect || !zoneId || pinZoneSelect.querySelector('option[value="' + zoneId + '"]')) return;
+    const option = document.createElement('option');
+    option.value = zoneId;
+    option.textContent = initialPinZoneNames[zoneId] || 'Zone';
+    pinZoneSelect.appendChild(option);
+}
+
+function removeUnplacedZoneOption(zoneId) {
+    const option = pinZoneSelect && pinZoneSelect.querySelector('option[value="' + zoneId + '"]');
+    if (option) option.remove();
 }
 
 function updatePinPosition(zoneId, position) {
     initialPinPositions[zoneId] = position;
+    removeUnplacedZoneOption(zoneId);
     renderEditorPin(zoneId);
 }
 
@@ -407,7 +454,10 @@ if (pinEditorMap) {
         if (!removeButton) return;
         event.preventDefault();
         event.stopPropagation();
-        delete initialPinPositions[removeButton.closest('.map-editor-pin').dataset.zoneId];
+        const zoneId = removeButton.closest('.map-editor-pin').dataset.zoneId;
+        delete initialPinPositions[zoneId];
+        addUnplacedZoneOption(zoneId);
+        pinZoneSelect.value = zoneId;
         removeButton.closest('.map-editor-pin').remove();
     });
 }
@@ -450,6 +500,9 @@ if (zoneFileInput) {
             if (zonePreviewWrap) zonePreviewWrap.classList.add('visible');
         } else {
             resetZoneUpload();
+            removedZoneImages = [];
+            if (removedZoneImagesInput) removedZoneImagesInput.value = '[]';
+            renderZoneGallery([]);
         }
     });
 }
@@ -460,11 +513,39 @@ if (zoneRemoveBtn) {
     });
 }
 
-function fillZoneForm(id, name, description, panoUrl, mapImg) {
+const zoneImagesInput = document.getElementById('zone_images');
+const zoneGalleryPreview = document.getElementById('zoneGalleryPreview');
+const removedZoneImagesInput = document.getElementById('removedZoneImages');
+let removedZoneImages = [];
+
+function renderZoneGallery(images) {
+    if (!zoneGalleryPreview) return;
+    zoneGalleryPreview.innerHTML = '';
+    images.forEach(function(image, index) {
+        const item = document.createElement('div');
+        item.style.cssText = 'position:relative;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#f8fafc;';
+        item.innerHTML = '<img src="' + image.url + '" alt="' + (image.label || 'Zone picture') + '" style="display:block;width:100%;height:82px;object-fit:cover;">'
+            + '<button type="button" aria-label="Remove zone picture" style="position:absolute;right:4px;top:4px;border:0;border-radius:50%;background:#b42318;color:white;width:22px;height:22px;cursor:pointer;">&times;</button>';
+        item.querySelector('button').addEventListener('click', function() {
+            if (image.existing) removedZoneImages.push(image.url);
+            images.splice(index, 1);
+            removedZoneImagesInput.value = JSON.stringify(removedZoneImages);
+            renderZoneGallery(images);
+        });
+        zoneGalleryPreview.appendChild(item);
+    });
+}
+
+function fillZoneForm(id, name, description, panoUrl, mapImg, galleryImages) {
     document.getElementById('zone_id_input').value = id || '';
     document.getElementById('zone_name_input').value = name || '';
     document.getElementById('zone_desc_input').value = description || '';
     document.getElementById('zone_pano_input').value = panoUrl || '';
+    removedZoneImages = [];
+    if (removedZoneImagesInput) removedZoneImagesInput.value = '[]';
+    renderZoneGallery((galleryImages || []).map(function(url) {
+        return {url: url, existing: true, label: name || 'Zone picture'};
+    }));
 
     const titleEl = document.getElementById('zoneFormTitleText');
     if (titleEl) titleEl.textContent = 'Edit Zone';

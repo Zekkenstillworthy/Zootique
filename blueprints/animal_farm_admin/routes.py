@@ -113,6 +113,23 @@ def _parse_date(value: str | None):
     except Exception:
         return None
 
+
+def _uploaded_file_size(file_storage) -> int | None:
+    """Read a seekable upload size without consuming the file."""
+    if file_storage.content_length:
+        return int(file_storage.content_length)
+    stream = getattr(file_storage, 'stream', None)
+    if not stream or not hasattr(stream, 'tell') or not hasattr(stream, 'seek'):
+        return None
+    try:
+        current_position = stream.tell()
+        stream.seek(0, os.SEEK_END)
+        size = stream.tell()
+        stream.seek(current_position)
+        return int(size)
+    except (OSError, ValueError):
+        return None
+
 @animal_farm_admin_bp.route('/')
 def dashboard():
     zoo = _current_zoo()
@@ -1332,6 +1349,9 @@ def save_zone_pin_positions():
         if not isinstance(positions, dict):
             raise ValueError
         zones = {str(zone.id): zone for zone in ZooZone.query.filter_by(zoo_id=zoo.id).all()}
+        unknown_zone_ids = set(positions) - set(zones)
+        if unknown_zone_ids:
+            raise ValueError
         for zone_id, zone in zones.items():
             raw_position = positions.get(zone_id)
             if raw_position is None:
@@ -1369,6 +1389,18 @@ def save_zone():
     description = (request.form.get('description') or '').strip() or None
     panorama_360_url = (request.form.get('panorama_360_url') or '').strip() or None
     map_image_file = request.files.get('map_image_file')
+    gallery_files = [
+        file for file in request.files.getlist('zone_images')
+        if file and file.filename
+    ]
+    try:
+        removed_images = json.loads(request.form.get('removed_zone_images') or '[]')
+    except (TypeError, ValueError, json.JSONDecodeError):
+        flash('The selected zone pictures could not be processed.', 'error')
+        return redirect(url_for('animal_farm_admin.visitor_map_zone_management', tab='add'))
+    if not isinstance(removed_images, list) or not all(isinstance(url, str) for url in removed_images):
+        flash('The selected zone pictures could not be processed.', 'error')
+        return redirect(url_for('animal_farm_admin.visitor_map_zone_management', tab='add'))
 
     if not name:
         flash('Zone name is required.', 'error')
@@ -1376,7 +1408,11 @@ def save_zone():
 
     zone = None
     if zone_id:
-        zone = ZooZone.query.filter_by(id=int(zone_id), zoo_id=zoo.id).first()
+        try:
+            zone = ZooZone.query.filter_by(id=int(zone_id), zoo_id=zoo.id).first()
+        except (TypeError, ValueError):
+            flash('The selected zone is invalid.', 'error')
+            return redirect(url_for('animal_farm_admin.visitor_map_zone_management', tab='add'))
     if not zone:
         zone = ZooZone(zoo_id=zoo.id)
         db.session.add(zone)
@@ -1384,6 +1420,24 @@ def save_zone():
     zone.name = name
     zone.description = description
     zone.panorama_360_url = panorama_360_url
+    current_images = [
+        image_url for image_url in zone.image_urls
+        if image_url not in set(removed_images)
+    ]
+    if len(current_images) + len(gallery_files) > 12:
+        flash('A zone can have up to 12 pictures.', 'error')
+        return redirect(url_for('animal_farm_admin.visitor_map_zone_management', tab='add'))
+
+    for image_file in gallery_files:
+        if (_uploaded_file_size(image_file) or 0) > 5 * 1024 * 1024:
+            flash('Each zone picture must be no larger than 5 MB.', 'error')
+            return redirect(url_for('animal_farm_admin.visitor_map_zone_management', tab='add'))
+        uploaded_url = _save_uploaded_image(image_file, 'zone_images')
+        if not uploaded_url:
+            flash('Unable to upload one of the zone pictures.', 'error')
+            return redirect(url_for('animal_farm_admin.visitor_map_zone_management', tab='add'))
+        current_images.append(uploaded_url)
+    zone.image_urls = current_images
 
     if map_image_file and map_image_file.filename:
         uploaded_url = _save_uploaded_image(map_image_file, 'zone_maps')
