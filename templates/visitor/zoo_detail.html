@@ -1,44 +1,503 @@
-
 {% extends "base.html" %}
 
 {% block title %}{{ zoo.name }}{% endblock %}
 {% block page_title %}{{ zoo.name }}{% endblock %}
 
+{% block extra_head %}
+<style>
+  /* Centered container with 16-24px responsive side padding */
+  .zoo-detail-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1.25rem 1.25rem 3.5rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Shorter Hero: 260px desktop, 180px mobile */
+  .zoo-hero {
+    position: relative;
+    height: 260px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0f2d1c 0%, #1B5E38 100%);
+    display: flex;
+    align-items: flex-end;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  @media (max-width: 640px) {
+    .zoo-hero {
+      height: 180px;
+    }
+  }
+
+  .zoo-hero-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .zoo-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(10, 25, 16, 0.1) 0%, rgba(10, 25, 16, 0.65) 60%, rgba(10, 25, 16, 0.92) 100%);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 1.5rem 1.75rem;
+    gap: 1rem;
+    box-sizing: border-box;
+    z-index: 2;
+  }
+
+  @media (max-width: 640px) {
+    .zoo-hero-overlay {
+      padding: 1rem 1.25rem;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-end;
+    }
+  }
+
+  .zoo-hero-title {
+    margin: 0 0 0.35rem;
+    font-size: clamp(1.4rem, 3vw, 2.1rem);
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+  }
+
+  .zoo-hero-meta {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+    color: #e2e8f0;
+    font-weight: 500;
+  }
+
+  .zoo-type-badge {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    color: #ffffff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+
+  /* Call To Action Buttons */
+  .btn-cta-primary {
+    background: #1B5E38;
+    color: #ffffff !important;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 0.75rem 1.4rem;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(27, 94, 56, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    transition: background 0.15s ease, transform 0.15s ease;
+  }
+
+  .btn-cta-primary:hover {
+    background: #14452a;
+    transform: translateY(-1px);
+  }
+
+  .btn-cta-secondary {
+    background: #1B5E38;
+    color: #ffffff !important;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.88rem;
+    padding: 0.55rem 1.15rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(27, 94, 56, 0.2);
+    transition: background 0.15s ease;
+  }
+
+  .btn-cta-secondary:hover {
+    background: #14452a;
+  }
+
+  /* Compact Essential Info Block under title */
+  .zoo-essential-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.85rem 1.25rem;
+    margin: 1.25rem 0 1.5rem;
+    font-size: 0.875rem;
+    color: #334155;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  }
+
+  .info-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-weight: 500;
+  }
+
+  .info-icon {
+    color: #1B5E38;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+  }
+
+  .info-link {
+    color: #1e293b;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .info-link:hover {
+    color: #1B5E38;
+    text-decoration: underline;
+  }
+
+  /* Description text */
+  .zoo-description {
+    line-height: 1.75;
+    color: #334155;
+    font-size: 0.98rem;
+    margin: 0 0 2rem;
+  }
+
+  /* Section Headers */
+  .section-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e2e8f0;
+  }
+
+  .section-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.3px;
+  }
+
+  /* Services Grid */
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2.75rem;
+  }
+
+  .service-card {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-left: 4px solid #1B5E38;
+    border-radius: 8px;
+    padding: 1.15rem 1.25rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .service-name {
+    margin: 0 0 0.35rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  /* High contrast price (WCAG AA compliant) */
+  .service-price {
+    margin: 0 0 0.5rem;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #14532d;
+  }
+
+  .service-desc {
+    margin: 0;
+    font-size: 0.88rem;
+    color: #334155;
+    line-height: 1.55;
+  }
+
+  /* Residents Grid: 3 columns desktop, 2 columns tablet, 1 column mobile */
+  .residents-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  @media (max-width: 860px) {
+    .residents-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .residents-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .resident-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+
+  .resident-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .resident-card-link:hover .resident-card {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  .resident-img-wrap {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    background: #e2e8f0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .resident-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .resident-img-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    color: #94a3b8;
+    font-size: 2rem;
+  }
+
+  .resident-card-body {
+    padding: 0.9rem 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    flex: 1;
+  }
+
+  .resident-name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.3;
+  }
+
+  /* High contrast subtitle (WCAG AA compliant) */
+  .resident-species {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #92400e;
+    margin-bottom: 0.25rem;
+  }
+
+  .resident-desc {
+    margin: 0;
+    font-size: 0.84rem;
+    color: #475569;
+    line-height: 1.45;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="card" style="margin-bottom: 2rem;">
-    {% if zoo.image_url %}<img src="{{ zoo.image_url }}" alt="{{ zoo.name }}" onerror="this.onerror=null;this.style.display='none';" style="width: 100%; height: 300px; object-fit: cover;">{% endif %}
-    <div class="card-content">
-        <h2 style="margin-bottom: 0.5rem;">{{ zoo.name }}</h2>
-        <p style="color: var(--accent-color); font-weight: bold; margin-bottom: 1rem;">{{ zoo.type }} | {{ zoo.location }}</p>
-        <p style="line-height: 1.8; color: #555; margin-bottom: 2rem;">{{ zoo.description|public_text }}</p>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-            <div>
-                <h3 style="margin-bottom: 1rem; border-bottom: 2px solid var(--accent-color); padding-bottom: 0.5rem;">Available Services</h3>
-                {% for service in services %}
-                <div style="padding: 1rem; background: #fafafa; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid var(--primary-color);">
-                    <h4 style="margin-bottom: 0.25rem;">{{ service.name }}</h4>
-                    <p style="font-weight: bold; color: var(--accent-color);">₱{{ service.price }}</p>
-                    <p style="font-size: 0.85rem; color: #777;">{{ service.description }}</p>
-                </div>
-                {% endfor %}
-            </div>
-            <div>
-                <h3 style="margin-bottom: 1rem; border-bottom: 2px solid var(--accent-color); padding-bottom: 0.5rem;">Our Residents</h3>
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
-                    {% for animal in animals %}
-                    <a href="{{ url_for('visitor.animal_detail', animal_id=animal.id) }}" style="text-decoration: none; color: inherit;">
-                        <div class="card" style="box-shadow: none; border: 1px solid #eee;">
-                            {% if animal.image_url %}<img src="{{ animal.image_url }}" alt="{{ animal.name }}" onerror="this.onerror=null;this.style.display='none';" style="height: 100px; width: 100%; object-fit: cover;">{% endif %}
-                            <div style="padding: 0.5rem; text-align: center;">
-                                <h4 style="font-size: 0.9rem;">{{ animal.name }}</h4>
-                            </div>
-                        </div>
-                    </a>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
+{% set _auth_by_role = session.get('auth_by_role') %}
+{% set _visitor_role_state = (_auth_by_role.get('visitor') if _auth_by_role is mapping else None) %}
+{% set _has_visitor_role = _visitor_role_state is mapping and _visitor_role_state.get('user_id') %}
+{% set _is_visitor_authed = (session.get('user_id') and session.get('role') == 'visitor') or _has_visitor_role %}
+{% set cta_url = url_for('visitor.my_bookings') if _is_visitor_authed else url_for('auth.login', module_name='visitor', next=request.path) %}
+
+<div class="zoo-detail-container">
+
+  <!-- HERO SECTION: 260px desktop, 180px mobile with overlay and fallback -->
+  <div class="zoo-hero">
+    {% if zoo.image_url %}
+    <img src="{{ zoo.image_url }}" alt="{{ zoo.name }}" class="zoo-hero-img" onerror="this.onerror=null;this.style.display='none';">
+    {% endif %}
+    <div class="zoo-hero-overlay">
+      <div class="zoo-hero-text">
+        <h1 class="zoo-hero-title">{{ zoo.name }}</h1>
+        <p class="zoo-hero-meta">
+          {% if zoo.type %}
+          <span class="zoo-type-badge">{{ zoo.type }}</span>
+          {% endif %}
+          {% if zoo.location %}
+          <span><i class="fa-solid fa-location-dot"></i> {{ zoo.location }}</span>
+          {% endif %}
+        </p>
+      </div>
+      <div>
+        <a href="{{ cta_url }}" class="btn-cta-primary">
+          Get a Membership <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
     </div>
+  </div>
+
+  <!-- ESSENTIAL INFO BLOCK: address, hours, contact (only rendered if present in data) -->
+  {% set hours = None %}
+  {% if services and services[0].opening_time and services[0].closing_time %}
+    {% set hours = services[0].opening_time ~ ' – ' ~ services[0].closing_time %}
+  {% elif zoo.opening_hours is defined and zoo.opening_hours %}
+    {% set hours = zoo.opening_hours %}
+  {% endif %}
+
+  {% set contact_phone = registration.establishment_contact_phone if registration and registration.establishment_contact_phone else (zoo.contact_phone if zoo.contact_phone is defined and zoo.contact_phone else None) %}
+  {% set contact_email = registration.establishment_contact_email if registration and registration.establishment_contact_email else (zoo.contact_email if zoo.contact_email is defined and zoo.contact_email else None) %}
+
+  {% if zoo.location or hours or contact_phone or contact_email %}
+  <div class="zoo-essential-info">
+    {% if zoo.location %}
+    <div class="info-item">
+      <i class="fa-solid fa-location-dot info-icon"></i>
+      <span>{{ zoo.location }}</span>
+    </div>
+    {% endif %}
+
+    {% if hours %}
+    <div class="info-item">
+      <i class="fa-regular fa-clock info-icon"></i>
+      <span>{{ hours }}</span>
+    </div>
+    {% endif %}
+
+    {% if contact_phone %}
+    <div class="info-item">
+      <i class="fa-solid fa-phone info-icon"></i>
+      <a href="tel:{{ contact_phone }}" class="info-link">{{ contact_phone }}</a>
+    </div>
+    {% endif %}
+
+    {% if contact_email %}
+    <div class="info-item">
+      <i class="fa-solid fa-envelope info-icon"></i>
+      <a href="mailto:{{ contact_email }}" class="info-link">{{ contact_email }}</a>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- ZOO DESCRIPTION (Graceful fallback for missing text) -->
+  <p class="zoo-description">
+    {{ (zoo.description|public_text) or ('Welcome to ' ~ zoo.name ~ '. Discover our conservation habitats, ethical wildlife care, and memorable visitor experiences.') }}
+  </p>
+
+  <!-- AVAILABLE SERVICES SECTION -->
+  <div class="section-header-row">
+    <h3 class="section-title">Available Services</h3>
+    <a href="{{ cta_url }}" class="btn-cta-secondary">
+      Get a Membership <i class="fa-solid fa-arrow-right"></i>
+    </a>
+  </div>
+
+  {% if services %}
+  <div class="services-grid">
+    {% for service in services %}
+    <div class="service-card">
+      <div>
+        <h4 class="service-name">{{ service.name }}</h4>
+        <!-- Format prices as ₱500 (no trailing .0, with thousands separator) -->
+        <p class="service-price">
+          ₱{{ '{:,.0f}'.format(service.price) if (service.price == service.price|int) else '{:,.2f}'.format(service.price) }}
+        </p>
+        <p class="service-desc">
+          {{ service.description or 'Includes standard entry and access to all scheduled activities for this service.' }}
+        </p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 2.5rem;">No active services currently listed for this park.</p>
+  {% endif %}
+
+  <!-- OUR RESIDENTS SECTION -->
+  <div class="section-header-row">
+    <h3 class="section-title">Our Residents</h3>
+  </div>
+
+  {% if animals %}
+  <div class="residents-grid">
+    {% for animal in animals %}
+    <a href="{{ url_for('visitor.animal_detail', animal_id=animal.id) }}" class="resident-card-link">
+      <div class="resident-card">
+        <div class="resident-img-wrap">
+          {% if animal.image_url %}
+          <img src="{{ animal.image_url }}" alt="{{ animal.name }}" class="resident-img" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'resident-img-fallback\'><i class=\'fa-solid fa-paw\'></i></div>';">
+          {% else %}
+          <div class="resident-img-fallback"><i class="fa-solid fa-paw"></i></div>
+          {% endif %}
+        </div>
+        <div class="resident-card-body">
+          <h4 class="resident-name">{{ animal.name }}</h4>
+          {% if animal.species %}
+          <div class="resident-species">{{ animal.species }}</div>
+          {% endif %}
+          <p class="resident-desc" title="{{ animal.description or 'Resident wildlife at ' ~ zoo.name ~ '.' }}">
+            {{ animal.description or ('Resident wildlife at ' ~ zoo.name ~ '.') }}
+          </p>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="color: #64748b; font-size: 0.9rem;">No residents currently listed for this park.</p>
+  {% endif %}
+
 </div>
 {% endblock %}

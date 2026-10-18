@@ -15,7 +15,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
-from models import db, Zoo, Animal, Service, Booking, BookingPayment, BookingBundle, BookingTicket, Event, Promotion, Feedback, ParkRule, User, ZooZone, EstablishmentType, Notification, TriviaQuestion, VisitorTriviaLog, VisitorBadge, LoyaltyAccount, LoyaltyTransaction, UserLinkedAccount
+from models import db, Zoo, Animal, Service, Booking, BookingPayment, BookingBundle, BookingTicket, Event, Promotion, Feedback, ParkRule, User, ZooZone, EstablishmentType, EstablishmentRegistration, Notification, TriviaQuestion, VisitorTriviaLog, VisitorBadge, LoyaltyAccount, LoyaltyTransaction, UserLinkedAccount
 from services import (
     BookingAuthorizationError,
     BookingValidationError,
@@ -570,7 +570,8 @@ def zoo_detail(zoo_id: int):
         session.modified = True
         zoo_animals = Animal.query.filter_by(zoo_id=zoo_id).order_by(Animal.id.asc()).all()
         zoo_services = Service.query.filter_by(zoo_id=zoo_id).order_by(Service.id.asc()).all()
-        return render_template("visitor/zoo_detail.html", zoo=zoo, animals=zoo_animals, services=zoo_services)
+        registration = EstablishmentRegistration.query.filter_by(zoo_id=zoo_id).first()
+        return render_template("visitor/zoo_detail.html", zoo=zoo, animals=zoo_animals, services=zoo_services, registration=registration)
 
     abort(404)
 

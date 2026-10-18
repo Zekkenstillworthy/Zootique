@@ -1268,8 +1268,8 @@
                     <header style="background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; overflow: visible;">
                         <div class="container visitor-navbar" style="padding: 0 1.5rem; box-shadow: none; position: static; display:flex; align-items:center; justify-content:space-between; height:60px; gap:0;">
 
-                            <!-- Logo (always visible) -->
-                            <a href="{{ url_for('visitor.home') }}" class="visitor-logo">
+                            <!-- Logo (always visible, links to landing) -->
+                            <a href="/" class="visitor-logo" title="Zootique">
                                 <img src="{{ url_for('static', filename='img/Zootique_Logo.png') }}" alt="Zootique" />
                             </a>
 
@@ -1311,7 +1311,11 @@
                                 <a href="{{ url_for('visitor.trivia') }}"
                                     class="visitor-nav-link {% if request.endpoint == 'visitor.trivia' %}active{% endif %}"><i class="fa-solid fa-gamepad" style="margin-right: 4px;"></i> Trivia</a>
                                 {% else %}
+                                {% if request.endpoint == 'visitor.zoo_detail' %}
+                                <a href="{{ url_for('visitor.list_zoos') }}" class="visitor-nav-link"><i class="fa-solid fa-arrow-left" style="margin-right: 6px;"></i> Back to Zoos</a>
+                                {% else %}
                                 <a href="/" class="visitor-nav-link">Back to Landing</a>
+                                {% endif %}
                                 {% endif %}
                                 {% endif %}
                             </nav>
@@ -1406,7 +1410,7 @@
                                   </div>
                                 </div>
                                 {% else %}
-                                <a href="{{ url_for('auth.login', module_name='visitor') }}" class="visitor-nav-link"
+                                <a href="{{ url_for('auth.login', module_name='visitor', next=request.path) }}" class="visitor-nav-link"
                                     style="height:auto; color:#1a4f32; font-weight:800;">
                                     <i class="fa-solid fa-right-to-bracket" style="margin-right: 8px;"></i> Sign in
                                 </a>
