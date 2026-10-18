@@ -29,13 +29,29 @@ _ALLOWED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 _ALLOWED_DOCUMENT_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg"}
 
 
+_last_storage_error: str | None = None
+
+
+def get_last_storage_error() -> str | None:
+    """Return the most recent error message from a failed cloud storage upload."""
+    global _last_storage_error
+    return _last_storage_error
+
+
 def _upload_to_supabase(object_key: str, file_bytes: bytes, content_type: str | None) -> str | None:
     """Upload binary payload directly to Supabase Storage via REST API."""
+    global _last_storage_error
+    _last_storage_error = None
+
     url = (os.environ.get("SUPABASE_URL") or "").strip().rstrip("/")
     key = (os.environ.get("SUPABASE_KEY") or "").strip()
     bucket = (os.environ.get("SUPABASE_STORAGE_BUCKET") or "zootique-images").strip()
 
-    if not url or not key:
+    if not url:
+        _last_storage_error = "SUPABASE_URL environment variable is missing."
+        return None
+    if not key:
+        _last_storage_error = "SUPABASE_KEY environment variable is missing."
         return None
 
     upload_endpoint = f"{url}/storage/v1/object/{bucket}/{object_key}"
@@ -51,11 +67,21 @@ def _upload_to_supabase(object_key: str, file_bytes: bytes, content_type: str | 
         with urllib.request.urlopen(req, timeout=30) as resp:
             if resp.status in (200, 201):
                 return f"{url}/storage/v1/object/public/{bucket}/{object_key}"
+            else:
+                _last_storage_error = f"Supabase responded with HTTP {resp.status}"
     except urllib.error.HTTPError as exc:
         err_body = exc.read().decode("utf-8", errors="replace")
-        current_app.logger.error("Supabase Storage REST upload failed (HTTP %s): %s", exc.code, err_body)
+        _last_storage_error = f"Supabase API HTTP {exc.code}: {err_body}"
+        try:
+            current_app.logger.error("Supabase Storage REST upload failed (HTTP %s): %s", exc.code, err_body)
+        except Exception:
+            pass
     except Exception as exc:
-        current_app.logger.error("Supabase Storage REST upload error: %s", exc)
+        _last_storage_error = f"Supabase connection error: {str(exc)}"
+        try:
+            current_app.logger.error("Supabase Storage REST upload error: %s", exc)
+        except Exception:
+            pass
 
     # Fallback to supabase-py library if installed and compatible
     try:

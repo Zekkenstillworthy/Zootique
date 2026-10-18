@@ -99,6 +99,19 @@
           <i class="fa-solid fa-file-shield"></i> REQUIRED DOCUMENTS
         </div>
         <p style="font-size: 12px; color: #64748b; margin: -0.75rem 0 0;">Upload one PDF, JPG, or PNG per document (up to 3.5 MB each). Photos and image files are automatically compressed for cloud upload.</p>
+        
+        <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 10px 14px; margin-top: 0.25rem; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Supabase Storage Diagnostic
+            </span>
+            <button type="button" id="btn-detect-supabase" onclick="detectSupabaseErrors()" style="background: #166453; color: white; border: none; border-radius: 4px; padding: 6px 12px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-stethoscope"></i> Test Supabase Connection (JS)
+            </button>
+          </div>
+          <div id="supabase-detect-output" style="display: none; padding: 10px 12px; border-radius: 6px; font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; line-height: 1.5; word-break: break-all;"></div>
+        </div>
+
         <div id="upload-limit-warning" style="display: none; background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; border-radius: 6px; padding: 12px; font-size: 13px; font-weight: 600;"></div>
 
         {% set document_fields = [
@@ -276,6 +289,59 @@
         submitBtn.style.opacity = '0.7';
       }
     });
+  }
+
+  async function detectSupabaseErrors() {
+    const btn = document.getElementById('btn-detect-supabase');
+    const box = document.getElementById('supabase-detect-output');
+    if (!btn || !box) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Probing Supabase...';
+    box.style.display = 'block';
+    box.style.background = '#f1f5f9';
+    box.style.border = '1px solid #cbd5e1';
+    box.style.color = '#334155';
+    box.innerHTML = 'Probing Supabase Storage and checking environment configuration...';
+
+    try {
+      const resp = await fetch('/auth/diagnose-storage');
+      const data = await resp.json();
+      console.log('[Supabase Diagnostic Result]:', data);
+
+      if (data.test_upload_status === 200 || data.test_upload_status === 201) {
+        box.style.background = '#f0fdf4';
+        box.style.border = '1px solid #86efac';
+        box.style.color = '#166534';
+        box.innerHTML = `<strong>✅ Supabase Storage is working properly!</strong><br>` +
+          `• Environment: ${data.is_vercel ? 'Vercel Serverless' : 'Local / Standard Server'}<br>` +
+          `• Supabase URL: <code>${data.supabase_url}</code><br>` +
+          `• Bucket: <code>${data.bucket}</code><br>` +
+          `• Test upload succeeded: <a href="${data.test_public_url}" target="_blank" style="color: #166534; font-weight: bold; text-decoration: underline;">View test probe file</a>`;
+      } else {
+        box.style.background = '#fef2f2';
+        box.style.border = '1px solid #fca5a5';
+        box.style.color = '#991b1b';
+        box.innerHTML = `<strong>❌ Supabase Storage Error Detected:</strong><br>` +
+          `• Environment: ${data.is_vercel ? 'Vercel Serverless' : 'Local / Standard Server'}<br>` +
+          `• SUPABASE_URL: <code>${data.supabase_url}</code><br>` +
+          `• SUPABASE_KEY: <code>${data.supabase_key_set ? 'Present (' + data.supabase_key_prefix + ')' : 'MISSING / EMPTY'}</code><br>` +
+          `• Bucket: <code>${data.bucket}</code><br>` +
+          `• Status: <code>${data.test_upload_status || 'Failed before request'}</code><br>` +
+          `• Error details: <div style="margin-top: 6px; padding: 6px 8px; background: rgba(0,0,0,0.06); border-radius: 4px; font-weight: 600;">${data.test_upload_error || 'No error message returned'}</div>`;
+      }
+    } catch (jsError) {
+      console.error('[JS Catch Error detecting Supabase]:', jsError);
+      box.style.background = '#fef2f2';
+      box.style.border = '1px solid #fca5a5';
+      box.style.color = '#991b1b';
+      box.innerHTML = `<strong>❌ JavaScript Catch Error:</strong><br>` +
+        `JavaScript caught an error trying to connect to the diagnostic endpoint:<br>` +
+        `<div style="margin-top: 6px; padding: 6px 8px; background: rgba(0,0,0,0.06); border-radius: 4px; font-weight: 600;">${jsError.message || jsError}</div>`;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-stethoscope"></i> Re-test Connection';
+    }
   }
 </script>
 {% endblock %}

@@ -3,13 +3,13 @@ from datetime import datetime, timedelta
 import hashlib
 import secrets
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.datastructures import FileStorage
 from werkzeug.security import generate_password_hash
 from email.utils import parseaddr
 
 from models import EstablishmentRegistration, Zoo, User, EstablishmentType, db
-from services.storage import save_uploaded_document
+from services.storage import save_uploaded_document, get_last_storage_error
 from services.registration_notifications import send_registration_submitted, send_registration_email_verification
 
 auth_bp = Blueprint('auth', __name__)
@@ -338,7 +338,11 @@ def register_admin_step1():
                     continue
                 uploaded_url = save_uploaded_document(document, f'establishment_registrations/{registration.id}')
                 if not uploaded_url:
-                    upload_errors.append(f'Unable to upload {label}. Please try again or check cloud storage settings.')
+                    err_detail = get_last_storage_error()
+                    if err_detail:
+                        upload_errors.append(f'Unable to upload {label}: {err_detail}')
+                    else:
+                        upload_errors.append(f'Unable to upload {label}. Please try again or check cloud storage settings.')
                     continue
                 setattr(registration, column_name, uploaded_url)
             elif not current_url:
@@ -355,6 +359,61 @@ def register_admin_step1():
 
     types = EstablishmentType.query.filter_by(is_active=True).order_by(EstablishmentType.name.asc()).all()
     return render_template('auth/register_admin_step1.html', establishment_types=types, registration=registration)
+
+
+@auth_bp.route('/diagnose-storage', methods=['GET', 'POST'])
+def diagnose_storage():
+    """Diagnostic endpoint to detect and return Supabase Storage error details."""
+    import os
+    import urllib.request
+    import urllib.error
+
+    url = (os.environ.get("SUPABASE_URL") or current_app.config.get("SUPABASE_URL") or "").strip().rstrip("/")
+    key = (os.environ.get("SUPABASE_KEY") or current_app.config.get("SUPABASE_KEY") or "").strip()
+    bucket = (os.environ.get("SUPABASE_STORAGE_BUCKET") or current_app.config.get("SUPABASE_STORAGE_BUCKET") or "zootique-images").strip()
+    is_vercel = bool(os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"))
+
+    status = {
+        "is_vercel": is_vercel,
+        "supabase_url": url or "NOT_SET",
+        "supabase_key_set": bool(key),
+        "supabase_key_prefix": (key[:8] + "...") if key else "NOT_SET",
+        "bucket": bucket,
+        "test_upload_status": None,
+        "test_upload_error": None,
+        "test_public_url": None,
+    }
+
+    if not url:
+        status["test_upload_error"] = "SUPABASE_URL is missing in environment variables."
+        return jsonify(status), 200
+
+    if not key:
+        status["test_upload_error"] = "SUPABASE_KEY is missing in environment variables."
+        return jsonify(status), 200
+
+    upload_endpoint = f"{url}/storage/v1/object/{bucket}/diagnostics/test.txt"
+    headers = {
+        "apikey": key,
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "text/plain",
+        "x-upsert": "true",
+    }
+
+    try:
+        req = urllib.request.Request(upload_endpoint, data=b"Zootique diagnostic test probe", headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            status["test_upload_status"] = resp.status
+            status["test_public_url"] = f"{url}/storage/v1/object/public/{bucket}/diagnostics/test.txt"
+            return jsonify(status), 200
+    except urllib.error.HTTPError as exc:
+        err_body = exc.read().decode("utf-8", errors="replace")
+        status["test_upload_status"] = exc.code
+        status["test_upload_error"] = f"HTTP {exc.code}: {err_body}"
+        return jsonify(status), 200
+    except Exception as exc:
+        status["test_upload_error"] = str(exc)
+        return jsonify(status), 200
 
 
 @auth_bp.route('/register-step-2', methods=['GET', 'POST'])
