@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Animals | Zoo Admin{% endblock %}
-{% block page_title %}Animals{% endblock %}
+{% block title %}Animals &amp; Wildlife Fun Facts | Zoo Admin{% endblock %}
+{% block page_title %}Animals &amp; Wildlife Facts{% endblock %}
 
 {% block content %}
 {% set selected_tab = request.args.get('tab', 'all') %}
@@ -9,7 +9,21 @@
 <!-- Success toast -->
 <div class="zf-toast" id="zfToast" role="status" aria-live="polite">
   <i class="fa-solid fa-circle-check"></i>
-  <span id="zfToastMsg">Animal saved successfully.</span>
+  <span id="zfToastMsg">Record saved successfully.</span>
+</div>
+
+<!-- Sub-navigation Tabs: Animals vs Wildlife Funfacts -->
+<div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+  <a href="{{ url_for('animal_farm_admin.animals_management') }}?tab=all"
+     class="btn {% if selected_tab != 'funfacts' %}btn-primary{% else %}btn-outline{% endif %}"
+     style="border-radius:20px; padding:8px 18px; font-size:13px; text-decoration:none;">
+    <i class="fa-solid fa-paw"></i> Resident Animals
+  </a>
+  <a href="{{ url_for('animal_farm_admin.animals_management') }}?tab=funfacts"
+     class="btn {% if selected_tab == 'funfacts' %}btn-primary{% else %}btn-outline{% endif %}"
+     style="border-radius:20px; padding:8px 18px; font-size:13px; text-decoration:none;">
+    <i class="fa-solid fa-lightbulb"></i> Wildlife Fun Facts (Did You Know?)
+  </a>
 </div>
 
 {% if not can_edit_feature('animals') %}
@@ -17,7 +31,7 @@
   <div style="display:flex; align-items:center; gap:10px;">
     <i class="fa-solid fa-lock" style="color:#d97706; font-size:18px;"></i>
     <span style="font-size:14px; color:#92400e; font-weight:600;">
-      <strong>Read-Only Mode:</strong> An active subscription with Super Admin is required to add, edit, or delete animals.
+      <strong>Read-Only Mode:</strong> An active subscription with Super Admin is required to add, edit, or delete animals and wildlife facts.
     </span>
   </div>
   <a href="{{ url_for('animal_farm_admin.subscriptions') }}" class="btn btn-primary btn-sm" style="white-space:nowrap;">
@@ -26,6 +40,141 @@
 </div>
 {% endif %}
 
+{% if selected_tab == 'funfacts' %}
+<!-- ===== WILDLIFE FUN FACTS (DID YOU KNOW?) SECTION ===== -->
+<div class="two-col" style="--two-col-template: 1.1fr 1.3fr; gap:24px;">
+
+  <!-- Add/Edit Fun Fact Card -->
+  <div class="zf-form-card" id="funFactFormCard">
+    <div class="zf-form-header">
+      <h2 class="zf-form-title">
+        <i class="fa-solid fa-lightbulb"></i>
+        <span id="funFactFormTitleText">Add Wildlife Fun Fact</span>
+      </h2>
+      <span class="zf-form-badge" id="funFactFormBadge">Did You Know?</span>
+    </div>
+
+    <form id="funFactForm" method="post" action="{{ url_for('animal_farm_admin.save_fun_fact') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="animal_id" id="ff_animal_id" value="">
+
+      <div class="zf-form-body">
+        <div class="zf-section">
+          <div class="zf-section-label">
+            <i class="fa-solid fa-paw"></i> Select Animal
+          </div>
+          <div class="zf-grid-2">
+            <div class="zf-field zf-full">
+              <label class="zf-label" for="ff_animal_select">Resident Animal</label>
+              <select id="ff_animal_select" name="animal_id_select" class="zf-control" onchange="handleAnimalSelectChange(this)">
+                <option value="">-- Choose existing animal or enter new --</option>
+                {% for a in animals %}
+                <option value="{{ a.id }}" data-name="{{ a.name }}" data-facts="{{ a.fun_facts or '' }}" data-img="{{ a.image_url or '' }}">{{ a.name }} ({{ a.species or 'Animal' }})</option>
+                {% endfor %}
+              </select>
+              <span class="zf-hint">Select a resident animal to update its landing page &amp; trivia fun facts</span>
+            </div>
+
+            <div class="zf-field zf-full" id="ff_custom_name_wrap">
+              <label class="zf-label" for="ff_animal_name">Animal Name <span class="zf-req">*</span></label>
+              <input type="text" id="ff_animal_name" name="animal_name" class="zf-control" placeholder="e.g., Bengal Tiger, African Elephant">
+            </div>
+          </div>
+        </div>
+
+        <div class="zf-section">
+          <div class="zf-section-label">
+            <i class="fa-solid fa-comment-dots"></i> "Did You Know?" Fact
+          </div>
+          <div class="zf-field zf-full">
+            <label class="zf-label" for="ff_fun_facts">Educational Wildlife Trivia / Fun Fact <span class="zf-req">*</span></label>
+            <textarea id="ff_fun_facts" name="fun_facts" class="zf-control" rows="4" required
+                      placeholder="e.g., Tigers have striped skin, not just fur. Their stripes act like human fingerprints..."></textarea>
+            <span class="zf-hint">This fact automatically syncs with the "Did You Know?" showcase on the public landing page!</span>
+          </div>
+
+          <div class="zf-field zf-full" style="margin-top:12px;">
+            <label class="zf-label" for="ff_image_file">Fact Feature Photo <small style="color:var(--text-muted);">(Optional)</small></label>
+            <input type="file" id="ff_image_file" name="image_file" accept="image/jpeg,image/png,image/webp" class="zf-control">
+            <span class="zf-hint">Leave blank to retain current photo</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="zf-actions zf-form-footer">
+        <button type="button" class="zf-btn-cancel" onclick="resetFunFactForm()">Clear</button>
+        <button type="submit" class="zf-btn-save" {% if not can_edit_feature('animals') %}disabled title="Active subscription required" style="opacity:0.6; cursor:not-allowed;"{% endif %}>
+          <i class="fa-solid fa-floppy-disk"></i> <span id="ff_save_btn_label">Save Fun Fact</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Fun Facts Table -->
+  <div class="card-panel">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+      <h2 style="margin:0;"><i class="fa-solid fa-lightbulb" style="color:var(--primary); margin-right:6px;"></i> Active Wildlife Fun Facts</h2>
+      <span class="badge badge-role">{{ fun_facts_animals|length }} Published</span>
+    </div>
+    <div class="card-body" style="padding:0;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:60px;">Image</th>
+              <th>Animal</th>
+              <th>Did You Know? Fun Fact</th>
+              <th style="width:140px; text-align:right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in fun_facts_animals %}
+            <tr>
+              <td>
+                {% if a.image_url %}
+                <img src="{{ a.image_url }}" alt="" style="width:48px; height:40px; object-fit:cover; border-radius:8px; border:1px solid var(--border);" />
+                {% else %}
+                <div style="width:48px; height:40px; border-radius:8px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700;">
+                  {{ a.name[0] }}
+                </div>
+                {% endif %}
+              </td>
+              <td>
+                <strong>{{ a.name }}</strong>
+                {% if a.species %}
+                <div style="font-size:12px; color:var(--text-muted);">{{ a.species }}</div>
+                {% endif %}
+              </td>
+              <td style="color:var(--text); font-size:13px; line-height:1.45;">
+                {{ a.fun_facts }}
+              </td>
+              <td style="text-align:right; white-space:nowrap;">
+                <button class="btn btn-outline btn-sm" type="button" onclick='fillFunFactForm({{ a.id|tojson }}, {{ a.name|tojson }}, {{ (a.fun_facts or "")|tojson }})'>
+                  <i class="fa-solid fa-pen"></i> Edit
+                </button>
+                <form method="post" action="{{ url_for('animal_farm_admin.clear_fun_fact', animal_id=a.id) }}" style="display:inline;" onsubmit="return confirm('Remove fun fact for {{ a.name }}?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger, #dc2626);"><i class="fa-solid fa-trash"></i></button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" style="text-align:center; padding:32px; color:var(--text-muted);">
+                No wildlife fun facts published yet. Use the form on the left to add your first "Did You Know?" fact!
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% else %}
+<!-- ===== STANDARD RESIDENT ANIMALS SECTION ===== -->
 <div class="two-col" style="--two-col-template: 1fr 1fr; {% if selected_tab == 'list' %}--two-col-template: 1fr;{% elif selected_tab == 'add' %}--two-col-template: 1fr;{% endif %}">
 
   {% if selected_tab in ['add', 'all'] %}
@@ -40,6 +189,7 @@
     </div>
 
     <form id="animalForm" method="post" action="{{ url_for('animal_farm_admin.save_animal') }}" enctype="multipart/form-data" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="animal_id" id="animal_id" value="">
 
       <div class="zf-form-body">
@@ -218,6 +368,7 @@
                     <i class="fa-solid fa-pen"></i> Edit
                   </button>
                   <form method="post" action="{{ url_for('animal_farm_admin.delete_animal', animal_id=a.id) }}" style="display:inline;" onsubmit="return confirm('Delete this animal?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button class="btn btn-ghost btn-sm" type="submit" {% if not can_edit_feature('animals') %}disabled title="Active subscription required to delete" style="opacity:0.5; cursor:not-allowed;"{% endif %}><i class="fa-solid fa-trash"></i> Delete</button>
                   </form>
                 </td>
@@ -233,6 +384,7 @@
   {% endif %}
 
 </div>
+{% endif %}
 
 <script>
 (function () {
@@ -247,7 +399,10 @@
 
   window.fillAnimalForm = function(id, name, species, habitat, status, description, age, fun_facts) {
     var form = document.getElementById('animalForm');
-    if (!form) return;
+    if (!form) {
+      window.location.href = "{{ url_for('animal_farm_admin.animals_management') }}?tab=add&edit_id=" + id;
+      return;
+    }
     document.getElementById('animal_id').value = id;
     document.getElementById('animal_name').value = name || '';
     document.getElementById('animal_species').value = species || '';
@@ -265,14 +420,53 @@
       }
     }
 
-    var sSel = document.getElementById('animal_status');
-    if (sSel) sSel.value = status || '';
+    var stSel = document.getElementById('animal_status');
+    if (stSel) stSel.value = status || '';
 
     setMode(true);
     clearAllErrors();
     resetUpload();
     var card = document.getElementById('animalFormCard');
     if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // Fun facts helper
+  window.handleAnimalSelectChange = function(sel) {
+    var opt = sel.options[sel.selectedIndex];
+    var idInput = document.getElementById('ff_animal_id');
+    var nameInput = document.getElementById('ff_animal_name');
+    var factsInput = document.getElementById('ff_fun_facts');
+    if (opt && opt.value) {
+      idInput.value = opt.value;
+      nameInput.value = opt.dataset.name || '';
+      factsInput.value = opt.dataset.facts || '';
+    } else {
+      idInput.value = '';
+    }
+  };
+
+  window.fillFunFactForm = function(id, name, funFacts) {
+    document.getElementById('ff_animal_id').value = id;
+    document.getElementById('ff_animal_name').value = name || '';
+    document.getElementById('ff_fun_facts').value = funFacts || '';
+    var sel = document.getElementById('ff_animal_select');
+    if (sel) sel.value = id;
+    document.getElementById('funFactFormTitleText').textContent = 'Edit Wildlife Fun Fact';
+    document.getElementById('funFactFormBadge').textContent = 'Editing';
+    document.getElementById('ff_save_btn_label').textContent = 'Update Fun Fact';
+    var card = document.getElementById('funFactFormCard');
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  window.resetFunFactForm = function() {
+    document.getElementById('ff_animal_id').value = '';
+    document.getElementById('ff_animal_name').value = '';
+    document.getElementById('ff_fun_facts').value = '';
+    var sel = document.getElementById('ff_animal_select');
+    if (sel) sel.value = '';
+    document.getElementById('funFactFormTitleText').textContent = 'Add Wildlife Fun Fact';
+    document.getElementById('funFactFormBadge').textContent = 'Did You Know?';
+    document.getElementById('ff_save_btn_label').textContent = 'Save Fun Fact';
   };
 
   function showError(inputId, errorId) {
@@ -374,7 +568,7 @@
   document.addEventListener('DOMContentLoaded', function(){
     document.querySelectorAll('[style*="border-left:4px solid var(--success)"]').forEach(function(b){
       var d = b.querySelector('div');
-      showToast(d ? d.textContent.trim() : 'Animal saved successfully.');
+      showToast(d ? d.textContent.trim() : 'Saved successfully.');
     });
   });
 })();

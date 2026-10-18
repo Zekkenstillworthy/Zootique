@@ -40,6 +40,7 @@
     </div>
 
     <form id="serviceForm" method="post" action="{{ url_for('animal_farm_admin.save_service') }}" enctype="multipart/form-data" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="service_id" id="service_id" value="">
 
       <div class="zf-form-body">
@@ -222,6 +223,7 @@
                     <i class="fa-solid fa-pen"></i> Edit
                   </button>
                   <form method="post" action="{{ url_for('animal_farm_admin.delete_service', service_id=s.id) }}" style="display:inline;" onsubmit="return confirm('Delete this service?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button class="btn btn-ghost btn-sm" type="submit" {% if not can_edit_feature('services') %}disabled title="Active subscription required to delete" style="opacity:0.5; cursor:not-allowed;"{% endif %}><i class="fa-solid fa-trash"></i> Delete</button>
                   </form>
                 </td>
@@ -251,7 +253,10 @@
 
   window.fillServiceForm = function(id, name, price, description, category, svcStatus, openingTime, closingTime, dailyCap, slotCap) {
     var form = document.getElementById('serviceForm');
-    if (!form) return;
+    if (!form) {
+      window.location.href = "{{ url_for('animal_farm_admin.services_management') }}?tab=add&edit_id=" + id;
+      return;
+    }
     document.getElementById('service_id').value = id;
     document.getElementById('service_name').value = name || '';
     document.getElementById('service_price').value = price || '';
@@ -389,6 +394,23 @@
       showToast(d ? d.textContent.trim() : 'Service saved successfully.');
     });
   });
+
+  {% if edit_service %}
+  document.addEventListener('DOMContentLoaded', function() {
+    fillServiceForm(
+      {{ edit_service.id|tojson }},
+      {{ edit_service.name|tojson }},
+      {{ (edit_service.price or 0)|tojson }},
+      {{ (edit_service.description or "")|tojson }},
+      {{ (edit_service.category or "")|tojson }},
+      {{ (edit_service.service_status or "")|tojson }},
+      {{ (edit_service.opening_time or "08:00")|tojson }},
+      {{ (edit_service.closing_time or "17:00")|tojson }},
+      {{ (edit_service.daily_capacity or 50)|tojson }},
+      {{ (edit_service.slot_capacity or 15)|tojson }}
+    );
+  });
+  {% endif %}
 })();
 </script>
 {% endblock %}

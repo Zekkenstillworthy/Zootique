@@ -11,304 +11,316 @@
   <span id="zfToastMsg">Staff record updated successfully.</span>
 </div>
 
-<!-- ===== STAFF ACCOUNTS ===== -->
-<div id="sm-tab-accounts" class="sm-section">
-  <div class="two-col" style="--two-col-template: 1.1fr 1.3fr;">
-    
-    <!-- Staff User Form -->
-    <div class="zf-form-card">
-      <div class="zf-form-header">
-        <h2 class="zf-form-title">
-          <i class="fa-solid fa-user-plus"></i>
-          <span id="staffFormTitleText">Add Staff Member</span>
-        </h2>
-        <span class="zf-form-badge" id="staffFormBadge">Staff</span>
-      </div>
-
-      <form id="staff-user-form" method="post" enctype="multipart/form-data" action="{{ url_for('animal_farm_admin.save_staff_user') }}" novalidate>
-        <input type="hidden" name="user_id" id="staff_user_id" value="" />
-
-        <div class="zf-form-body">
-          <div class="zf-section">
-            <div class="zf-section-label">
-              <i class="fa-solid fa-id-badge"></i> Account Credentials
-            </div>
-            <div class="zf-grid-2">
-              <div class="zf-field zf-full">
-                <label class="zf-label" for="staff_full_name">Full Name <span class="zf-req">*</span></label>
-                <input type="text" id="staff_full_name" name="full_name" class="zf-control" placeholder="e.g., Maria Santos" required autocomplete="off">
-                <span class="zf-error" id="staff_name_error"><i class="fa-solid fa-triangle-exclamation"></i> Full name is required.</span>
-              </div>
-
-              <div class="zf-field">
-                <label class="zf-label" for="staff_email">Email <span class="zf-req">*</span></label>
-                <input type="email" id="staff_email" name="email" class="zf-control" placeholder="staff@zoo.ph" required autocomplete="off">
-                <span class="zf-error" id="staff_email_error"><i class="fa-solid fa-triangle-exclamation"></i> Valid email is required.</span>
-              </div>
-
-              <div class="zf-field">
-                <label class="zf-label" for="staff_username">Username</label>
-                <input type="text" id="staff_username" name="username" class="zf-control" placeholder="e.g., msantos" autocomplete="off">
-              </div>
-
-              <div class="zf-field">
-                <label class="zf-label" for="staff_status">Status</label>
-                <select id="staff_status" name="status" class="zf-control">
-                  <option value="active">Active</option>
-                  <option value="suspended">Suspended</option>
-                </select>
-              </div>
-
-              <div class="zf-field">
-                <label class="zf-label" for="staff_password">Password</label>
-                <input type="password" id="staff_password" name="password" class="zf-control" placeholder="Set temporary password" autocomplete="new-password">
-                <span class="zf-hint" id="staffPwdHint">Required for new staff; leave blank to keep unchanged</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="zf-section">
-            <div class="zf-section-label">
-              <i class="fa-solid fa-camera"></i> Profile Photo
-            </div>
-              <div class="zf-upload-box" id="staffUploadBox" tabindex="0" role="button" aria-label="Upload staff photo">
-                <input type="file" id="staff_profile_img" name="profile_image_file" accept="image/png,image/jpeg,image/webp" aria-label="Choose file">
-                <div class="zf-upload-idle" id="staffUploadIdle">
-                  <i class="fa-solid fa-cloud-arrow-up"></i>
-                  <p class="zf-upload-title"><span>Click to upload</span> or drag and drop</p>
-                  <p class="zf-upload-meta">PNG, JPG or WEBP - Max 5 MB</p>
-                </div>
-                <div class="zf-upload-preview" id="staffUploadPreview">
-                  <img class="zf-preview-img" id="staffImagePreview" src="" alt="Preview" style="width:64px; height:64px; border-radius:50%; object-fit:cover;">
-                  <div class="zf-preview-info">
-                    <div class="zf-preview-name" id="staffPreviewName"></div>
-                    <div class="zf-preview-size" id="staffPreviewSize"></div>
+<!-- ===== STAFF MEMBERS PANEL ===== -->
+<div class="card-panel">
+  <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <h2 style="margin:0;"><i class="fa-solid fa-users" style="margin-right:8px; color:var(--primary);"></i> Staff Members</h2>
+      <span class="badge badge-role">{{ staff|length }} Staff</span>
+    </div>
+    <button class="btn btn-primary btn-sm" type="button" onclick="openStaffModal()">
+      <i class="fa-solid fa-user-plus"></i> Add Staff Member
+    </button>
+  </div>
+  <div class="card-body" style="padding:0;">
+    <div class="zf-table-wrap">
+      <table class="table-striped">
+        <thead>
+          <tr>
+            <th style="padding-left:16px;">Staff Member</th>
+            <th>Status</th>
+            <th style="width:110px; text-align:right; padding-right:16px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in staff %}
+            <tr>
+              <td style="padding-left:16px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  {% if s.profile_image %}
+                    <img src="{{ s.profile_image }}" alt="" style="width:36px; height:36px; object-fit:cover; border-radius:50%; border:1px solid var(--border);" />
+                  {% else %}
+                    <div style="width:36px; height:36px; border-radius:50%; background:var(--primary); color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px;">
+                      {{ (s.full_name or 'S')[0]|upper }}
+                    </div>
+                  {% endif %}
+                  <div>
+                    <div style="font-weight:700; color: var(--text);">{{ s.full_name }}</div>
+                    <div style="color: var(--text-muted); font-size:12px;">{{ s.email }}{% if s.username %} • @{{ s.username }}{% endif %}</div>
                   </div>
-                  <button type="button" class="zf-preview-remove" id="staffRemoveImgBtn" aria-label="Remove image">
-                    <i class="fa-solid fa-xmark"></i> Remove
-                  </button>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="zf-actions zf-form-footer">
-          <button type="button" class="zf-btn-cancel" onclick="resetStaffForm()">Reset</button>
-          <button class="zf-btn-save zf-btn-primary" type="submit" id="saveStaffBtn">
-            <span class="zf-spinner"></span>
-            <i class="fa-solid fa-user-check zf-save-label"></i>
-            <span class="zf-save-label" id="saveStaffBtnText">Save Staff Member</span>
-          </button>
-        </div>
-      </form>
+              </td>
+              <td>
+                <span class="badge badge-{{ 'active' if (s.status or 'active') == 'active' else 'suspended' }}">
+                  {{ s.status or 'active' }}
+                </span>
+              </td>
+              <td style="text-align:right; padding-right:16px;">
+                <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
+                  <button class="zf-icon-btn" type="button" title="Edit Staff" onclick='fillStaffForm({{ s.id|tojson }}, {{ (s.full_name or "")|tojson }}, {{ (s.email or "")|tojson }}, {{ (s.username or "")|tojson }}, {{ (s.status or "active")|tojson }}, {{ (s.profile_image or "")|tojson }})'>
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+                  <form method="post" action="{{ url_for('animal_farm_admin.delete_staff_user', user_id=s.id) }}" style="display:inline;" onsubmit="return confirm('Delete this staff user?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="zf-icon-btn danger" type="submit" title="Delete Staff">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="3">
+                <div class="zf-empty-state">
+                  <i class="fa-solid fa-users-slash zf-empty-icon"></i>
+                  <div class="zf-empty-title">No Staff Accounts Yet</div>
+                  <div class="zf-empty-desc">Add caretakers, guides, and ground staff to assign duties and track daily park operations.</div>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-
-    <!-- Staff List Table -->
-    <div class="card-panel">
-      <div class="card-header">
-        <h2><i class="fa-solid fa-users" style="margin-right:8px;"></i> Staff Members</h2>
-        <div class="card-header-actions">
-          <span class="badge badge-role">{{ staff|length }} Staff</span>
-        </div>
-      </div>
-      <div class="card-body" style="padding:0;">
-        <div class="zf-table-wrap">
-          <table class="table-striped">
-            <thead>
-              <tr>
-                <th style="padding-left:16px;">Staff Member</th>
-                <th>Status</th>
-                <th style="width:110px; text-align:right; padding-right:16px;">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for s in staff %}
-                <tr>
-                  <td style="padding-left:16px;">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                      {% if s.profile_image %}
-                        <img src="{{ s.profile_image }}" alt="" style="width:36px; height:36px; object-fit:cover; border-radius:50%; border:1px solid var(--border);" />
-                      {% else %}
-                        <div style="width:36px; height:36px; border-radius:50%; background:var(--primary); color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px;">
-                          {{ (s.full_name or 'S')[0]|upper }}
-                        </div>
-                      {% endif %}
-                      <div>
-                        <div style="font-weight:700; color: var(--text);">{{ s.full_name }}</div>
-                        <div style="color: var(--text-muted); font-size:12px;">{{ s.email }}{% if s.username %} • @{{ s.username }}{% endif %}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span class="badge badge-{{ 'active' if (s.status or 'active') == 'active' else 'suspended' }}">
-                      {{ s.status or 'active' }}
-                    </span>
-                  </td>
-                  <td style="text-align:right; padding-right:16px;">
-                    <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
-                      <button class="zf-icon-btn" type="button" title="Edit Staff" onclick='fillStaffForm({{ s.id|tojson }}, {{ (s.full_name or "")|tojson }}, {{ (s.email or "")|tojson }}, {{ (s.username or "")|tojson }}, {{ (s.status or "active")|tojson }}, {{ (s.profile_image or "")|tojson }})'>
-                        <i class="fa-solid fa-pen"></i>
-                      </button>
-                      <form method="post" action="{{ url_for('animal_farm_admin.delete_staff_user', user_id=s.id) }}" style="display:inline;" onsubmit="return confirm('Delete this staff user?');">
-                        <button class="zf-icon-btn danger" type="submit" title="Delete Staff">
-                          <i class="fa-solid fa-trash"></i>
-                        </button>
-                      </form>
-                    </div>
-                  </td>
-                </tr>
-              {% else %}
-                <tr>
-                  <td colspan="3">
-                    <div class="zf-empty-state">
-                      <i class="fa-solid fa-users-slash zf-empty-icon"></i>
-                      <div class="zf-empty-title">No Staff Accounts Yet</div>
-                      <div class="zf-empty-desc">Add caretakers, guides, and ground staff to assign duties and track daily park operations.</div>
-                    </div>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
   </div>
 </div>
 
+<!-- ===== STAFF MODAL POPUP ===== -->
+<div id="staffModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); backdrop-filter:blur(4px); z-index:2000; align-items:flex-start; justify-content:center; padding:1.5rem; overflow-y:auto;">
+  <div class="zf-form-card" style="width:100%; max-width:540px; margin:auto; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3); border-radius:12px; overflow:hidden;">
+    <div class="zf-form-header" style="display:flex; justify-content:space-between; align-items:center;">
+      <h2 class="zf-form-title" style="margin:0;">
+        <i class="fa-solid fa-user-plus"></i>
+        <span id="staffFormTitleText">Add Staff Member</span>
+      </h2>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="zf-form-badge" id="staffFormBadge">Staff</span>
+        <button type="button" onclick="closeStaffModal()" style="background:none; border:none; font-size:1.5rem; line-height:1; color:var(--text-muted); cursor:pointer; padding:0 4px;">&times;</button>
+      </div>
+    </div>
+
+    <form id="staff-user-form" method="post" enctype="multipart/form-data" action="{{ url_for('animal_farm_admin.save_staff_user') }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <input type="hidden" name="user_id" id="staff_user_id" value="" />
+
+      <div class="zf-form-body">
+        <div class="zf-section">
+          <div class="zf-section-label">
+            <i class="fa-solid fa-id-badge"></i> Account Credentials
+          </div>
+          <div class="zf-grid-2">
+            <div class="zf-field zf-full">
+              <label class="zf-label" for="staff_full_name">Full Name <span class="zf-req">*</span></label>
+              <input type="text" id="staff_full_name" name="full_name" class="zf-control" placeholder="e.g., Maria Santos" required autocomplete="off">
+              <span class="zf-error" id="staff_name_error"><i class="fa-solid fa-triangle-exclamation"></i> Full name is required.</span>
+            </div>
+
+            <div class="zf-field">
+              <label class="zf-label" for="staff_email">Email <span class="zf-req">*</span></label>
+              <input type="email" id="staff_email" name="email" class="zf-control" placeholder="staff@zoo.ph" required autocomplete="off">
+              <span class="zf-error" id="staff_email_error"><i class="fa-solid fa-triangle-exclamation"></i> Valid email is required.</span>
+            </div>
+
+            <div class="zf-field">
+              <label class="zf-label" for="staff_username">Username</label>
+              <input type="text" id="staff_username" name="username" class="zf-control" placeholder="e.g., msantos" autocomplete="off">
+            </div>
+
+            <div class="zf-field">
+              <label class="zf-label" for="staff_status">Status</label>
+              <select id="staff_status" name="status" class="zf-control">
+                <option value="active">Active</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
+
+            <div class="zf-field">
+              <label class="zf-label" for="staff_password">Password</label>
+              <input type="password" id="staff_password" name="password" class="zf-control" placeholder="Set temporary password" autocomplete="new-password">
+              <span class="zf-hint" id="staffPwdHint">Required for new staff; leave blank to keep unchanged</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="zf-section">
+          <div class="zf-section-label">
+            <i class="fa-solid fa-camera"></i> Profile Photo
+          </div>
+          <div class="zf-upload-box" id="staffUploadBox" tabindex="0" role="button" aria-label="Upload staff photo">
+            <input type="file" id="staff_profile_img" name="profile_image_file" accept="image/png,image/jpeg,image/webp" aria-label="Choose file">
+            <div class="zf-upload-idle" id="staffUploadIdle">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <p class="zf-upload-title"><span>Click to upload</span> or drag and drop</p>
+              <p class="zf-upload-meta">PNG, JPG or WEBP - Max 5 MB</p>
+            </div>
+            <div class="zf-upload-preview" id="staffUploadPreview">
+              <img class="zf-preview-img" id="staffImagePreview" src="" alt="Preview" style="width:64px; height:64px; border-radius:50%; object-fit:cover;">
+              <div class="zf-preview-info">
+                <div class="zf-preview-name" id="staffPreviewName"></div>
+                <div class="zf-preview-size" id="staffPreviewSize"></div>
+              </div>
+              <button type="button" class="zf-preview-remove" id="staffRemoveImgBtn" aria-label="Remove image">
+                <i class="fa-solid fa-xmark"></i> Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="zf-actions zf-form-footer">
+        <button type="button" class="zf-btn-cancel" onclick="closeStaffModal()">Cancel</button>
+        <button class="zf-btn-save zf-btn-primary" type="submit" id="saveStaffBtn">
+          <span class="zf-spinner"></span>
+          <i class="fa-solid fa-user-check zf-save-label"></i>
+          <span class="zf-save-label" id="saveStaffBtnText">Save Staff Member</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 
 {% endblock %}
 
 {% block extra_js %}
 <script>
+const staffModal = document.getElementById('staffModalOverlay');
+
+function openStaffModal() {
+  document.getElementById('staff-user-form').reset();
+  document.getElementById('staff_user_id').value = '';
+  document.getElementById('staffFormTitleText').textContent = 'Add Staff Member';
+  document.getElementById('staffFormBadge').textContent = 'New';
+  document.getElementById('saveStaffBtnText').textContent = 'Save Staff Member';
+  document.getElementById('staffPwdHint').textContent = 'Required for new staff account';
+  document.getElementById('staff_password').required = true;
+  resetUpload();
+  staffModal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeStaffModal() {
+  staffModal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
 function fillStaffForm(id, fullName, email, username, status, profileImg) {
-    const form = document.getElementById('staff-user-form');
-    if (!form) return;
-    document.getElementById('staff_user_id').value = id || '';
-    document.getElementById('staff_full_name').value = fullName || '';
-    document.getElementById('staff_email').value = email || '';
-    document.getElementById('staff_username').value = username || '';
-    document.getElementById('staff_status').value = status || 'active';
-    document.getElementById('staff_password').value = '';
+  document.getElementById('staff_user_id').value = id || '';
+  document.getElementById('staff_full_name').value = fullName || '';
+  document.getElementById('staff_email').value = email || '';
+  document.getElementById('staff_username').value = username || '';
+  document.getElementById('staff_status').value = status || 'active';
+  document.getElementById('staff_password').value = '';
+  document.getElementById('staff_password').required = false;
+  document.getElementById('staffPwdHint').textContent = 'Leave blank to keep existing password';
 
-    const titleEl = document.getElementById('staffFormTitleText');
-    if (titleEl) titleEl.textContent = 'Edit Staff Member';
-    const badgeEl = document.getElementById('staffFormBadge');
-    if (badgeEl) {
-        badgeEl.textContent = 'Edit';
-        badgeEl.classList.add('editing');
+  document.getElementById('staffFormTitleText').textContent = 'Edit Staff Member';
+  document.getElementById('staffFormBadge').textContent = 'Edit';
+  document.getElementById('saveStaffBtnText').textContent = 'Update Staff Member';
+
+  resetUpload();
+  if (profileImg) {
+    const previewImg = document.getElementById('staffImagePreview');
+    const idleState = document.getElementById('staffUploadIdle');
+    const preview = document.getElementById('staffUploadPreview');
+    if (previewImg && idleState && preview) {
+      previewImg.src = profileImg;
+      idleState.classList.add('hidden');
+      preview.classList.add('visible');
     }
-    const btnText = document.getElementById('saveStaffBtnText');
-    if (btnText) btnText.textContent = 'Update Staff Member';
+  }
 
-    const previewWrap = document.getElementById('staffPreviewWrap');
-    const img = document.getElementById('staffImagePreview');
-    if (profileImg && previewWrap && img) {
-        img.src = profileImg;
-        previewWrap.style.display = 'block';
+  staffModal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+// Close on backdrop click
+if (staffModal) {
+  staffModal.addEventListener('click', function(e) {
+    if (e.target === this) closeStaffModal();
+  });
+}
+
+// Close on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && staffModal && staffModal.style.display === 'flex') {
+    closeStaffModal();
+  }
+});
+
+// Image Upload handling
+const fileInput = document.getElementById('staff_profile_img');
+const idleState = document.getElementById('staffUploadIdle');
+const preview = document.getElementById('staffUploadPreview');
+const previewImg = document.getElementById('staffImagePreview');
+const previewNm = document.getElementById('staffPreviewName');
+const previewSz = document.getElementById('staffPreviewSize');
+const removeBtn = document.getElementById('staffRemoveImgBtn');
+
+function showPreview(file) {
+  if (!previewImg || !idleState || !preview) return;
+  previewImg.src = URL.createObjectURL(file);
+  if (previewNm) previewNm.textContent = file.name;
+  if (previewSz) previewSz.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+  idleState.classList.add('hidden');
+  preview.classList.add('visible');
+}
+
+function resetUpload() {
+  if (fileInput) fileInput.value = '';
+  if (previewImg) previewImg.src = '';
+  if (idleState) idleState.classList.remove('hidden');
+  if (preview) preview.classList.remove('visible');
+}
+
+if (fileInput) {
+  fileInput.addEventListener('change', function() {
+    if (!this.files[0]) { resetUpload(); return; }
+    if (this.files[0].size > 5 * 1024 * 1024) {
+      alert('Photo must be less than 5MB');
+      resetUpload();
+      return;
+    }
+    showPreview(this.files[0]);
+  });
+}
+if (removeBtn) {
+  removeBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    resetUpload();
+  });
+}
+
+// Form validation
+const form = document.getElementById('staff-user-form');
+if (form) {
+  form.addEventListener('submit', function(e) {
+    const name = document.getElementById('staff_full_name');
+    const email = document.getElementById('staff_email');
+    let valid = true;
+
+    if (!name || !name.value.trim()) {
+      document.getElementById('staff_name_error').classList.add('visible');
+      valid = false;
+    } else {
+      document.getElementById('staff_name_error').classList.remove('visible');
     }
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function resetStaffForm() {
-    const form = document.getElementById('staff-user-form');
-    if (!form) return;
-    form.reset();
-    document.getElementById('staff_user_id').value = '';
-    const titleEl = document.getElementById('staffFormTitleText');
-    if (titleEl) titleEl.textContent = 'Add Staff Member';
-    const badgeEl = document.getElementById('staffFormBadge');
-    if (badgeEl) {
-        badgeEl.textContent = 'Staff';
-        badgeEl.classList.remove('editing');
+    if (!email || !email.value.trim() || !email.value.includes('@')) {
+      document.getElementById('staff_email_error').classList.add('visible');
+      valid = false;
+    } else {
+      document.getElementById('staff_email_error').classList.remove('visible');
     }
-    const btnText = document.getElementById('saveStaffBtnText');
-    if (btnText) btnText.textContent = 'Save Staff Member';
-    const previewWrap = document.getElementById('staffPreviewWrap');
-    if (previewWrap) previewWrap.style.display = 'none';
-}
 
-// Upload preview for staff profile image
-const staffFileInput = document.getElementById('staff_profile_img');
-const staffUploadBox = document.getElementById('staffUploadBox');
-const staffUploadIdle = document.getElementById('staffUploadIdle');
-const staffPreviewWrap = document.getElementById('staffUploadPreview');
-const staffImagePreview = document.getElementById('staffImagePreview');
-const staffPreviewName = document.getElementById('staffPreviewName');
-const staffPreviewSize = document.getElementById('staffPreviewSize');
-const staffRemoveBtn = document.getElementById('staffRemoveImgBtn');
-
-function resetStaffUpload() {
-    if (staffFileInput) staffFileInput.value = '';
-    if (staffImagePreview) staffImagePreview.src = '';
-    if (staffUploadIdle) staffUploadIdle.classList.remove('hidden');
-    if (staffPreviewWrap) staffPreviewWrap.classList.remove('visible');
-}
-
-if (staffFileInput) {
-    staffFileInput.addEventListener('change', function(e) {
-        if (e.target.files && e.target.files[0]) {
-            const f = e.target.files[0];
-            staffImagePreview.src = URL.createObjectURL(f);
-            if (staffPreviewName) staffPreviewName.textContent = f.name;
-            if (staffPreviewSize) staffPreviewSize.textContent = (f.size / (1024 * 1024)).toFixed(2) + ' MB';
-            if (staffUploadIdle) staffUploadIdle.classList.add('hidden');
-            if (staffPreviewWrap) staffPreviewWrap.classList.add('visible');
-        } else {
-            resetStaffUpload();
-        }
-    });
-}
-if (staffRemoveBtn) {
-    staffRemoveBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        resetStaffUpload();
-    });
-}
-
-
-
-const staffUserForm = document.getElementById('staff-user-form');
-if (staffUserForm) {
-    staffUserForm.addEventListener('submit', function(e) {
-        const nameInput = document.getElementById('staff_full_name');
-        const nameErr = document.getElementById('staff_name_error');
-        const emailInput = document.getElementById('staff_email');
-        const emailErr = document.getElementById('staff_email_error');
-        let invalid = false;
-
-        if (!nameInput.value.trim()) {
-            nameInput.classList.add('is-invalid');
-            if (nameErr) nameErr.style.display = 'block';
-            invalid = true;
-        } else {
-            nameInput.classList.remove('is-invalid');
-            if (nameErr) nameErr.style.display = 'none';
-        }
-
-        if (!emailInput.value.trim() || !emailInput.value.includes('@')) {
-            emailInput.classList.add('is-invalid');
-            if (emailErr) emailErr.style.display = 'block';
-            invalid = true;
-        } else {
-            emailInput.classList.remove('is-invalid');
-            if (emailErr) emailErr.style.display = 'none';
-        }
-
-        if (invalid) {
-            e.preventDefault();
-            return;
-        }
-
-        const btn = document.getElementById('saveStaffBtn');
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
-        }
-    });
+    if (!valid) {
+      e.preventDefault();
+      return;
+    }
+    const btn = document.getElementById('saveStaffBtn');
+    if (btn) btn.classList.add('is-loading');
+  });
 }
 </script>
 {% endblock %}

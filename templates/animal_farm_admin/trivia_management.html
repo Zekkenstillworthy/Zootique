@@ -15,6 +15,7 @@
     </div>
 
     <form method="post" action="{{ url_for('animal_farm_admin.save_trivia_question') }}" id="triviaForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="question_id" id="trivia_question_id">
 
       <div class="zf-form-body">
@@ -135,6 +136,7 @@
                   <i class="fa-solid fa-pen"></i> Edit
                 </button>
                 <form method="post" action="{{ url_for('animal_farm_admin.delete_trivia_question', question_id=q.id) }}" style="display:inline;" onsubmit="return confirm('Delete this trivia question?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button class="btn btn-ghost btn-sm" type="submit"><i class="fa-solid fa-trash"></i></button>
                 </form>
               </td>

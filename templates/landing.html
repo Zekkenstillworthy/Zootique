@@ -2285,45 +2285,78 @@
                 </div>
             </div>
             <div class="lp-events-grid">
-                <div class="lp-event-card">
-                    <div class="lp-event-img" style="background-image: url('https://images.unsplash.com/photo-1547721064-da6cfb341d50?auto=format&fit=crop&w=600&q=80');">
-                        <span class="lp-event-date-badge">OCT 20</span>
-                    </div>
-                    <div class="lp-event-body">
-                        <div>
-                            <h4 style="font-size:1.15rem; font-weight:800; color:#0f172a; margin:0 0 0.4rem;">Animal Feeding Experience</h4>
-                            <div style="font-size:0.82rem; color:#64748b; margin-bottom:0.75rem;"><i class="fa-solid fa-location-dot" style="color:#10b981;"></i> Manila Wildlife Sanctuary</div>
-                            <p style="font-size:0.85rem; color:#475569; line-height:1.45; margin:0 0 1rem;">Hands-on guided feeding session with certified handlers for giraffes and friendly herbivores.</p>
+                {% if upcoming_events or active_promotions %}
+                    {% for ev in upcoming_events[:2] %}
+                    <div class="lp-event-card">
+                        <div class="lp-event-img" style="background-image: url('{{ ev.image_url if ev.image_url else "https://images.unsplash.com/photo-1547721064-da6cfb341d50?auto=format&fit=crop&w=600&q=80" }}');">
+                            <span class="lp-event-date-badge">{{ ev.time or 'EVENT' }}</span>
                         </div>
-                        <a href="{{ url_for('visitor.events') }}" style="color:#1a4f32; font-weight:700; font-size:0.85rem; text-decoration:none;">Learn More &rarr;</a>
-                    </div>
-                </div>
-                <div class="lp-event-card">
-                    <div class="lp-event-img" style="background-image: url('https://images.unsplash.com/photo-1552728089-57bdde30beb3?auto=format&fit=crop&w=600&q=80');">
-                        <span class="lp-event-date-badge">NOV 05</span>
-                    </div>
-                    <div class="lp-event-body">
-                        <div>
-                            <h4 style="font-size:1.15rem; font-weight:800; color:#0f172a; margin:0 0 0.4rem;">Avian &amp; Bird Watching Tour</h4>
-                            <div style="font-size:0.82rem; color:#64748b; margin-bottom:0.75rem;"><i class="fa-solid fa-location-dot" style="color:#10b981;"></i> Laguna Wildlife Park</div>
-                            <p style="font-size:0.85rem; color:#475569; line-height:1.45; margin:0 0 1rem;">Early morning avian trek spotting native Philippine hornbills, eagles, and colorful parrots.</p>
+                        <div class="lp-event-body">
+                            <div>
+                                <h4 style="font-size:1.15rem; font-weight:800; color:#0f172a; margin:0 0 0.4rem;">{{ ev.name }}</h4>
+                                <div style="font-size:0.82rem; color:#64748b; margin-bottom:0.75rem;"><i class="fa-solid fa-location-dot" style="color:#10b981;"></i> {{ ev.zoo.name if ev.zoo else (ev.location or 'Zootique Wildlife Sanctuary') }}</div>
+                                <p style="font-size:0.85rem; color:#475569; line-height:1.45; margin:0 0 1rem;">{{ ev.type or (ev.location ~ ' seasonal showcase') or 'Guided session and immersive wildlife experience.' }}</p>
+                            </div>
+                            <a href="{{ url_for('visitor.events') }}" style="color:#1a4f32; font-weight:700; font-size:0.85rem; text-decoration:none;">Learn More &rarr;</a>
                         </div>
-                        <a href="{{ url_for('visitor.events') }}" style="color:#1a4f32; font-weight:700; font-size:0.85rem; text-decoration:none;">Learn More &rarr;</a>
                     </div>
-                </div>
-                <div class="lp-event-card">
-                    <div class="lp-event-img" style="background-image: url('https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?auto=format&fit=crop&w=600&q=80');">
-                        <span class="lp-event-date-badge" style="background:#fee2e2; color:#dc2626;">20% OFF</span>
-                    </div>
-                    <div class="lp-event-body">
-                        <div>
-                            <h4 style="font-size:1.15rem; font-weight:800; color:#0f172a; margin:0 0 0.4rem;">Family Safari Weekend Promo</h4>
-                            <div style="font-size:0.82rem; color:#64748b; margin-bottom:0.75rem;"><i class="fa-solid fa-location-dot" style="color:#10b981;"></i> Taal Countryside Farm</div>
-                            <p style="font-size:0.85rem; color:#475569; line-height:1.45; margin:0 0 1rem;">Discounted family bundles including petting zoo access, tram rides, and complimentary snacks.</p>
+                    {% endfor %}
+                    {% for promo in active_promotions[:2] %}
+                    <div class="lp-event-card">
+                        <div class="lp-event-img" style="background-image: url('{{ promo.image_url if promo.image_url else "https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?auto=format&fit=crop&w=600&q=80" }}');">
+                            <span class="lp-event-date-badge" style="background:#fee2e2; color:#dc2626;">{{ promo.discount or 'SPECIAL' }}</span>
                         </div>
-                        <a href="{{ url_for('visitor.promotions') }}" style="color:#1a4f32; font-weight:700; font-size:0.85rem; text-decoration:none;">Claim Offer &rarr;</a>
+                        <div class="lp-event-body">
+                            <div>
+                                <h4 style="font-size:1.15rem; font-weight:800; color:#0f172a; margin:0 0 0.4rem;">{{ promo.name }}</h4>
+                                <div style="font-size:0.82rem; color:#64748b; margin-bottom:0.75rem;"><i class="fa-solid fa-location-dot" style="color:#10b981;"></i> {{ promo.zoo.name if promo.zoo else 'Partner Zoo' }}</div>
+                                <p style="font-size:0.85rem; color:#475569; line-height:1.45; margin:0 0 1rem;">Promo code: <strong>{{ promo.code }}</strong> &bull; Valid until {{ promo.valid_until or 'Limited time offer' }}.</p>
+                            </div>
+                            <a href="{{ url_for('visitor.promotions') }}" style="color:#1a4f32; font-weight:700; font-size:0.85rem; text-decoration:none;">Claim Offer &rarr;</a>
+                        </div>
                     </div>
-                </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="lp-event-card">
+                        <div class="lp-event-img" style="background-image: url('https://images.unsplash.com/photo-1547721064-da6cfb341d50?auto=format&fit=crop&w=600&q=80');">
+                            <span class="lp-event-date-badge">OCT 20</span>
+                        </div>
+                        <div class="lp-event-body">
+                            <div>
+                                <h4 style="font-size:1.15rem; font-weight:800; color:#0f172a; margin:0 0 0.4rem;">Animal Feeding Experience</h4>
+                                <div style="font-size:0.82rem; color:#64748b; margin-bottom:0.75rem;"><i class="fa-solid fa-location-dot" style="color:#10b981;"></i> Manila Wildlife Sanctuary</div>
+                                <p style="font-size:0.85rem; color:#475569; line-height:1.45; margin:0 0 1rem;">Hands-on guided feeding session with certified handlers for giraffes and friendly herbivores.</p>
+                            </div>
+                            <a href="{{ url_for('visitor.events') }}" style="color:#1a4f32; font-weight:700; font-size:0.85rem; text-decoration:none;">Learn More &rarr;</a>
+                        </div>
+                    </div>
+                    <div class="lp-event-card">
+                        <div class="lp-event-img" style="background-image: url('https://images.unsplash.com/photo-1552728089-57bdde30beb3?auto=format&fit=crop&w=600&q=80');">
+                            <span class="lp-event-date-badge">NOV 05</span>
+                        </div>
+                        <div class="lp-event-body">
+                            <div>
+                                <h4 style="font-size:1.15rem; font-weight:800; color:#0f172a; margin:0 0 0.4rem;">Avian &amp; Bird Watching Tour</h4>
+                                <div style="font-size:0.82rem; color:#64748b; margin-bottom:0.75rem;"><i class="fa-solid fa-location-dot" style="color:#10b981;"></i> Laguna Wildlife Park</div>
+                                <p style="font-size:0.85rem; color:#475569; line-height:1.45; margin:0 0 1rem;">Early morning avian trek spotting native Philippine hornbills, eagles, and colorful parrots.</p>
+                            </div>
+                            <a href="{{ url_for('visitor.events') }}" style="color:#1a4f32; font-weight:700; font-size:0.85rem; text-decoration:none;">Learn More &rarr;</a>
+                        </div>
+                    </div>
+                    <div class="lp-event-card">
+                        <div class="lp-event-img" style="background-image: url('https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?auto=format&fit=crop&w=600&q=80');">
+                            <span class="lp-event-date-badge" style="background:#fee2e2; color:#dc2626;">20% OFF</span>
+                        </div>
+                        <div class="lp-event-body">
+                            <div>
+                                <h4 style="font-size:1.15rem; font-weight:800; color:#0f172a; margin:0 0 0.4rem;">Family Safari Weekend Promo</h4>
+                                <div style="font-size:0.82rem; color:#64748b; margin-bottom:0.75rem;"><i class="fa-solid fa-location-dot" style="color:#10b981;"></i> Taal Countryside Farm</div>
+                                <p style="font-size:0.85rem; color:#475569; line-height:1.45; margin:0 0 1rem;">Discounted family bundles including petting zoo access, tram rides, and complimentary snacks.</p>
+                            </div>
+                            <a href="{{ url_for('visitor.promotions') }}" style="color:#1a4f32; font-weight:700; font-size:0.85rem; text-decoration:none;">Claim Offer &rarr;</a>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </section>
@@ -2332,16 +2365,16 @@
     <section class="lp-facts-banner">
         <div class="container" style="max-width: 1140px;">
             <div class="lp-facts-grid">
-                <!-- Left: Featured Fact with Tiger -->
+                <!-- Left: Featured Fact -->
                 <div class="lp-facts-featured">
                     <div class="lp-facts-img-wrap">
-                        <img src="https://images.unsplash.com/photo-1549480017-d76466a4b7e8?auto=format&fit=crop&w=400&q=80" alt="Tiger" />
+                        <img src="{{ (wildlife_facts[0].image_url if wildlife_facts and wildlife_facts[0].image_url else 'https://images.unsplash.com/photo-1549480017-d76466a4b7e8?auto=format&fit=crop&w=400&q=80') }}" alt="{{ wildlife_facts[0].name if wildlife_facts else 'Tiger' }}" />
                     </div>
                     <div>
-                        <span class="lp-facts-kicker">Animal Facts</span>
+                        <span class="lp-facts-kicker">Animal Facts &bull; {{ wildlife_facts[0].name if wildlife_facts else 'Tiger' }}</span>
                         <h3 class="lp-facts-title">Did You Know?</h3>
                         <p class="lp-facts-text">
-                            Tigers have striped skin, not just fur. Their stripes help with camouflage, temperature regulation, and may even disrupt the vision of their prey.
+                            {{ wildlife_facts[0].fun_facts if wildlife_facts else 'Tigers have striped skin, not just fur. Their stripes help with camouflage, temperature regulation, and may even disrupt the vision of their prey.' }}
                         </p>
                         <a href="{{ url_for('visitor.trivia') }}" class="lp-facts-btn">
                             Explore More Facts <i class="fa-solid fa-arrow-right"></i>
@@ -2349,36 +2382,48 @@
                     </div>
                 </div>
 
-                <!-- Right: 4 Animal Pills -->
+                <!-- Right: Animal Pills -->
                 <div class="lp-facts-cards">
-                    <div class="lp-fact-pill">
-                        <img src="https://images.unsplash.com/photo-1549480017-d76466a4b7e8?auto=format&fit=crop&w=150&q=80" alt="Tigers" />
-                        <div>
-                            <h5>Tigers</h5>
-                            <p>Unique stripes act like fingerprints for camouflage.</p>
+                    {% if wildlife_facts and wildlife_facts|length > 1 %}
+                        {% for a in wildlife_facts[1:5] %}
+                        <div class="lp-fact-pill">
+                            <img src="{{ a.image_url if a.image_url else 'https://images.unsplash.com/photo-1549480017-d76466a4b7e8?auto=format&fit=crop&w=150&q=80' }}" alt="{{ a.name }}" />
+                            <div>
+                                <h5>{{ a.name }}</h5>
+                                <p>{{ a.fun_facts|truncate(70) }}</p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="lp-fact-pill">
-                        <img src="https://images.unsplash.com/photo-1598439210625-5067c578f3f6?auto=format&fit=crop&w=150&q=80" alt="Penguins" />
-                        <div>
-                            <h5>Penguins</h5>
-                            <p>Can drink ocean water via specialized salt-filtering glands.</p>
+                        {% endfor %}
+                    {% else %}
+                        <div class="lp-fact-pill">
+                            <img src="https://images.unsplash.com/photo-1549480017-d76466a4b7e8?auto=format&fit=crop&w=150&q=80" alt="Tigers" />
+                            <div>
+                                <h5>Tigers</h5>
+                                <p>Unique stripes act like fingerprints for camouflage.</p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="lp-fact-pill">
-                        <img src="https://images.unsplash.com/photo-1547721064-da6cfb341d50?auto=format&fit=crop&w=150&q=80" alt="Giraffes" />
-                        <div>
-                            <h5>Giraffes</h5>
-                            <p>Have the exact same number of neck vertebrae as humans (7).</p>
+                        <div class="lp-fact-pill">
+                            <img src="https://images.unsplash.com/photo-1598439210625-5067c578f3f6?auto=format&fit=crop&w=150&q=80" alt="Penguins" />
+                            <div>
+                                <h5>Penguins</h5>
+                                <p>Can drink ocean water via specialized salt-filtering glands.</p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="lp-fact-pill">
-                        <img src="https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?auto=format&fit=crop&w=150&q=80" alt="Elephants" />
-                        <div>
-                            <h5>Elephants</h5>
-                            <p>Communicate across miles using low-frequency ground rumbles.</p>
+                        <div class="lp-fact-pill">
+                            <img src="https://images.unsplash.com/photo-1547721064-da6cfb341d50?auto=format&fit=crop&w=150&q=80" alt="Giraffes" />
+                            <div>
+                                <h5>Giraffes</h5>
+                                <p>Have the exact same number of neck vertebrae as humans (7).</p>
+                            </div>
                         </div>
-                    </div>
+                        <div class="lp-fact-pill">
+                            <img src="https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?auto=format&fit=crop&w=150&q=80" alt="Elephants" />
+                            <div>
+                                <h5>Elephants</h5>
+                                <p>Communicate across miles using low-frequency ground rumbles.</p>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 import json
-
 import os
+import re
+from sqlalchemy import or_
 
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
@@ -905,7 +906,11 @@ def services_management():
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.dashboard'))
     services = Service.query.filter_by(zoo_id=zoo.id).order_by(Service.id.desc()).all()
-    return render_template('animal_farm_admin/services.html', zoo=zoo, services=services)
+    edit_id = request.args.get('edit_id', type=int)
+    edit_service = None
+    if edit_id:
+        edit_service = Service.query.filter_by(id=edit_id, zoo_id=zoo.id).first()
+    return render_template('animal_farm_admin/services.html', zoo=zoo, services=services, edit_service=edit_service)
 
 
 @animal_farm_admin_bp.post('/services/save')
@@ -985,7 +990,8 @@ def animals_management():
         return redirect(url_for('animal_farm_admin.dashboard'))
     animals = Animal.query.filter_by(zoo_id=zoo.id).order_by(Animal.id.desc()).all()
     zones = ZooZone.query.filter_by(zoo_id=zoo.id).order_by(ZooZone.name.asc()).all()
-    return render_template('animal_farm_admin/animals.html', zoo=zoo, animals=animals, zones=zones)
+    fun_facts_animals = [a for a in animals if a.fun_facts and a.fun_facts.strip()]
+    return render_template('animal_farm_admin/animals.html', zoo=zoo, animals=animals, zones=zones, fun_facts_animals=fun_facts_animals)
 
 
 @animal_farm_admin_bp.post('/animals/save')
@@ -994,6 +1000,8 @@ def save_animal():
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.animals_management'))
+
+    animal_id = request.form.get('animal_id')
     if not animal_id and not limit_allows(
         zoo, 'animals', Animal.query.filter_by(zoo_id=zoo.id).count()
     ):
@@ -1004,7 +1012,6 @@ def save_animal():
     if not can_edit_feature(zoo, 'animals'):
         return paywall_edit_error('Animals', required_tier=1)
 
-    animal_id = request.form.get('animal_id')
     name = (request.form.get('name') or '').strip()
     species = (request.form.get('species') or '').strip() or None
     habitat = (request.form.get('habitat') or '').strip() or None
@@ -1044,6 +1051,65 @@ def save_animal():
     db.session.commit()
     flash('Animal saved.', 'success')
     return redirect(url_for('animal_farm_admin.animals_management'))
+
+
+@animal_farm_admin_bp.post('/animals/fun-facts/save')
+def save_fun_fact():
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_admin.animals_management', tab='funfacts'))
+    if not can_edit_feature(zoo, 'animals'):
+        return paywall_edit_error('Animals', required_tier=1)
+
+    animal_id = request.form.get('animal_id', type=int)
+    animal_name = (request.form.get('animal_name') or '').strip()
+    fun_facts = (request.form.get('fun_facts') or '').strip()
+
+    if not fun_facts:
+        flash('Fun fact / Did You Know description is required.', 'error')
+        return redirect(url_for('animal_farm_admin.animals_management', tab='funfacts'))
+
+    animal = None
+    if animal_id:
+        animal = Animal.query.filter_by(id=animal_id, zoo_id=zoo.id).first()
+    elif animal_name:
+        animal = Animal.query.filter_by(name=animal_name, zoo_id=zoo.id).first()
+
+    if not animal and animal_name:
+        animal = Animal(zoo_id=zoo.id, name=animal_name, status='Healthy')
+        db.session.add(animal)
+
+    if not animal:
+        flash('Please select or specify an animal for this fun fact.', 'error')
+        return redirect(url_for('animal_farm_admin.animals_management', tab='funfacts'))
+
+    animal.fun_facts = fun_facts
+    image_file = request.files.get('image_file')
+    if image_file and image_file.filename:
+        uploaded_url = _save_uploaded_image(image_file, 'animal_images')
+        if uploaded_url:
+            animal.image_url = uploaded_url
+
+    db.session.commit()
+    flash('Wildlife fun fact saved successfully.', 'success')
+    return redirect(url_for('animal_farm_admin.animals_management', tab='funfacts'))
+
+
+@animal_farm_admin_bp.post('/animals/fun-facts/<int:animal_id>/clear')
+def clear_fun_fact(animal_id: int):
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_admin.animals_management', tab='funfacts'))
+    if not can_edit_feature(zoo, 'animals'):
+        return paywall_edit_error('Animals', required_tier=1)
+    animal = Animal.query.filter_by(id=animal_id, zoo_id=zoo.id).first()
+    if animal:
+        animal.fun_facts = None
+        db.session.commit()
+        flash('Fun fact removed.', 'success')
+    return redirect(url_for('animal_farm_admin.animals_management', tab='funfacts'))
 
 
 @animal_farm_admin_bp.post('/animals/<int:animal_id>/delete')

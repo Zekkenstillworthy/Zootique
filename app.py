@@ -249,11 +249,19 @@ def create_app() -> Flask:
             except Exception:
                 subscription_plans = []
 
+            from models import Event, Promotion
+            upcoming_events = Event.query.order_by(Event.id.desc()).limit(6).all()
+            active_promotions = Promotion.query.order_by(Promotion.id.desc()).limit(6).all()
+            wildlife_facts = Animal.query.filter(Animal.fun_facts.isnot(None), Animal.fun_facts != '').order_by(Animal.id.desc()).limit(8).all()
+
             from services.subscription_catalog import TIER_METADATA
         except Exception:
             hero_zoos = []
             platform_stats = None
             subscription_plans = []
+            upcoming_events = []
+            active_promotions = []
+            wildlife_facts = []
             TIER_METADATA = {}
         return render_template(
             "landing.html",
@@ -261,6 +269,9 @@ def create_app() -> Flask:
             stats=platform_stats,
             subscription_plans=subscription_plans,
             tier_catalog=TIER_METADATA,
+            upcoming_events=upcoming_events,
+            active_promotions=active_promotions,
+            wildlife_facts=wildlife_facts,
         )
 
     app.register_blueprint(visitor_bp, url_prefix="/visitor")

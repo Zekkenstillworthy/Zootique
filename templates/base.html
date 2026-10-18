@@ -886,12 +886,16 @@
                     </button>
                     <div class="nav-dropdown-menu" id="animals-dropdown">
                         <a href="{{ url_for('animal_farm_admin.animals_management') }}?tab=add"
-                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.animals_management' and request.args.get('tab') == 'add' %}active{% endif %}">
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.animals_management' and request.args.get('tab', 'add') == 'add' %}active{% endif %}">
                             <i class="fa-solid fa-plus-circle"></i> Add/Edit Animal
                         </a>
                         <a href="{{ url_for('animal_farm_admin.animals_management') }}?tab=list"
                             class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.animals_management' and request.args.get('tab') == 'list' %}active{% endif %}">
                             <i class="fa-solid fa-list"></i> Animal List
+                        </a>
+                        <a href="{{ url_for('animal_farm_admin.animals_management') }}?tab=funfacts"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.animals_management' and request.args.get('tab') == 'funfacts' %}active{% endif %}">
+                            <i class="fa-solid fa-lightbulb"></i> Wildlife Fun Facts
                         </a>
                     </div>
                 </div>
