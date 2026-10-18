@@ -44,6 +44,7 @@ def dashboard():
     tasks_done = 0
     recent_tasks = []
     animals_count = 0
+    bookings_count = 0
     if user:
         from models import StaffTask, Animal
         tasks_pending = StaffTask.query.filter_by(
@@ -62,6 +63,7 @@ def dashboard():
         )
         if zoo:
             animals_count = Animal.query.filter_by(zoo_id=zoo.id).count()
+            bookings_count = Booking.query.filter_by(zoo_id=zoo.id).count()
     return render_template(
         'animal_farm_staff/dashboard.html',
         user=user,
@@ -70,6 +72,7 @@ def dashboard():
         tasks_done=tasks_done,
         recent_tasks=recent_tasks,
         animals_count=animals_count,
+        bookings_count=bookings_count,
         today=datetime.utcnow().date(),
     )
 

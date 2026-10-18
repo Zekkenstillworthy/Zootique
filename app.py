@@ -87,8 +87,9 @@ def create_app() -> Flask:
 
     @app.context_processor
     def inject_current_zoo_name():
-        """Expose the active/assigned Zoo name for header display."""
+        """Expose the active/assigned Zoo name and user profile picture for header display."""
         zoo_name = None
+        user_avatar = None
         try:
             role = session.get('role')
             user_id = session.get('user_id')
@@ -97,11 +98,17 @@ def create_app() -> Flask:
 
             if role in {'zoo_admin', 'zoo_staff'} and user_id:
                 user = db.session.get(User, int(user_id))
-                if user and user.zoo_id:
-                    zoo = db.session.get(Zoo, int(user.zoo_id))
-                    zoo_name = zoo.name if zoo else None
+                if user:
+                    user_avatar = user.profile_image
+                    if user.zoo_id:
+                        zoo = db.session.get(Zoo, int(user.zoo_id))
+                        zoo_name = zoo.name if zoo else None
 
             if role == 'visitor':
+                if user_id:
+                    user = db.session.get(User, int(user_id))
+                    if user:
+                        user_avatar = user.profile_image
                 selected_zoo_id = session.get('selected_zoo_id')
                 if selected_zoo_id:
                     zoo = db.session.get(Zoo, int(selected_zoo_id))
@@ -109,7 +116,7 @@ def create_app() -> Flask:
         except Exception:
             zoo_name = None
 
-        return {'current_zoo_name': zoo_name}
+        return {'current_zoo_name': zoo_name, 'current_user_avatar': user_avatar}
 
     # --- Database configuration (Postgres-only) ---
     database_url = (os.environ.get("DATABASE_URL") or "").strip()

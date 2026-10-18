@@ -1001,29 +1001,12 @@
                     <i class="fa-solid fa-gamepad"></i> Trivia &amp; Quizzes
                 </a>
 
-                <!-- Staff Management Dropdown -->
-                <div class="nav-dropdown">
-                    <button
-                        class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.staff_management' %}active{% endif %}"
-                        onclick="toggleDropdown(event, 'afa-staff-dropdown')">
-                        <span class="trigger-label"><i class="fa-solid fa-user-check"></i> Staff Management
-                          {% if _sub_tier < feature_required_tier('staff_management') %}<i class="fa-solid fa-lock" title="Requires Standard Tier" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
-                        </span>
-                        <i class="fa-solid fa-chevron-down chevron"></i>
-                    </button>
-                    <div class="nav-dropdown-menu {% if request.endpoint == 'animal_farm_admin.staff_management' %}open{% endif %}"
-                        id="afa-staff-dropdown">
-                        <a href="{{ url_for('animal_farm_admin.staff_management') }}?tab=accounts"
-                            data-sm-tab="accounts"
-                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.staff_management' and request.args.get('tab', 'accounts') == 'accounts' %}active{% endif %}">
-                            <i class="fa-solid fa-users"></i> Staff Accounts
-                        </a>
-                        <a href="{{ url_for('animal_farm_admin.staff_management') }}?tab=tasks" data-sm-tab="tasks"
-                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.staff_management' and request.args.get('tab') == 'tasks' %}active{% endif %}">
-                            <i class="fa-solid fa-list-check"></i> Task List
-                        </a>
-                    </div>
-                </div>
+                <!-- Staff Management -->
+                <a href="{{ url_for('animal_farm_admin.staff_management') }}"
+                    class="nav-item {% if request.endpoint == 'animal_farm_admin.staff_management' %}active{% endif %}">
+                    <i class="fa-solid fa-user-check"></i> Staff Management
+                    {% if _sub_tier < feature_required_tier('staff_management') %}<i class="fa-solid fa-lock" title="Requires Standard Tier" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
+                </a>
                 <!-- Settings Dropdown -->
                 <div class="nav-dropdown">
                     <button
@@ -1227,15 +1210,25 @@
                     <button class="icon-btn" title="Notifications"><i class="fa-solid fa-bell"></i></button>
                     {% endif %}
                     {% if session.get('user_id') %}
+                    {% set _profile_url = url_for('animal_farm_staff.profile') if request.blueprint == 'animal_farm_staff' else
+                    (url_for('animal_farm_admin.settings') if request.blueprint == 'animal_farm_admin' else
+                    (url_for('zootique_admin.settings') if request.blueprint == 'zootique_admin' else
+                    (url_for('visitor.profile') if request.blueprint == 'visitor' else '#'))) %}
                     <div style="display:flex; align-items:center; gap:12px; margin-left:16px;">
-                        <div class="avatar" title="{{ session.get('full_name', 'User') }}">{{ session.get('full_name',
-                            'U')[0]|upper }}</div>
+                        <a href="{{ _profile_url }}" class="avatar" title="{{ session.get('full_name', 'User') }}" style="text-decoration:none; color:#ffffff; overflow:hidden;">
+                            {% if current_user_avatar or session.get('profile_image') %}
+                                {% set _img = current_user_avatar or session.get('profile_image') %}
+                                <img src="{{ _img if _img.startswith('http') else url_for('uploaded_file', filename=_img) }}" alt="{{ session.get('full_name', 'User') }}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />
+                            {% else %}
+                                {{ session.get('full_name', 'U')[0]|upper }}
+                            {% endif %}
+                        </a>
                         <span style="color:var(--text-muted); text-decoration:none; font-size:14px; font-weight:800;">
                             {{ current_zoo_name or 'Zoo' }}
                         </span>
                     </div>
                     {% else %}
-                    <div class="avatar" title="Guest">G</div>
+                    <a href="{{ url_for('auth.portal') }}" class="avatar" title="Guest" style="text-decoration:none; color:#ffffff;">G</a>
                     <a href="{{ url_for('auth.portal') }}"
                         style="color:#10b981; text-decoration:none; font-size:14px; font-weight:600; margin-left:12px;"><i
                             class="fa-solid fa-right-to-bracket"></i> Sign in</a>
@@ -1574,15 +1567,15 @@
                     });
                 }
 
-                // Staff Management: client-side tab switching (no page reload)
+                // Staff Management: client-side view handling
                 if (currentUrl.includes('/staff-management')) {
-                    const SM_TABS = ['accounts', 'tasks', 'assign'];
+                    const SM_TABS = ['accounts'];
 
                     function switchSmTab(tab) {
-                        if (!SM_TABS.includes(tab)) tab = 'accounts';
+                        tab = 'accounts';
                         SM_TABS.forEach(function (t) {
                             const el = document.getElementById('sm-tab-' + t);
-                            if (el) el.style.display = (t === tab) ? '' : 'none';
+                            if (el) el.style.display = '';
                         });
                         document.querySelectorAll('[data-sm-tab]').forEach(function (link) {
                             link.classList.toggle('active', link.dataset.smTab === tab);

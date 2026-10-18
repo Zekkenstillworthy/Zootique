@@ -1,29 +1,24 @@
 """
 services/storage.py
 -------------------
-Cloud-aware image upload helper.
+Cloud-aware image & document upload helper.
 
 Production (Vercel + Supabase):
   - Uploads to Supabase Storage bucket ``SUPABASE_STORAGE_BUCKET``
-    (defaults to "zootique-images").
+    (defaults to "zootique-images") using direct REST API.
+  - Supports both standard JWT keys and Supabase secret tokens (sb_secret_...).
   - Returns the public HTTPS URL stored by Supabase.
 
 Local development (no SUPABASE_URL set):
   - Falls back to saving on the local filesystem under UPLOAD_FOLDER.
-  - Returns a ``/uploads/...`` relative URL exactly as before.
-
-Usage::
-
-    from services.storage import save_uploaded_image
-
-    url = save_uploaded_image(request.files.get("image_file"), "animal_images")
-    if url:
-        animal.image_url = url
+  - Returns a ``/uploads/...`` relative URL.
 """
 
 from __future__ import annotations
 
 import os
+import urllib.error
+import urllib.request
 import uuid
 
 from flask import current_app
@@ -34,17 +29,48 @@ _ALLOWED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 _ALLOWED_DOCUMENT_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg"}
 
 
-def _get_supabase_client():
-    """Return a Supabase client if credentials are configured, else None."""
-    url = os.environ.get("SUPABASE_URL", "").strip()
-    key = os.environ.get("SUPABASE_KEY", "").strip()
+def _upload_to_supabase(object_key: str, file_bytes: bytes, content_type: str | None) -> str | None:
+    """Upload binary payload directly to Supabase Storage via REST API."""
+    url = (os.environ.get("SUPABASE_URL") or "").strip().rstrip("/")
+    key = (os.environ.get("SUPABASE_KEY") or "").strip()
+    bucket = (os.environ.get("SUPABASE_STORAGE_BUCKET") or "zootique-images").strip()
+
     if not url or not key:
         return None
+
+    upload_endpoint = f"{url}/storage/v1/object/{bucket}/{object_key}"
+    headers = {
+        "apikey": key,
+        "Authorization": f"Bearer {key}",
+        "Content-Type": content_type or "application/octet-stream",
+        "x-upsert": "true",
+    }
+
+    try:
+        req = urllib.request.Request(upload_endpoint, data=file_bytes, headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            if resp.status in (200, 201):
+                return f"{url}/storage/v1/object/public/{bucket}/{object_key}"
+    except urllib.error.HTTPError as exc:
+        err_body = exc.read().decode("utf-8", errors="replace")
+        current_app.logger.error("Supabase Storage REST upload failed (HTTP %s): %s", exc.code, err_body)
+    except Exception as exc:
+        current_app.logger.error("Supabase Storage REST upload error: %s", exc)
+
+    # Fallback to supabase-py library if installed and compatible
     try:
         from supabase import create_client  # type: ignore
-        return create_client(url, key)
-    except Exception:
-        return None
+        client = create_client(url, key)
+        client.storage.from_(bucket).upload(
+            path=object_key,
+            file=file_bytes,
+            file_options={"content-type": content_type or "application/octet-stream", "upsert": "true"},
+        )
+        return client.storage.from_(bucket).get_public_url(object_key)
+    except Exception as exc:
+        current_app.logger.debug("Supabase client library fallback failed: %s", exc)
+
+    return None
 
 
 def save_uploaded_image(file_storage: FileStorage | None, subfolder: str) -> str | None:
@@ -73,34 +99,28 @@ def save_uploaded_image(file_storage: FileStorage | None, subfolder: str) -> str
         return None
 
     stored_name = f"{uuid.uuid4().hex}{ext}"
-    # Normalise subfolder to forward-slash path segments (safe on all OSes).
     parts = [p for p in (subfolder or "").replace("\\", "/").split("/") if p]
     object_key = "/".join(parts + [stored_name])
 
-    # --- Supabase Storage (production) ---
-    supabase = _get_supabase_client()
-    if supabase:
-        bucket = os.environ.get("SUPABASE_STORAGE_BUCKET", "zootique-images").strip()
-        try:
-            file_storage.seek(0)
-            file_bytes = file_storage.read()
-            file_storage.seek(0)
-            content_type = getattr(file_storage, "content_type", None) or "application/octet-stream"
-            supabase.storage.from_(bucket).upload(
-                path=object_key,
-                file=file_bytes,
-                file_options={"content-type": content_type},
-            )
-            public_url: str = supabase.storage.from_(bucket).get_public_url(object_key)
-            return public_url
-        except Exception as exc:
-            current_app.logger.error("Supabase Storage upload failed: %s", exc)
-            return None
+    try:
+        file_storage.seek(0)
+        file_bytes = file_storage.read()
+        file_storage.seek(0)
+    except Exception as exc:
+        current_app.logger.error("Failed to read uploaded file: %s", exc)
+        return None
+
+    content_type = getattr(file_storage, "content_type", None) or "application/octet-stream"
+
+    # --- Cloud Storage (Supabase) ---
+    public_url = _upload_to_supabase(object_key, file_bytes, content_type)
+    if public_url:
+        return public_url
 
     # Guard for Vercel serverless environment: local filesystem is read-only
     if os.environ.get("VERCEL"):
         current_app.logger.error(
-            "[Vercel Serverless] Supabase storage client unavailable and serverless filesystem is read-only. "
+            "[Vercel Serverless] Supabase storage upload failed or credentials missing. "
             "Please configure SUPABASE_URL, SUPABASE_KEY, and SUPABASE_STORAGE_BUCKET in Vercel project environment settings."
         )
         return None
@@ -134,28 +154,26 @@ def save_uploaded_document(file_storage: FileStorage | None, subfolder: str) -> 
     stored_name = f"{uuid.uuid4().hex}{ext}"
     parts = [p for p in (subfolder or "").replace("\\", "/").split("/") if p]
     object_key = "/".join(parts + [stored_name])
-    supabase = _get_supabase_client()
-    if supabase:
-        bucket = os.environ.get("SUPABASE_STORAGE_BUCKET", "zootique-images").strip()
-        try:
-            file_storage.seek(0)
-            file_bytes = file_storage.read()
-            file_storage.seek(0)
-            content_type = getattr(file_storage, "content_type", None) or "application/octet-stream"
-            supabase.storage.from_(bucket).upload(
-                path=object_key,
-                file=file_bytes,
-                file_options={"content-type": content_type},
-            )
-            return supabase.storage.from_(bucket).get_public_url(object_key)
-        except Exception as exc:
-            current_app.logger.error("Supabase document upload failed: %s", exc)
-            return None
+
+    try:
+        file_storage.seek(0)
+        file_bytes = file_storage.read()
+        file_storage.seek(0)
+    except Exception as exc:
+        current_app.logger.error("Failed to read uploaded document: %s", exc)
+        return None
+
+    content_type = getattr(file_storage, "content_type", None) or "application/octet-stream"
+
+    # --- Cloud Storage (Supabase) ---
+    public_url = _upload_to_supabase(object_key, file_bytes, content_type)
+    if public_url:
+        return public_url
 
     # Guard for Vercel serverless environment: local filesystem is read-only
     if os.environ.get("VERCEL"):
         current_app.logger.error(
-            "[Vercel Serverless] Supabase storage client unavailable and serverless filesystem is read-only. "
+            "[Vercel Serverless] Supabase storage upload failed or credentials missing. "
             "Please configure SUPABASE_URL, SUPABASE_KEY, and SUPABASE_STORAGE_BUCKET in Vercel project environment settings."
         )
         return None

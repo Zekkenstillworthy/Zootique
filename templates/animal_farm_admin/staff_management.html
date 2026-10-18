@@ -11,68 +11,8 @@
   <span id="zfToastMsg">Staff record updated successfully.</span>
 </div>
 
-<!-- ===== ASSIGN TASK TAB ===== -->
-<div id="sm-tab-assign" class="sm-section" style="display:none; max-width: 760px; margin: 0 auto;">
-  <div class="zf-form-card">
-    <div class="zf-form-header">
-      <h2 class="zf-form-title">
-        <i class="fa-solid fa-clipboard-check"></i>
-        <span id="taskFormTitleText">Assign Task</span>
-      </h2>
-      <span class="zf-form-badge" id="taskFormBadge">Task</span>
-    </div>
-
-    <form id="assignTaskForm" method="post" action="{{ url_for('animal_farm_admin.save_staff_task') }}" novalidate>
-      <input type="hidden" name="task_id" id="task_id_input" value="">
-
-      <div class="zf-form-body">
-        <div class="zf-section">
-          <div class="zf-section-label">
-            <i class="fa-solid fa-circle-info"></i> Task Assignment Details
-          </div>
-          <div class="zf-grid-2">
-            <div class="zf-field zf-full">
-              <label class="zf-label" for="task_title_input">Task Title <span class="zf-req">*</span></label>
-              <input id="task_title_input" type="text" name="title" class="zf-control" placeholder="e.g., Prepare tour route and sanitize feeding bay" required autocomplete="off">
-              <span class="zf-error" id="task_title_error"><i class="fa-solid fa-triangle-exclamation"></i> Task title is required.</span>
-            </div>
-
-            <div class="zf-field zf-full">
-              <label class="zf-label" for="task_desc_input">Description</label>
-              <textarea id="task_desc_input" name="description" class="zf-control" rows="3" placeholder="Provide instructions or background notes..."></textarea>
-            </div>
-
-            <div class="zf-field">
-              <label class="zf-label" for="task_due_input">Due Date</label>
-              <input id="task_due_input" type="date" name="due_date" class="zf-control">
-            </div>
-
-            <div class="zf-field">
-              <label class="zf-label" for="task_status_input">Status</label>
-              <select id="task_status_input" name="status" class="zf-control">
-                <option value="pending">Pending</option>
-                <option value="in_progress">In progress</option>
-                <option value="done">Done</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="zf-form-footer">
-        <button type="button" class="zf-btn-cancel" onclick="window.switchSmTab && window.switchSmTab('tasks')">
-          <i class="fa-solid fa-list-check"></i> View Tasks
-        </button>
-        <button class="zf-btn-primary" type="submit" id="saveTaskBtn">
-          <i class="fa-solid fa-floppy-disk"></i> Save Task
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- ===== STAFF ACCOUNTS TAB ===== -->
-<div id="sm-tab-accounts" class="sm-section" style="display:none;">
+<!-- ===== STAFF ACCOUNTS ===== -->
+<div id="sm-tab-accounts" class="sm-section">
   <div class="two-col" style="--two-col-template: 1.1fr 1.3fr;">
     
     <!-- Staff User Form -->
@@ -238,111 +178,11 @@
   </div>
 </div>
 
-<!-- ===== TASK LIST TAB ===== -->
-<div id="sm-tab-tasks" class="sm-section" style="display:none;">
-  <div class="card-panel">
-    <div class="card-header">
-      <h2><i class="fa-solid fa-list-check" style="margin-right:8px;"></i> All Assigned Tasks</h2>
-      <div class="card-header-actions">
-        <button class="btn btn-primary btn-sm" type="button" onclick="window.switchSmTab && window.switchSmTab('assign')">
-          <i class="fa-solid fa-plus"></i> New Task
-        </button>
-      </div>
-    </div>
-    <div class="card-body" style="padding:0;">
-      <div class="zf-table-wrap">
-        <table class="table-striped" style="table-layout: fixed; width: 100%;">
-          <colgroup>
-            <col style="width: 36%;">
-            <col style="width: 20%;">
-            <col style="width: 14%;">
-            <col style="width: 16%;">
-            <col style="width: 14%;">
-          </colgroup>
-          <thead>
-            <tr>
-              <th style="padding-left:16px;">Task Title &amp; Details</th>
-              <th>Assigned To</th>
-              <th>Due Date</th>
-              <th>Status</th>
-              <th style="text-align:right; padding-right:16px;">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for t in tasks %}
-              <tr>
-                <td style="padding-left:16px;">
-                  <div style="font-weight:700; color: var(--text); word-break: break-word;">{{ t.title }}</div>
-                  {% if t.description %}<div style="color: var(--text-muted); font-size:12px; word-break: break-word; white-space: normal; margin-top:2px;">{{ t.description }}</div>{% endif %}
-                </td>
-                <td>{{ t.assigned_to_user.full_name if t.assigned_to_user else '<span style="color:var(--text-muted);">Unassigned</span>'|safe }}</td>
-                <td>{{ t.due_date.strftime('%Y-%m-%d') if t.due_date else '-' }}</td>
-                <td>
-                  {% if t.status == 'done' %}
-                    <span class="badge badge-completed">Done</span>
-                  {% elif t.status == 'in_progress' %}
-                    <span class="badge badge-in-progress">In Progress</span>
-                  {% else %}
-                    <span class="badge badge-pending">Pending</span>
-                  {% endif %}
-                </td>
-                <td style="text-align:right; padding-right:16px;">
-                  <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
-                    <button class="zf-icon-btn" type="button" title="Edit Task"
-                      onclick='fillTaskForm({{ t.id|tojson }}, {{ t.title|tojson }}, {{ (t.description or "")|tojson }}, {{ (t.assigned_to_user_id or "")|tojson }}, {{ (t.due_date.strftime("%Y-%m-%d") if t.due_date else "")|tojson }}, {{ t.status|tojson }})'>
-                      <i class="fa-solid fa-pen"></i>
-                    </button>
-                    <form method="post" action="{{ url_for('animal_farm_admin.delete_staff_task', task_id=t.id) }}" style="display:inline;" onsubmit="return confirm('Delete this task?');">
-                      <button class="zf-icon-btn danger" type="submit" title="Delete Task">
-                        <i class="fa-solid fa-trash"></i>
-                      </button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-            {% else %}
-              <tr>
-                <td colspan="5">
-                  <div class="zf-empty-state">
-                    <i class="fa-solid fa-list-check zf-empty-icon"></i>
-                    <div class="zf-empty-title">No Tasks Assigned</div>
-                    <div class="zf-empty-desc">Create your first staff duty to delegate feeding, maintenance, or guest activities.</div>
-                  </div>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
 
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function fillTaskForm(id, title, description, assignedTo, dueDate, status) {
-    document.getElementById('task_id_input').value = id || '';
-    document.getElementById('task_title_input').value = title || '';
-    document.getElementById('task_desc_input').value = description || '';
-    const assignEl = document.getElementById('task_assign_input');
-    if (assignEl) assignEl.value = assignedTo || '';
-    document.getElementById('task_due_input').value = dueDate || '';
-    document.getElementById('task_status_input').value = status || 'pending';
-
-    const titleEl = document.getElementById('taskFormTitleText');
-    if (titleEl) titleEl.textContent = 'Edit Task';
-    const badgeEl = document.getElementById('taskFormBadge');
-    if (badgeEl) {
-        badgeEl.textContent = 'Edit';
-        badgeEl.classList.add('editing');
-    }
-
-    if (window.switchSmTab) window.switchSmTab('assign');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
 function fillStaffForm(id, fullName, email, username, status, profileImg) {
     const form = document.getElementById('staff-user-form');
     if (!form) return;
@@ -429,28 +269,7 @@ if (staffRemoveBtn) {
     });
 }
 
-// Form validation
-const assignTaskForm = document.getElementById('assignTaskForm');
-if (assignTaskForm) {
-    assignTaskForm.addEventListener('submit', function(e) {
-        const titleInput = document.getElementById('task_title_input');
-        const titleErr = document.getElementById('task_title_error');
-        if (!titleInput.value.trim()) {
-            e.preventDefault();
-            titleInput.classList.add('is-invalid');
-            if (titleErr) titleErr.style.display = 'block';
-            return;
-        } else {
-            titleInput.classList.remove('is-invalid');
-            if (titleErr) titleErr.style.display = 'none';
-        }
-        const btn = document.getElementById('saveTaskBtn');
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
-        }
-    });
-}
+
 
 const staffUserForm = document.getElementById('staff-user-form');
 if (staffUserForm) {
