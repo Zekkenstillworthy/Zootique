@@ -1106,6 +1106,7 @@
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 1.75rem;
+            align-items: stretch;
         }
         .lp-portal-card {
             border-radius: 18px;
@@ -1115,7 +1116,7 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.04);
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            height: 100%;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .lp-portal-card:hover {
@@ -1133,6 +1134,7 @@
             display: flex;
             flex-direction: column;
             height: 100%;
+            flex: 1;
         }
         .lp-portal-badge {
             display: inline-flex;
@@ -1144,7 +1146,7 @@
             text-transform: uppercase;
             padding: 0.35rem 0.75rem;
             border-radius: 999px;
-            margin-bottom: 1rem;
+            margin-bottom: 0.85rem;
             width: fit-content;
         }
         .lp-portal-badge-visitor {
@@ -1158,24 +1160,24 @@
             border: 1px solid #bae6fd;
         }
         .lp-portal-title {
-            font-size: 1.6rem;
+            font-size: 1.55rem;
             font-weight: 800;
             color: #0f172a;
-            margin: 0 0 0.85rem;
+            margin: 0 0 0.75rem;
             line-height: 1.25;
         }
         .lp-portal-desc {
             font-size: 0.95rem;
             color: #475569;
             line-height: 1.6;
-            margin-bottom: 1.5rem;
-            flex-grow: 1;
+            margin: 0 0 1.25rem;
         }
         .lp-portal-tags {
             display: flex;
             flex-wrap: wrap;
             gap: 0.5rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
+            align-items: center;
         }
         .lp-portal-tag {
             background: #f1f5f9;
@@ -1187,38 +1189,71 @@
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
+            line-height: 1.2;
+        }
+        .lp-portal-action-row {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1.25rem;
+            width: 100%;
+            padding-top: 0.5rem;
         }
         .lp-portal-cta {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 0.6rem;
-            padding: 0.85rem 1.6rem;
-            border-radius: 12px;
-            font-weight: 800;
-            font-size: 0.95rem;
+            padding: 0.75rem 1.4rem;
+            height: 44px;
+            box-sizing: border-box;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.92rem;
             text-decoration: none;
             transition: all 0.2s ease;
-            width: fit-content;
+            white-space: nowrap;
+            line-height: 1;
         }
         .lp-portal-cta-visitor {
             background: #1a4f32;
             color: #ffffff;
-            box-shadow: 0 4px 14px rgba(26,79,50,0.3);
+            box-shadow: 0 4px 14px rgba(26,79,50,0.25);
         }
         .lp-portal-cta-visitor:hover {
             background: #133c26;
+            transform: translateY(-1px);
         }
         .lp-portal-cta-admin {
             background: #0284c7;
             color: #ffffff;
-            box-shadow: 0 4px 14px rgba(2,132,199,0.3);
+            box-shadow: 0 4px 14px rgba(2,132,199,0.25);
         }
         .lp-portal-cta-admin:hover {
             background: #0369a1;
+            transform: translateY(-1px);
         }
-        @media (max-width: 900px) {
-            .lp-portal-grid { grid-template-columns: 1fr; }
+        .lp-portal-thumb-wrap {
+            width: 120px;
+            height: 80px;
+            border-radius: 12px;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+        .lp-portal-thumb {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        @media (max-width: 768px) {
+            .lp-portal-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
         }
 
         /* =============================================
@@ -2104,21 +2139,25 @@
                 <!-- Left: Visitors Portal -->
                 <div class="lp-portal-card lp-portal-card-visitor">
                     <div class="lp-portal-body">
-                        <div>
-                            <span class="lp-portal-badge lp-portal-badge-visitor">
-                                <i class="fa-solid fa-users"></i> For Visitors
-                            </span>
-                            <h3 class="lp-portal-title">Your Wildlife Adventure Starts Here</h3>
-                            <p class="lp-portal-desc">
-                                Explore amazing attractions, book your favorite services, discover exciting events, learn about wildlife, and earn rewards through our engagement activities.
-                            </p>
+                        <span class="lp-portal-badge lp-portal-badge-visitor">
+                            <i class="fa-solid fa-users"></i> For Visitors
+                        </span>
+                        <h3 class="lp-portal-title">Your Wildlife Adventure Starts Here</h3>
+                        <p class="lp-portal-desc">
+                            Explore amazing attractions, book your favorite services, discover exciting events, learn about wildlife, and earn rewards through our engagement activities.
+                        </p>
+                        <div class="lp-portal-tags">
+                            <span class="lp-portal-tag"><i class="fa-solid fa-compass" style="color:#16a34a;"></i> Browse Zoos</span>
+                            <span class="lp-portal-tag"><i class="fa-solid fa-ticket" style="color:#16a34a;"></i> Book Services</span>
+                            <span class="lp-portal-tag"><i class="fa-solid fa-calendar-days" style="color:#16a34a;"></i> View Events</span>
+                            <span class="lp-portal-tag"><i class="fa-solid fa-award" style="color:#16a34a;"></i> Earn Rewards</span>
                         </div>
-                        <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:1.5rem; flex-wrap:wrap; margin-top:1rem;">
+                        <div class="lp-portal-action-row">
                             <a href="{{ url_for('visitor.choose_zoo') }}" class="lp-portal-cta lp-portal-cta-visitor">
                                 Explore Now <i class="fa-solid fa-arrow-right"></i>
                             </a>
-                            <div style="width:140px; height:100px; border-radius:14px; overflow:hidden; flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
-                                <img src="https://images.unsplash.com/photo-1534567153574-2b12153a87f0?auto=format&fit=crop&w=400&q=80" alt="Wildlife" style="width:100%; height:100%; object-fit:cover;" />
+                            <div class="lp-portal-thumb-wrap">
+                                <img src="https://images.unsplash.com/photo-1534567153574-2b12153a87f0?auto=format&fit=crop&w=400&q=80" alt="Wildlife" class="lp-portal-thumb" />
                             </div>
                         </div>
                     </div>
@@ -2127,27 +2166,25 @@
                 <!-- Right: Zoo Admin Portal -->
                 <div class="lp-portal-card lp-portal-card-admin">
                     <div class="lp-portal-body">
-                        <div>
-                            <span class="lp-portal-badge lp-portal-badge-admin">
-                                <i class="fa-solid fa-shield-halved"></i> For Zoo Admins
-                            </span>
-                            <h3 class="lp-portal-title">Manage Your Zoo with Ease</h3>
-                            <p class="lp-portal-desc">
-                                Handle bookings, services, schedules, events, promotions, and visitor feedback all in one convenient dashboard. Keep your establishment updated and reach more visitors.
-                            </p>
-                            <div class="lp-portal-tags">
-                                <span class="lp-portal-tag"><i class="fa-solid fa-calendar-check" style="color:#0284c7;"></i> Manage Bookings</span>
-                                <span class="lp-portal-tag"><i class="fa-solid fa-list-check" style="color:#0284c7;"></i> Update Services</span>
-                                <span class="lp-portal-tag"><i class="fa-solid fa-bullhorn" style="color:#0284c7;"></i> Publish Events</span>
-                                <span class="lp-portal-tag"><i class="fa-solid fa-chart-line" style="color:#0284c7;"></i> View Analytics</span>
-                            </div>
+                        <span class="lp-portal-badge lp-portal-badge-admin">
+                            <i class="fa-solid fa-shield-halved"></i> For Zoo Admins
+                        </span>
+                        <h3 class="lp-portal-title">Manage Your Zoo with Ease</h3>
+                        <p class="lp-portal-desc">
+                            Handle bookings, services, schedules, events, promotions, and visitor feedback all in one convenient dashboard. Keep your establishment updated and reach more visitors.
+                        </p>
+                        <div class="lp-portal-tags">
+                            <span class="lp-portal-tag"><i class="fa-solid fa-calendar-check" style="color:#0284c7;"></i> Manage Bookings</span>
+                            <span class="lp-portal-tag"><i class="fa-solid fa-list-check" style="color:#0284c7;"></i> Update Services</span>
+                            <span class="lp-portal-tag"><i class="fa-solid fa-bullhorn" style="color:#0284c7;"></i> Publish Events</span>
+                            <span class="lp-portal-tag"><i class="fa-solid fa-chart-line" style="color:#0284c7;"></i> View Analytics</span>
                         </div>
-                        <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:1.5rem; flex-wrap:wrap; margin-top:0.5rem;">
+                        <div class="lp-portal-action-row">
                             <a href="{{ url_for('auth.login', module_name='zoo_admin') }}" class="lp-portal-cta lp-portal-cta-admin">
                                 Zoo Admin Login <i class="fa-solid fa-arrow-right"></i>
                             </a>
-                            <div style="width:140px; height:100px; border-radius:14px; overflow:hidden; flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
-                                <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80" alt="Admin Dashboard" style="width:100%; height:100%; object-fit:cover;" />
+                            <div class="lp-portal-thumb-wrap">
+                                <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80" alt="Admin Dashboard" class="lp-portal-thumb" />
                             </div>
                         </div>
                     </div>
