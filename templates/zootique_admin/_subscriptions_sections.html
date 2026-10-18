@@ -90,10 +90,12 @@
             <td style="text-align:right;">
               <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center;">
                 <form method="post" action="{{ url_for('zootique_admin.renew_subscription', subscription_id=sub.subscription_id) }}" style="display:inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <input type="hidden" name="months" value="1">
                   <button class="btn btn-outline btn-sm" type="submit"><i class="fa-solid fa-check"></i> Confirm</button>
                 </form>
                 <form method="post" action="{{ url_for('zootique_admin.cancel_subscription', subscription_id=sub.subscription_id) }}" style="display:inline;" onsubmit="return confirm('Cancel this subscription?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger);"><i class="fa-solid fa-xmark"></i> Cancel</button>
                 </form>
               </div>
@@ -120,6 +122,7 @@
       </div>
       <div class="card-body">
         <form method="post" action="{{ url_for('zootique_admin.save_subscription_plan') }}" style="display:flex; flex-direction:column; gap:12px;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           {% if edit_plan %}
             <input type="hidden" name="plan_id" value="{{ edit_plan.id }}">
           {% endif %}
@@ -181,7 +184,13 @@
               <td style="text-transform:capitalize;">{{ p.duration }}</td>
               <td style="color:var(--text-muted); font-size:12px;">{{ (p.features or '—')|replace('\n', ', ') }}</td>
               <td style="text-align:right;">
-                <a class="btn btn-ghost btn-sm" href="{{ url_for('zootique_admin.manage_subscriptions', edit_plan=p.id) }}#plan-manager"><i class="fa-regular fa-pen-to-square"></i> Edit</a>
+                <div style="display:flex; gap:6px; justify-content:flex-end; align-items:center;">
+                  <a class="btn btn-ghost btn-sm" href="{{ url_for('zootique_admin.manage_subscriptions', edit_plan=p.id) }}#plan-manager"><i class="fa-regular fa-pen-to-square"></i> Edit</a>
+                  <form method="post" action="{{ url_for('zootique_admin.delete_subscription_plan', plan_id=p.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete {{ p.name }}?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger, #dc2626);"><i class="fa-solid fa-trash"></i> Delete</button>
+                  </form>
+                </div>
               </td>
             </tr>
             {% else %}

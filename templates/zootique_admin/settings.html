@@ -267,6 +267,48 @@
         });
     }
 
+    const saProf = document.getElementById('saProfileForm');
+    if (saProf) {
+        saProf.addEventListener('submit', function(e) {
+            const name = document.getElementById('sa_full_name');
+            const email = document.getElementById('sa_email');
+            let invalid = false;
+
+            if (!name.value.trim()) {
+                name.classList.add('is-invalid');
+                const err = document.getElementById('sa_name_err');
+                if (err) err.style.display = 'block';
+                invalid = true;
+            } else {
+                name.classList.remove('is-invalid');
+                const err = document.getElementById('sa_name_err');
+                if (err) err.style.display = 'none';
+            }
+
+            if (!email.value.trim()) {
+                email.classList.add('is-invalid');
+                const err = document.getElementById('sa_email_err');
+                if (err) err.style.display = 'block';
+                invalid = true;
+            } else {
+                email.classList.remove('is-invalid');
+                const err = document.getElementById('sa_email_err');
+                if (err) err.style.display = 'none';
+            }
+
+            if (invalid) {
+                e.preventDefault();
+                return;
+            }
+
+            const btn = document.getElementById('saveSaProfileBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+            }
+        });
+    }
+
     const saSec = document.getElementById('saSecurityForm');
     if (saSec) {
         saSec.addEventListener('submit', function(e) {

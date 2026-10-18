@@ -280,8 +280,15 @@ def create_app() -> Flask:
     @app.context_processor
     def inject_global_notifications():
         user_id = session.get("user_id")
+        role = session.get("role")
+        result = {
+            "visitor_notifications": [],
+            "visitor_unread_count": 0,
+            "sa_notifications": [],
+            "sa_unread_count": 0,
+        }
         if not user_id:
-            return {"visitor_notifications": [], "visitor_unread_count": 0}
+            return result
         try:
             from models import Notification
             notifs = (
@@ -291,9 +298,91 @@ def create_app() -> Flask:
                 .all()
             )
             unread_count = sum(1 for n in notifs if not n.read_at)
-            return {"visitor_notifications": notifs, "visitor_unread_count": unread_count}
+            result["visitor_notifications"] = notifs
+            result["visitor_unread_count"] = unread_count
+
+            if role in ("zootique_admin", "super_admin"):
+                from models import EstablishmentRegistration, ZooAdminFeedback, ZooSubscription
+                sa_alerts = []
+
+                # Pending registrations
+                pending_regs = (
+                    EstablishmentRegistration.query.filter(EstablishmentRegistration.status.ilike("pending"))
+                    .order_by(EstablishmentRegistration.created_at.desc())
+                    .limit(6)
+                    .all()
+                )
+                for pr in pending_regs:
+                    sa_alerts.append({
+                        "id": f"reg-{pr.id}",
+                        "type": "registration",
+                        "title": "Registration Pending",
+                        "message": f"Review application from {pr.establishment_name} ({pr.establishment_type})",
+                        "time": pr.created_at,
+                        "url": url_for("zootique_admin.registration_detail", registration_id=pr.id),
+                        "icon": "fa-file-circle-check",
+                        "badge": "Pending Review",
+                    })
+
+                # Open feedback
+                open_feedback = (
+                    ZooAdminFeedback.query.filter_by(status="open")
+                    .order_by(ZooAdminFeedback.created_at.desc())
+                    .limit(5)
+                    .all()
+                )
+                for fb in open_feedback:
+                    zoo_name = fb.zoo.name if fb.zoo else "Zoo Admin"
+                    sa_alerts.append({
+                        "id": f"fb-{fb.id}",
+                        "type": "feedback",
+                        "title": "Zoo Feedback Received",
+                        "message": f"{zoo_name}: {fb.subject or 'System feedback submitted'}",
+                        "time": fb.created_at,
+                        "url": url_for("zootique_admin.view_feedback"),
+                        "icon": "fa-comment-dots",
+                        "badge": "New Message",
+                    })
+
+                # Pending subscriptions
+                pending_subs = (
+                    ZooSubscription.query.filter(ZooSubscription.status.ilike("pending"))
+                    .order_by(ZooSubscription.start_date.desc())
+                    .limit(5)
+                    .all()
+                )
+                for ps in pending_subs:
+                    zoo_name = ps.zoo.name if ps.zoo else "Zoo"
+                    sa_alerts.append({
+                        "id": f"sub-{ps.id}",
+                        "type": "subscription",
+                        "title": "Subscription Activation",
+                        "message": f"{zoo_name} has a pending subscription request",
+                        "time": ps.start_date,
+                        "url": url_for("zootique_admin.manage_subscriptions"),
+                        "icon": "fa-credit-card",
+                        "badge": "Pending",
+                    })
+
+                # Personal user notifications
+                for un in notifs:
+                    sa_alerts.append({
+                        "id": f"notif-{un.id}",
+                        "type": "personal",
+                        "title": "System Alert",
+                        "message": un.message,
+                        "time": un.created_at,
+                        "url": "#",
+                        "icon": "fa-bell",
+                        "badge": "Alert",
+                    })
+
+                result["sa_notifications"] = sa_alerts
+                result["sa_unread_count"] = len(pending_regs) + len(open_feedback) + len(pending_subs) + unread_count
+
+            return result
         except Exception:
-            return {"visitor_notifications": [], "visitor_unread_count": 0}
+            return result
 
     # --- Friendly URL aliases---
     @app.get("/zoo_admin")

@@ -924,22 +924,23 @@ def save_subscription_plan():
 
     duration_months = 1 if duration == 'monthly' else 12
 
+    is_new = False
     if plan_id and plan_id.isdigit():
         plan = db.session.get(SubscriptionPlan, int(plan_id))
         if not plan:
             flash('Plan not found.', 'error')
-            return redirect(url_for('zootique_admin.manage_subscriptions'))
+            return redirect(url_for('zootique_admin.subscription_pricing_tiers'))
     else:
         plan = SubscriptionPlan()
-        db.session.add(plan)
+        is_new = True
 
     duplicate_query = SubscriptionPlan.query.filter(SubscriptionPlan.name.ilike(name))
-    if plan.id:
+    if not is_new:
         duplicate_query = duplicate_query.filter(SubscriptionPlan.id != plan.id)
     duplicate = duplicate_query.first()
     if duplicate:
         flash('A subscription plan with that name already exists.', 'error')
-        return redirect(url_for('zootique_admin.manage_subscriptions'))
+        return redirect(url_for('zootique_admin.subscription_pricing_tiers'))
 
     plan.name = name
     plan.price = price_value
@@ -949,6 +950,9 @@ def save_subscription_plan():
     plan.tier_level = tier_level
     if limits is not None:
         plan.limits = json.dumps(limits, separators=(',', ':'))
+
+    if is_new:
+        db.session.add(plan)
 
     try:
         db.session.commit()
@@ -1204,6 +1208,234 @@ def view_reports():
         },
     )
 
+
+@admin_bp.get("/reports/export-csv")
+def export_reports_csv():
+    import csv
+    import io
+    from flask import Response
+
+    now = datetime.utcnow()
+    total_revenue = db.session.query(db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0)).scalar() or 0.0
+    active_subs = db.session.query(db.func.count(ZooSubscription.id)).filter(ZooSubscription.end_date >= now).scalar() or 0
+    expired_subs = db.session.query(db.func.count(ZooSubscription.id)).filter(ZooSubscription.end_date < now).scalar() or 0
+
+    year_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+    year_end = year_start.replace(year=year_start.year + 1)
+    yearly_income = (
+        db.session.query(db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0))
+        .filter(SubscriptionPayment.paid_at >= year_start)
+        .filter(SubscriptionPayment.paid_at < year_end)
+        .scalar()
+        or 0.0
+    )
+
+    zoo_perf = (
+        db.session.query(
+            Zoo.name,
+            db.func.count(Booking.id).label('bookings'),
+            db.func.coalesce(db.func.sum(Booking.guests), 0).label('visitors'),
+        )
+        .join(Booking, Booking.zoo_id == Zoo.id)
+        .group_by(Zoo.name)
+        .order_by(db.desc('bookings'))
+        .all()
+    )
+
+    recent_payments = (
+        db.session.query(SubscriptionPayment)
+        .join(ZooSubscription)
+        .join(Zoo)
+        .order_by(SubscriptionPayment.paid_at.desc())
+        .limit(100)
+        .all()
+    )
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    writer.writerow(["ZOOTIQUE SUPER ADMIN - PLATFORM ANALYTICS REPORT"])
+    writer.writerow(["Generated At", now.strftime("%Y-%m-%d %H:%M:%S UTC")])
+    writer.writerow([])
+    writer.writerow(["KEY PERFORMANCE INDICATORS"])
+    writer.writerow(["Metric", "Value"])
+    writer.writerow(["Fiscal Year Revenue (YTD)", f"PHP {yearly_income:,.2f}"])
+    writer.writerow(["Total All-Time Revenue", f"PHP {total_revenue:,.2f}"])
+    writer.writerow(["Active Subscriptions", active_subs])
+    writer.writerow(["Expired Subscriptions", expired_subs])
+    writer.writerow([])
+
+    writer.writerow(["ZOO ENGAGEMENT & PERFORMANCE"])
+    writer.writerow(["Establishment Name", "Total Bookings", "Total Visitors"])
+    for zp in zoo_perf:
+        writer.writerow([zp[0], int(zp[1] or 0), int(zp[2] or 0)])
+    writer.writerow([])
+
+    writer.writerow(["SUBSCRIPTION PAYMENTS & TRANSACTIONS"])
+    writer.writerow(["Payment Date", "Establishment", "Plan", "Amount (PHP)", "Reference", "Status"])
+    for p in recent_payments:
+        writer.writerow([
+            p.paid_at.strftime('%Y-%m-%d %H:%M') if p.paid_at else '—',
+            p.subscription.zoo.name if p.subscription and p.subscription.zoo else '—',
+            p.subscription.plan.name if p.subscription and p.subscription.plan else '—',
+            f"{float(p.amount):,.2f}",
+            p.reference or '—',
+            p.status or 'Paid',
+        ])
+
+    csv_data = output.getvalue()
+    filename = f"zootique_analytics_report_{now.strftime('%Y%m%d')}.csv"
+    return Response(
+        csv_data,
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@admin_bp.get("/reports/export-pdf")
+def export_reports_pdf():
+    now = datetime.utcnow()
+    total_revenue = db.session.query(db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0)).scalar() or 0.0
+    active_subs = db.session.query(db.func.count(ZooSubscription.id)).filter(ZooSubscription.end_date >= now).scalar() or 0
+    expired_subs = db.session.query(db.func.count(ZooSubscription.id)).filter(ZooSubscription.end_date < now).scalar() or 0
+
+    year_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+    year_end = year_start.replace(year=year_start.year + 1)
+    yearly_income = (
+        db.session.query(db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0))
+        .filter(SubscriptionPayment.paid_at >= year_start)
+        .filter(SubscriptionPayment.paid_at < year_end)
+        .scalar()
+        or 0.0
+    )
+
+    zoo_perf = (
+        db.session.query(
+            Zoo.name,
+            db.func.count(Booking.id).label('bookings'),
+            db.func.coalesce(db.func.sum(Booking.guests), 0).label('visitors'),
+        )
+        .join(Booking, Booking.zoo_id == Zoo.id)
+        .group_by(Zoo.name)
+        .order_by(db.desc('bookings'))
+        .all()
+    )
+
+    recent_payments = (
+        db.session.query(SubscriptionPayment)
+        .join(ZooSubscription)
+        .join(Zoo)
+        .order_by(SubscriptionPayment.paid_at.desc())
+        .limit(15)
+        .all()
+    )
+
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+    styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle(
+        'DocTitle',
+        parent=styles['Heading1'],
+        fontName='Helvetica-Bold',
+        fontSize=18,
+        leading=22,
+        textColor=colors.HexColor('#1a4f32')
+    )
+    subtitle_style = ParagraphStyle(
+        'DocSubtitle',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=9,
+        leading=13,
+        textColor=colors.HexColor('#64748b')
+    )
+    h2_style = ParagraphStyle(
+        'SectionHeading',
+        parent=styles['Heading2'],
+        fontName='Helvetica-Bold',
+        fontSize=12,
+        leading=15,
+        textColor=colors.HexColor('#0f172a'),
+        spaceBefore=12,
+        spaceAfter=5
+    )
+    cell_style = ParagraphStyle('Cell', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, leading=11)
+    cell_bold = ParagraphStyle('CellBold', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8.5, leading=11)
+
+    elements = []
+    elements.append(Paragraph("ZOOTIQUE — SUPER ADMIN PLATFORM REPORT", title_style))
+    elements.append(Paragraph(f"Generated on {now.strftime('%B %d, %Y at %I:%M %p UTC')} | Confidential Analytics Summary", subtitle_style))
+    elements.append(Spacer(1, 12))
+
+    elements.append(Paragraph("Key Performance Metrics", h2_style))
+    kpi_data = [
+        [Paragraph("Metric", cell_bold), Paragraph("Value", cell_bold)],
+        [Paragraph("Fiscal Year Revenue (YTD)", cell_style), Paragraph(f"PHP {yearly_income:,.2f}", cell_style)],
+        [Paragraph("Total Lifetime Revenue", cell_style), Paragraph(f"PHP {total_revenue:,.2f}", cell_style)],
+        [Paragraph("Active Partner Subscriptions", cell_style), Paragraph(str(active_subs), cell_style)],
+        [Paragraph("Expired Subscriptions", cell_style), Paragraph(str(expired_subs), cell_style)],
+    ]
+    kpi_table = Table(kpi_data, colWidths=[330, 210])
+    kpi_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0f172a')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
+        ('PADDING', (0, 0), (-1, -1), 5),
+    ]))
+    elements.append(kpi_table)
+    elements.append(Spacer(1, 10))
+
+    elements.append(Paragraph("Top Establishments Performance", h2_style))
+    zoo_data = [[Paragraph("Establishment", cell_bold), Paragraph("Bookings", cell_bold), Paragraph("Visitors", cell_bold)]]
+    for zp in zoo_perf[:8]:
+        zoo_data.append([
+            Paragraph(zp[0], cell_style),
+            Paragraph(str(zp[1] or 0), cell_style),
+            Paragraph(str(zp[2] or 0), cell_style),
+        ])
+    if len(zoo_data) == 1:
+        zoo_data.append([Paragraph("No booking records available.", cell_style), Paragraph("—", cell_style), Paragraph("—", cell_style)])
+    zoo_table = Table(zoo_data, colWidths=[300, 120, 120])
+    zoo_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
+        ('PADDING', (0, 0), (-1, -1), 5),
+    ]))
+    elements.append(zoo_table)
+    elements.append(Spacer(1, 10))
+
+    elements.append(Paragraph("Recent Subscription Transactions", h2_style))
+    tx_data = [[Paragraph("Date", cell_bold), Paragraph("Establishment", cell_bold), Paragraph("Plan", cell_bold), Paragraph("Amount", cell_bold), Paragraph("Status", cell_bold)]]
+    for p in recent_payments[:12]:
+        tx_data.append([
+            Paragraph(p.paid_at.strftime('%Y-%m-%d') if p.paid_at else '—', cell_style),
+            Paragraph(p.subscription.zoo.name if p.subscription and p.subscription.zoo else '—', cell_style),
+            Paragraph(p.subscription.plan.name if p.subscription and p.subscription.plan else '—', cell_style),
+            Paragraph(f"PHP {float(p.amount):,.2f}", cell_style),
+            Paragraph(p.status or 'Paid', cell_style),
+        ])
+    if len(tx_data) == 1:
+        tx_data.append([Paragraph("No transactions recorded.", cell_style), Paragraph("—", cell_style), Paragraph("—", cell_style), Paragraph("—", cell_style), Paragraph("—", cell_style)])
+    tx_table = Table(tx_data, colWidths=[80, 190, 110, 100, 60])
+    tx_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
+        ('PADDING', (0, 0), (-1, -1), 5),
+    ]))
+    elements.append(tx_table)
+
+    doc.build(elements)
+    buffer.seek(0)
+    filename = f"zootique_analytics_report_{now.strftime('%Y%m%d')}.pdf"
+    return send_file(buffer, as_attachment=True, download_name=filename, mimetype="application/pdf")
+
+
 @admin_bp.get("/user-management")
 def user_management():
     edit_user_id = request.args.get('edit_user')
@@ -1367,6 +1599,11 @@ def settings():
     return render_template('zootique_admin/settings.html', user=user)
 
 
+@admin_bp.get('/profile')
+def profile():
+    return redirect(url_for('zootique_admin.settings', section='profile'))
+
+
 @admin_bp.post('/settings/profile')
 def update_profile():
     user = _current_user()
@@ -1379,18 +1616,18 @@ def update_profile():
 
     if not full_name or not email:
         flash('Full name and email are required.', 'error')
-        return redirect(url_for('zootique_admin.settings'))
+        return redirect(url_for('zootique_admin.settings', section='profile'))
 
     if email and email != user.email:
         if User.query.filter(User.email == email, User.id != user.id).first():
             flash('Email already exists.', 'error')
-            return redirect(url_for('zootique_admin.settings'))
+            return redirect(url_for('zootique_admin.settings', section='profile'))
         user.email = email
 
     if username and username != user.username:
         if User.query.filter(User.username == username, User.id != user.id).first():
             flash('Username already exists.', 'error')
-            return redirect(url_for('zootique_admin.settings'))
+            return redirect(url_for('zootique_admin.settings', section='profile'))
         user.username = username
 
     user.full_name = full_name
@@ -1400,11 +1637,14 @@ def update_profile():
         uploaded_url = _save_uploaded_image(file, 'profile_pictures')
         if uploaded_url:
             user.profile_image = uploaded_url
+            session['profile_image'] = uploaded_url
 
     db.session.commit()
     session['full_name'] = user.full_name
-    flash('Profile updated.', 'success')
-    return redirect(url_for('zootique_admin.settings'))
+    if user.profile_image:
+        session['profile_image'] = user.profile_image
+    flash('Profile updated successfully.', 'success')
+    return redirect(url_for('zootique_admin.settings', section='profile'))
 
 
 @admin_bp.post('/settings/security')
@@ -1540,10 +1780,11 @@ def delete_establishment_type(type_id: int):
         flash('Establishment type not found.', 'error')
         return redirect(url_for('zootique_admin.establishment_types'))
 
-    zoos_using_type = Zoo.query.filter(Zoo.type.ilike(et.name)).count()
-    if zoos_using_type > 0:
-        flash(f'Cannot delete "{et.name}" because it is currently assigned to {zoos_using_type} establishment(s). Deactivate it instead.', 'error')
-        return redirect(url_for('zootique_admin.establishment_types'))
+    # Reassign any zoos or registrations using this type to 'Other' so deletion succeeds cleanly
+    Zoo.query.filter(Zoo.type.ilike(et.name)).update({Zoo.type: 'Other'}, synchronize_session=False)
+    EstablishmentRegistration.query.filter(EstablishmentRegistration.establishment_type.ilike(et.name)).update(
+        {EstablishmentRegistration.establishment_type: 'Other'}, synchronize_session=False
+    )
 
     db.session.delete(et)
     db.session.commit()

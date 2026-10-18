@@ -18,8 +18,8 @@
     <div class="sa-section-sub">Live subscription, performance, and revenue analytics.</div>
   </div>
   <div style="display:flex; gap:10px; flex-wrap:wrap;">
-    <button class="btn btn-secondary" type="button"><i class="fa-regular fa-file-pdf"></i> Export PDF</button>
-    <button class="btn btn-outline" type="button"><i class="fa-solid fa-file-csv"></i> Download CSV</button>
+    <a href="{{ url_for('zootique_admin.export_reports_pdf') }}" class="btn btn-secondary" style="text-decoration:none;"><i class="fa-regular fa-file-pdf"></i> Export PDF</a>
+    <a href="{{ url_for('zootique_admin.export_reports_csv') }}" class="btn btn-outline" style="text-decoration:none;"><i class="fa-solid fa-file-csv"></i> Download CSV</a>
   </div>
 </div>
 

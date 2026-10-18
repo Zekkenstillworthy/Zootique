@@ -93,17 +93,21 @@
               <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center; flex-wrap:wrap;">
                 {% if sub.status == 'Pending' %}
                   <form method="post" action="{{ url_for('zootique_admin.approve_subscription', subscription_id=sub.subscription_id) }}" style="display:inline;" onsubmit="return confirm('Approve this subscription request?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button class="btn btn-primary btn-sm" type="submit"><i class="fa-solid fa-check-double"></i> Approve</button>
                   </form>
                   <form method="post" action="{{ url_for('zootique_admin.cancel_subscription', subscription_id=sub.subscription_id) }}" style="display:inline;" onsubmit="return confirm('Reject and cancel this subscription request?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger);"><i class="fa-solid fa-xmark"></i> Reject</button>
                   </form>
                 {% else %}
                   <form method="post" action="{{ url_for('zootique_admin.renew_subscription', subscription_id=sub.subscription_id) }}" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="months" value="1">
                     <button class="btn btn-outline btn-sm" type="submit"><i class="fa-solid fa-rotate-right"></i> Renew</button>
                   </form>
                   <form method="post" action="{{ url_for('zootique_admin.cancel_subscription', subscription_id=sub.subscription_id) }}" style="display:inline;" onsubmit="return confirm('Cancel this subscription?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger);"><i class="fa-solid fa-xmark"></i> Cancel</button>
                   </form>
                 {% endif %}

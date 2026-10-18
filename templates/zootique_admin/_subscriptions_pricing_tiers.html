@@ -97,6 +97,7 @@
                   <i class="fa-regular fa-pen-to-square"></i> Edit
                 </button>
                 <form method="post" action="{{ url_for('zootique_admin.delete_subscription_plan', plan_id=p.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete {{ p.name }}?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger, #dc2626);">
                     <i class="fa-solid fa-trash"></i> Delete
                   </button>
@@ -124,6 +125,7 @@
     </div>
     <div class="card-body" style="padding: 1.25rem 1.5rem;">
       <form id="planModalForm" method="post" action="{{ url_for('zootique_admin.save_subscription_plan') }}" style="display:flex; flex-direction:column; gap:14px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" id="modalPlanId" name="plan_id" value="">
         <input type="hidden" id="modalPlanLimits" name="limits" value="">
 

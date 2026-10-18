@@ -6,6 +6,7 @@
     <div class="card-body">
       <form method="post" action="{{ url_for('zootique_admin.save_subscription_plan') }}"
         style="display:flex; flex-direction:column; gap:12px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {% if edit_plan %}
         <input type="hidden" name="plan_id" value="{{ edit_plan.id }}">
         {% endif %}
