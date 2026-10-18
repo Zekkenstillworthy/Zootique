@@ -1601,7 +1601,7 @@ def settings():
 
 @admin_bp.get('/profile')
 def profile():
-    return redirect(url_for('zootique_admin.settings', section='profile'))
+    return redirect(url_for('zootique_admin.settings'))
 
 
 @admin_bp.post('/settings/profile')
@@ -1616,18 +1616,18 @@ def update_profile():
 
     if not full_name or not email:
         flash('Full name and email are required.', 'error')
-        return redirect(url_for('zootique_admin.settings', section='profile'))
+        return redirect(url_for('zootique_admin.settings'))
 
     if email and email != user.email:
         if User.query.filter(User.email == email, User.id != user.id).first():
             flash('Email already exists.', 'error')
-            return redirect(url_for('zootique_admin.settings', section='profile'))
+            return redirect(url_for('zootique_admin.settings'))
         user.email = email
 
     if username and username != user.username:
         if User.query.filter(User.username == username, User.id != user.id).first():
             flash('Username already exists.', 'error')
-            return redirect(url_for('zootique_admin.settings', section='profile'))
+            return redirect(url_for('zootique_admin.settings'))
         user.username = username
 
     user.full_name = full_name
@@ -1644,7 +1644,7 @@ def update_profile():
     if user.profile_image:
         session['profile_image'] = user.profile_image
     flash('Profile updated successfully.', 'success')
-    return redirect(url_for('zootique_admin.settings', section='profile'))
+    return redirect(url_for('zootique_admin.settings'))
 
 
 @admin_bp.post('/settings/security')

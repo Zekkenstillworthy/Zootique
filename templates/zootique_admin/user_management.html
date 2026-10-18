@@ -191,14 +191,13 @@
             <td style="text-align:right; padding-right:16px;">
               <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
                 <!-- Edit button opens modal pre-filled -->
-                <button class="zf-icon-btn" title="Edit Administrator"
-                  onclick="openAdminModal({
-                    id: {{ u.id }},
-                    full_name: {{ u.full_name | tojson }},
-                    email: {{ u.email | tojson }},
-                    zoo_id: {{ u.zoo_id | tojson if u.zoo_id else 'null' }},
-                    status: {{ (u.status or 'Active') | tojson }}
-                  })">
+                <button class="zf-icon-btn btn-edit-admin" title="Edit Administrator"
+                  type="button"
+                  data-id="{{ u.id }}"
+                  data-fullname="{{ u.full_name or '' }}"
+                  data-email="{{ u.email or '' }}"
+                  data-zoo="{{ u.zoo_id or '' }}"
+                  data-status="{{ u.status or 'Active' }}">
                   <i class="fa-solid fa-pen"></i>
                 </button>
 
@@ -370,6 +369,21 @@ overlay.addEventListener('click', function(e) {
 // Close on Escape key
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && overlay.classList.contains('open')) closeAdminModal();
+});
+
+// Edit button click delegation using data attributes
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.btn-edit-admin');
+  if (btn) {
+    e.preventDefault();
+    openAdminModal({
+      id: btn.getAttribute('data-id'),
+      full_name: btn.getAttribute('data-fullname'),
+      email: btn.getAttribute('data-email'),
+      zoo_id: btn.getAttribute('data-zoo') || null,
+      status: btn.getAttribute('data-status') || 'Active'
+    });
+  }
 });
 
 // Auto-open if server redirected with edit_user (Jinja)

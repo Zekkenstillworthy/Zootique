@@ -1113,31 +1113,21 @@
                     class="nav-item {% if request.endpoint == 'zootique_admin.establishment_types' %}active{% endif %}">
                     <i class="fa-solid fa-layer-group"></i> Establishment Types
                 </a>
-                <!-- Settings Dropdown -->
-                <div class="nav-dropdown">
-                    <button
-                        class="nav-dropdown-trigger {% if request.endpoint == 'zootique_admin.settings' %}active{% endif %}"
-                        onclick="toggleDropdown(event, 'settings-dropdown')">
-                        <span class="trigger-label"><i class="fa-solid fa-gear"></i> Settings</span>
-                        <i class="fa-solid fa-chevron-down chevron"></i>
-                    </button>
-                    <div class="nav-dropdown-menu {% if request.endpoint == 'zootique_admin.settings' %}open{% endif %}"
-                        id="settings-dropdown">
-                        <a href="{{ url_for('zootique_admin.settings') }}?section=profile"
-                            class="nav-dropdown-item {% if request.endpoint == 'zootique_admin.settings' and (request.args.get('section', 'profile') == 'profile') %}active{% endif %}">
-                            <i class="fa-solid fa-circle-user"></i> Profile Details
-                        </a>
-                        <a href="{{ url_for('zootique_admin.settings') }}?section=security"
-                            class="nav-dropdown-item {% if request.endpoint == 'zootique_admin.settings' and request.args.get('section') == 'security' %}active{% endif %}">
-                            <i class="fa-solid fa-shield-halved"></i> Account Security
-                        </a>
-                    </div>
-                </div>
+                <a href="{{ url_for('zootique_admin.settings') }}"
+                    class="nav-item {% if request.endpoint == 'zootique_admin.settings' %}active{% endif %}">
+                    <i class="fa-solid fa-gear"></i> Settings
+                </a>
                 {% endif %}
             </nav>
 
             <!-- Pinned logout — always visible, never scrolls off -->
-            {% if request.blueprint == 'animal_farm_admin' %}
+            {% if request.blueprint == 'zootique_admin' %}
+            <div class="sidebar-logout">
+                <a href="{{ url_for('auth.logout') }}" class="nav-item">
+                    <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+                </a>
+            </div>
+            {% elif request.blueprint == 'animal_farm_admin' %}
             <div class="sidebar-logout">
                 <a href="{{ url_for('auth.logout') }}" class="nav-item">
                     <i class="fa-solid fa-right-from-bracket"></i> Logout
@@ -1224,7 +1214,7 @@
                         </div>
                     </div>
                     {% set _sa_avatar = session.get('profile_image') %}
-                    <a href="{{ url_for('zootique_admin.settings') }}?section=profile"
+                    <a href="{{ url_for('zootique_admin.settings') }}"
                         title="Admin Profile &amp; Settings"
                         style="display:flex; align-items:center; gap:10px; text-decoration:none;">
                         <span class="header-profile-label" style="font-size: 14px; font-weight: 600; color: var(--text-muted);">Admin Profile</span>
@@ -1235,9 +1225,6 @@
                         <img src="https://ui-avatars.com/api/?name={{ _sa_name }}&background=1a3024&color=fff"
                             alt="Avatar" style="width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border, #cbd5e1);" />
                         {% endif %}
-                    </a>
-                    <a class="icon-btn" href="{{ url_for('auth.logout') }}" title="Sign Out" aria-label="Sign Out">
-                        <i class="fa-solid fa-right-from-bracket"></i>
                     </a>
                 </div>
                 {% else %}

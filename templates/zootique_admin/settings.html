@@ -5,7 +5,6 @@
 
 {% block content %}
 
-{% set section = request.args.get('section', 'profile') %}
 
 <!-- Success toast -->
 <div class="zf-toast" id="zfToast" role="status" aria-live="polite">
@@ -13,23 +12,8 @@
   <span id="zfToastMsg">Super Admin settings updated.</span>
 </div>
 
-<div style="max-width: 680px; margin: 0 auto;">
+<div style="max-width: 680px; margin: 0 auto; display:flex; flex-direction:column; gap:24px;">
 
-    <!-- Navigation Tabs -->
-    <div style="display:flex; gap:10px; margin-bottom:20px;">
-        <a href="{{ url_for('zootique_admin.settings') }}?section=profile"
-           class="btn {% if section == 'profile' %}btn-primary{% else %}btn-outline{% endif %}"
-           style="border-radius:20px; padding:8px 18px; font-size:13px; text-decoration:none;">
-            <i class="fa-solid fa-circle-user"></i> Admin Profile
-        </a>
-        <a href="{{ url_for('zootique_admin.settings') }}?section=security"
-           class="btn {% if section == 'security' %}btn-primary{% else %}btn-outline{% endif %}"
-           style="border-radius:20px; padding:8px 18px; font-size:13px; text-decoration:none;">
-            <i class="fa-solid fa-shield-halved"></i> Security &amp; Credentials
-        </a>
-    </div>
-
-    {% if section == 'profile' %}
     <!-- ===== PROFILE DETAILS ===== -->
     <div class="zf-form-card">
         <div class="zf-form-header">
@@ -92,10 +76,7 @@
                 </div>
             </div>
 
-            <div class="zf-form-footer">
-                <a href="{{ url_for('zootique_admin.settings') }}?section=security" class="zf-btn-cancel" style="text-decoration:none;">
-                    <i class="fa-solid fa-shield-halved"></i> Go to Security
-                </a>
+            <div class="zf-form-footer" style="justify-content:flex-end;">
                 <button type="submit" class="zf-btn-primary" id="saveSaProfileBtn">
                     <i class="fa-solid fa-floppy-disk"></i> Save Profile
                 </button>
@@ -103,7 +84,6 @@
         </form>
     </div>
 
-    {% else %}
     <!-- ===== ACCOUNT SECURITY ===== -->
     <div class="zf-form-card">
         <div class="zf-form-header">
@@ -170,17 +150,13 @@
                 </div>
             </div>
 
-            <div class="zf-form-footer">
-                <a href="{{ url_for('zootique_admin.settings') }}?section=profile" class="zf-btn-cancel" style="text-decoration:none;">
-                    <i class="fa-solid fa-circle-user"></i> Go to Profile
-                </a>
+            <div class="zf-form-footer" style="justify-content:flex-end;">
                 <button type="submit" class="zf-btn-primary" id="saveSaSecurityBtn">
                     <i class="fa-solid fa-shield-halved"></i> Save Security Changes
                 </button>
             </div>
         </form>
     </div>
-    {% endif %}
 
 </div>
 

@@ -37,19 +37,6 @@
             <span>Promo bundles: {{ tier.limits.promo_bundles if tier.limits.promo_bundles >= 0 else 'Unlimited' }}</span>
           </div>
         </div>
-        <div style="margin-top:14px;">
-          <button class="btn btn-ghost btn-open-plan-modal"
-            type="button"
-            data-id="{{ tier.id }}"
-            data-name="{{ tier.name }}"
-            data-price="{{ tier.price }}"
-            data-duration="{% if plan_obj %}{{ plan_obj.duration }}{% else %}monthly{% endif %}"
-            data-tier="{{ tier.tier_level }}"
-            data-features="{% if plan_obj %}{{ plan_obj.features }}{% endif %}"
-            data-limits='{{ tier.limits|tojson }}'>
-            <i class="fa-regular fa-pen-to-square"></i> Edit Features
-          </button>
-        </div>
       </div>
     {% else %}
       <div class="empty-state">No pricing tiers configured yet.</div>
@@ -58,11 +45,8 @@
 
   <!-- Subscription Plans Table -->
   <div class="card-panel" style="margin-bottom:0;">
-    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+    <div class="card-header">
       <h2 style="margin:0;">SUBSCRIPTION PLANS</h2>
-      <button class="btn btn-outline btn-sm btn-open-plan-modal" type="button">
-        <i class="fa-solid fa-plus"></i> Add Plan
-      </button>
     </div>
     <div class="table-wrap">
       <table>
