@@ -688,8 +688,9 @@ body[data-blueprint="animal_farm_staff"] .main-content {
 
 /* Nav */
 .sidebar-nav {
-  flex: 1;
-  padding: 16px 8px;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 16px 8px 12px;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
@@ -2762,14 +2763,24 @@ textarea.zf-control {
 
 /* ---- Sidebar pinned logout ---- */
 .sidebar-logout {
-  position: fixed;
-  left: 0;
-  bottom: 0;
-  z-index: 101;
-  width: var(--sidebar-width);
+  flex-shrink: 0;
+  margin-top: auto;
+  width: 100%;
   background: var(--sidebar-bg);
   border-top: 1px solid var(--sidebar-border);
-  padding: 6px 0;
+  padding: 8px;
+  box-sizing: border-box;
+  z-index: 10;
+}
+
+.sidebar-logout .nav-item {
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+body.superadmin .sidebar-logout {
+  background: #093f24;
 }
 
 /* ==========================================================================
