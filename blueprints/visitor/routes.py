@@ -115,6 +115,15 @@ def _activate_saved_visitor_role():
 
 
 def _selected_zoo_id() -> int | None:
+    # First check if zoo_id is provided in URL parameters or form
+    arg_zoo = request.args.get("zoo_id") or request.form.get("zoo_id")
+    if arg_zoo and str(arg_zoo).isdigit():
+        val = int(arg_zoo)
+        if val > 0:
+            session["selected_zoo_id"] = val
+            session.modified = True
+            return val
+
     zoo_id = session.get("selected_zoo_id")
     if zoo_id is None:
         return None
@@ -198,17 +207,27 @@ def _require_visitor_login():
 def visitor_login_required(view_func):
     @wraps(view_func)
     def _wrapped(*args, **kwargs):
+        # Adopt zoo_id if passed in query string or form
+        arg_zoo = request.args.get("zoo_id") or request.form.get("zoo_id")
+        if arg_zoo and str(arg_zoo).isdigit():
+            val = int(arg_zoo)
+            if val > 0:
+                session["selected_zoo_id"] = val
+                session.modified = True
+
         maybe_redirect = _require_visitor_login()
         if maybe_redirect is not None:
             if request.path.startswith("/visitor/api/"):
                 return jsonify({"success": False, "error": "Not authenticated"}), 401
             return maybe_redirect
 
-        # MVP: require Zoo selection before accessing protected visitor pages.
+        # Require Zoo selection before accessing protected visitor pages.
         if session.get("role") == "visitor":
             if (
                 request.endpoint not in {
                     "visitor.choose_zoo",
+                    "visitor.select_zoo",
+                    "visitor.list_zoos",
                     "visitor.profile",
                     "visitor.visitor_availability",
                     "visitor.api_trivia_submit",
@@ -284,12 +303,14 @@ def select_zoo():
     return redirect(url_for("visitor.choose_zoo"))
 
 
-@visitor_bp.route("/choose-zoo", methods=["GET"])
-@visitor_bp.route("/choose-zoo/<string:category_name>", methods=["GET"])
+@visitor_bp.route("/choose-zoo", methods=["GET", "POST"])
+@visitor_bp.route("/choose-zoo/<string:category_name>", methods=["GET", "POST"])
 @visitor_login_required
 def choose_zoo(category_name=None):
-    if request.method == "GET":
-        session.pop("selected_zoo_id", None)
+    if request.method == "POST":
+        return select_zoo()
+
+    session.pop("selected_zoo_id", None)
 
     all_zoos = Zoo.query.order_by(Zoo.id.asc()).all()
 

@@ -359,7 +359,7 @@
 {% set _visitor_role_state = (_auth_by_role.get('visitor') if _auth_by_role is mapping else None) %}
 {% set _has_visitor_role = _visitor_role_state is mapping and _visitor_role_state.get('user_id') %}
 {% set _is_visitor_authed = (session.get('user_id') and session.get('role') == 'visitor') or _has_visitor_role %}
-{% set cta_url = url_for('visitor.my_bookings') if _is_visitor_authed else url_for('auth.login', module_name='visitor', next=request.path) %}
+{% set cta_url = url_for('visitor.my_bookings', zoo_id=zoo.id) if _is_visitor_authed else url_for('auth.login', module_name='visitor', next=url_for('visitor.my_bookings', zoo_id=zoo.id)) %}
 
 <div class="zoo-detail-container">
 
@@ -382,7 +382,7 @@
       </div>
       <div>
         <a href="{{ cta_url }}" class="btn-cta-primary">
-          Get a Membership <i class="fa-solid fa-arrow-right"></i>
+          <i class="fa-solid fa-ticket"></i> Book Now <i class="fa-solid fa-arrow-right"></i>
         </a>
       </div>
     </div>
@@ -440,7 +440,7 @@
   <div class="section-header-row">
     <h3 class="section-title">Available Services</h3>
     <a href="{{ cta_url }}" class="btn-cta-secondary">
-      Get a Membership <i class="fa-solid fa-arrow-right"></i>
+      <i class="fa-solid fa-ticket"></i> Book Now <i class="fa-solid fa-arrow-right"></i>
     </a>
   </div>
 

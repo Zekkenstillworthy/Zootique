@@ -2002,13 +2002,13 @@
 
                         <div class="lp-slide-actions">
                             <a class="lp-btn-hero-primary"
-                               href="{{ url_for('visitor.zoo_detail', zoo_id=zoo.id) }}"
-                               aria-label="Explore {{ zoo.name }}">
-                                <i class="fa-solid fa-compass"></i> Explore & Book &rarr;
+                               href="{{ url_for('visitor.my_bookings', zoo_id=zoo.id) }}"
+                               aria-label="Book {{ zoo.name }}">
+                                <i class="fa-solid fa-ticket"></i> Book Now &rarr;
                             </a>
                             <a class="lp-btn-hero-secondary"
-                               href="{{ url_for('auth.register_selection') }}">
-                                <i class="fa-solid fa-building-user"></i> Register Your Zoo
+                               href="{{ url_for('visitor.zoo_detail', zoo_id=zoo.id) }}">
+                                <i class="fa-solid fa-compass"></i> Explore Zoo
                             </a>
                         </div>
                     </div>

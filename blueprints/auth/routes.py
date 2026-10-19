@@ -171,12 +171,20 @@ def login(module_name):
 
             _set_auth_session(user)
 
-            # Visitors must pick a Zoo after login.
+            # Visitors
             if module_name == 'visitor':
                 if next_url:
                     parsed = urlparse(next_url)
                     if parsed.scheme == '' and parsed.netloc == '' and parsed.path.startswith('/'):
+                        from urllib.parse import parse_qs
+                        qs = parse_qs(parsed.query)
+                        target_zoo_id = qs.get('zoo_id', [None])[0]
+                        if target_zoo_id and str(target_zoo_id).isdigit():
+                            session['selected_zoo_id'] = int(target_zoo_id)
+                            session.modified = True
+                            return redirect(next_url)
                         session['post_login_next'] = next_url
+                        return redirect(next_url)
                 return redirect(url_for('visitor.choose_zoo'))
 
             maybe_next = _safe_next_redirect(next_url)
