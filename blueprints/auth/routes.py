@@ -18,8 +18,8 @@ PASSWORD_MIN_LENGTH = 8
 
 ROLES = {
     'zootique_admin': 'Zootique Admin Database',
-    'zoo_admin': 'Animal Farm Admin Module',
-    'zoo_staff': 'Animal Farm Staff Module',
+    'zoo_admin': 'Zoo Admin Module',
+    'zoo_staff': 'Zoo Staff Module',
     'visitor': 'Visitors Module'
 }
 

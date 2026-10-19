@@ -1155,8 +1155,8 @@
 
             <!-- Top Header Bar -->
             <header class="top-header">
-                {% set _app_label = 'Zootique Admin' if request.blueprint == 'zootique_admin' else ('Animal Farm Admin'
-                if request.blueprint == 'animal_farm_admin' else ('Animal Farm Staff' if request.blueprint ==
+                {% set _app_label = 'Zootique Admin' if request.blueprint == 'zootique_admin' else ('Zoo Admin'
+                if request.blueprint == 'animal_farm_admin' else ('Zoo Staff' if request.blueprint ==
                 'animal_farm_staff' else 'Admin')) %}
                 {% set _home_url = url_for('zootique_admin.dashboard') if request.blueprint == 'zootique_admin' else
                 (url_for('animal_farm_admin.dashboard') if request.blueprint == 'animal_farm_admin' else
