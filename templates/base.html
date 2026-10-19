@@ -1325,7 +1325,7 @@
                             <!-- Desktop nav links -->
                             <nav class="visitor-nav-links" id="visitorNavLinks">
                                 {% if request.blueprint == 'auth' %}
-                                {% if request.endpoint not in ['auth.login_selection', 'auth.portal',
+                                {% if request.endpoint not in ['auth.login_selection', 'auth.portal', 'auth.register_selection',
                                 'auth.register_admin_step1', 'auth.register_admin_step2'] %}
                                 <a href="/" class="visitor-nav-link"><i class="fa-solid fa-arrow-left"
                                         style="margin-right: 6px;"></i> Back to Landing</a>
