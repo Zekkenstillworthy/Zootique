@@ -72,6 +72,19 @@ def create_visitor_feedback(*, user: User, zoo_id: int | None, rating: int | Non
     )
     db.session.add(feedback)
     db.session.commit()
+
+    try:
+        from services.zoo_notifications import notify_zoo_team
+        short_comment = feedback.comment[:70] + ('...' if len(feedback.comment) > 70 else '')
+        notify_zoo_team(
+            zoo_id=feedback.zoo_id,
+            notification_type="new_feedback",
+            message=f"New {feedback.rating}★ visitor review from {feedback.visitor_name}: \"{short_comment}\"",
+            dedupe_prefix=f"zoo-feedback:{feedback.id}",
+        )
+    except Exception:
+        pass
+
     return feedback
 
 

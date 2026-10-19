@@ -62,6 +62,20 @@ def cancel_visitor_booking(*, booking: Booking, user: User) -> bool:
             ),
             dedupe_key=dedupe_key,
         ))
+
+    try:
+        from services.zoo_notifications import notify_zoo_team
+        notify_zoo_team(
+            zoo_id=booking.zoo_id,
+            notification_type="booking_cancelled",
+            message=f"Booking #{booking.id} ({booking.visitor_name} - {booking.service_name} on {booking.date}) was cancelled by the visitor.",
+            booking_id=booking.id,
+            dedupe_prefix=f"zoo-booking-cancelled:{booking.id}",
+            commit=False,
+        )
+    except Exception:
+        pass
+
     return eligible_for_refund
 
 

@@ -1064,7 +1064,7 @@
         </div>
         <div>
           <h2 class="vb-booking-title">Choose Your Wildlife Adventure</h2>
-          <div class="vb-booking-subtitle">Select an experience and pick an open date for your wildlife visit (All-day access, no encounter time limit)</div>
+          <div class="vb-booking-subtitle">Select an experience, pick an open date, and choose your encounter time for your wildlife visit</div>
         </div>
       </div>
       <div class="vb-live-badge">
@@ -1274,6 +1274,18 @@
           </div>
         </div>
 
+        <!-- Step 3: Interactive Time Slot Picker -->
+        <div id="vb-time-section" class="vb-time-container" style="display: none; margin-top: 1.5rem;">
+          <div class="vb-time-title-row">
+            <span class="vb-time-title"><i class="fa-regular fa-clock" style="color: var(--vb-terracotta); margin-right: 6px;"></i>Select Encounter Time <span class="vb-field-req">*</span></span>
+            <span id="time-summary-badge" class="vb-time-badge" style="display: none;">
+              <span id="time-summary-text"></span>
+            </span>
+          </div>
+          <div id="vb-time-chips-container" class="vb-time-grid">
+            <!-- Dynamically populated time chips -->
+          </div>
+        </div>
 
         <!-- Step 4: Payment Method Selector -->
         <div id="vb-payment-section" style="margin-top:1.5rem;">
@@ -1547,6 +1559,12 @@
   var guestsInput = document.getElementById('new_guests');
   var hiddenDate = document.getElementById('new_date');
   var hiddenTime = document.getElementById('new_time');
+  var timeSection = document.getElementById('vb-time-section');
+  var timeChipsContainer = document.getElementById('vb-time-chips-container');
+  var timeBadge = document.getElementById('time-summary-badge');
+  var timeBadgeText = document.getElementById('time-summary-text');
+  var selectedTime = (hiddenTime && hiddenTime.value) || '';
+
   var confirmBtn = document.getElementById('btn-confirm-booking');
   var calGrid = document.getElementById('cal-days-grid');
   var calTitle = document.getElementById('cal-month-year');
@@ -1559,11 +1577,12 @@
   function updateFormState() {
     var hasService = !!(serviceSelect && serviceSelect.value);
     var hasDate = !!selectedDate;
+    var hasTime = !!(selectedTime || (hiddenTime && hiddenTime.value));
     var guests = parseInt((guestsInput && guestsInput.value) || '1', 10);
     var isGuestsValid = guests >= 1 && guests <= maxSlotCapacity;
 
     if (confirmBtn) {
-      confirmBtn.disabled = !(hasService && hasDate && isGuestsValid);
+      confirmBtn.disabled = !(hasService && hasDate && hasTime && isGuestsValid);
     }
 
     // Dynamic helper message
@@ -1573,7 +1592,9 @@
       } else if (!hasService && hasDate) {
         selectionSummary.innerHTML = '<span style="color:var(--vb-terracotta);font-weight:700;"><i class="fa-solid fa-arrow-up" style="margin-right:6px;"></i>Date selected. Please choose an experience above.</span>';
       } else if (hasService && !hasDate) {
-        selectionSummary.innerHTML = '<span><i class="fa-solid fa-calendar-days" style="color:var(--vb-forest);margin-right:6px;"></i>Pick an open date to confirm your booking.</span>';
+        selectionSummary.innerHTML = '<span><i class="fa-solid fa-calendar-days" style="color:var(--vb-forest);margin-right:6px;"></i>Pick an open date to check encounter slots.</span>';
+      } else if (hasService && hasDate && !hasTime) {
+        selectionSummary.innerHTML = '<span style="color:var(--vb-terracotta);font-weight:700;"><i class="fa-regular fa-clock" style="margin-right:6px;"></i>Please select an encounter time slot below.</span>';
       } else {
         selectionSummary.innerHTML = '';
       }
@@ -1802,21 +1823,15 @@
 
       calGrid.appendChild(cell);
     });
+
+    if (selectedDate && data.days && data.days[selectedDate] && data.days[selectedDate].slots) {
+      renderTimeSlots(data.days[selectedDate].slots);
+    }
   }
 
   function selectDate(dayInfo) {
     selectedDate = dayInfo.date;
     if (hiddenDate) hiddenDate.value = selectedDate;
-    // Default time to park open time if not already set
-    if (!selectedTime) {
-      selectedTime = '08:00';
-    }
-    if (hiddenTime) hiddenTime.value = selectedTime;
-    if (dayInfo && dayInfo.remaining_capacity != null) {
-      maxSlotCapacity = dayInfo.remaining_capacity;
-      if (guestsInput) guestsInput.max = maxSlotCapacity;
-      validateGuests();
-    }
 
     var allCells = calGrid.querySelectorAll('.vb-cal-day');
     allCells.forEach(function(c) {
@@ -1826,6 +1841,110 @@
         c.classList.add('is-selected');
       }
     });
+
+    if (dayInfo.slots && dayInfo.slots.length > 0) {
+      renderTimeSlots(dayInfo.slots);
+      if (window.innerWidth < 768 && timeSection) {
+        setTimeout(function() {
+          timeSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
+      }
+    } else {
+      if (timeSection) timeSection.style.display = 'none';
+      if (!selectedTime) {
+        selectedTime = '08:00';
+      }
+      if (hiddenTime) hiddenTime.value = selectedTime;
+      if (dayInfo && dayInfo.remaining_capacity != null) {
+        maxSlotCapacity = dayInfo.remaining_capacity;
+        if (guestsInput) guestsInput.max = maxSlotCapacity;
+        validateGuests();
+      }
+    }
+
+    updateFormState();
+  }
+
+  function renderTimeSlots(slots) {
+    if (!timeSection || !timeChipsContainer) return;
+
+    if (!slots || slots.length === 0) {
+      timeSection.style.display = 'none';
+      return;
+    }
+
+    timeSection.style.display = 'block';
+    timeChipsContainer.innerHTML = '';
+    if (timeBadge) timeBadge.style.display = 'none';
+
+    var matchedSlot = false;
+    slots.forEach(function(slot) {
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'vb-time-chip';
+      var isCurrent = selectedTime && (slot.time === selectedTime || slot.time.toLowerCase() === selectedTime.toLowerCase());
+      if (!slot.is_available) {
+        chip.classList.add('is-full');
+        chip.disabled = true;
+        chip.setAttribute('aria-disabled', 'true');
+      } else if (isCurrent) {
+        chip.classList.add('is-selected');
+        matchedSlot = true;
+      }
+
+      var timeSpan = document.createElement('span');
+      timeSpan.className = 'vb-chip-time';
+      timeSpan.textContent = slot.time;
+      chip.appendChild(timeSpan);
+
+      var subSpan = document.createElement('span');
+      subSpan.className = 'vb-chip-sub';
+      subSpan.textContent = slot.is_available ? (slot.remaining + ' slots left') : 'Full';
+      chip.appendChild(subSpan);
+
+      chip.setAttribute('aria-label', slot.time + ' - ' + (slot.is_available ? (slot.remaining + ' slots available') : 'Fully Booked'));
+
+      if (slot.is_available) {
+        chip.addEventListener('click', function() {
+          selectTime(slot, chip);
+        });
+      }
+
+      timeChipsContainer.appendChild(chip);
+    });
+
+    if (matchedSlot) {
+      if (timeBadge && timeBadgeText && selectedTime) {
+        timeBadge.style.display = 'inline-flex';
+        timeBadgeText.textContent = selectedTime;
+      }
+    } else {
+      var firstAvail = slots.find(function(s) { return s.is_available; });
+      if (firstAvail) {
+        var firstChip = timeChipsContainer.querySelector('.vb-time-chip:not(:disabled)');
+        if (firstChip) selectTime(firstAvail, firstChip);
+      }
+    }
+  }
+
+  function selectTime(slot, chipEl) {
+    selectedTime = slot.time;
+    if (hiddenTime) hiddenTime.value = selectedTime;
+    maxSlotCapacity = slot.remaining;
+
+    var allChips = timeChipsContainer.querySelectorAll('.vb-time-chip');
+    allChips.forEach(function(c) { c.classList.remove('is-selected'); });
+    if (chipEl) chipEl.classList.add('is-selected');
+
+    if (timeBadge && timeBadgeText) {
+      timeBadge.style.display = 'inline-flex';
+      timeBadgeText.textContent = slot.time + ' (' + slot.remaining + ' slots available)';
+    }
+
+    if (guestsInput) {
+      guestsInput.max = slot.remaining;
+      validateGuests();
+    }
 
     updateFormState();
   }
@@ -1891,10 +2010,9 @@
       }
       syncServiceDropdown();
       selectedServiceId = this.value;
-      if (!selectedTime) {
-        selectedTime = '08:00';
-        if (hiddenTime) hiddenTime.value = '08:00';
-      }
+      selectedTime = '';
+      if (hiddenTime) hiddenTime.value = '';
+      if (timeSection) timeSection.style.display = 'none';
       currentMonthData = null;
       fetchAvailability(currentYear, currentMonth, selectedServiceId);
       updateFormState();

@@ -745,6 +745,18 @@ def my_bookings():
         db.session.add(booking)
         db.session.commit()
 
+        try:
+            from services.zoo_notifications import notify_zoo_team
+            notify_zoo_team(
+                zoo_id=booking.zoo_id,
+                notification_type="new_booking",
+                message=f"New booking #{booking.id} placed by {booking.visitor_name} for {booking.service_name} on {booking.date} at {booking.time} ({booking.guests} guest{'s' if booking.guests > 1 else ''}).",
+                booking_id=booking.id,
+                dedupe_prefix=f"zoo-new-booking:{booking.id}",
+            )
+        except Exception:
+            pass
+
         # Capture the pre-selected payment method from the booking form
         payment_method = (request.form.get("payment_method") or "").strip().lower()
         valid_methods = set(get_payment_methods(selected_zoo_id)) if selected_zoo_id else {"gcash", "maya", "card", "cash_on_arrival"}

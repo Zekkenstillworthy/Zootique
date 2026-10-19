@@ -6,7 +6,7 @@ import os
 import re
 from sqlalchemy import or_
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 
 from services.storage import save_uploaded_image as _save_uploaded_image
 
@@ -16,6 +16,7 @@ from models import (
     BookingBundle,
     Event,
     Feedback,
+    Notification,
     ParkRule,
     Promotion,
     Service,
@@ -2155,3 +2156,38 @@ def delete_trivia_question(question_id: int):
     db.session.commit()
     flash('Trivia question deleted.', 'success')
     return redirect(url_for('animal_farm_admin.trivia_management'))
+
+
+@animal_farm_admin_bp.get('/notifications')
+def notifications():
+    user = _current_user()
+    if not user:
+        return redirect(url_for('auth.portal'))
+    items = Notification.query.filter_by(user_id=user.id).order_by(Notification.created_at.desc()).limit(100).all()
+    unread = sum(1 for item in items if item.read_at is None)
+    return render_template('animal_farm_admin/notifications.html', notifications=items, unread=unread)
+
+
+@animal_farm_admin_bp.post('/notifications/<int:notification_id>/read')
+def mark_notification_read(notification_id: int):
+    user = _current_user()
+    if not user:
+        return jsonify({'success': False}), 401
+    notif = Notification.query.filter_by(id=notification_id, user_id=user.id).first()
+    if not notif:
+        return jsonify({'success': False}), 404
+    if notif.read_at is None:
+        notif.read_at = datetime.utcnow()
+        db.session.commit()
+    unread_count = Notification.query.filter_by(user_id=user.id, read_at=None).count()
+    return jsonify({'success': True, 'unread_count': unread_count})
+
+
+@animal_farm_admin_bp.post('/notifications/read-all')
+def mark_all_notifications_read():
+    user = _current_user()
+    if not user:
+        return jsonify({'success': False}), 401
+    Notification.query.filter_by(user_id=user.id, read_at=None).update({'read_at': datetime.utcnow()})
+    db.session.commit()
+    return jsonify({'success': True, 'unread_count': 0})

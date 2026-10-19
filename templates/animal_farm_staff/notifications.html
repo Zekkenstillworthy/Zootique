@@ -1,15 +1,101 @@
 {% extends "base.html" %}
-{% block title %}Notifications | Staff{% endblock %}
-{% block page_title %}Staff Notifications{% endblock %}
+{% block title %}Zoo Activity Notifications | Staff{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+
 {% block content %}
-<div class="card-panel">
-  <div class="card-header"><h2>NOTIFICATIONS <span class="badge badge-role">{{ unread }} unread</span></h2></div>
-  <div class="card-body" style="display:grid; gap:10px;">
-    {% for item in notifications %}
-      <div style="border:1px solid var(--border-light); border-radius:8px; padding:12px; {% if not item.read_at %}background:#f0fdf4;{% endif %}">
-        <strong>{{ item.message }}</strong><div style="color:var(--text-muted); font-size:12px;">{{ item.created_at.strftime('%b %d, %Y %I:%M %p') }}</div>
+<div style="max-width: 920px; margin: 0 auto; display: grid; gap: 20px;">
+  <div class="card-panel">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <h2 style="margin:0;"><i class="fa-solid fa-bell" style="color:var(--primary); margin-right:8px;"></i>Staff Activity Alerts</h2>
+        <span class="badge badge-role" id="unreadBadgeHeader">{{ unread }} unread</span>
       </div>
-    {% else %}<p>No notifications yet.</p>{% endfor %}
+      {% if unread > 0 %}
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="markAllReadBtn" onclick="markAllNotificationsRead()" style="border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; background: white; font-weight:600; cursor:pointer;">
+        <i class="fa-solid fa-check-double"></i> Mark all as read
+      </button>
+      {% endif %}
+    </div>
+
+    <div class="card-body" style="padding:0;">
+      <div style="display:flex; flex-direction:column;">
+        {% for item in notifications %}
+        <div id="notif-row-{{ item.id }}" style="padding: 16px 20px; border-bottom: 1px solid var(--border-light); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; {% if not item.read_at %}background: #f0fdf4; border-left: 4px solid var(--primary);{% else %}border-left: 4px solid transparent;{% endif %} transition: background 0.2s ease;">
+          <div style="display:flex; gap:14px; align-items:flex-start; flex:1;">
+            <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+              {% if 'cancel' in item.notification_type %}background:#fef2f2; color:#ef4444;
+              {% elif 'payment' in item.notification_type %}background:#ecfdf5; color:#10b981;
+              {% elif 'feedback' in item.notification_type %}background:#fef3c7; color:#f59e0b;
+              {% else %}background:#eff6ff; color:#3b82f6;{% endif %}">
+              <i class="fa-solid {% if 'cancel' in item.notification_type %}fa-ban{% elif 'payment' in item.notification_type %}fa-credit-card{% elif 'feedback' in item.notification_type %}fa-star{% else %}fa-ticket{% endif %}" style="font-size: 16px;"></i>
+            </div>
+            <div>
+              <div style="font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.4; margin-bottom: 4px;">
+                {{ item.message }}
+              </div>
+              <div style="font-size: 12px; color: var(--text-muted); display:flex; align-items:center; gap:8px;">
+                <span><i class="fa-regular fa-clock" style="margin-right:4px;"></i>{{ item.created_at.strftime('%b %d, %Y at %I:%M %p') }}</span>
+                {% if not item.read_at %}
+                <span class="badge" style="background:#dcfce7; color:#15803d; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px;">New</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% if not item.read_at %}
+          <button type="button" class="btn btn-sm btn-ghost" onclick="markOneRead({{ item.id }})" title="Mark as read" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; padding:6px 10px; border-radius:6px;">
+            <i class="fa-solid fa-check"></i>
+          </button>
+          {% endif %}
+        </div>
+        {% else %}
+        <div style="padding: 48px 20px; text-align: center; color: var(--text-muted);">
+          <i class="fa-regular fa-bell-slash" style="font-size: 36px; margin-bottom: 12px; display: block; opacity: 0.4;"></i>
+          <h4 style="margin: 0 0 6px; font-weight: 700;">No Activity Notifications</h4>
+          <p style="margin: 0; font-size: 13px;">You will receive alerts here whenever visitors book tickets or activities occur in your zoo.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
   </div>
 </div>
+
+<script>
+function markOneRead(id) {
+  fetch('/animal-farm-staff/notifications/' + id + '/read', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token() if csrf_token else "" }}',
+      'Content-Type': 'application/json'
+    }
+  }).then(r => r.json()).then(data => {
+    if (data.success) {
+      const row = document.getElementById('notif-row-' + id);
+      if (row) {
+        row.style.background = 'transparent';
+        row.style.borderLeft = '4px solid transparent';
+        const btn = row.querySelector('button');
+        if (btn) btn.remove();
+        const badge = row.querySelector('.badge');
+        if (badge && badge.textContent === 'New') badge.remove();
+      }
+      const unreadH = document.getElementById('unreadBadgeHeader');
+      if (unreadH) unreadH.textContent = data.unread_count + ' unread';
+    }
+  });
+}
+
+function markAllNotificationsRead() {
+  fetch('/animal-farm-staff/notifications/read-all', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token() if csrf_token else "" }}',
+      'Content-Type': 'application/json'
+    }
+  }).then(r => r.json()).then(data => {
+    if (data.success) {
+      window.location.reload();
+    }
+  });
+}
+</script>
 {% endblock %}

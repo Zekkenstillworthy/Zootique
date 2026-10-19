@@ -329,6 +329,8 @@ def create_app() -> Flask:
             unread_count = sum(1 for n in notifs if not n.read_at)
             result["visitor_notifications"] = notifs
             result["visitor_unread_count"] = unread_count
+            result["zoo_notifications"] = notifs
+            result["zoo_unread_count"] = unread_count
 
             if role in ("zootique_admin", "super_admin"):
                 from models import EstablishmentRegistration, ZooAdminFeedback, ZooSubscription

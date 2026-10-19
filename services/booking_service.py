@@ -197,4 +197,17 @@ def process_booking_checkout(*, booking: Booking, payer: User, payment_method: s
 
     db.session.add(payment)
     db.session.commit()
+
+    try:
+        from services.zoo_notifications import notify_zoo_team
+        notify_zoo_team(
+            zoo_id=booking.zoo_id,
+            notification_type="payment_confirmed",
+            message=f"Payment of ₱{amount:,.2f} confirmed for booking #{booking.id} ({booking.service_name}) via {method.replace('_', ' ').title()}.",
+            booking_id=booking.id,
+            dedupe_prefix=f"zoo-booking-paid:{booking.id}",
+        )
+    except Exception:
+        pass
+
     return payment
