@@ -231,11 +231,17 @@
     }
     .landing-map-image {
       width: 100%;
-      max-height: 420px;
-      object-fit: cover;
+      height: auto;
+      max-height: none;
+      object-fit: contain;
       display: block;
     }
-    .landing-map-canvas { position: relative; overflow: hidden; }
+    .landing-map-canvas {
+      position: relative;
+      width: 100%;
+      background: #f8fafc;
+      overflow: hidden;
+    }
     .visitor-map-pin {
       position: absolute;
       transform: translate(-50%, -100%) rotate(-45deg);
@@ -808,9 +814,16 @@
         <div class="landing-map-title"><i class="fa-solid fa-map-location-dot"></i> {{ (landing_map.title if landing_map else (zoo.name ~ ' Visitor Map')) }}</div>
         <div class="landing-map-sub">{{ (landing_map.description if landing_map else 'A map will be published here soon to help you plan your visit.') }}</div>
       </div>
-      {% if landing_map and landing_map.updated_at %}
-        <div class="landing-map-date">Updated {{ landing_map.updated_at.strftime('%Y-%m-%d') }}</div>
-      {% endif %}
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        {% if landing_map and landing_map.image_url %}
+          <a href="{{ landing_map.image_url }}" target="_blank" rel="noopener" class="landing-map-date" style="text-decoration:none; display:inline-flex; align-items:center; gap:5px; cursor:pointer;" title="Open full resolution map">
+            <i class="fa-solid fa-expand"></i> Full Map
+          </a>
+        {% endif %}
+        {% if landing_map and landing_map.updated_at %}
+          <div class="landing-map-date">Updated {{ landing_map.updated_at.strftime('%Y-%m-%d') }}</div>
+        {% endif %}
+      </div>
     </div>
 
     {% if landing_map and landing_map.image_url %}

@@ -218,7 +218,7 @@ def create_app() -> Flask:
                 # Only include establishments that are not suspended
                 admin_users = User.query.filter(
                     User.zoo_id == zoo.id,
-                    User.role.in_(["admin", "animal_farm_admin"])
+                    User.role.in_(["admin", "animal_farm_admin", "zoo_admin"])
                 ).all()
                 if admin_users and all(getattr(u, "status", "active") == "suspended" for u in admin_users):
                     continue
