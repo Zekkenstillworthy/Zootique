@@ -424,6 +424,14 @@ def profile():
 
             db.session.commit()
             session['full_name'] = user.full_name
+            if user.profile_image:
+                session['profile_image'] = user.profile_image
+            auth_by_role = session.get("auth_by_role")
+            if isinstance(auth_by_role, dict) and "zoo_staff" in auth_by_role:
+                auth_by_role["zoo_staff"]["full_name"] = user.full_name
+                auth_by_role["zoo_staff"]["profile_image"] = user.profile_image
+                session["auth_by_role"] = auth_by_role
+            session.modified = True
             flash('Profile updated.', 'success')
             return redirect(url_for('animal_farm_staff.profile'))
 

@@ -87,36 +87,50 @@ def create_app() -> Flask:
 
     @app.context_processor
     def inject_current_zoo_name():
-        """Expose the active/assigned Zoo name and user profile picture for header display."""
+        """Expose the active/assigned Zoo name, current user full name, and avatar for header display."""
         zoo_name = None
         user_avatar = None
+        current_user_name = None
         try:
             role = session.get('role')
             user_id = session.get('user_id')
 
+            auth_by_role = session.get('auth_by_role')
+            if isinstance(auth_by_role, dict):
+                blueprint = request.blueprint or ''
+                if 'staff' in blueprint and 'zoo_staff' in auth_by_role:
+                    st = auth_by_role.get('zoo_staff')
+                    if isinstance(st, dict):
+                        user_id = st.get('user_id') or user_id
+                elif 'admin' in blueprint and 'zoo_admin' in auth_by_role:
+                    st = auth_by_role.get('zoo_admin')
+                    if isinstance(st, dict):
+                        user_id = st.get('user_id') or user_id
+
             from models import User, Zoo  # local import to avoid circulars at app startup
 
-            if role in {'zoo_admin', 'zoo_staff'} and user_id:
+            if user_id:
                 user = db.session.get(User, int(user_id))
                 if user:
                     user_avatar = user.profile_image
+                    current_user_name = user.full_name or user.username
                     if user.zoo_id:
                         zoo = db.session.get(Zoo, int(user.zoo_id))
                         zoo_name = zoo.name if zoo else None
 
-            if role == 'visitor':
-                if user_id:
-                    user = db.session.get(User, int(user_id))
-                    if user:
-                        user_avatar = user.profile_image
+            if role == 'visitor' or (not zoo_name and session.get('selected_zoo_id')):
                 selected_zoo_id = session.get('selected_zoo_id')
                 if selected_zoo_id:
                     zoo = db.session.get(Zoo, int(selected_zoo_id))
                     zoo_name = zoo.name if zoo else zoo_name
         except Exception:
-            zoo_name = None
+            pass
 
-        return {'current_zoo_name': zoo_name, 'current_user_avatar': user_avatar}
+        return {
+            'current_zoo_name': zoo_name,
+            'current_user_avatar': user_avatar or session.get('profile_image'),
+            'current_user_name': current_user_name or session.get('full_name'),
+        }
 
     # --- Database configuration (Postgres-only) ---
     database_url = (os.environ.get("DATABASE_URL") or "").strip()

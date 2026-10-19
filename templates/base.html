@@ -1255,18 +1255,26 @@
                     (url_for('animal_farm_admin.settings') if request.blueprint == 'animal_farm_admin' else
                     (url_for('zootique_admin.settings') if request.blueprint == 'zootique_admin' else
                     (url_for('visitor.profile') if request.blueprint == 'visitor' else '#'))) %}
-                    <div style="display:flex; align-items:center; gap:12px; margin-left:16px;">
-                        <a href="{{ _profile_url }}" class="avatar" title="{{ session.get('full_name', 'User') }}" style="text-decoration:none; color:#ffffff; overflow:hidden;">
+                    {% set _display_user_name = current_user_name or session.get('full_name') or 'Staff' %}
+                    <div style="display:flex; align-items:center; gap:10px; margin-left:16px;">
+                        <a href="{{ _profile_url }}" class="avatar" title="{{ _display_user_name }}" style="text-decoration:none; color:#ffffff; overflow:hidden; flex-shrink:0;">
                             {% if current_user_avatar or session.get('profile_image') %}
                                 {% set _img = current_user_avatar or session.get('profile_image') %}
-                                <img src="{{ _img if _img.startswith('http') else url_for('uploaded_file', filename=_img) }}" alt="{{ session.get('full_name', 'User') }}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />
+                                <img src="{{ _img if _img.startswith('http') else url_for('uploaded_file', filename=_img) }}" alt="{{ _display_user_name }}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />
                             {% else %}
-                                {{ session.get('full_name', 'U')[0]|upper }}
+                                {{ _display_user_name[0]|upper }}
                             {% endif %}
                         </a>
-                        <span style="color:var(--text-muted); text-decoration:none; font-size:14px; font-weight:800;">
-                            {{ current_zoo_name or 'Zoo' }}
-                        </span>
+                        <a href="{{ _profile_url }}" style="display:flex; flex-direction:column; line-height:1.2; text-decoration:none; text-align:left;">
+                            <span style="color:var(--text, #1e293b); font-size:14px; font-weight:800; white-space:nowrap;">
+                                {{ _display_user_name }}
+                            </span>
+                            {% if current_zoo_name %}
+                            <span style="color:var(--text-muted, #64748b); font-size:11px; font-weight:600; white-space:nowrap;">
+                                {{ current_zoo_name }}
+                            </span>
+                            {% endif %}
+                        </a>
                     </div>
                     {% else %}
                     <a href="{{ url_for('auth.portal') }}" class="avatar" title="Guest" style="text-decoration:none; color:#ffffff;">G</a>

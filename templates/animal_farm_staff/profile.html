@@ -17,7 +17,7 @@
         <div style="background:linear-gradient(135deg, var(--primary), var(--primary-light));
                     padding:2rem 2.5rem; display:flex; align-items:center; gap:1.5rem; color:white;">
             {% if user.profile_image %}
-                <img src="{{ url_for('uploaded_file', filename=user.profile_image) }}"
+                <img src="{{ user.profile_image if user.profile_image.startswith('http') else url_for('uploaded_file', filename=user.profile_image) }}"
                      alt="{{ user.full_name }}"
                      style="width:84px; height:84px; border-radius:50%; object-fit:cover;
                             border:3px solid rgba(255,255,255,0.6); flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,0.15);">

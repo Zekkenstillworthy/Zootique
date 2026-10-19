@@ -72,12 +72,14 @@ def require_role_guard(*, expected_role: str, login_module: str):
     auth_by_role[str(expected_role)] = {
         "user_id": int(user.id),
         "full_name": user.full_name,
+        "profile_image": user.profile_image,
     }
     session["auth_by_role"] = auth_by_role
 
     session["user_id"] = user.id
     session["role"] = user.role
     session["full_name"] = user.full_name
+    session["profile_image"] = user.profile_image
 
     session.permanent = True
     session.modified = True
