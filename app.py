@@ -48,7 +48,7 @@ def create_app() -> Flask:
     session_days = int(os.environ.get("SESSION_LIFETIME_DAYS", "3650"))
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=max(session_days, 1))
     app.config["SESSION_REFRESH_EACH_REQUEST"] = True
-    app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024
+    app.config["MAX_CONTENT_LENGTH"] = int(4.2 * 1024 * 1024)
     app.config["JSON_SORT_KEYS"] = False
 
     # UI version label (used in templates). Can be overridden via env var.
@@ -69,9 +69,13 @@ def create_app() -> Flask:
     @app.errorhandler(RequestEntityTooLarge)
     def handle_oversized_request(error):
         if request.path in {"/auth/register-step-1", "/auth/register-admin-step1"}:
-            flash("Each registration document must be no larger than 8 MB.", "error")
+            flash("Each registration document must be no larger than 4 MB.", "error")
             return redirect(url_for("auth.register_admin_step1"))
-        return "The submitted data is too large.", 413
+        referer = request.referrer
+        if referer:
+            flash("The uploaded file is too large for cloud storage (maximum 4 MB). Please select a smaller or compressed image.", "error")
+            return redirect(referer)
+        return "The submitted data exceeds the 4 MB limit.", 413
 
     @app.context_processor
     def inject_csrf_token():

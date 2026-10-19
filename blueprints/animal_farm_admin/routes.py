@@ -822,6 +822,7 @@ def save_establishment_profile():
     if image_file and image_file.filename:
         uploaded_url = _save_uploaded_image(image_file, 'zoo_images')
         if not uploaded_url:
+            flash('Failed to upload facility cover photo. Please try a different image.', 'error')
             return redirect(url_for('animal_farm_admin.establishment_profile'))
         zoo.image_url = uploaded_url
 
@@ -829,6 +830,9 @@ def save_establishment_profile():
         uploaded_promo_url = _save_uploaded_image(promo_image_file, 'zoo_promo_banners')
         if uploaded_promo_url:
             zoo.landing_promo_image_url = uploaded_promo_url
+        else:
+            flash('Failed to upload promotional slide banner. Please try a different image.', 'error')
+            return redirect(url_for('animal_farm_admin.establishment_profile'))
 
     db.session.commit()
 

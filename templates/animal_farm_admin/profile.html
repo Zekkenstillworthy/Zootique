@@ -50,6 +50,11 @@
         <form id="estProfileForm" method="POST" action="{{ url_for('animal_farm_admin.save_establishment_profile') }}" enctype="multipart/form-data" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
+            <div id="profileUploadError" style="display: none; margin: 16px 24px 0; padding: 12px 16px; border-radius: 8px; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; font-size: 0.9rem;">
+                <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px;"></i>
+                <span id="profileUploadErrorMsg"></span>
+            </div>
+
             <div class="zf-form-body">
                 <div class="zf-section">
                     <div class="zf-section-label">
@@ -119,9 +124,13 @@
                                     <i class="fa-solid fa-folder-open"></i> Browse Picture
                                 </label>
                                 <input type="file" id="promo_cover_img" name="landing_promo_image_file" accept="image/*" class="zf-file-input">
-                                <div class="zf-upload-hint">Landscape aspect ratio recommended (1920x1080). Leave empty to keep current.</div>
+                                <div class="zf-upload-hint">Landscape (1920x1080 recommended, auto-optimized, max 4MB). Leave empty to keep current.</div>
                                 <div class="zf-preview-wrap" id="promoPreviewWrap">
                                     <img id="promoImagePreview" src="" alt="Promo Preview">
+                                    <div class="zf-preview-info">
+                                        <div class="zf-preview-name" id="promoFileName"></div>
+                                        <div class="zf-preview-size" id="promoFileSize"></div>
+                                    </div>
                                     <button type="button" class="zf-remove-btn" id="promoRemoveImgBtn">&times;</button>
                                 </div>
                             </div>
@@ -141,9 +150,13 @@
                                 <i class="fa-solid fa-folder-open"></i> Browse Picture
                             </label>
                             <input type="file" id="profile_cover_img" name="image_file" accept="image/*" class="zf-file-input">
-                            <div class="zf-upload-hint">PNG, JPG or WEBP up to 5MB (leave empty to keep current)</div>
+                            <div class="zf-upload-hint">PNG, JPG or WEBP (auto-optimized, max 4MB). Leave empty to keep current.</div>
                             <div class="zf-preview-wrap" id="profilePreviewWrap">
                                 <img id="profileImagePreview" src="" alt="Preview">
+                                <div class="zf-preview-info">
+                                    <div class="zf-preview-name" id="profileFileName"></div>
+                                    <div class="zf-preview-size" id="profileFileSize"></div>
+                                </div>
                                 <button type="button" class="zf-remove-btn" id="profileRemoveImgBtn">&times;</button>
                             </div>
                         </div>
@@ -172,80 +185,219 @@
 </div>
 
 <script>
-const fileInput = document.getElementById('profile_cover_img');
-const previewWrap = document.getElementById('profilePreviewWrap');
-const imagePreview = document.getElementById('profileImagePreview');
-const removeImgBtn = document.getElementById('profileRemoveImgBtn');
+(function() {
+    const fileInput = document.getElementById('profile_cover_img');
+    const previewWrap = document.getElementById('profilePreviewWrap');
+    const imagePreview = document.getElementById('profileImagePreview');
+    const profileFileName = document.getElementById('profileFileName');
+    const profileFileSize = document.getElementById('profileFileSize');
+    const removeImgBtn = document.getElementById('profileRemoveImgBtn');
+    const profileDropZone = document.getElementById('profileDropZone');
 
-if (fileInput) {
-    fileInput.addEventListener('change', function(e) {
-        if (e.target.files && e.target.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                imagePreview.src = evt.target.result;
-                previewWrap.style.display = 'block';
-            };
-            reader.readAsDataURL(e.target.files[0]);
+    const promoFileInput = document.getElementById('promo_cover_img');
+    const promoPreviewWrap = document.getElementById('promoPreviewWrap');
+    const promoImagePreview = document.getElementById('promoImagePreview');
+    const promoFileName = document.getElementById('promoFileName');
+    const promoFileSize = document.getElementById('promoFileSize');
+    const promoRemoveImgBtn = document.getElementById('promoRemoveImgBtn');
+    const promoDropZone = document.getElementById('promoDropZone');
+
+    const form = document.getElementById('estProfileForm');
+    const uploadError = document.getElementById('profileUploadError');
+    const uploadErrorMsg = document.getElementById('profileUploadErrorMsg');
+    const saveBtn = document.getElementById('saveProfileBtn');
+
+    const MAX_TOTAL_BYTES = 4.0 * 1024 * 1024; // 4.0 MB safe cloud limit (Vercel payload limit is 4.5 MB)
+
+    function formatBytes(bytes) {
+        if (!bytes || bytes <= 0) return '0 B';
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    function showError(msg) {
+        if (uploadError && uploadErrorMsg) {
+            uploadErrorMsg.textContent = msg;
+            uploadError.style.display = 'block';
+            uploadError.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
-    });
-}
-if (removeImgBtn) {
-    removeImgBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        fileInput.value = '';
-        imagePreview.src = '';
-        previewWrap.style.display = 'none';
-    });
-}
+    }
 
-// Promo banner upload preview
-const promoFileInput = document.getElementById('promo_cover_img');
-const promoPreviewWrap = document.getElementById('promoPreviewWrap');
-const promoImagePreview = document.getElementById('promoImagePreview');
-const promoRemoveImgBtn = document.getElementById('promoRemoveImgBtn');
-
-if (promoFileInput) {
-    promoFileInput.addEventListener('change', function(e) {
-        if (e.target.files && e.target.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                promoImagePreview.src = evt.target.result;
-                promoPreviewWrap.style.display = 'block';
-            };
-            reader.readAsDataURL(e.target.files[0]);
+    function hideError() {
+        if (uploadError) {
+            uploadError.style.display = 'none';
         }
-    });
-}
-if (promoRemoveImgBtn) {
-    promoRemoveImgBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        promoFileInput.value = '';
-        promoImagePreview.src = '';
-        promoPreviewWrap.style.display = 'none';
-    });
-}
+    }
 
-const form = document.getElementById('estProfileForm');
-if (form) {
-    form.addEventListener('submit', function(e) {
-        const nameInput = document.getElementById('zoo_name');
-        const nameErr = document.getElementById('zoo_name_error');
-        if (!nameInput.value.trim()) {
-            e.preventDefault();
-            nameInput.classList.add('is-invalid');
-            if (nameErr) nameErr.style.display = 'block';
-            return;
-        } else {
-            nameInput.classList.remove('is-invalid');
-            if (nameErr) nameErr.style.display = 'none';
+    async function handleFileSelected(file, input, previewWrap, imagePreview, nameEl, sizeEl, isPromo) {
+        if (!file) return;
+        hideError();
+
+        if (nameEl) nameEl.textContent = file.name;
+        if (sizeEl) sizeEl.textContent = 'Optimizing image for cloud upload (' + formatBytes(file.size) + ')...';
+        if (previewWrap) {
+            previewWrap.classList.add('visible');
+            previewWrap.style.display = 'flex';
         }
 
-        const btn = document.getElementById('saveProfileBtn');
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+        // Generate immediate thumbnail preview
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            if (imagePreview) imagePreview.src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+
+        // Compress client-side if image compressor is available
+        let processedFile = file;
+        if (typeof window.compressImageFile === 'function' && file.type && file.type.startsWith('image/')) {
+            const originalSize = file.size;
+            try {
+                const maxW = isPromo ? 1920 : 1600;
+                const maxH = isPromo ? 1080 : 1200;
+                processedFile = await window.compressImageFile(file, maxW, maxH, 0.82);
+                if (typeof window.setFileInputFile === 'function') {
+                    window.setFileInputFile(input, processedFile);
+                }
+            } catch (err) {
+                console.warn('Image optimization skipped:', err);
+            }
+
+            if (sizeEl) {
+                if (processedFile.size < originalSize) {
+                    sizeEl.textContent = formatBytes(processedFile.size) + ' (Optimized from ' + formatBytes(originalSize) + ')';
+                } else {
+                    sizeEl.textContent = formatBytes(processedFile.size);
+                }
+            }
+        } else if (sizeEl) {
+            sizeEl.textContent = formatBytes(file.size);
         }
-    });
-}
+
+        if (processedFile.size > MAX_TOTAL_BYTES) {
+            showError('File "' + file.name + '" (' + formatBytes(processedFile.size) + ') exceeds the 4 MB cloud limit. Please choose a smaller image.');
+        }
+    }
+
+    function setupDropZone(dropZone, input, onFile) {
+        if (!dropZone || !input) return;
+        ['dragenter', 'dragover'].forEach(name => {
+            dropZone.addEventListener(name, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.add('dragover');
+            });
+        });
+        ['dragleave', 'dragend', 'drop'].forEach(name => {
+            dropZone.addEventListener(name, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.remove('dragover');
+            });
+        });
+        dropZone.addEventListener('drop', (e) => {
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+                const file = e.dataTransfer.files[0];
+                if (typeof window.setFileInputFile === 'function') {
+                    window.setFileInputFile(input, file);
+                }
+                onFile(file);
+            }
+        });
+    }
+
+    // Facility cover photo handlers
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                handleFileSelected(e.target.files[0], fileInput, previewWrap, imagePreview, profileFileName, profileFileSize, false);
+            }
+        });
+        setupDropZone(profileDropZone, fileInput, (file) => {
+            handleFileSelected(file, fileInput, previewWrap, imagePreview, profileFileName, profileFileSize, false);
+        });
+    }
+
+    if (removeImgBtn) {
+        removeImgBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            fileInput.value = '';
+            if (imagePreview) imagePreview.src = '';
+            if (profileFileName) profileFileName.textContent = '';
+            if (profileFileSize) profileFileSize.textContent = '';
+            if (previewWrap) {
+                previewWrap.classList.remove('visible');
+                previewWrap.style.display = 'none';
+            }
+            hideError();
+        });
+    }
+
+    // Promo banner handlers
+    if (promoFileInput) {
+        promoFileInput.addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                handleFileSelected(e.target.files[0], promoFileInput, promoPreviewWrap, promoImagePreview, promoFileName, promoFileSize, true);
+            }
+        });
+        setupDropZone(promoDropZone, promoFileInput, (file) => {
+            handleFileSelected(file, promoFileInput, promoPreviewWrap, promoImagePreview, promoFileName, promoFileSize, true);
+        });
+    }
+
+    if (promoRemoveImgBtn) {
+        promoRemoveImgBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            promoFileInput.value = '';
+            if (promoImagePreview) promoImagePreview.src = '';
+            if (promoFileName) promoFileName.textContent = '';
+            if (promoFileSize) promoFileSize.textContent = '';
+            if (promoPreviewWrap) {
+                promoPreviewWrap.classList.remove('visible');
+                promoPreviewWrap.style.display = 'none';
+            }
+            hideError();
+        });
+    }
+
+    // Form submission validation
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            hideError();
+
+            const nameInput = document.getElementById('zoo_name');
+            const nameErr = document.getElementById('zoo_name_error');
+            if (!nameInput.value.trim()) {
+                e.preventDefault();
+                nameInput.classList.add('is-invalid');
+                if (nameErr) nameErr.style.display = 'block';
+                nameInput.focus();
+                return;
+            } else {
+                nameInput.classList.remove('is-invalid');
+                if (nameErr) nameErr.style.display = 'none';
+            }
+
+            let totalBytes = 0;
+            if (fileInput && fileInput.files && fileInput.files[0]) {
+                totalBytes += fileInput.files[0].size;
+            }
+            if (promoFileInput && promoFileInput.files && promoFileInput.files[0]) {
+                totalBytes += promoFileInput.files[0].size;
+            }
+
+            if (totalBytes > MAX_TOTAL_BYTES) {
+                e.preventDefault();
+                showError('Total selected images (' + formatBytes(totalBytes) + ') exceed the 4.0 MB cloud limit. Please choose smaller or compressed files.');
+                return;
+            }
+
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving Changes...';
+            }
+        });
+    }
+})();
 </script>
 {% endblock %}

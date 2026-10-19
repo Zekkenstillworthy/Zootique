@@ -436,4 +436,90 @@ function toNumber(value) {
   return Number.isFinite(n) ? n : 0;
 }
 
+/**
+ * Compresses an image file client-side using canvas to keep payload well below Vercel's 4.5 MB limit.
+ */
+window.compressImageFile = function (file, maxWidth = 1920, maxHeight = 1080, quality = 0.82) {
+  return new Promise((resolve) => {
+    if (!file || !file.type || !file.type.startsWith("image/")) {
+      return resolve(file);
+    }
+    if (file.type === "image/svg+xml" || file.type === "image/gif") {
+      return resolve(file);
+    }
+    if (file.size < 400 * 1024) {
+      return resolve(file);
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const img = new Image();
+      img.onload = function () {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth || height > maxHeight) {
+          if (width / height > maxWidth / maxHeight) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(file);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const outType = file.type === "image/webp" ? "image/webp" : "image/jpeg";
+        const ext = file.type === "image/webp" ? ".webp" : ".jpg";
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob || blob.size >= file.size) {
+              return resolve(file);
+            }
+            const baseName = file.name.replace(/\.[^/.]+$/, "");
+            const compressed = new File([blob], baseName + ext, {
+              type: outType,
+              lastModified: Date.now(),
+            });
+            resolve(compressed);
+          },
+          outType,
+          quality
+        );
+      };
+      img.onerror = function () {
+        resolve(file);
+      };
+      img.src = e.target.result;
+    };
+    reader.onerror = function () {
+      resolve(file);
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+/**
+ * Assigns a File object to an <input type="file"> via DataTransfer.
+ */
+window.setFileInputFile = function (input, file) {
+  try {
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    input.files = dt.files;
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 
