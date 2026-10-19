@@ -999,9 +999,6 @@
         <p class="vb-hero-desc">Secure park passes, book guided habitat tours, and explore real-time visitor availability.</p>
       </div>
       <div class="vb-hero-actions">
-        <a href="#new-booking" class="vb-btn-terracotta">
-          <i class="fa-solid fa-plus"></i> Book an Adventure
-        </a>
         <a href="#all-reservations" class="vb-btn-outline-warm">
           <i class="fa-solid fa-ticket"></i> My Passes
         </a>
@@ -1095,7 +1092,7 @@
 
       <script id="available-events-data" type="application/json">
       [
-        {% for ev in events or [] %}
+        {% for ev in events or [] if not ev.is_past %}
         {
           "id": {{ ev.id }},
           "name": {{ ev.name|tojson }},
@@ -1112,10 +1109,11 @@
         <!-- Hidden synchronized inputs to preserve POST contract -->
         <input type="hidden" id="new_date" name="date" value="{{ selected_date or '' }}" required>
         <input type="hidden" id="new_time" name="time" value="{{ selected_event_time or '08:00' }}">
+        <input type="hidden" id="new_bundle_id" name="bundle_id" value="">
 
         <!-- Step 1: Experience & Guests -->
         <div class="vb-top-fields">
-          <div class="vb-field-group" style="flex: 2; min-width: 260px;">
+          <div class="vb-field-group" style="flex: 1.8; min-width: 260px;">
             <label class="vb-field-label" for="new_service_id">
               <i class="fa-solid fa-binoculars" style="color: var(--vb-terracotta);"></i>
               <span>Select Experience <span class="vb-field-req">*</span></span>
@@ -1124,23 +1122,6 @@
               <option value="" {% if not selected_service_id %}selected{% endif %} disabled>Select an experience to check availability…</option>
               {% for service in services %}
               <option value="{{ service.id }}" {% if selected_service_id == service.id %}selected{% endif %}>{{ service.name }} — ₱{{ "{:,.2f}".format(service.price or 0) }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div class="vb-field-group" style="flex: 1; min-width: 220px;">
-            <label class="vb-field-label" for="new_bundle_id">
-              <i class="fa-solid fa-tags" style="color: var(--vb-terracotta);"></i>
-              <span>Package</span>
-            </label>
-            <select id="new_bundle_id" name="bundle_id" class="vb-select-control">
-              <option value="">Standard pricing</option>
-              {% for bundle in bundles or [] %}
-              <option value="{{ bundle.id }}"
-                      data-service-id="{{ bundle.service_id or '' }}"
-                      data-price="{{ bundle.price or 0 }}"
-                      data-discount-type="{{ bundle.discount_type or 'none' }}"
-                      data-discount-value="{{ bundle.discount_value or 0 }}">{{ bundle.name }} — ₱{{ "{:,.2f}".format(bundle.price or 0) }}</option>
               {% endfor %}
             </select>
           </div>
@@ -1200,16 +1181,24 @@
                 <button type="button" id="btn-remove-promo" style="background:none;border:none;color:inherit;cursor:pointer;padding:0 4px;font-size:0.85rem;" title="Remove promotion">&times;</button>
               </div>
             </div>
-            <div class="vb-field-group" style="flex:1;min-width:220px;">
-              <label class="vb-field-label" for="new_add_on_ids">
+            <div class="vb-field-group" style="flex:1.4;min-width:280px;">
+              <label class="vb-field-label">
                 <i class="fa-solid fa-plus" style="color:var(--vb-terracotta);"></i>
-                <span>Add-ons</span>
+                <span>Add-ons <span style="font-size:0.75rem;font-weight:600;color:var(--vb-text-muted);">(Select multiple)</span></span>
               </label>
-              <select id="new_add_on_ids" name="add_on_ids" class="vb-select-control" multiple size="3">
+              <div id="vb-addons-box" style="background:#ffffff;border:1.5px solid var(--vb-border);border-radius:12px;padding:0.45rem;max-height:135px;overflow-y:auto;display:flex;flex-direction:column;gap:0.35rem;">
                 {% for add_on in add_on_services or [] %}
-                <option value="{{ add_on.id }}" data-service-id="{{ add_on.id }}" data-price="{{ add_on.price or 0 }}">{{ add_on.name }} — ₱{{ "{:,.2f}".format(add_on.price or 0) }}</option>
+                <label class="vb-addon-item" data-service-id="{{ add_on.id }}" style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;padding:0.45rem 0.65rem;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;cursor:pointer;font-size:0.83rem;user-select:none;transition:all 0.15s ease;">
+                  <span style="display:flex;align-items:center;gap:0.55rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                    <input type="checkbox" name="add_on_ids" value="{{ add_on.id }}" data-price="{{ add_on.price or 0 }}" class="vb-addon-check" style="accent-color:var(--vb-forest);width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+                    <span style="font-weight:600;color:var(--vb-forest);overflow:hidden;text-overflow:ellipsis;">{{ add_on.name }}</span>
+                  </span>
+                  <span style="font-weight:700;color:var(--vb-terracotta);font-size:0.78rem;white-space:nowrap;flex-shrink:0;">+₱{{ "{:,.2f}".format(add_on.price or 0) }}</span>
+                </label>
+                {% else %}
+                <div style="font-size:0.8rem;color:var(--vb-text-muted);padding:0.5rem;text-align:center;">No add-ons available.</div>
                 {% endfor %}
-              </select>
+              </div>
             </div>
             <div class="vb-field-group" style="flex:1;min-width:180px;">
               <label class="vb-field-label" for="new_loyalty_points">
@@ -1617,9 +1606,16 @@
       promotion_code: activePromo.trim(),
       loyalty_points: loyaltyInput ? loyaltyInput.value : ''
     });
-    if (addOnSelect) Array.prototype.forEach.call(addOnSelect.selectedOptions, function(option) {
-      params.append('add_on_ids', option.value);
-    });
+    var addOnChecks = document.querySelectorAll('.vb-addon-check:checked');
+    if (addOnChecks.length > 0) {
+      addOnChecks.forEach(function(chk) {
+        params.append('add_on_ids', chk.value);
+      });
+    } else if (addOnSelect) {
+      Array.prototype.forEach.call(addOnSelect.selectedOptions, function(option) {
+        params.append('add_on_ids', option.value);
+      });
+    }
     fetch('/visitor/api/booking-quote?' + params.toString())
       .then(function(response) { return response.json(); })
       .then(function(data) {
@@ -1862,6 +1858,20 @@
   // Event Listeners
   if (serviceSelect) {
     serviceSelect.addEventListener('change', function() {
+      var currentSvcId = serviceSelect.value;
+      var addonItems = document.querySelectorAll('.vb-addon-item');
+      addonItems.forEach(function(item) {
+        var isPrimary = item.getAttribute('data-service-id') === currentSvcId;
+        item.style.display = isPrimary ? 'none' : 'flex';
+        if (isPrimary) {
+          var chk = item.querySelector('.vb-addon-check');
+          if (chk) {
+            chk.checked = false;
+            item.style.background = '#f8fafc';
+            item.style.borderColor = '#e2e8f0';
+          }
+        }
+      });
       if (addOnSelect) {
         Array.prototype.forEach.call(addOnSelect.options, function(option) {
           var isPrimary = option.getAttribute('data-service-id') === serviceSelect.value;
@@ -1890,6 +1900,25 @@
       updateFormState();
     });
   }
+
+  // Interactive multiple Add-ons selection
+  (function initAddOnChecks() {
+    var addonItems = document.querySelectorAll('.vb-addon-item');
+    addonItems.forEach(function(item) {
+      var chk = item.querySelector('.vb-addon-check');
+      if (!chk) return;
+      chk.addEventListener('change', function() {
+        if (chk.checked) {
+          item.style.background = '#ecfdf5';
+          item.style.borderColor = '#10b981';
+        } else {
+          item.style.background = '#f8fafc';
+          item.style.borderColor = '#e2e8f0';
+        }
+        updateFormState();
+      });
+    });
+  })();
 
   if (guestsInput) {
     guestsInput.addEventListener('input', validateGuests);

@@ -11,16 +11,29 @@
 
         <div style="display:flex; justify-content:space-between; align-items:flex-end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
             <div>
-                <h1 style="margin: 0; font-size: 2rem; color: var(--primary);">Events & Shows</h1>
-                <p style="margin: 0.25rem 0 0; color: var(--text-muted);">Showing {{ events|length }} event{% if events|length != 1 %}s{% endif %}</p>
+                <h1 style="margin: 0; font-size: 2rem; color: var(--primary);">Events &amp; Shows</h1>
+                <p style="margin: 0.25rem 0 0; color: var(--text-muted);">
+                    {% if current_filter == 'past' %}Showing concluded events{% elif current_filter == 'all' %}Showing all scheduled events{% else %}Showing upcoming active events{% endif %} ({{ events|length }})
+                </p>
+            </div>
+            <div style="display:inline-flex; background:#e2e8f0; padding:4px; border-radius:10px; gap:4px; font-size:0.85rem; font-weight:700;">
+                <a href="{{ url_for('visitor.events', filter='upcoming') }}" style="text-decoration:none; padding:0.4rem 0.85rem; border-radius:8px; transition:all 0.15s ease; {% if current_filter == 'upcoming' %}background:white; color:var(--primary); box-shadow:0 1px 3px rgba(0,0,0,0.1);{% else %}color:#64748b;{% endif %}">
+                    Upcoming ({{ upcoming_count }})
+                </a>
+                <a href="{{ url_for('visitor.events', filter='past') }}" style="text-decoration:none; padding:0.4rem 0.85rem; border-radius:8px; transition:all 0.15s ease; {% if current_filter == 'past' %}background:white; color:var(--primary); box-shadow:0 1px 3px rgba(0,0,0,0.1);{% else %}color:#64748b;{% endif %}">
+                    Closed ({{ past_count }})
+                </a>
+                <a href="{{ url_for('visitor.events', filter='all') }}" style="text-decoration:none; padding:0.4rem 0.85rem; border-radius:8px; transition:all 0.15s ease; {% if current_filter == 'all' %}background:white; color:var(--primary); box-shadow:0 1px 3px rgba(0,0,0,0.1);{% else %}color:#64748b;{% endif %}">
+                    All ({{ all_count }})
+                </a>
             </div>
         </div>
 
         <div class="visitor-card-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem;">
             {% for event in events %}
             {% set banner = (event.banner_url or event.image_url) %}
-            <div style="background: white; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; display:flex; flex-direction:column;">
-                <div style="height: 200px; background: var(--border-light);">
+            <div style="background: white; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; display:flex; flex-direction:column; {% if event.is_past %}opacity:0.85;{% endif %}">
+                <div style="height: 200px; background: var(--border-light); position:relative;">
                     {% if banner %}
                         <img src="{{ banner }}" alt="" onerror="this.onerror=null;this.style.display='none';" style="width: 100%; height: 100%; object-fit: cover; display:block;" />
                     {% else %}
@@ -28,9 +41,25 @@
                             No image
                         </div>
                     {% endif %}
+                    {% if event.is_past %}
+                    <div style="position:absolute; top:12px; right:12px; background:rgba(185,28,28,0.92); color:#ffffff; font-size:0.75rem; font-weight:800; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px); display:flex; align-items:center; gap:5px;">
+                        <i class="fa-solid fa-lock"></i> Closed
+                    </div>
+                    {% endif %}
                 </div>
                 <div style="padding: 1.25rem; display:flex; flex-direction:column; gap: 0.5rem; flex: 1;">
-                    <div style="color: var(--text-muted); font-size: 0.8rem; font-weight: 800; text-transform: uppercase;">{{ event.type or 'Event' }}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+                        <div style="color: var(--text-muted); font-size: 0.8rem; font-weight: 800; text-transform: uppercase;">{{ event.type or 'Event' }}</div>
+                        {% if event.is_past %}
+                        <span style="background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 999px; padding: 2px 8px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-lock"></i> Closed
+                        </span>
+                        {% else %}
+                        <span style="background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; border-radius: 999px; padding: 2px 8px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-circle-check"></i> Open
+                        </span>
+                        {% endif %}
+                    </div>
                     <div style="font-weight: 900; color: var(--text); font-size: 1.1rem;">{{ event.name }}</div>
                     <div style="display:flex; gap: 1rem; flex-wrap: wrap; color: var(--text-muted); font-size: 0.9rem; margin-top: 0.2rem;">
                         <span><i class="fa-regular fa-calendar" style="color: var(--primary);"></i> {{ event.date or event.time or 'TBA' }}</span>
@@ -39,11 +68,17 @@
                         {% endif %}
                     </div>
                     <div style="margin-top: auto; padding-top: 0.85rem; border-top: 1px solid var(--border-light); display: flex; justify-content: flex-end;">
+                        {% if event.is_past %}
+                        <span class="btn" style="background: #f1f5f9; color: #94a3b8; border: 1px solid #cbd5e1; padding: 0.5rem 1.1rem; border-radius: 10px; font-weight: 800; font-size: 0.88rem; cursor: not-allowed; display: inline-flex; align-items: center; gap: 0.45rem;">
+                            <i class="fa-solid fa-calendar-xmark"></i> Event Closed
+                        </span>
+                        {% else %}
                         <a href="{{ url_for('visitor.my_bookings', event=event.name, event_id=event.id, event_time=(event.date or event.time or '')) }}#new-booking"
                            class="btn"
                            style="background: var(--primary); color: white; border: none; padding: 0.5rem 1.1rem; border-radius: 10px; font-weight: 800; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.45rem; box-shadow: 0 2px 8px rgba(20,56,35,0.2); transition: transform 0.15s ease;">
                             <i class="fa-regular fa-calendar-check"></i> Book Event
                         </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>

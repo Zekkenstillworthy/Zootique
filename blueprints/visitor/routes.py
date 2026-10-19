@@ -1262,8 +1262,28 @@ def events():
         # Admin events are zoo-scoped; do the same here (exclude global NULL zoo events).
         query = query.filter(Event.zoo_id == selected_zoo_id)
 
-    events = query.order_by(Event.id.asc()).all()
-    return render_template("visitor/events.html", events=events)
+    events_list = query.order_by(Event.id.asc()).all()
+    filter_mode = (request.args.get("filter") or "upcoming").strip().lower()
+
+    upcoming_events = [e for e in events_list if not e.is_past]
+    past_events = [e for e in events_list if e.is_past]
+
+    if filter_mode == "past":
+        filtered_events = past_events
+    elif filter_mode == "all":
+        filtered_events = events_list
+    else:
+        filter_mode = "upcoming"
+        filtered_events = upcoming_events
+
+    return render_template(
+        "visitor/events.html",
+        events=filtered_events,
+        all_count=len(events_list),
+        upcoming_count=len(upcoming_events),
+        past_count=len(past_events),
+        current_filter=filter_mode,
+    )
 
 @visitor_bp.get("/services")
 def services():
@@ -1551,6 +1571,7 @@ def profile():
             full_name = (request.form.get("full_name") or "").strip()
             email = (request.form.get("email") or "").strip().lower()
             username = (request.form.get("username") or "").strip() or None
+            phone = (request.form.get("phone") or "").strip() or None
 
             if not full_name:
                 flash("Full name is required.", "error")
@@ -1577,6 +1598,7 @@ def profile():
                     user.profile_image = uploaded_url
 
             user.full_name = full_name
+            user.phone = phone
             db.session.commit()
             session["full_name"] = user.full_name
             flash("Profile updated.", "success")

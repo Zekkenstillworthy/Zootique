@@ -17,6 +17,7 @@ class User(db.Model):
     zoo_id = db.Column(db.Integer, db.ForeignKey('zoos.id', ondelete="CASCADE"), nullable=True)
     status = db.Column(db.String(20), nullable=False, default='active')  # active|suspended
     profile_image = db.Column(db.String(500), nullable=True)
+    phone = db.Column(db.String(50), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     zoo = db.relationship('Zoo', back_populates='users', lazy=True)
@@ -352,6 +353,29 @@ class Event(db.Model):
     def banner_url(self):
         # Backwards-compatible alias used by visitor templates.
         return self.image_url
+
+    @property
+    def event_date(self):
+        val = getattr(self, 'time', None) or ""
+        if not val:
+            return None
+        import re
+        from datetime import date
+        m = re.search(r'(\d{4}-\d{2}-\d{2})', str(val))
+        if m:
+            try:
+                return date.fromisoformat(m.group(1))
+            except ValueError:
+                return None
+        return None
+
+    @property
+    def is_past(self):
+        from datetime import date
+        d = self.event_date
+        if d:
+            return d < date.today()
+        return False
 
 class Promotion(db.Model):
     __tablename__ = 'promotions'

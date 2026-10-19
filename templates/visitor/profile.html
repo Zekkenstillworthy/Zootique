@@ -115,6 +115,10 @@
                         <input name="email" type="email" value="{{ user.email }}" style="width:100%; padding: 0.8rem 1rem; border: 1px solid #cbd5e1; border-radius: 10px; font-family: 'Inter', sans-serif;">
                     </div>
                     <div>
+                        <label style="display:block; font-size:0.75rem; color:#94a3b8; font-weight: 800; margin-bottom: 0.4rem;">Mobile / Phone Number</label>
+                        <input name="phone" type="tel" value="{{ user.phone or '' }}" placeholder="e.g. +63 912 345 6789" style="width:100%; padding: 0.8rem 1rem; border: 1px solid #cbd5e1; border-radius: 10px; font-family: 'Inter', sans-serif;">
+                    </div>
+                    <div>
                         <label style="display:block; font-size:0.75rem; color:#94a3b8; font-weight: 800; margin-bottom: 0.4rem;">Username (optional)</label>
                         <input name="username" value="{{ user.username or '' }}" placeholder="e.g. mynickname" style="width:100%; padding: 0.8rem 1rem; border: 1px solid #cbd5e1; border-radius: 10px; font-family: 'Inter', sans-serif;">
                     </div>
@@ -128,7 +132,6 @@
                         </button>
                     </div>
                 </form>
-                <div style="margin-top: 0.8rem; font-size: 0.8rem; color:#94a3b8;">Other profile fields (phone/DOB/etc.) are UI placeholders for now.</div>
                 {% else %}
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem 3rem;">
                     <div>
@@ -145,7 +148,7 @@
                     </div>
                     <div>
                         <div style="font-size: 0.75rem; color: #94a3b8; font-weight: bold; margin-bottom: 0.3rem;">Phone Number</div>
-                        <div style="font-size: 1.05rem; font-weight: bold; color: #1e293b;">—</div>
+                        <div style="font-size: 1.05rem; font-weight: bold; color: #1e293b;">{{ user.phone or '—' }}</div>
                     </div>
                 </div>
                 {% endif %}

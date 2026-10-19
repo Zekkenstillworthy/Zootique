@@ -178,8 +178,14 @@
                                             <i class="fa-regular fa-image"></i>
                                         </div>
                                     {% endif %}
+                                <td style="font-weight:600; color:var(--text);">
+                                    {{ e.name }}
+                                    {% if e.is_past %}
+                                    <span class="badge" style="background:#fee2e2; color:#b91c1c; font-size:11px; margin-left:6px; font-weight:700;">Closed (Past)</span>
+                                    {% else %}
+                                    <span class="badge" style="background:#dcfce7; color:#15803d; font-size:11px; margin-left:6px; font-weight:700;">Active</span>
+                                    {% endif %}
                                 </td>
-                                <td style="font-weight:600; color:var(--text);">{{ e.name }}</td>
                                 <td>
                                     {% if e.type %}
                                         <span class="badge badge-routine">{{ e.type }}</span>
