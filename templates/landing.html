@@ -84,7 +84,7 @@
             position: relative;
             overflow: hidden;
             background: #0b1f15;
-            min-height: 520px;
+            min-height: 460px;
             display: flex;
             flex-direction: column;
         }
@@ -104,7 +104,7 @@
             position: relative;
             display: flex;
             align-items: center;
-            min-height: 520px;
+            min-height: 460px;
         }
 
         /* background image layer */
@@ -134,7 +134,7 @@
             width: 100%;
             max-width: 1140px;
             margin: 0 auto;
-            padding: 5.5rem 2rem 4rem;
+            padding: 3.5rem 2rem 4.5rem;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -245,15 +245,21 @@
 
         /* --- Controls bar (dots + arrows) --- */
         .lp-slider-controls {
-            position: relative;
+            position: absolute;
+            bottom: 1.25rem;
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 10;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 1rem;
-            padding: 1rem 2rem 1.2rem;
-            background: rgba(0,0,0,0.35);
-            backdrop-filter: blur(6px);
+            gap: 0.75rem;
+            padding: 0.4rem 0.85rem;
+            background: rgba(11, 31, 21, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 999px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
         }
 
         .lp-arrow {
@@ -261,17 +267,17 @@
             border: 1px solid rgba(255,255,255,0.2);
             color: #fff;
             border-radius: 50%;
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 0.85rem;
-            transition: background 0.2s;
+            font-size: 0.8rem;
+            transition: background 0.2s, transform 0.2s;
             flex-shrink: 0;
         }
-        .lp-arrow:hover { background: rgba(255,255,255,0.25); }
+        .lp-arrow:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
         .lp-arrow:focus-visible { outline: 2px solid #4ade80; outline-offset: 2px; }
 
         .lp-dots {
@@ -542,7 +548,7 @@
             .lp-about-section { padding: 3.5rem 1.25rem; }
             .lp-slide-inner,
             .lp-hero-static {
-                padding: 4.75rem 1.5rem 2.5rem;
+                padding: 2.75rem 1.25rem 4rem;
             }
             .lp-hero-static-card { display: none; }
         }
@@ -2075,8 +2081,6 @@
             </div>
         </div>
         {% endif %}
-    </section>
-
     </section>
 
     <!-- Quick Category Actions Bar -->
