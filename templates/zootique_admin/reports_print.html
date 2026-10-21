@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zootique — Platform Analytics Report ({{ now.strftime('%Y-%m-%d') }})</title>
+  <style>
+    :root {
+      --primary: #1a4f32;
+      --primary-dark: #123724;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #cbd5e1;
+      --bg-header: #f8fafc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: var(--text);
+      background: #f1f5f9;
+      margin: 0;
+      padding: 24px;
+    }
+    .report-container {
+      max-width: 860px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    .report-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      border: 1px solid transparent;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-ghost {
+      background: #fff;
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .report-header {
+      margin-bottom: 28px;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--primary);
+      margin: 0 0 6px 0;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+    h2 {
+      font-size: 15px;
+      font-weight: 800;
+      color: #1e293b;
+      margin: 28px 0 12px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    th {
+      background: var(--bg-header);
+      font-weight: 700;
+      color: #334155;
+    }
+    td.num {
+      text-align: right;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      background: #ecfdf5;
+      color: #065f46;
+    }
+    @media print {
+      body {
+        background: #ffffff;
+        padding: 0;
+      }
+      .report-container {
+        box-shadow: none;
+        padding: 0;
+        max-width: 100%;
+      }
+      .report-actions {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="report-container">
+    <div class="report-actions">
+      <a href="{{ url_for('zootique_admin.view_reports') }}" class="btn btn-ghost">← Back to Reports</a>
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
+    </div>
+
+    <div class="report-header">
+      <h1>ZOOTIQUE — SUPER ADMIN PLATFORM REPORT</h1>
+      <p class="subtitle">Generated on {{ now.strftime('%B %d, %Y at %I:%M %p UTC') }} | Confidential Analytics Summary</p>
+    </div>
+
+    <h2>Key Performance Metrics</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th style="width: 200px; text-align: right;">Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Fiscal Year Revenue (YTD)</td>
+          <td class="num"><strong>PHP {{ "{:,.2f}".format(yearly_income) }}</strong></td>
+        </tr>
+        <tr>
+          <td>Total Lifetime Revenue</td>
+          <td class="num"><strong>PHP {{ "{:,.2f}".format(total_revenue) }}</strong></td>
+        </tr>
+        <tr>
+          <td>Active Partner Subscriptions</td>
+          <td class="num">{{ active_subs }}</td>
+        </tr>
+        <tr>
+          <td>Expired Subscriptions</td>
+          <td class="num">{{ expired_subs }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Top Establishments Performance</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Establishment</th>
+          <th style="width: 140px; text-align: right;">Bookings</th>
+          <th style="width: 140px; text-align: right;">Visitors</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for zp in zoo_perf[:10] %}
+        <tr>
+          <td><strong>{{ zp[0] }}</strong></td>
+          <td class="num">{{ zp[1] or 0 }}</td>
+          <td class="num">{{ zp[2] or 0 }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="3" style="text-align:center; color:var(--text-muted);">No booking records available.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h2>Recent Subscription Transactions</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 110px;">Date</th>
+          <th>Establishment</th>
+          <th>Plan</th>
+          <th style="width: 130px; text-align: right;">Amount</th>
+          <th style="width: 90px; text-align: center;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in recent_payments[:15] %}
+        <tr>
+          <td>{{ p.paid_at.strftime('%Y-%m-%d') if p.paid_at else '—' }}</td>
+          <td>{{ p.subscription.zoo.name if p.subscription and p.subscription.zoo else '—' }}</td>
+          <td>{{ p.subscription.plan.name if p.subscription and p.subscription.plan else '—' }}</td>
+          <td class="num">PHP {{ "{:,.2f}".format(p.amount) }}</td>
+          <td style="text-align: center;"><span class="badge">{{ p.status or 'Paid' }}</span></td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" style="text-align:center; color:var(--text-muted);">No transactions recorded.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <script>
+    // Auto-open print dialog if requested
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('print') === '1') {
+      window.onload = function() { window.print(); };
+    }
+  </script>
+</body>
+</html>

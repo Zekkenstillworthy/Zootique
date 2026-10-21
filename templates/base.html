@@ -840,14 +840,26 @@
                     <i class="fa-solid fa-clipboard-list"></i> Park Rules
                     {% if _sub_tier < feature_required_tier('park_rules') %}<i class="fa-solid fa-lock" title="Requires Standard Tier" style="font-size:10px; margin-left:auto; opacity:0.6;"></i>{% endif %}
                 </a>
-                <a href="{{ url_for('animal_farm_admin.booking_management') }}"
-                    class="nav-item {% if request.endpoint == 'animal_farm_admin.booking_management' %}active{% endif %}">
-                    <i class="fa-solid fa-calendar-check"></i> Bookings
-                </a>
-                <a href="{{ url_for('animal_farm_admin.booking_bundles') }}"
-                    class="nav-item {% if request.endpoint == 'animal_farm_admin.booking_bundles' %}active{% endif %}">
-                    <i class="fa-solid fa-boxes-stacked"></i> Booking Bundles
-                </a>
+                <!-- Bookings Dropdown -->
+                {% set _bookings_active = request.endpoint in ('animal_farm_admin.booking_management', 'animal_farm_admin.booking_bundles') %}
+                <div class="nav-dropdown">
+                    <button
+                        class="nav-dropdown-trigger {% if _bookings_active %}active{% endif %}"
+                        onclick="toggleDropdown(event, 'bookings-dropdown')">
+                        <span class="trigger-label"><i class="fa-solid fa-calendar-check"></i> Bookings</span>
+                        <i class="fa-solid fa-chevron-down chevron"></i>
+                    </button>
+                    <div class="nav-dropdown-menu {% if _bookings_active %}open{% endif %}" id="bookings-dropdown">
+                        <a href="{{ url_for('animal_farm_admin.booking_management') }}"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.booking_management' %}active{% endif %}">
+                            <i class="fa-solid fa-calendar-check"></i> Bookings
+                        </a>
+                        <a href="{{ url_for('animal_farm_admin.booking_bundles') }}"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.booking_bundles' %}active{% endif %}">
+                            <i class="fa-solid fa-boxes-stacked"></i> Booking Bundles
+                        </a>
+                    </div>
+                </div>
                 <a href="{{ url_for('animal_farm_admin.availability_settings') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_admin.availability_settings' %}active{% endif %}">
                     <i class="fa-solid fa-clock"></i> Availability
@@ -1230,17 +1242,18 @@
                             </div>
                         </div>
                     </div>
-                    {% set _sa_avatar = session.get('profile_image') %}
+                    {% set _sa_name = current_user_name or session.get('full_name') or 'Super Admin' %}
+                    {% set _sa_avatar = current_user_avatar or session.get('profile_image') %}
                     <a href="{{ url_for('zootique_admin.settings') }}"
                         title="Admin Profile &amp; Settings"
                         style="display:flex; align-items:center; gap:10px; text-decoration:none;">
-                        <span class="header-profile-label" style="font-size: 14px; font-weight: 600; color: var(--text-muted);">Admin Profile</span>
+                        <span class="header-profile-label" style="font-size: 14px; font-weight: 600; color: var(--text-muted);">{{ _sa_name }}</span>
                         {% if _sa_avatar %}
                         <img src="{{ _sa_avatar if _sa_avatar.startswith('http') else url_for('uploaded_file', filename=_sa_avatar) }}"
-                            alt="Avatar" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border, #cbd5e1);" />
+                            alt="{{ _sa_name }}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border, #cbd5e1);" />
                         {% else %}
-                        <img src="https://ui-avatars.com/api/?name={{ _sa_name }}&background=1a3024&color=fff"
-                            alt="Avatar" style="width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border, #cbd5e1);" />
+                        <img src="https://ui-avatars.com/api/?name={{ _sa_name|urlencode }}&background=1a3024&color=fff"
+                            alt="{{ _sa_name }}" style="width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border, #cbd5e1);" />
                         {% endif %}
                     </a>
                 </div>

@@ -59,25 +59,30 @@
           class="sa-feedback-card"
           data-feedback-id="{{ f.id }}"
           data-zoo-name="{{ f.zoo_name|e }}"
+          data-category="{{ f.category|e }}"
           data-rating="{{ f.rating }}"
           data-comment="{{ f.comment|e }}"
           data-created-at="{{ f.created_at|e }}"
           data-status="{{ status }}"
           data-latest-reply="{{ (f.latest_reply or '')|e }}"
-          data-latest-reply-date="{{ (f.latest_reply_date or '')|e }}">
+          data-latest-reply-date="{{ (f.latest_reply_date or '')|e }}"
+          style="text-align:left; cursor:pointer; width:100%; border:1px solid var(--border-light, #e2e8f0); border-radius:10px; padding:14px; background:#fff; transition:all 0.15s ease;">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
             <div>
-              <div style="font-weight:900;">{{ f.zoo_name }}</div>
-              <div style="font-size:12px; color:var(--text-muted); font-weight:700;">{{ f.created_at }}</div>
+              <div style="font-weight:900; font-size:15px; color:var(--text, #0f172a);">{{ f.zoo_name }}</div>
+              <div style="font-size:12px; color:var(--text-muted); font-weight:700; margin-top:2px;">{{ f.created_at }} • <span class="badge badge-neutral" style="font-size:10px; padding:2px 6px;">{{ f.category }}</span></div>
             </div>
             <span class="sa-pill {% if status == 'REPLIED' %}sa-pill--ok{% else %}sa-pill--warn{% endif %}">{{ status }}</span>
           </div>
-          <div style="margin-top:8px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
-            <div style="font-size:12px; color:var(--text-muted); font-weight:800;">Rating: {{ f.rating }}/5</div>
-            <div style="font-size:12px; color:var(--text-muted); font-weight:800;">View Full Details</div>
+          <div style="margin-top:10px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+            <div style="font-size:13px; color:#eab308; font-weight:800;">
+              {% for star in range(f.rating) %}<i class="fa-solid fa-star"></i>{% endfor %}{% for star in range(5 - f.rating) %}<i class="fa-regular fa-star" style="color:#cbd5e1;"></i>{% endfor %}
+              <span style="font-size:12px; color:var(--text-muted); font-weight:700; margin-left:4px;">{{ f.rating }}/5</span>
+            </div>
+            <span style="font-size:12px; color:var(--primary, #1a4f32); font-weight:800; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-eye"></i> View Full Details</span>
           </div>
           <div style="margin-top:8px; color:var(--text-secondary); font-size:13px; line-height:1.5;">
-            {{ f.comment[:120] }}{% if f.comment|length > 120 %}...{% endif %}
+            {{ f.comment[:140] }}{% if f.comment|length > 140 %}...{% endif %}
           </div>
         </button>
       {% else %}
@@ -87,32 +92,47 @@
   </div>
 
   <!-- Detail + reply panel -->
-  <div class="card-panel" style="margin-bottom:0; position:sticky; top:76px;">
-    <div class="card-header">
-      <h2>Feedback Detail</h2>
+  <div id="sa_feedback_detail_panel" class="card-panel" style="margin-bottom:0; position:sticky; top:76px;">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+      <h2 style="margin:0;">Feedback Detail</h2>
+      <span id="sa_feedback_category" class="badge badge-neutral" style="font-size:11px; font-weight:700;">—</span>
     </div>
     <div class="card-body" style="padding-top:0;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
         <div>
-          <div id="sa_feedback_zoo" style="font-weight:900;">—</div>
-          <div id="sa_feedback_time" style="font-size:12px; color:var(--text-muted); font-weight:700;">—</div>
+          <div id="sa_feedback_zoo" style="font-weight:900; font-size:16px;">—</div>
+          <div id="sa_feedback_time" style="font-size:12px; color:var(--text-muted); font-weight:700; margin-top:2px;">—</div>
+          <div id="sa_feedback_stars" style="color:#eab308; font-size:13px; margin-top:4px;"></div>
         </div>
         <span id="sa_feedback_status" class="badge" style="background:var(--border-light); color:var(--text-muted); font-weight:900;">—</span>
       </div>
 
-      <div style="margin-top:10px; font-size:12px; font-weight:900; letter-spacing:0.02em; color:var(--text-muted);">REVIEW CONTENT</div>
-      <div id="sa_feedback_comment" style="margin-top:6px; color:var(--text-secondary); line-height:1.6;">Select a feedback card to view details.</div>
+      <div style="margin-top:14px; font-size:12px; font-weight:900; letter-spacing:0.02em; color:var(--text-muted); text-transform:uppercase;">Review Content</div>
+      <div id="sa_feedback_comment" style="margin-top:6px; color:var(--text-secondary); line-height:1.6; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; font-size:13.5px; white-space:pre-wrap;">Select a feedback card to view details.</div>
 
-      <div style="margin-top:14px; font-size:12px; font-weight:900; letter-spacing:0.02em; color:var(--text-muted);">INTERNAL REPLY</div>
+      <!-- Existing Reply View (if already replied) -->
+      <div id="sa_existing_reply_box" style="display:none; margin-top:16px;">
+        <div style="font-size:12px; font-weight:900; letter-spacing:0.02em; color:var(--primary, #1a4f32); text-transform:uppercase; display:flex; align-items:center; gap:6px;">
+          <i class="fa-solid fa-reply"></i> Latest Sent Reply
+        </div>
+        <div style="margin-top:6px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px 14px;">
+          <div id="sa_existing_reply_text" style="color:#166534; font-size:13px; line-height:1.5; white-space:pre-wrap;">—</div>
+          <div id="sa_existing_reply_date" style="font-size:11px; color:#15803d; font-weight:700; margin-top:6px;">—</div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px; font-size:12px; font-weight:900; letter-spacing:0.02em; color:var(--text-muted); text-transform:uppercase;" id="sa_reply_header">Send Reply</div>
       <form id="sa_reply_form" method="post" action="" style="margin-top:8px; display:flex; flex-direction:column; gap:10px;">
-        <textarea name="reply_text" rows="5" class="zf-control" placeholder="Type your response to the park administrator here..." required></textarea>
-        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-paper-plane"></i> SEND REPLY</button>
-        <div style="font-size:12px; color:var(--text-muted);">
-          Replies sent through this portal are emailed directly to the Zoo's primary account owner and stored in their "Communications" tab.
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <textarea id="sa_reply_textarea" name="reply_text" rows="4" class="zf-control" placeholder="Type your response to the park administrator here..." required style="width:100%; border:1px solid var(--border, #cbd5e1); border-radius:8px; padding:10px; font-family:inherit; font-size:13px;"></textarea>
+        <button class="btn btn-primary" type="submit" id="sa_reply_submit_btn"><i class="fa-solid fa-paper-plane"></i> SEND REPLY</button>
+        <div style="font-size:11.5px; color:var(--text-muted); line-height:1.4;">
+          Replies sent through this portal are saved to the Zoo's feedback record and displayed in their communications.
         </div>
       </form>
-      <form id="sa_delete_form" method="post" action="" style="margin-top:10px;">
-        <button class="btn btn-ghost" type="submit" onclick="return confirm('Delete this feedback and its replies?');"><i class="fa-solid fa-trash"></i> Delete Feedback</button>
+      <form id="sa_delete_form" method="post" action="" style="margin-top:12px; border-top:1px solid #f1f5f9; padding-top:12px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-ghost" type="submit" style="color:var(--danger, #dc2626);" onclick="return confirm('Delete this feedback and its replies? This action cannot be undone.');"><i class="fa-solid fa-trash"></i> Delete Feedback</button>
       </form>
     </div>
   </div>
@@ -128,3 +148,4 @@
   window.ZootiqueSuperAdmin.deleteUrlTemplate = "{{ url_for('zootique_admin.delete_feedback', feedback_id=0) }}";
 </script>
 {% endblock %}
+

@@ -45,7 +45,9 @@ from services.registration_notifications import (
     send_registration_rejected,
     send_establishment_confirmation,
     send_registration_resubmission,
+    send_registration_email_verification,
 )
+from services.zoo_notifications import notify_zoo_team
 
 admin_bp = Blueprint("zootique_admin", __name__)
 
@@ -477,10 +479,52 @@ def resend_registration_email(registration_id: int, email_kind: str):
         return redirect(url_for("zootique_admin.registration_detail", registration_id=registration.id))
     if email_kind == "establishment":
         sent = send_establishment_confirmation(registration, approved=registration.status == "approved")
+    elif registration.status == "rejected":
+        sent = send_registration_rejected(registration)
+    elif registration.email_verified_at:
+        # Already verified — resend the approval notification
+        sent = send_registration_approved(registration)
     else:
-        sent = send_registration_rejected(registration) if registration.status == "rejected" else send_registration_approved(registration)
+        # Not yet verified — generate a fresh token and resend the verification email
+        token = secrets.token_urlsafe(32)
+        registration.email_verification_token_hash = hashlib.sha256(token.encode()).hexdigest()
+        registration.email_verification_expires_at = datetime.utcnow() + timedelta(minutes=60)
+        db.session.commit()
+        sent = send_registration_email_verification(registration, token)
+        if not sent:
+            # SMTP unavailable — show the link so admin can copy-paste it
+            base_url = current_app.config.get("PUBLIC_BASE_URL", "").rstrip("/") or "http://127.0.0.1:5000"
+            verify_link = (
+                f"{base_url}/auth/verify-registration-email"
+                f"?registration_id={registration.id}&token={token}"
+            )
+            db.session.commit()
+            flash(
+                f"SMTP is not configured. Share this verification link manually with the applicant: {verify_link}",
+                "warning",
+            )
+            return redirect(url_for("zootique_admin.registration_detail", registration_id=registration.id))
     db.session.commit()
-    flash("Email attempt logged and sent." if sent else "Email attempt logged; SMTP is not configured.", "success")
+    flash("Email sent successfully." if sent else "Email attempt logged; SMTP is not configured.", "success")
+    return redirect(url_for("zootique_admin.registration_detail", registration_id=registration.id))
+
+
+@admin_bp.post('/registrations/<int:registration_id>/manual-verify-email')
+def manual_verify_email(registration_id: int):
+    """Super Admin can manually mark a registration email as verified when SMTP is unavailable."""
+    registration = db.session.get(EstablishmentRegistration, registration_id)
+    if not registration:
+        abort(404)
+    if registration.email_verified_at:
+        flash("Email is already verified.", "info")
+        return redirect(url_for("zootique_admin.registration_detail", registration_id=registration.id))
+    registration.email_verified_at = datetime.utcnow()
+    registration.email_verification_token_hash = None
+    registration.email_verification_expires_at = None
+    if registration.status not in ("pending", "rejected", "approved"):
+        registration.status = "pending"
+    db.session.commit()
+    flash("Email manually verified by Super Admin. The registration is now eligible for approval.", "success")
     return redirect(url_for("zootique_admin.registration_detail", registration_id=registration.id))
 
 
@@ -893,23 +937,23 @@ def save_subscription_plan():
 
     if not name:
         flash('Plan name is required.', 'error')
-        return redirect(url_for('zootique_admin.manage_subscriptions'))
+        return redirect(url_for('zootique_admin.subscription_pricing_tiers'))
     try:
         price_value = float(price)
     except (TypeError, ValueError):
         flash('Price must be a number.', 'error')
-        return redirect(url_for('zootique_admin.manage_subscriptions'))
+        return redirect(url_for('zootique_admin.subscription_pricing_tiers'))
     if price_value < 0:
         flash('Price cannot be negative.', 'error')
-        return redirect(url_for('zootique_admin.manage_subscriptions'))
+        return redirect(url_for('zootique_admin.subscription_pricing_tiers'))
     if duration not in ('monthly', 'yearly'):
         flash('Duration must be monthly or yearly.', 'error')
-        return redirect(url_for('zootique_admin.manage_subscriptions'))
+        return redirect(url_for('zootique_admin.subscription_pricing_tiers'))
     try:
         tier_level = infer_tier_level(name, int(tier_level_raw) if tier_level_raw else None)
     except ValueError:
         flash('Tier level must be a valid catalog tier.', 'error')
-        return redirect(url_for('zootique_admin.manage_subscriptions'))
+        return redirect(url_for('zootique_admin.subscription_pricing_tiers'))
     if limits_raw:
         try:
             limits = json.loads(limits_raw)
@@ -918,7 +962,7 @@ def save_subscription_plan():
             limits = {str(key): int(value) for key, value in limits.items()}
         except (TypeError, ValueError, json.JSONDecodeError):
             flash('Limits must be a valid JSON object of numeric values.', 'error')
-            return redirect(url_for('zootique_admin.manage_subscriptions'))
+            return redirect(url_for('zootique_admin.subscription_pricing_tiers'))
     else:
         limits = None
 
@@ -948,6 +992,7 @@ def save_subscription_plan():
     plan.duration_months = duration_months
     plan.features = features
     plan.tier_level = tier_level
+    plan.is_active = True
     if limits is not None:
         plan.limits = json.dumps(limits, separators=(',', ':'))
 
@@ -973,7 +1018,9 @@ def delete_subscription_plan(plan_id: int):
 
     active_usage = db.session.query(ZooSubscription).filter(ZooSubscription.plan_id == plan.id).first()
     if active_usage:
-        flash(f"Cannot delete plan '{plan.name}' because it is assigned to existing subscriptions.", 'error')
+        plan.is_active = False
+        db.session.commit()
+        flash(f"Plan '{plan.name}' is assigned to existing subscriptions, so it was archived and deactivated instead.", 'info')
         return redirect(url_for('zootique_admin.subscription_pricing_tiers'))
 
     try:
@@ -1097,6 +1144,18 @@ def reply_feedback(feedback_id: int):
     )
     db.session.add(reply)
     db.session.commit()
+
+    try:
+        notify_zoo_team(
+            zoo_id=feedback.zoo_id,
+            notification_type="feedback_reply",
+            message=f"Super Admin replied to your feedback: '{reply_text[:60]}...'",
+            dedupe_prefix=f"reply-{reply.id}",
+            commit=True,
+        )
+    except Exception:
+        pass
+
     flash('Reply sent.', 'success')
     return redirect(url_for('zootique_admin.view_feedback'))
 
@@ -1330,110 +1389,124 @@ def export_reports_pdf():
         .all()
     )
 
-    from reportlab.lib.pagesizes import letter
-    from reportlab.lib import colors
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    try:
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib import colors
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
-    styles = getSampleStyleSheet()
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+        styles = getSampleStyleSheet()
 
-    title_style = ParagraphStyle(
-        'DocTitle',
-        parent=styles['Heading1'],
-        fontName='Helvetica-Bold',
-        fontSize=18,
-        leading=22,
-        textColor=colors.HexColor('#1a4f32')
-    )
-    subtitle_style = ParagraphStyle(
-        'DocSubtitle',
-        parent=styles['Normal'],
-        fontName='Helvetica',
-        fontSize=9,
-        leading=13,
-        textColor=colors.HexColor('#64748b')
-    )
-    h2_style = ParagraphStyle(
-        'SectionHeading',
-        parent=styles['Heading2'],
-        fontName='Helvetica-Bold',
-        fontSize=12,
-        leading=15,
-        textColor=colors.HexColor('#0f172a'),
-        spaceBefore=12,
-        spaceAfter=5
-    )
-    cell_style = ParagraphStyle('Cell', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, leading=11)
-    cell_bold = ParagraphStyle('CellBold', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8.5, leading=11)
+        title_style = ParagraphStyle(
+            'DocTitle',
+            parent=styles['Heading1'],
+            fontName='Helvetica-Bold',
+            fontSize=18,
+            leading=22,
+            textColor=colors.HexColor('#1a4f32')
+        )
+        subtitle_style = ParagraphStyle(
+            'DocSubtitle',
+            parent=styles['Normal'],
+            fontName='Helvetica',
+            fontSize=9,
+            leading=13,
+            textColor=colors.HexColor('#64748b')
+        )
+        h2_style = ParagraphStyle(
+            'SectionHeading',
+            parent=styles['Heading2'],
+            fontName='Helvetica-Bold',
+            fontSize=12,
+            leading=15,
+            textColor=colors.HexColor('#0f172a'),
+            spaceBefore=12,
+            spaceAfter=5
+        )
+        cell_style = ParagraphStyle('Cell', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, leading=11)
+        cell_bold = ParagraphStyle('CellBold', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8.5, leading=11)
 
-    elements = []
-    elements.append(Paragraph("ZOOTIQUE — SUPER ADMIN PLATFORM REPORT", title_style))
-    elements.append(Paragraph(f"Generated on {now.strftime('%B %d, %Y at %I:%M %p UTC')} | Confidential Analytics Summary", subtitle_style))
-    elements.append(Spacer(1, 12))
+        elements = []
+        elements.append(Paragraph("ZOOTIQUE — SUPER ADMIN PLATFORM REPORT", title_style))
+        elements.append(Paragraph(f"Generated on {now.strftime('%B %d, %Y at %I:%M %p UTC')} | Confidential Analytics Summary", subtitle_style))
+        elements.append(Spacer(1, 12))
 
-    elements.append(Paragraph("Key Performance Metrics", h2_style))
-    kpi_data = [
-        [Paragraph("Metric", cell_bold), Paragraph("Value", cell_bold)],
-        [Paragraph("Fiscal Year Revenue (YTD)", cell_style), Paragraph(f"PHP {yearly_income:,.2f}", cell_style)],
-        [Paragraph("Total Lifetime Revenue", cell_style), Paragraph(f"PHP {total_revenue:,.2f}", cell_style)],
-        [Paragraph("Active Partner Subscriptions", cell_style), Paragraph(str(active_subs), cell_style)],
-        [Paragraph("Expired Subscriptions", cell_style), Paragraph(str(expired_subs), cell_style)],
-    ]
-    kpi_table = Table(kpi_data, colWidths=[330, 210])
-    kpi_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0f172a')),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
-        ('PADDING', (0, 0), (-1, -1), 5),
-    ]))
-    elements.append(kpi_table)
-    elements.append(Spacer(1, 10))
+        elements.append(Paragraph("Key Performance Metrics", h2_style))
+        kpi_data = [
+            [Paragraph("Metric", cell_bold), Paragraph("Value", cell_bold)],
+            [Paragraph("Fiscal Year Revenue (YTD)", cell_style), Paragraph(f"PHP {yearly_income:,.2f}", cell_style)],
+            [Paragraph("Total Lifetime Revenue", cell_style), Paragraph(f"PHP {total_revenue:,.2f}", cell_style)],
+            [Paragraph("Active Partner Subscriptions", cell_style), Paragraph(str(active_subs), cell_style)],
+            [Paragraph("Expired Subscriptions", cell_style), Paragraph(str(expired_subs), cell_style)],
+        ]
+        kpi_table = Table(kpi_data, colWidths=[330, 210])
+        kpi_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0f172a')),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
+            ('PADDING', (0, 0), (-1, -1), 5),
+        ]))
+        elements.append(kpi_table)
+        elements.append(Spacer(1, 10))
 
-    elements.append(Paragraph("Top Establishments Performance", h2_style))
-    zoo_data = [[Paragraph("Establishment", cell_bold), Paragraph("Bookings", cell_bold), Paragraph("Visitors", cell_bold)]]
-    for zp in zoo_perf[:8]:
-        zoo_data.append([
-            Paragraph(zp[0], cell_style),
-            Paragraph(str(zp[1] or 0), cell_style),
-            Paragraph(str(zp[2] or 0), cell_style),
-        ])
-    if len(zoo_data) == 1:
-        zoo_data.append([Paragraph("No booking records available.", cell_style), Paragraph("—", cell_style), Paragraph("—", cell_style)])
-    zoo_table = Table(zoo_data, colWidths=[300, 120, 120])
-    zoo_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
-        ('PADDING', (0, 0), (-1, -1), 5),
-    ]))
-    elements.append(zoo_table)
-    elements.append(Spacer(1, 10))
+        elements.append(Paragraph("Top Establishments Performance", h2_style))
+        zoo_data = [[Paragraph("Establishment", cell_bold), Paragraph("Bookings", cell_bold), Paragraph("Visitors", cell_bold)]]
+        for zp in zoo_perf[:8]:
+            zoo_data.append([
+                Paragraph(zp[0], cell_style),
+                Paragraph(str(zp[1] or 0), cell_style),
+                Paragraph(str(zp[2] or 0), cell_style),
+            ])
+        if len(zoo_data) == 1:
+            zoo_data.append([Paragraph("No booking records available.", cell_style), Paragraph("—", cell_style), Paragraph("—", cell_style)])
+        zoo_table = Table(zoo_data, colWidths=[300, 120, 120])
+        zoo_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
+            ('PADDING', (0, 0), (-1, -1), 5),
+        ]))
+        elements.append(zoo_table)
+        elements.append(Spacer(1, 10))
 
-    elements.append(Paragraph("Recent Subscription Transactions", h2_style))
-    tx_data = [[Paragraph("Date", cell_bold), Paragraph("Establishment", cell_bold), Paragraph("Plan", cell_bold), Paragraph("Amount", cell_bold), Paragraph("Status", cell_bold)]]
-    for p in recent_payments[:12]:
-        tx_data.append([
-            Paragraph(p.paid_at.strftime('%Y-%m-%d') if p.paid_at else '—', cell_style),
-            Paragraph(p.subscription.zoo.name if p.subscription and p.subscription.zoo else '—', cell_style),
-            Paragraph(p.subscription.plan.name if p.subscription and p.subscription.plan else '—', cell_style),
-            Paragraph(f"PHP {float(p.amount):,.2f}", cell_style),
-            Paragraph(p.status or 'Paid', cell_style),
-        ])
-    if len(tx_data) == 1:
-        tx_data.append([Paragraph("No transactions recorded.", cell_style), Paragraph("—", cell_style), Paragraph("—", cell_style), Paragraph("—", cell_style), Paragraph("—", cell_style)])
-    tx_table = Table(tx_data, colWidths=[80, 190, 110, 100, 60])
-    tx_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
-        ('PADDING', (0, 0), (-1, -1), 5),
-    ]))
-    elements.append(tx_table)
+        elements.append(Paragraph("Recent Subscription Transactions", h2_style))
+        tx_data = [[Paragraph("Date", cell_bold), Paragraph("Establishment", cell_bold), Paragraph("Plan", cell_bold), Paragraph("Amount", cell_bold), Paragraph("Status", cell_bold)]]
+        for p in recent_payments[:12]:
+            tx_data.append([
+                Paragraph(p.paid_at.strftime('%Y-%m-%d') if p.paid_at else '—', cell_style),
+                Paragraph(p.subscription.zoo.name if p.subscription and p.subscription.zoo else '—', cell_style),
+                Paragraph(p.subscription.plan.name if p.subscription and p.subscription.plan else '—', cell_style),
+                Paragraph(f"PHP {float(p.amount):,.2f}", cell_style),
+                Paragraph(p.status or 'Paid', cell_style),
+            ])
+        if len(tx_data) == 1:
+            tx_data.append([Paragraph("No transactions recorded.", cell_style), Paragraph("—", cell_style), Paragraph("—", cell_style), Paragraph("—", cell_style), Paragraph("—", cell_style)])
+        tx_table = Table(tx_data, colWidths=[80, 190, 110, 100, 60])
+        tx_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
+            ('PADDING', (0, 0), (-1, -1), 5),
+        ]))
+        elements.append(tx_table)
 
-    doc.build(elements)
-    buffer.seek(0)
-    filename = f"zootique_analytics_report_{now.strftime('%Y%m%d')}.pdf"
-    return send_file(buffer, as_attachment=True, download_name=filename, mimetype="application/pdf")
+        doc.build(elements)
+        buffer.seek(0)
+        filename = f"zootique_analytics_report_{now.strftime('%Y%m%d')}.pdf"
+        return send_file(buffer, as_attachment=True, download_name=filename, mimetype="application/pdf")
+    except Exception as exc:
+        current_app.logger.warning("ReportLab PDF generation fallback engaged: %s", exc)
+        return render_template(
+            "zootique_admin/reports_print.html",
+            now=now,
+            total_revenue=total_revenue,
+            active_subs=active_subs,
+            expired_subs=expired_subs,
+            yearly_income=yearly_income,
+            zoo_perf=zoo_perf,
+            recent_payments=recent_payments,
+        )
+
 
 
 @admin_bp.get("/user-management")

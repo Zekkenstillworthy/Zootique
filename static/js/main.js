@@ -196,36 +196,79 @@ function initSuperAdminFeedback() {
 
   const zooEl = document.getElementById("sa_feedback_zoo");
   const timeEl = document.getElementById("sa_feedback_time");
+  const starsEl = document.getElementById("sa_feedback_stars");
   const statusEl = document.getElementById("sa_feedback_status");
+  const categoryEl = document.getElementById("sa_feedback_category");
   const commentEl = document.getElementById("sa_feedback_comment");
   const replyForm = document.getElementById("sa_reply_form");
   const deleteForm = document.getElementById("sa_delete_form");
+  const existingReplyBox = document.getElementById("sa_existing_reply_box");
+  const existingReplyText = document.getElementById("sa_existing_reply_text");
+  const existingReplyDate = document.getElementById("sa_existing_reply_date");
+  const replyHeader = document.getElementById("sa_reply_header");
+  const replySubmitBtn = document.getElementById("sa_reply_submit_btn");
 
-  function selectCard(card) {
-    cards.forEach((c) => c.classList.remove("is-active"));
+  function selectCard(card, shouldScroll = false) {
+    cards.forEach((c) => {
+      c.classList.remove("is-active");
+      c.style.borderColor = "var(--border-light, #e2e8f0)";
+      c.style.boxShadow = "none";
+    });
     card.classList.add("is-active");
+    card.style.borderColor = "var(--primary, #1a4f32)";
+    card.style.boxShadow = "0 0 0 1.5px var(--primary, #1a4f32)";
 
     const zooName = card.getAttribute("data-zoo-name") || "—";
+    const category = card.getAttribute("data-category") || "General";
     const createdAt = card.getAttribute("data-created-at") || "—";
     const status = card.getAttribute("data-status") || "—";
-    const rating = card.getAttribute("data-rating") || "—";
+    const rating = parseInt(card.getAttribute("data-rating") || "0", 10);
     const comment = card.getAttribute("data-comment") || "";
     const feedbackId = card.getAttribute("data-feedback-id") || "";
+    const latestReply = card.getAttribute("data-latest-reply") || "";
+    const latestReplyDate = card.getAttribute("data-latest-reply-date") || "";
 
     if (zooEl) zooEl.textContent = zooName;
-    if (timeEl) timeEl.textContent = `${createdAt} • Rating ${rating}/5`;
+    if (categoryEl) categoryEl.textContent = category;
+    if (timeEl) timeEl.textContent = `Submitted on ${createdAt} • Category: ${category}`;
+
+    if (starsEl) {
+      let starsHtml = "";
+      for (let i = 0; i < rating; i++) starsHtml += '<i class="fa-solid fa-star"></i> ';
+      for (let i = rating; i < 5; i++) starsHtml += '<i class="fa-regular fa-star" style="color:#cbd5e1;"></i> ';
+      starsHtml += ` <strong style="color:var(--text, #0f172a); font-size:12px; margin-left:4px;">${rating}/5 Stars</strong>`;
+      starsEl.innerHTML = starsHtml;
+    }
+
     if (commentEl) commentEl.textContent = comment || "—";
+
     if (statusEl) {
       statusEl.textContent = status;
       if (status === "REPLIED") {
-        statusEl.style.background = "var(--success-bg)";
-        statusEl.style.color = "var(--success)";
+        statusEl.style.background = "#dcfce7";
+        statusEl.style.color = "#166534";
       } else if (status === "PENDING") {
-        statusEl.style.background = "var(--warning-bg)";
-        statusEl.style.color = "var(--warning)";
+        statusEl.style.background = "#fef3c7";
+        statusEl.style.color = "#92400e";
       } else {
-        statusEl.style.background = "var(--border-light)";
-        statusEl.style.color = "var(--text-muted)";
+        statusEl.style.background = "var(--border-light, #e2e8f0)";
+        statusEl.style.color = "var(--text-muted, #64748b)";
+      }
+    }
+
+    if (existingReplyBox && existingReplyText) {
+      if (latestReply) {
+        existingReplyBox.style.display = "block";
+        existingReplyText.textContent = latestReply;
+        if (existingReplyDate) {
+          existingReplyDate.textContent = `Replied by Super Admin on ${latestReplyDate || createdAt}`;
+        }
+        if (replyHeader) replyHeader.textContent = "Send Follow-up Reply";
+        if (replySubmitBtn) replySubmitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> SEND ANOTHER REPLY';
+      } else {
+        existingReplyBox.style.display = "none";
+        if (replyHeader) replyHeader.textContent = "Send Reply";
+        if (replySubmitBtn) replySubmitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> SEND REPLY';
       }
     }
 
@@ -242,14 +285,21 @@ function initSuperAdminFeedback() {
         deleteForm.action = template.replace(/\/0(\/|$)/, `/${feedbackId}$1`);
       }
     }
+
+    if (shouldScroll && window.innerWidth <= 900) {
+      const panel = document.getElementById("sa_feedback_detail_panel");
+      if (panel) {
+        panel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
   }
 
   cards.forEach((card) => {
-    card.addEventListener("click", () => selectCard(card));
+    card.addEventListener("click", () => selectCard(card, true));
   });
 
   // Auto-select the first card
-  selectCard(cards[0]);
+  selectCard(cards[0], false);
 }
 
 function initSuperAdminTabs() {
