@@ -40,59 +40,103 @@
           </div>
         </div>
 
-        <form method="post">
+        {# Fix 1: Map stored keys → readable display labels, icons, and descriptions.
+           The checkbox value="{{ method }}" is the raw key from the backend — unchanged.
+           The display strings are template-only. #}
+        {% set method_labels = {
+          'Gcash':           'GCash',
+          'Maya':            'Maya',
+          'Card':            'Credit / Debit Card',
+          'Cash On Arrival': 'Cash on Arrival'
+        } %}
+        {% set method_icons = {
+          'Gcash':           'fa-solid fa-mobile-screen-button',
+          'Maya':            'fa-solid fa-wallet',
+          'Card':            'fa-solid fa-credit-card',
+          'Cash On Arrival': 'fa-solid fa-money-bill-wave'
+        } %}
+        {% set method_descs = {
+          'Gcash':           'Mobile wallet via GCash app',
+          'Maya':            'Mobile wallet via Maya (PayMaya)',
+          'Card':            'Visa / Mastercard / debit card',
+          'Cash On Arrival': 'Pay in person at the venue'
+        } %}
+
+        <form method="post" id="payment-methods-form">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-          <div style="display:flex; flex-direction:column; gap:2px; margin-bottom:24px;">
-            {% set method_icons = {
-              'Gcash':           'fa-brands fa-google-pay',
-              'Maya':            'fa-solid fa-wallet',
-              'Card':            'fa-solid fa-credit-card',
-              'Cash On Arrival': 'fa-solid fa-money-bill-wave'
-            } %}
-            {% set method_descs = {
-              'Gcash':           'Mobile wallet via GCash app',
-              'Maya':            'Mobile wallet via Maya (PayMaya)',
-              'Card':            'Visa / Mastercard / debit card',
-              'Cash On Arrival': 'Pay in person at the venue'
-            } %}
-
+          <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
             {% for method in methods %}
             {% set is_checked = method in enabled_methods %}
-            <label style="display:flex; align-items:center; justify-content:space-between;
-                          gap:12px; padding:14px 16px; border-radius:10px; cursor:{% if can_edit %}pointer{% else %}default{% endif %};
-                          border:1px solid {% if is_checked %}var(--primary, #1a4f32){% else %}var(--border-light, #e2e8f0){% endif %};
-                          background:{% if is_checked %}#f0fdf4{% else %}#fff{% endif %};
-                          transition:all .15s ease;"
-                   onmouseover="if({{ 'true' if can_edit else 'false' }}) this.style.borderColor='var(--primary,#1a4f32)'"
-                   onmouseout="this.style.borderColor='{% if is_checked %}var(--primary,#1a4f32){% else %}var(--border-light,#e2e8f0){% endif %}'">
-              <div style="display:flex; align-items:center; gap:12px;">
-                <i class="{{ method_icons.get(method, 'fa-solid fa-circle-dot') }}"
-                   style="font-size:18px; color:{% if is_checked %}var(--primary,#1a4f32){% else %}var(--text-muted,#94a3b8){% endif %}; width:22px; text-align:center; flex-shrink:0;"></i>
+            {# Fix 2: No radio-dot; left side is a method icon only.
+               Fix 3: inactive rows get grey border + muted text (toggled live by JS). #}
+            <label
+              class="pm-row"
+              data-active="{{ 'true' if is_checked else 'false' }}"
+              style="display:flex; align-items:center; justify-content:space-between;
+                     gap:12px; padding:14px 16px; border-radius:10px;
+                     cursor:{% if can_edit %}pointer{% else %}default{% endif %};
+                     border:1px solid {{ 'var(--primary,#1a4f32)' if is_checked else '#e2e8f0' }};
+                     background:{{ '#f0fdf4' if is_checked else '#f8fafc' }};
+                     transition:border-color .15s, background .15s;">
+
+              {# Icon + labels — no radio dot #}
+              <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
+                <i class="{{ method_icons.get(method, 'fa-solid fa-circle-dot') }} pm-icon"
+                   style="font-size:20px; width:24px; text-align:center; flex-shrink:0;
+                          color:{{ 'var(--primary,#1a4f32)' if is_checked else '#94a3b8' }};
+                          transition:color .15s;"></i>
                 <div>
-                  <div style="font-weight:700; font-size:14px; color:var(--text, #1e293b);">{{ method }}</div>
-                  <div style="font-size:12px; color:var(--text-muted, #64748b);">{{ method_descs.get(method, '') }}</div>
+                  <div class="pm-label"
+                       style="font-weight:700; font-size:14px;
+                              color:{{ 'var(--text,#1e293b)' if is_checked else '#94a3b8' }};
+                              transition:color .15s;">
+                    {{ method_labels.get(method, method) }}
+                  </div>
+                  <div class="pm-desc"
+                       style="font-size:12px;
+                              color:{{ '#64748b' if is_checked else '#b0b8c6' }};
+                              transition:color .15s;">
+                    {{ method_descs.get(method, '') }}
+                  </div>
                 </div>
               </div>
-              {# Toggle switch appearance (wraps a real checkbox) #}
+
+              {# Toggle switch (real checkbox, visually styled) #}
               <div style="position:relative; width:44px; height:24px; flex-shrink:0;">
                 <input type="checkbox"
                        name="methods"
                        value="{{ method }}"
                        {% if is_checked %}checked{% endif %}
                        {% if not can_edit %}disabled{% endif %}
-                       id="method_{{ loop.index }}"
-                       style="position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:{% if can_edit %}pointer{% else %}default{% endif %}; z-index:1;">
-                <span style="position:absolute; inset:0; border-radius:12px; background:{% if is_checked %}var(--primary,#1a4f32){% else %}#cbd5e1{% endif %}; transition:background .2s;">
-                  <span style="position:absolute; top:3px; left:{% if is_checked %}23px{% else %}3px{% endif %}; width:18px; height:18px; background:#fff; border-radius:50%; transition:left .2s; box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
+                       class="pm-checkbox"
+                       style="position:absolute; opacity:0; width:100%; height:100%;
+                              margin:0; cursor:{% if can_edit %}pointer{% else %}default{% endif %};
+                              z-index:1;">
+                <span class="pm-track"
+                      style="position:absolute; inset:0; border-radius:12px;
+                             background:{{ 'var(--primary,#1a4f32)' if is_checked else '#cbd5e1' }};
+                             transition:background .2s;">
+                  <span class="pm-thumb"
+                        style="position:absolute; top:3px;
+                               left:{{ '23px' if is_checked else '3px' }};
+                               width:18px; height:18px; background:#fff; border-radius:50%;
+                               transition:left .2s; box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
                 </span>
               </div>
             </label>
             {% endfor %}
           </div>
 
-          <div style="display:flex; justify-content:flex-end;">
-            <button class="btn btn-primary" type="submit"
+          {# Fix 4: Inline validation message + disabled Save when all off #}
+          <div style="display:flex; align-items:center; justify-content:flex-end; gap:12px; flex-wrap:wrap;">
+            <span id="pm-validation-msg"
+                  style="display:none; font-size:13px; font-weight:600;
+                         color:#dc2626; align-items:center; gap:6px;">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              Enable at least one payment method.
+            </span>
+            <button class="btn btn-primary" type="submit" id="pm-save-btn"
                     {% if not can_edit %}disabled title="Requires active subscription"{% endif %}>
               <i class="fa-solid fa-floppy-disk"></i> Save Payment Methods
             </button>
@@ -106,27 +150,56 @@
 </div>
 
 <script>
-/* Live toggle-switch visual feedback */
-document.querySelectorAll('input[name="methods"]').forEach(function(cb) {
-  cb.addEventListener('change', function() {
-    const label = this.closest('label');
-    const track = label.querySelector('span[style*="border-radius:12px"]');
-    const thumb = track ? track.querySelector('span') : null;
-    const icon  = label.querySelector('i[style*="font-size:18px"]');
-    if (this.checked) {
-      label.style.borderColor = 'var(--primary,#1a4f32)';
-      label.style.background  = '#f0fdf4';
-      if (track)  track.style.background = 'var(--primary,#1a4f32)';
-      if (thumb)  thumb.style.left = '23px';
-      if (icon)   icon.style.color = 'var(--primary,#1a4f32)';
-    } else {
-      label.style.borderColor = 'var(--border-light,#e2e8f0)';
-      label.style.background  = '#fff';
-      if (track)  track.style.background = '#cbd5e1';
-      if (thumb)  thumb.style.left = '3px';
-      if (icon)   icon.style.color = 'var(--text-muted,#94a3b8)';
-    }
+(function () {
+  var canEdit = {{ 'true' if can_edit else 'false' }};
+  if (!canEdit) return;   // disabled state — no JS needed
+
+  var form    = document.getElementById('payment-methods-form');
+  var saveBtn = document.getElementById('pm-save-btn');
+  var msg     = document.getElementById('pm-validation-msg');
+
+  // ── Row update helper ────────────────────────────────────────────────────
+  function applyRowState(label, checked) {
+    var icon  = label.querySelector('.pm-icon');
+    var lbl   = label.querySelector('.pm-label');
+    var desc  = label.querySelector('.pm-desc');
+    var track = label.querySelector('.pm-track');
+    var thumb = label.querySelector('.pm-thumb');
+
+    // Fix 3: active = green border + tinted bg; inactive = grey border + faded bg
+    label.style.borderColor = checked ? 'var(--primary,#1a4f32)' : '#e2e8f0';
+    label.style.background  = checked ? '#f0fdf4' : '#f8fafc';
+
+    // Fix 2: icon colour (no radio dot — icon is the only left-side visual)
+    if (icon)  icon.style.color  = checked ? 'var(--primary,#1a4f32)' : '#94a3b8';
+
+    // Fix 3: muted label + description when off
+    if (lbl)   lbl.style.color   = checked ? 'var(--text,#1e293b)' : '#94a3b8';
+    if (desc)  desc.style.color  = checked ? '#64748b'              : '#b0b8c6';
+
+    // Toggle switch track + thumb
+    if (track) track.style.background = checked ? 'var(--primary,#1a4f32)' : '#cbd5e1';
+    if (thumb) thumb.style.left       = checked ? '23px' : '3px';
+  }
+
+  // ── Validation: at least one checkbox on ────────────────────────────────
+  function validate() {
+    var any = Array.from(form.querySelectorAll('.pm-checkbox')).some(function(cb){ return cb.checked; });
+    // Fix 4: disable Save + show message when none checked
+    saveBtn.disabled   = !any;
+    msg.style.display  = any ? 'none' : 'inline-flex';
+  }
+
+  // ── Wire each checkbox ───────────────────────────────────────────────────
+  form.querySelectorAll('.pm-checkbox').forEach(function (cb) {
+    cb.addEventListener('change', function () {
+      applyRowState(this.closest('.pm-row'), this.checked);
+      validate();
+    });
   });
-});
+
+  // Run once on load to set correct state
+  validate();
+})();
 </script>
 {% endblock %}
