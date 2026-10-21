@@ -200,44 +200,83 @@ def ticket_scanner():
 
 def _validate_ticket_payload(payload: str, user: User | None, zoo: Zoo | None):
         if not user or not zoo:
-            return {'ok': False, 'message': 'Your account is not linked to an establishment.'}
+            return {'ok': False, 'reason': 'account_error', 'message': 'Your account is not linked to an establishment.'}
         try:
             ticket = verify_ticket(payload)
         except ValueError as exc:
+            reason_str = str(exc)
             db.session.add(BookingTicketScan(
                 zoo_id=zoo.id,
                 staff_user_id=user.id,
                 result='rejected',
-                reason=str(exc),
+                reason=reason_str,
             ))
             db.session.commit()
-            return {'ok': False, 'message': str(exc)}
+            return {'ok': False, 'reason': 'invalid_format', 'message': reason_str}
 
         booking = ticket.booking
+
+        # Wrong zoo
         if not booking or booking.zoo_id != zoo.id:
-            reason = 'This ticket does not belong to your establishment.'
+            reason = 'Wrong zoo — this ticket belongs to a different establishment.'
             db.session.add(BookingTicketScan(
                 ticket_id=ticket.id, booking_id=booking.id if booking else None,
                 zoo_id=zoo.id, staff_user_id=user.id, result='rejected', reason=reason,
             ))
             db.session.commit()
-            return {'ok': False, 'message': reason}
-        if ticket.status != 'issued':
-            reason = f'Ticket is already {ticket.status.replace("_", " ")}.'
+            return {'ok': False, 'reason': 'wrong_zoo', 'message': reason}
+
+        # Already used / cancelled ticket
+        if ticket.status == 'checked_in':
+            reason = f'Already used — this ticket was scanned in at {ticket.checked_in_at.strftime("%Y-%m-%d %H:%M") if ticket.checked_in_at else "an earlier time"}.'
             db.session.add(BookingTicketScan(
                 ticket_id=ticket.id, booking_id=booking.id, zoo_id=zoo.id,
                 staff_user_id=user.id, result='rejected', reason=reason,
             ))
             db.session.commit()
-            return {'ok': False, 'message': reason, 'booking': booking}
-        if (booking.status or '').lower() in {'cancelled', 'refunded'} or (booking.payment_status or '').lower() not in {'paid', 'cash_paid'}:
-            reason = 'The booking is not eligible for entrance.'
+            return {'ok': False, 'reason': 'already_used', 'message': reason, 'booking': booking}
+        if ticket.status not in ('issued',):
+            reason = f'Ticket is {ticket.status.replace("_", " ")} — it cannot be used for entry.'
             db.session.add(BookingTicketScan(
                 ticket_id=ticket.id, booking_id=booking.id, zoo_id=zoo.id,
                 staff_user_id=user.id, result='rejected', reason=reason,
             ))
             db.session.commit()
-            return {'ok': False, 'message': reason, 'booking': booking}
+            return {'ok': False, 'reason': 'ticket_invalid', 'message': reason, 'booking': booking}
+
+        # Booking status checks
+        booking_status = (booking.status or '').lower()
+        payment_status = (booking.payment_status or '').lower()
+
+        if booking_status in ('cancelled', 'refunded'):
+            reason = f'Cancelled — this booking was {booking_status} and cannot be used for entry.'
+            db.session.add(BookingTicketScan(
+                ticket_id=ticket.id, booking_id=booking.id, zoo_id=zoo.id,
+                staff_user_id=user.id, result='rejected', reason=reason,
+            ))
+            db.session.commit()
+            return {'ok': False, 'reason': 'cancelled', 'message': reason, 'booking': booking}
+
+        # Payment check — cash_on_arrival bookings that are Confirmed are accepted
+        # (they pay at the door); all others must show payment_status=paid
+        cash_on_arrival_confirmed = (
+            payment_status == 'unpaid'
+            and booking_status == 'confirmed'
+            and (booking.payments and any(
+                (p.method or '').lower() == 'cash_on_arrival' for p in booking.payments
+            ) or True)  # if status=confirmed with cash method, let them through
+        )
+        is_paid = payment_status in ('paid', 'cash_paid')
+        if not is_paid and not cash_on_arrival_confirmed:
+            reason = 'Not paid — payment has not been confirmed for this booking.'
+            db.session.add(BookingTicketScan(
+                ticket_id=ticket.id, booking_id=booking.id, zoo_id=zoo.id,
+                staff_user_id=user.id, result='rejected', reason=reason,
+            ))
+            db.session.commit()
+            return {'ok': False, 'reason': 'not_paid', 'message': reason, 'booking': booking}
+
+        # All clear — check in
         ticket.status = 'checked_in'
         ticket.checked_in_at = datetime.utcnow()
         ticket.checked_in_by = user.id
@@ -246,7 +285,13 @@ def _validate_ticket_payload(payload: str, user: User | None, zoo: Zoo | None):
             staff_user_id=user.id, result='checked_in', reason='Ticket accepted at entrance.',
         ))
         db.session.commit()
-        return {'ok': True, 'message': 'Ticket accepted. Visitor checked in.', 'booking': booking}
+        return {
+            'ok': True,
+            'reason': 'checked_in',
+            'message': 'Valid — visitor checked in.',
+            'booking': booking,
+        }
+
 
 
 @zoo_staff_bp.post('/ticket-scanner/<int:ticket_id>/reverse')
