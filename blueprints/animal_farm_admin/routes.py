@@ -420,8 +420,11 @@ def save_layout():
     return redirect(url_for('animal_farm_admin.layout_changer'))
 
 
-@animal_farm_admin_bp.route('/bookings')
+@animal_farm_admin_bp.route('/bookings', methods=['GET', 'POST'])
 def booking_management():
+    if request.method == 'POST':
+        return create_booking()
+
     zoo = _current_zoo()
     if not zoo:
         flash('No zoo assigned.', 'error')

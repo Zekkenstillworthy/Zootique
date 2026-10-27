@@ -118,8 +118,11 @@ def daily_tasks():
     return render_template('animal_farm_staff/tasks.html', user=user, tasks=tasks)
 
 
-@zoo_staff_bp.route('/bookings')
+@zoo_staff_bp.route('/bookings', methods=['GET', 'POST'])
 def my_bookings():
+    if request.method == 'POST':
+        return create_booking()
+
     user = _current_user()
     zoo = _current_zoo()
     if not zoo or not user:
