@@ -1019,14 +1019,19 @@ def visitor_availability():
 
     # Determine schedule & slot capacity dynamically from Service model
     slots = []
-    slot_capacity = (service.slot_capacity if service and service.slot_capacity else None) or 15
+    active_service = service or reference_service
+    slot_capacity = (
+        (active_service.slot_capacity if active_service and active_service.slot_capacity else None)
+        or (active_service.daily_capacity if active_service and active_service.daily_capacity else None)
+        or 50
+    )
 
-    if service and service.opening_time and service.closing_time:
+    if active_service and active_service.opening_time and active_service.closing_time:
         try:
             from datetime import datetime as _dt, timedelta as _td
-            start_t = _dt.strptime(service.opening_time.strip(), "%H:%M")
-            end_t = _dt.strptime(service.closing_time.strip(), "%H:%M")
-            dur = max(30, int(service.slot_duration_minutes or 60))
+            start_t = _dt.strptime(active_service.opening_time.strip(), "%H:%M")
+            end_t = _dt.strptime(active_service.closing_time.strip(), "%H:%M")
+            dur = max(30, int(active_service.slot_duration_minutes or 60))
             curr = start_t
             while curr < end_t:
                 slots.append(curr.strftime("%I:%M %p"))
@@ -1035,14 +1040,16 @@ def visitor_availability():
             pass
 
     if not slots:
-        if service and any(k in (service.name or "").lower() for k in ["tour", "feeding", "vip", "encounter"]):
+        if active_service and any(k in (active_service.name or "").lower() for k in ["tour", "feeding", "vip", "encounter"]):
             slots = ["10:00 AM", "02:00 PM"]
-            slot_capacity = (service.slot_capacity if service and service.slot_capacity else None) or 15
         else:
             slots = ["09:00 AM", "10:00 AM", "11:00 AM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM"]
-            slot_capacity = (service.slot_capacity if service and service.slot_capacity else None) or 12
 
-    day_capacity = (service.daily_capacity if service and service.daily_capacity else None) or (slot_capacity * len(slots))
+    day_capacity = (
+        (service.daily_capacity if service and service.daily_capacity else None)
+        or (reference_service.daily_capacity if reference_service and reference_service.daily_capacity else None)
+        or (slot_capacity * len(slots))
+    )
     limited_threshold = 0.20
 
     # Query active bookings for this month, service, and zoo from the database.
