@@ -125,6 +125,74 @@ class RemainingFeatureTestCase(unittest.TestCase):
             SystemSetting.query.filter_by(key=f"zoo:{zoo.id}:availability").delete()
             db.session.commit()
 
+    def test_delete_booking_cascades_safely(self):
+        with self.app.app_context():
+            from models import BookingPayment, BookingTicket, Notification
+            from uuid import uuid4
+
+            admin_user = User.query.filter(User.role == "animal_farm_admin", User.zoo_id.isnot(None)).first()
+            if not admin_user:
+                admin_user = User.query.filter(User.zoo_id.isnot(None)).first()
+            if not admin_user:
+                self.skipTest("No admin user with zoo found.")
+
+            zoo_id = admin_user.zoo_id
+            booking_id = f"BK-TEST-{uuid4().hex[:6].upper()}"
+            booking = Booking(
+                id=booking_id,
+                zoo_id=zoo_id,
+                visitor_name="Test Deletion",
+                date="2099-01-01",
+                time="09:00 AM",
+                guests=2,
+                status="Confirmed",
+                amount=200,
+                payment_status="paid",
+            )
+            db.session.add(booking)
+            db.session.flush()
+
+            payment = BookingPayment(
+                booking_id=booking.id,
+                amount=200,
+                method="card",
+                status="paid",
+                reference=f"REF-{uuid4().hex[:8].upper()}",
+            )
+            ticket = BookingTicket(
+                booking_id=booking.id,
+                token_hash=uuid4().hex,
+                token_payload=uuid4().hex,
+                status="issued",
+            )
+            notification = Notification(
+                user_id=admin_user.id,
+                booking_id=booking.id,
+                notification_type="booking_confirmed",
+                message="Test deletion notification",
+                dedupe_key=f"test-del:{booking.id}",
+            )
+            db.session.add_all([payment, ticket, notification])
+            db.session.commit()
+
+            with self.client.session_transaction() as sess:
+                sess["user_id"] = admin_user.id
+                sess["role"] = admin_user.role or "animal_farm_admin"
+                sess["zoo_id"] = zoo_id
+
+            # GET should redirect safely
+            get_res = self.client.get(f"/animal-farm-admin/bookings/{booking.id}/delete")
+            self.assertEqual(get_res.status_code, 302)
+
+            # POST should delete without 500 error
+            post_res = self.client.post(f"/animal-farm-admin/bookings/{booking.id}/delete")
+            self.assertEqual(post_res.status_code, 302)
+
+            # Ensure booking and child records are gone
+            self.assertIsNone(Booking.query.filter_by(id=booking_id).first())
+            self.assertEqual(BookingPayment.query.filter_by(booking_id=booking_id).count(), 0)
+            self.assertEqual(BookingTicket.query.filter_by(booking_id=booking_id).count(), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

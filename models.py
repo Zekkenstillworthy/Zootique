@@ -254,7 +254,10 @@ class Booking(db.Model):
     service = db.relationship('Service', lazy=True)
     user = db.relationship('User', foreign_keys=[user_id], back_populates='bookings', lazy=True)
     assigned_staff_user = db.relationship('User', foreign_keys=[assigned_staff_user_id], back_populates='assigned_bookings', lazy=True)
-    payments = db.relationship('BookingPayment', back_populates='booking', lazy=True)
+    payments = db.relationship('BookingPayment', back_populates='booking', cascade='all, delete-orphan', passive_deletes=True, lazy=True)
+    tickets = db.relationship('BookingTicket', back_populates='booking', cascade='all, delete-orphan', passive_deletes=True, lazy=True)
+    ticket_scans = db.relationship('BookingTicketScan', back_populates='booking', cascade='all, delete-orphan', passive_deletes=True, lazy=True)
+    notifications = db.relationship('Notification', back_populates='booking', cascade='all, delete-orphan', passive_deletes=True, lazy=True)
     bundle = db.relationship('BookingBundle', lazy=True)
 
 
@@ -271,7 +274,7 @@ class Notification(db.Model):
     read_at = db.Column(db.DateTime, nullable=True)
 
     user = db.relationship('User', lazy=True)
-    booking = db.relationship('Booking', lazy=True)
+    booking = db.relationship('Booking', back_populates='notifications', lazy=True)
 
 
 @event.listens_for(Booking, 'after_update')
@@ -655,7 +658,7 @@ class BookingTicket(db.Model):
     checked_in_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-    booking = db.relationship('Booking', lazy=True)
+    booking = db.relationship('Booking', back_populates='tickets', lazy=True)
     checker = db.relationship('User', lazy=True)
 
 
@@ -671,7 +674,7 @@ class BookingTicketScan(db.Model):
     scanned_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     ticket = db.relationship('BookingTicket', lazy=True)
-    booking = db.relationship('Booking', lazy=True)
+    booking = db.relationship('Booking', back_populates='ticket_scans', lazy=True)
     staff_user = db.relationship('User', lazy=True)
     zoo = db.relationship('Zoo', lazy=True)
 

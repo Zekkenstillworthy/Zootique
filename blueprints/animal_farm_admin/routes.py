@@ -6,7 +6,7 @@ import os
 import re
 from sqlalchemy import or_
 
-from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, session, url_for
 
 from services.storage import save_uploaded_image as _save_uploaded_image
 
@@ -14,8 +14,12 @@ from models import (
     Animal,
     Booking,
     BookingBundle,
+    BookingPayment,
+    BookingTicket,
+    BookingTicketScan,
     Event,
     Feedback,
+    LoyaltyTransaction,
     Notification,
     ParkRule,
     Promotion,
@@ -769,7 +773,7 @@ def booking_management_legacy_redirect():
     return redirect(url_for('animal_farm_admin.booking_management'), code=301)
 
 
-@animal_farm_admin_bp.post('/bookings/<booking_id>/delete')
+@animal_farm_admin_bp.route('/bookings/<booking_id>/delete', methods=['GET', 'POST'])
 def delete_booking(booking_id: str):
     zoo = _current_zoo()
     if not zoo:
@@ -779,9 +783,33 @@ def delete_booking(booking_id: str):
     if not booking:
         flash('Booking not found.', 'error')
         return redirect(url_for('animal_farm_admin.booking_management'))
-    db.session.delete(booking)
-    db.session.commit()
-    flash('Booking removed.', 'success')
+
+    if request.method == 'GET':
+        return redirect(url_for('animal_farm_admin.booking_management'))
+
+    try:
+        # Delete any associated ticket scans first
+        ticket_ids = [t.id for t in BookingTicket.query.filter_by(booking_id=booking.id).all()]
+        if ticket_ids:
+            BookingTicketScan.query.filter(BookingTicketScan.ticket_id.in_(ticket_ids)).delete(synchronize_session=False)
+        BookingTicketScan.query.filter_by(booking_id=booking.id).delete(synchronize_session=False)
+
+        # Delete tickets, payments, and notifications
+        BookingTicket.query.filter_by(booking_id=booking.id).delete(synchronize_session=False)
+        BookingPayment.query.filter_by(booking_id=booking.id).delete(synchronize_session=False)
+        Notification.query.filter_by(booking_id=booking.id).delete(synchronize_session=False)
+
+        # Unlink loyalty transactions safely
+        LoyaltyTransaction.query.filter_by(booking_id=booking.id).update({'booking_id': None}, synchronize_session=False)
+
+        db.session.delete(booking)
+        db.session.commit()
+        flash('Booking removed.', 'success')
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.exception('Failed to delete booking %s: %s', booking_id, exc)
+        flash('Unable to delete booking. Please try again.', 'error')
+
     return redirect(url_for('animal_farm_admin.booking_management'))
 
 @animal_farm_admin_bp.route('/profile')
