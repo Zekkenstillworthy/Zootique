@@ -95,16 +95,15 @@
               <div style="display:inline-flex; gap:6px; justify-content:flex-end; align-items:center;">
                 {# Edit #}
                 <button class="zf-icon-btn" type="button" title="Edit booking"
-                  onclick="openBookingModal({
-                    id:      {{ b.id|tojson }},
-                    visitor: {{ (b.visitor_name or '')|tojson }},
-                    date:    {{ (b.date|string)|tojson }},
-                    time:    {{ (b.time or '')|tojson }},
-                    guests:  {{ (b.guests or 1)|tojson }},
-                    amount:  {{ (b.amount or 0)|tojson }},
-                    service: {{ (b.service_id or '')|tojson }},
-                    status:  {{ (b.status or 'Pending')|tojson }}
-                  })">
+                  data-id="{{ b.id }}"
+                  data-visitor="{{ b.visitor_name or '' }}"
+                  data-date="{{ b.date or '' }}"
+                  data-time="{{ b.time or '' }}"
+                  data-guests="{{ b.guests or 1 }}"
+                  data-amount="{{ b.amount or 0 }}"
+                  data-service="{{ b.service_id or '' }}"
+                  data-status="{{ b.status or 'Pending' }}"
+                  onclick="openBookingModal(this.dataset)">
                   <i class="fa-solid fa-pen"></i>
                 </button>
                 {# Accept #}
