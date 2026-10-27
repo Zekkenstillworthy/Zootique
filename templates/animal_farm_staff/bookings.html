@@ -39,8 +39,9 @@
     <div class="card-panel">
         <div class="card-header">
             <h2><i class="fa-solid fa-ticket" style="margin-right:8px;"></i> Zoo Bookings — {{ zoo.name }}</h2>
-            <div class="card-header-actions">
+            <div class="card-header-actions" style="display:flex; align-items:center; gap:8px;">
                 <span class="badge badge-role">{{ bookings|length }} Filtered</span>
+                <a class="btn btn-outline btn-sm" href="{{ url_for('animal_farm_staff.my_bookings') }}">Reset Filters</a>
             </div>
         </div>
 
@@ -55,6 +56,12 @@
                 </a>
                 {% endfor %}
             </div>
+
+            <div style="display:flex; align-items:center; gap:10px; margin-left:auto;">
+                <button class="btn btn-primary btn-sm" type="button" style="height:38px;" onclick="openBookingModal()">
+                    <i class="fa-solid fa-plus"></i> Add Booking
+                </button>
+            </div>
         </div>
 
         <div class="card-body" style="padding:0;">
@@ -62,34 +69,38 @@
                 <table class="table-striped">
                     <thead>
                         <tr>
-                            <th style="width:70px; padding-left:16px;">Photo</th>
+                            <th style="width:70px; padding-left:16px;">Cover</th>
                             <th>Visitor</th>
                             <th>Service</th>
-                            <th>Schedule Date</th>
-                            <th>Time</th>
+                            <th>Schedule</th>
                             <th>Guests</th>
                             <th>Amount</th>
                             <th>Status</th>
-                            <th style="width:230px; text-align:right; padding-right:16px;">Update Status</th>
+                            <th style="width:190px; text-align:right; padding-right:16px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for b in bookings %}
                         <tr>
                             <td style="padding-left:16px;">
-                                {% if b.image_url %}
-                                    <img src="{{ b.image_url }}" alt="" style="width:52px; height:38px; object-fit:cover; border-radius:6px; border:1px solid var(--border);" />
+                                {% set bimg = (b.image_url or (b.service.image_url if b.service else None)) %}
+                                {% if bimg %}
+                                    <img src="{{ bimg }}" alt="" style="width:52px; height:38px; object-fit:cover; border-radius:6px; border:1px solid var(--border);" />
                                 {% else %}
                                     <div style="width:52px; height:38px; background:#f1f5f9; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:14px;">
                                         <i class="fa-solid fa-ticket"></i>
                                     </div>
                                 {% endif %}
                             </td>
-                            <td style="font-weight:700; color:var(--text);">{{ b.visitor_name }}</td>
-                            <td>{{ b.service_name or '—' }}</td>
-                            <td>{{ b.date or '—' }}</td>
-                            <td>{{ b.time or '—' }}</td>
-                            <td><span class="badge badge-neutral">{{ b.guests or 1 }}</span></td>
+                            <td>
+                                <div style="font-weight:700; color:var(--text);">{{ b.visitor_name }}</div>
+                            </td>
+                            <td>{{ b.service_name or (b.service.name if b.service else '—') }}</td>
+                            <td>
+                                <div style="font-size:13px; font-weight:600; color:var(--text);">{{ b.date or '—' }}</div>
+                                {% if b.time %}<div style="font-size:12px; color:var(--text-muted);">{{ b.time }}</div>{% endif %}
+                            </td>
+                            <td><span class="badge badge-neutral">{{ b.guests or 1 }} Guest(s)</span></td>
                             <td style="font-weight:700; color:var(--text);">₱{{ '%.2f'|format(b.amount or 0) }}</td>
                             <td>
                                 {% set s = (b.status or '')|lower %}
@@ -100,20 +111,52 @@
                                 {% else %}<span class="badge badge-neutral">{{ b.status }}</span>{% endif %}
                             </td>
                             <td style="text-align:right; padding-right:16px;">
-                                <form method="post" action="{{ url_for('animal_farm_staff.update_assigned_booking_status', booking_id=b.id) }}" style="display:inline-flex; gap:6px; align-items:center; justify-content:flex-end; margin:0;">
-                                    <select name="status" class="zf-control" style="padding:4px 8px; height:34px; width:auto; font-size:13px;">
-                                        <option value="Pending" {% if (b.status or 'Pending') == 'Pending' %}selected{% endif %}>Pending</option>
-                                        <option value="Confirmed" {% if b.status == 'Confirmed' %}selected{% endif %}>Confirmed</option>
-                                        <option value="Cancelled" {% if b.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
-                                        <option value="Finished" {% if b.status == 'Finished' %}selected{% endif %}>Finished</option>
-                                    </select>
-                                    <button class="btn btn-primary btn-sm" type="submit" style="height:34px;">Update</button>
-                                </form>
+                                <div style="display:inline-flex; gap:6px; justify-content:flex-end; align-items:center;">
+                                    {# Edit #}
+                                    <button class="zf-icon-btn" type="button" title="Edit booking"
+                                        onclick="openBookingModal({
+                                            id:      {{ b.id|tojson }},
+                                            visitor: {{ (b.visitor_name or '')|tojson }},
+                                            date:    {{ (b.date|string)|tojson }},
+                                            time:    {{ (b.time or '')|tojson }},
+                                            guests:  {{ (b.guests or 1)|tojson }},
+                                            amount:  {{ (b.amount or 0)|tojson }},
+                                            service: {{ (b.service_id or '')|tojson }},
+                                            status:  {{ (b.status or 'Pending')|tojson }}
+                                        })">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    {# Accept #}
+                                    {% if s != 'confirmed' and s != 'finished' %}
+                                    <form method="post" action="{{ url_for('animal_farm_staff.update_assigned_booking_status', booking_id=b.id) }}" style="display:inline; margin:0;">
+                                        <input type="hidden" name="status" value="Confirmed">
+                                        <button class="zf-icon-btn" type="submit" style="color:#16a34a; border-color:#bbf7d0;" title="Confirm Booking">
+                                            <i class="fa-solid fa-check"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    {# Decline #}
+                                    {% if s != 'cancelled' %}
+                                    <form method="post" action="{{ url_for('animal_farm_staff.update_assigned_booking_status', booking_id=b.id) }}" style="display:inline; margin:0;">
+                                        <input type="hidden" name="status" value="Cancelled">
+                                        <button class="zf-icon-btn danger" type="submit" title="Cancel Booking">
+                                            <i class="fa-solid fa-ban"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    {# Remove #}
+                                    <form method="post" action="{{ url_for('animal_farm_staff.delete_booking', booking_id=b.id) }}"
+                                          style="display:inline; margin:0;" onsubmit="return confirm('Remove this booking permanently?');">
+                                        <button class="zf-icon-btn danger" type="submit" title="Delete Booking">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="9">
+                            <td colspan="8">
                                 <div class="zf-empty-state">
                                     <i class="fa-regular fa-calendar-xmark zf-empty-icon"></i>
                                     <div class="zf-empty-title">No Bookings Found</div>
@@ -128,4 +171,138 @@
         </div>
     </div>
 </div>
+
+{# ══════════════════════════════════════
+   STANDARDIZED BOOKING MODAL (.zf-modal-*)
+══════════════════════════════════════ #}
+<div id="booking-modal-overlay" class="zf-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title"
+     onclick="if(event.target===this) closeBookingModal()">
+    <div class="zf-modal-dialog">
+        <div class="zf-modal-header">
+            <h3 class="zf-modal-title" id="modal-title">
+                <i class="fa-solid fa-calendar-check" style="margin-right:8px;"></i>
+                <span id="modal-mode-label">Add Booking</span>
+            </h3>
+            <button class="zf-modal-close" type="button" onclick="closeBookingModal()" title="Close">&times;</button>
+        </div>
+
+        <form id="booking-modal-form"
+              method="post"
+              enctype="multipart/form-data"
+              data-add-action="{{ url_for('animal_farm_staff.create_booking') }}"
+              data-edit-template="{{ url_for('animal_farm_staff.update_booking', booking_id='BOOKING_ID') }}"
+              action="{{ url_for('animal_farm_staff.create_booking') }}" style="display:flex; flex-direction:column; margin:0;">
+
+            <input type="hidden" name="booking_id" id="modal-booking-id" value="">
+
+            <div class="zf-modal-body">
+                <div class="zf-grid-2">
+                    <div class="zf-field zf-full">
+                        <label class="zf-label" for="modal-visitor">Visitor Name <span class="zf-req">*</span></label>
+                        <input type="text" name="visitor_name" id="modal-visitor" class="zf-control" placeholder="e.g. John Doe / Walk-in Visitor" required>
+                    </div>
+
+                    <div class="zf-field">
+                        <label class="zf-label" for="modal-date">Booking Date <span class="zf-req">*</span></label>
+                        <input type="date" name="date" id="modal-date" class="zf-control" required>
+                    </div>
+                    <div class="zf-field">
+                        <label class="zf-label" for="modal-time">Time Slot <span class="zf-req">*</span></label>
+                        <input type="text" name="time" id="modal-time" class="zf-control" placeholder="e.g. 10:00 AM, 2:00 PM" required>
+                    </div>
+                    <div class="zf-field">
+                        <label class="zf-label" for="modal-guests">Number of Guests</label>
+                        <input type="number" name="guests" id="modal-guests" class="zf-control" min="1" value="1">
+                    </div>
+                    <div class="zf-field">
+                        <label class="zf-label" for="modal-amount">Total Amount (₱)</label>
+                        <input type="number" step="0.01" name="amount" id="modal-amount" class="zf-control" placeholder="0.00">
+                    </div>
+
+                    <div class="zf-field zf-full">
+                        <label class="zf-label" for="modal-service">Service Package</label>
+                        <select name="service_id" id="modal-service" class="zf-control">
+                            <option value="">(keep current / select service)</option>
+                            {% for s in services %}
+                            <option value="{{ s.id }}">{{ s.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="zf-field">
+                        <label class="zf-label" for="modal-status">Status</label>
+                        <select name="status" id="modal-status" class="zf-control">
+                            <option value="Pending">Pending</option>
+                            <option value="Confirmed">Confirmed</option>
+                            <option value="Cancelled">Cancelled</option>
+                            <option value="Finished">Finished</option>
+                        </select>
+                    </div>
+
+                    <div class="zf-field">
+                        <label class="zf-label" for="modal-image">Booking Receipt / Photo</label>
+                        <input type="file" name="image_file" id="modal-image" accept="image/*" class="zf-control" style="padding:6px;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="zf-modal-footer">
+                <button type="button" class="zf-btn-cancel" onclick="closeBookingModal()">Cancel</button>
+                <button type="submit" class="zf-btn-primary">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Booking
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const overlay   = document.getElementById('booking-modal-overlay');
+    if (overlay && overlay.parentElement !== document.body) {
+        document.body.appendChild(overlay);
+    }
+    const form      = document.getElementById('booking-modal-form');
+    const modeLabel = document.getElementById('modal-mode-label');
+
+    function resetBookingModal() {
+        form.reset();
+        form.action = form.dataset.addAction || '';
+        document.getElementById('modal-booking-id').value = '';
+        document.getElementById('modal-visitor').value = '';
+        modeLabel.textContent = 'Add Booking';
+    }
+
+    function openBookingModal(data) {
+        const isEdit = data && data.id;
+        modeLabel.textContent = isEdit ? 'Edit Booking' : 'Add Booking';
+
+        if (isEdit) {
+            const tpl = form.dataset.editTemplate || '';
+            form.action = tpl.replace('BOOKING_ID', encodeURIComponent(String(data.id)));
+            document.getElementById('modal-booking-id').value = data.id;
+            document.getElementById('modal-visitor').value    = data.visitor || '';
+            document.getElementById('modal-date').value       = data.date   || '';
+            document.getElementById('modal-time').value       = data.time   || '';
+            document.getElementById('modal-guests').value     = data.guests || 1;
+            document.getElementById('modal-amount').value     = (data.amount ?? '');
+            document.getElementById('modal-service').value    = data.service|| '';
+            document.getElementById('modal-status').value     = data.status || 'Pending';
+        } else {
+            resetBookingModal();
+        }
+
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeBookingModal() {
+        overlay.classList.remove('open');
+        resetBookingModal();
+        document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeBookingModal();
+    });
+</script>
 {% endblock %}

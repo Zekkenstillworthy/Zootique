@@ -193,6 +193,97 @@ class RemainingFeatureTestCase(unittest.TestCase):
             self.assertEqual(BookingPayment.query.filter_by(booking_id=booking_id).count(), 0)
             self.assertEqual(BookingTicket.query.filter_by(booking_id=booking_id).count(), 0)
 
+    def test_zoo_staff_booking_full_authority(self):
+        with self.app.app_context():
+            from uuid import uuid4
+
+            zoo = Zoo.query.order_by(Zoo.id.asc()).first()
+            if not zoo:
+                self.skipTest("No zoo found.")
+
+            staff_user = User.query.filter_by(zoo_id=zoo.id, role="zoo_staff").first()
+            if not staff_user:
+                staff_user = User(
+                    email=f"staff-{uuid4().hex[:6]}@example.com",
+                    full_name="Staff Tester",
+                    role="zoo_staff",
+                    status="active",
+                    zoo_id=zoo.id,
+                )
+                staff_user.set_password("Password123!")
+                db.session.add(staff_user)
+                db.session.commit()
+
+            with self.client.session_transaction() as sess:
+                sess["user_id"] = staff_user.id
+                sess["role"] = "zoo_staff"
+                sess["zoo_id"] = zoo.id
+
+            # 1. Staff can view bookings page with Add Booking button & modal
+            res = self.client.get("/animal-farm-staff/bookings")
+            self.assertEqual(res.status_code, 200)
+            html = res.get_data(as_text=True)
+            self.assertIn("Add Booking", html)
+            self.assertIn("booking-modal-overlay", html)
+
+            # 2. Staff can create a new booking
+            create_res = self.client.post(
+                "/animal-farm-staff/bookings/create",
+                data={
+                    "visitor_name": "VIP Visitor",
+                    "date": "2099-05-10",
+                    "time": "10:00 AM",
+                    "guests": "3",
+                    "amount": "150.00",
+                    "status": "Pending",
+                },
+                follow_redirects=True,
+            )
+            self.assertEqual(create_res.status_code, 200)
+            created_booking = Booking.query.filter_by(
+                zoo_id=zoo.id, visitor_name="VIP Visitor", date="2099-05-10"
+            ).first()
+            self.assertIsNotNone(created_booking)
+            self.assertEqual(created_booking.guests, 3)
+
+            # 3. Staff can update the booking
+            update_res = self.client.post(
+                f"/animal-farm-staff/bookings/{created_booking.id}/update",
+                data={
+                    "visitor_name": "VIP Visitor Updated",
+                    "date": "2099-05-11",
+                    "time": "11:00 AM",
+                    "guests": "4",
+                    "amount": "200.00",
+                    "status": "Confirmed",
+                },
+                follow_redirects=True,
+            )
+            self.assertEqual(update_res.status_code, 200)
+            db.session.refresh(created_booking)
+            self.assertEqual(created_booking.visitor_name, "VIP Visitor Updated")
+            self.assertEqual(created_booking.date, "2099-05-11")
+            self.assertEqual(created_booking.guests, 4)
+            self.assertEqual(created_booking.status, "Confirmed")
+
+            # 4. Staff can quick confirm / cancel status
+            status_res = self.client.post(
+                f"/animal-farm-staff/bookings/{created_booking.id}/status",
+                data={"status": "Cancelled"},
+                follow_redirects=True,
+            )
+            self.assertEqual(status_res.status_code, 200)
+            db.session.refresh(created_booking)
+            self.assertEqual(created_booking.status, "Cancelled")
+
+            # 5. Staff can delete the booking permanently
+            del_res = self.client.post(
+                f"/animal-farm-staff/bookings/{created_booking.id}/delete",
+                follow_redirects=True,
+            )
+            self.assertEqual(del_res.status_code, 200)
+            self.assertIsNone(Booking.query.filter_by(id=created_booking.id).first())
+
 
 if __name__ == "__main__":
     unittest.main()

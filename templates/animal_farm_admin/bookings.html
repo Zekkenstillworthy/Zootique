@@ -97,6 +97,7 @@
                 <button class="zf-icon-btn" type="button" title="Edit booking"
                   onclick="openBookingModal({
                     id:      {{ b.id|tojson }},
+                    visitor: {{ (b.visitor_name or '')|tojson }},
                     date:    {{ (b.date|string)|tojson }},
                     time:    {{ (b.time or '')|tojson }},
                     guests:  {{ (b.guests or 1)|tojson }},
@@ -169,14 +170,19 @@
     <form id="booking-modal-form"
           method="post"
           enctype="multipart/form-data"
-          data-add-action="{{ url_for('animal_farm_admin.booking_management') }}"
+          data-add-action="{{ url_for('animal_farm_admin.create_booking') }}"
           data-edit-template="{{ url_for('animal_farm_admin.update_booking', booking_id='BOOKING_ID') }}"
-          action="{{ url_for('animal_farm_admin.booking_management') }}" style="display:flex; flex-direction:column; margin:0;">
+          action="{{ url_for('animal_farm_admin.create_booking') }}" style="display:flex; flex-direction:column; margin:0;">
 
       <input type="hidden" name="booking_id" id="modal-booking-id" value="">
 
       <div class="zf-modal-body">
         <div class="zf-grid-2">
+          <div class="zf-field zf-full">
+            <label class="zf-label" for="modal-visitor">Visitor Name <span class="zf-req">*</span></label>
+            <input type="text" name="visitor_name" id="modal-visitor" class="zf-control" placeholder="e.g. John Doe / Walk-in Visitor" required>
+          </div>
+
           <div class="zf-field">
             <label class="zf-label" for="modal-date">Booking Date <span class="zf-req">*</span></label>
             <input type="date" name="date" id="modal-date" class="zf-control" required>
@@ -243,6 +249,7 @@
     form.reset();
     form.action = form.dataset.addAction || '';
     document.getElementById('modal-booking-id').value = '';
+    document.getElementById('modal-visitor').value = '';
     modeLabel.textContent = 'Add Booking';
   }
 
@@ -254,6 +261,7 @@
       const tpl = form.dataset.editTemplate || '';
       form.action = tpl.replace('BOOKING_ID', encodeURIComponent(String(data.id)));
       document.getElementById('modal-booking-id').value = data.id;
+      document.getElementById('modal-visitor').value    = data.visitor || '';
       document.getElementById('modal-date').value        = data.date   || '';
       document.getElementById('modal-time').value        = data.time   || '';
       document.getElementById('modal-guests').value      = data.guests || 1;

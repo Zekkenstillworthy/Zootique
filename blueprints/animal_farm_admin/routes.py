@@ -584,6 +584,7 @@ def create_booking():
     amount_raw = (request.form.get('amount') or '').strip()
     status = (request.form.get('status') or 'Pending').strip()
     staff_user_id_raw = (request.form.get('assigned_staff_user_id') or '').strip()
+    visitor_name = (request.form.get('visitor_name') or '').strip() or 'Walk-in Visitor'
     image_file = request.files.get('image_file')
 
     if not date or not time:
@@ -607,6 +608,7 @@ def create_booking():
     booking = Booking(
         id=secrets.token_hex(8),
         zoo_id=zoo.id,
+        visitor_name=visitor_name,
         service_id=service.id if service else None,
         service_name=service.name if service else None,
         date=date,
@@ -646,6 +648,7 @@ def update_booking(booking_id: str):
     guests = request.form.get('guests', type=int) or 1
     amount_raw = (request.form.get('amount') or '').strip()
     status = (request.form.get('status') or '').strip()
+    visitor_name = (request.form.get('visitor_name') or '').strip()
     image_file = request.files.get('image_file')
 
     if not date:
@@ -656,7 +659,7 @@ def update_booking(booking_id: str):
         return redirect(url_for('animal_farm_admin.booking_management'))
     if guests < 1:
         guests = 1
-    if status and status not in {'Pending', 'Confirmed', 'Cancelled'}:
+    if status and status not in {'Pending', 'Confirmed', 'Cancelled', 'Finished'}:
         flash('Invalid status.', 'error')
         return redirect(url_for('animal_farm_admin.booking_management'))
 
@@ -678,6 +681,8 @@ def update_booking(booking_id: str):
             flash('Amount must be a number.', 'error')
             return redirect(url_for('animal_farm_admin.booking_management'))
 
+    if visitor_name:
+        booking.visitor_name = visitor_name
     booking.date = date
     booking.time = time
     booking.guests = guests

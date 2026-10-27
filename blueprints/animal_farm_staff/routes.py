@@ -4,12 +4,28 @@ import os
 import secrets
 from datetime import datetime, timedelta, date
 
-from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.utils import secure_filename
 
 from services.storage import save_uploaded_image as _save_uploaded_image
 
-from models import Animal, Booking, BookingTicket, BookingTicketScan, Event, Feedback, Notification, StaffTask, User, Zoo, ZooZone, Service, db
+from models import (
+    Animal,
+    Booking,
+    BookingPayment,
+    BookingTicket,
+    BookingTicketScan,
+    Event,
+    Feedback,
+    LoyaltyTransaction,
+    Notification,
+    StaffTask,
+    User,
+    Zoo,
+    ZooZone,
+    Service,
+    db,
+)
 from services.auth_guard import require_role_guard
 from services.tickets import verify_ticket
 
@@ -130,11 +146,19 @@ def my_bookings():
     pending = sum(1 for b in all_bookings if (b.status or '').lower() == 'pending')
     cancelled = sum(1 for b in all_bookings if (b.status or '').lower() == 'cancelled')
 
+    services = (
+        Service.query
+        .filter_by(zoo_id=zoo.id)
+        .order_by(Service.name.asc())
+        .all()
+    )
+
     return render_template(
         'animal_farm_staff/bookings.html',
         zoo=zoo,
         bookings=bookings,
         selected_status=selected_status,
+        services=services,
         total=total,
         confirmed=confirmed,
         pending=pending,
@@ -143,6 +167,145 @@ def my_bookings():
         today_guests=today_guests,
         today_remaining=today_remaining,
     )
+
+
+@zoo_staff_bp.post('/bookings/create')
+def create_booking():
+    user = _current_user()
+    zoo = _current_zoo()
+    if not zoo or not user:
+        flash('Your account is not linked to an establishment.', 'error')
+        return redirect(url_for('animal_farm_staff.dashboard'))
+
+    service_id_raw = (request.form.get('service_id') or '').strip()
+    date = (request.form.get('date') or '').strip()
+    time = (request.form.get('time') or '').strip()
+    guests = request.form.get('guests', type=int) or 1
+    amount_raw = (request.form.get('amount') or '').strip()
+    status = (request.form.get('status') or 'Pending').strip()
+    visitor_name = (request.form.get('visitor_name') or '').strip() or 'Walk-in Visitor'
+    image_file = request.files.get('image_file')
+
+    if not date or not time:
+        flash('Date and time are required.', 'error')
+        return redirect(url_for('animal_farm_staff.my_bookings'))
+
+    service = None
+    if service_id_raw and service_id_raw.isdigit():
+        service = Service.query.filter_by(id=int(service_id_raw), zoo_id=zoo.id).first()
+
+    amount = None
+    if amount_raw:
+        try:
+            amount = float(amount_raw)
+        except Exception:
+            pass
+    if amount is None and service:
+        amount = float(service.price or 0)
+
+    booking = Booking(
+        id=secrets.token_hex(8),
+        zoo_id=zoo.id,
+        visitor_name=visitor_name,
+        service_id=service.id if service else None,
+        service_name=service.name if service else None,
+        date=date,
+        time=time,
+        guests=guests,
+        amount=amount or 0,
+        status=status if status in {'Pending', 'Confirmed', 'Cancelled', 'Finished'} else 'Pending',
+        assigned_staff_user_id=user.id,
+    )
+    db.session.add(booking)
+
+    if image_file and image_file.filename:
+        uploaded_url = _save_uploaded_image(image_file, 'booking_images')
+        if uploaded_url:
+            booking.image_url = uploaded_url
+
+    db.session.commit()
+    flash('Booking created.', 'success')
+    return redirect(url_for('animal_farm_staff.my_bookings'))
+
+
+@zoo_staff_bp.post('/bookings/<booking_id>/update')
+def update_booking(booking_id: str):
+    user = _current_user()
+    zoo = _current_zoo()
+    if not zoo or not user:
+        flash('Your account is not linked to an establishment.', 'error')
+        return redirect(url_for('animal_farm_staff.dashboard'))
+
+    booking = Booking.query.filter_by(id=booking_id, zoo_id=zoo.id).first()
+    if not booking:
+        flash('Booking not found.', 'error')
+        return redirect(url_for('animal_farm_staff.my_bookings'))
+
+    service_id_raw = (request.form.get('service_id') or '').strip()
+    date = (request.form.get('date') or '').strip()
+    time = (request.form.get('time') or '').strip()
+    guests = request.form.get('guests', type=int) or 1
+    amount_raw = (request.form.get('amount') or '').strip()
+    status = (request.form.get('status') or '').strip()
+    visitor_name = (request.form.get('visitor_name') or '').strip()
+    image_file = request.files.get('image_file')
+
+    if not date:
+        flash('Booking date is required.', 'error')
+        return redirect(url_for('animal_farm_staff.my_bookings'))
+    if not time:
+        flash('Booking time is required.', 'error')
+        return redirect(url_for('animal_farm_staff.my_bookings'))
+    if guests < 1:
+        guests = 1
+    if status and status not in {'Pending', 'Confirmed', 'Cancelled', 'Finished'}:
+        flash('Invalid status.', 'error')
+        return redirect(url_for('animal_farm_staff.my_bookings'))
+
+    service = None
+    if service_id_raw:
+        if not service_id_raw.isdigit():
+            flash('Invalid service selection.', 'error')
+            return redirect(url_for('animal_farm_staff.my_bookings'))
+        service = Service.query.filter_by(id=int(service_id_raw), zoo_id=zoo.id).first()
+        if not service:
+            flash('Selected service was not found.', 'error')
+            return redirect(url_for('animal_farm_staff.my_bookings'))
+
+    amount = None
+    if amount_raw:
+        try:
+            amount = float(amount_raw)
+        except Exception:
+            flash('Amount must be a number.', 'error')
+            return redirect(url_for('animal_farm_staff.my_bookings'))
+
+    if visitor_name:
+        booking.visitor_name = visitor_name
+    booking.date = date
+    booking.time = time
+    booking.guests = guests
+    if status:
+        booking.status = status
+
+    if service:
+        booking.service_id = service.id
+        booking.service_name = service.name
+        booking.zoo_id = service.zoo_id
+        if amount is None:
+            booking.amount = float(service.price or 0)
+    if amount is not None:
+        booking.amount = amount
+
+    if image_file and image_file.filename:
+        uploaded_url = _save_uploaded_image(image_file, 'booking_images')
+        if not uploaded_url:
+            return redirect(url_for('animal_farm_staff.my_bookings'))
+        booking.image_url = uploaded_url
+
+    db.session.commit()
+    flash('Booking updated.', 'success')
+    return redirect(url_for('animal_farm_staff.my_bookings'))
 
 
 @zoo_staff_bp.post('/bookings/<booking_id>/status')
@@ -169,6 +332,48 @@ def update_assigned_booking_status(booking_id: str):
     booking.status = new_status
     db.session.commit()
     flash('Booking status updated.', 'success')
+    return redirect(url_for('animal_farm_staff.my_bookings'))
+
+
+@zoo_staff_bp.route('/bookings/<booking_id>/delete', methods=['GET', 'POST'])
+def delete_booking(booking_id: str):
+    user = _current_user()
+    zoo = _current_zoo()
+    if not zoo or not user:
+        flash('Your account is not linked to an establishment.', 'error')
+        return redirect(url_for('animal_farm_staff.dashboard'))
+
+    booking = Booking.query.filter_by(id=booking_id, zoo_id=zoo.id).first()
+    if not booking:
+        flash('Booking not found.', 'error')
+        return redirect(url_for('animal_farm_staff.my_bookings'))
+
+    if request.method == 'GET':
+        return redirect(url_for('animal_farm_staff.my_bookings'))
+
+    try:
+        # Delete ticket scans
+        ticket_ids = [t.id for t in BookingTicket.query.filter_by(booking_id=booking.id).all()]
+        if ticket_ids:
+            BookingTicketScan.query.filter(BookingTicketScan.ticket_id.in_(ticket_ids)).delete(synchronize_session=False)
+        BookingTicketScan.query.filter_by(booking_id=booking.id).delete(synchronize_session=False)
+
+        # Delete tickets, payments, notifications
+        BookingTicket.query.filter_by(booking_id=booking.id).delete(synchronize_session=False)
+        BookingPayment.query.filter_by(booking_id=booking.id).delete(synchronize_session=False)
+        Notification.query.filter_by(booking_id=booking.id).delete(synchronize_session=False)
+
+        # Unlink loyalty transactions
+        LoyaltyTransaction.query.filter_by(booking_id=booking.id).update({'booking_id': None}, synchronize_session=False)
+
+        db.session.delete(booking)
+        db.session.commit()
+        flash('Booking removed.', 'success')
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.exception('Staff failed to delete booking %s: %s', booking_id, exc)
+        flash('Unable to delete booking. Please try again.', 'error')
+
     return redirect(url_for('animal_farm_staff.my_bookings'))
 
 
