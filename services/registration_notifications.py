@@ -1,9 +1,8 @@
 """Registration email notifications.
 
-Supports:
-  1. Brevo (Sendinblue) HTTP API (HTTPS port 443 — works seamlessly on Vercel to ANY email)
-  2. Resend HTTP API (HTTPS port 443)
-  3. SMTP (Local development fallback)
+Dedicated email service using Brevo (Sendinblue) Transactional REST API over HTTPS (port 443).
+Works reliably on serverless environments like Vercel with no blocked SMTP ports.
+Falls back to local SMTP only for offline development.
 """
 
 from __future__ import annotations
@@ -23,7 +22,6 @@ def _sender_address() -> str:
     """Return the sender email address."""
     return (
         os.environ.get("BREVO_SENDER_EMAIL")
-        or os.environ.get("RESEND_FROM")
         or os.environ.get("SMTP_FROM")
         or os.environ.get("SMTP_USERNAME")
         or "zootique22@gmail.com"
@@ -34,7 +32,7 @@ def _send_via_brevo(*, recipient: str, subject: str, body: str, sender: str) -> 
     """Send an email using Brevo's v3 Transactional Email REST API over HTTPS."""
     api_key = os.environ.get("BREVO_API_KEY", "").strip()
     if not api_key:
-        return False
+        raise ValueError("BREVO_API_KEY environment variable is not configured.")
 
     url = "https://api.brevo.com/v3/smtp/email"
     headers = {
@@ -42,8 +40,8 @@ def _send_via_brevo(*, recipient: str, subject: str, body: str, sender: str) -> 
         "api-key": api_key,
         "content-type": "application/json",
     }
-    
-    # Extract clean email if sender is in format 'Name <email@domain.com>'
+
+    # Extract clean email and name if sender is in format 'Name <email@domain.com>'
     clean_sender = sender
     sender_name = "Zootique"
     if "<" in sender and ">" in sender:
@@ -68,7 +66,7 @@ def _send_via_brevo(*, recipient: str, subject: str, body: str, sender: str) -> 
         with urllib.request.urlopen(req, timeout=15) as response:
             if response.status in (200, 201, 202):
                 return True
-            current_app.logger.warning("Brevo responded with status %s", response.status)
+            current_app.logger.warning("Brevo responded with unexpected status %s", response.status)
             return False
     except urllib.error.HTTPError as exc:
         err_body = exc.read().decode("utf-8", errors="replace")
@@ -76,32 +74,6 @@ def _send_via_brevo(*, recipient: str, subject: str, body: str, sender: str) -> 
         raise RuntimeError(f"Brevo HTTP {exc.code}: {err_body}") from exc
     except Exception as exc:
         current_app.logger.warning("Brevo send error: %s", exc)
-        raise
-
-
-def _send_via_resend(*, recipient: str, subject: str, body: str, sender: str) -> bool:
-    """Send an email using the Resend HTTP API."""
-    api_key = os.environ.get("RESEND_API_KEY", "").strip()
-    if not api_key:
-        return False
-
-    try:
-        import resend  # type: ignore[import]
-    except ImportError:
-        return False
-
-    resend.api_key = api_key
-    try:
-        params: resend.Emails.SendParams = {
-            "from": sender,
-            "to": [recipient],
-            "subject": subject,
-            "text": body,
-        }
-        resend.Emails.send(params)
-        return True
-    except Exception as exc:
-        current_app.logger.warning("Resend failed for %s: %s", recipient, exc)
         raise
 
 
@@ -149,8 +121,9 @@ def send_registration_notification(*, recipient: str | None, subject: str, body:
 
     sender = _sender_address()
 
-    # --- Priority 1: Brevo HTTP REST API (Best for sending from zootique22@gmail.com to ANY recipient) ---
-    if os.environ.get("BREVO_API_KEY", "").strip():
+    # --- Primary: Brevo HTTP REST API (HTTPS port 443) ---
+    brevo_key = os.environ.get("BREVO_API_KEY", "").strip()
+    if brevo_key:
         try:
             if _send_via_brevo(recipient=recipient, subject=subject, body=body, sender=sender):
                 if attempt:
@@ -162,20 +135,7 @@ def send_registration_notification(*, recipient: str | None, subject: str, body:
                 attempt.error_message = f"[Brevo] {exc}"[:500]
             return False
 
-    # --- Priority 2: Resend HTTP API ---
-    if os.environ.get("RESEND_API_KEY", "").strip():
-        try:
-            if _send_via_resend(recipient=recipient, subject=subject, body=body, sender=sender):
-                if attempt:
-                    attempt.status = "sent"
-                return True
-        except Exception as exc:
-            if attempt:
-                attempt.status = "failed"
-                attempt.error_message = f"[Resend] {exc}"[:500]
-            return False
-
-    # --- Priority 3: Local SMTP Fallback ---
+    # --- Local Dev Fallback: SMTP ---
     try:
         if _send_via_smtp(recipient=recipient, subject=subject, body=body, sender=sender):
             if attempt:
@@ -190,14 +150,14 @@ def send_registration_notification(*, recipient: str | None, subject: str, body:
 
     if attempt:
         attempt.status = "failed"
-        attempt.error_message = "No email provider configured (set BREVO_API_KEY, RESEND_API_KEY, or SMTP credentials)."
+        attempt.error_message = "No email provider configured (set BREVO_API_KEY or SMTP credentials)."
     return False
 
 
 def send_registration_approved(registration, activation_token: str | None = None) -> bool:
     activation_url = ""
     if activation_token:
-        base_url = current_app.config.get("PUBLIC_BASE_URL", "").rstrip("/") or "http://127.0.0.1:5000"
+        base_url = current_app.config.get("PUBLIC_BASE_URL", "").rstrip("/") or "https://zootique.vercel.app"
         activation_url = f"\n\nActivate the administrator account here:\n{base_url}/auth/activate-zoo-admin?registration_id={registration.id}&token={activation_token}"
     return send_registration_notification(
         recipient=registration.admin_email,
