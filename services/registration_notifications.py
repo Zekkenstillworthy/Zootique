@@ -172,14 +172,27 @@ def send_registration_approved(registration, activation_token: str | None = None
     )
 
 
-def send_registration_rejected(registration) -> bool:
+def send_registration_rejected(registration, resubmission_token: str | None = None) -> bool:
     note = registration.rejection_note or "No additional note was provided."
+    base_url = current_app.config.get("PUBLIC_BASE_URL", "").rstrip("/") or "https://zootique.vercel.app"
+    resubmission_section = ""
+    if resubmission_token:
+        resubmission_url = (
+            f"{base_url}/auth/resubmit-registration"
+            f"?registration_id={registration.id}&token={resubmission_token}"
+        )
+        resubmission_section = (
+            f"\n\nTo appeal or re-upload your documents, use the link below:\n"
+            f"{resubmission_url}\n\n"
+            "This resubmission link expires in 7 days."
+        )
     return send_registration_notification(
         recipient=registration.admin_email,
         subject="Your Zootique establishment registration needs attention",
         body=(
             f"Your registration for {registration.establishment_name} was rejected.\n\n"
             f"Reviewer note: {note}"
+            f"{resubmission_section}"
         ),
         registration=registration,
         notification_type="applicant_rejected",

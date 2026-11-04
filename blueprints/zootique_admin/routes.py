@@ -630,8 +630,12 @@ def reject_registration(registration_id: int):
     registration.rejected_by = reviewer.id if reviewer else None
     registration.rejected_at = datetime.utcnow()
     registration.rejection_note = f"{reason.replace('_', ' ').title()}: {note}" if note else reason.replace('_', ' ').title()
+    # Generate a secure resubmission token valid for 7 days
+    resub_token = secrets.token_urlsafe(32)
+    registration.resubmission_token_hash = hashlib.sha256(resub_token.encode()).hexdigest()
+    registration.resubmission_expires_at = datetime.utcnow() + timedelta(days=7)
     db.session.commit()
-    applicant_sent = send_registration_rejected(registration)
+    applicant_sent = send_registration_rejected(registration, resubmission_token=resub_token)
     establishment_sent = send_establishment_confirmation(registration, approved=False)
     registration.acknowledgement_email_status = 'sent' if applicant_sent else 'failed'
     registration.confirmation_email_status = 'sent' if establishment_sent else 'failed'

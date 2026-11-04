@@ -106,6 +106,8 @@ class EstablishmentRegistration(db.Model):
     email_verified_at = db.Column(db.DateTime, nullable=True)
     activation_token_hash = db.Column(db.String(128), nullable=True)
     activation_expires_at = db.Column(db.DateTime, nullable=True)
+    resubmission_token_hash = db.Column(db.String(128), nullable=True)
+    resubmission_expires_at = db.Column(db.DateTime, nullable=True)
     is_legacy_migration = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, nullable=True, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)

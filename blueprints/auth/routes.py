@@ -518,6 +518,79 @@ def activate_zoo_admin():
     return render_template('auth/activate_zoo_admin.html', registration=registration, token=token)
 
 
+@auth_bp.route('/resubmit-registration', methods=['GET', 'POST'])
+def resubmit_registration():
+    registration_id = request.args.get('registration_id', type=int) or request.form.get('registration_id', type=int)
+    token = (request.args.get('token') or request.form.get('token') or '').strip()
+    registration = db.session.get(EstablishmentRegistration, registration_id) if registration_id else None
+
+    if not registration or registration.status != 'rejected' or not registration.resubmission_token_hash:
+        flash('This resubmission link is invalid or has already been used.', 'error')
+        return redirect(url_for('landing'))
+
+    if not registration.resubmission_expires_at or registration.resubmission_expires_at < datetime.utcnow():
+        flash('This resubmission link has expired. Please contact support.', 'error')
+        return redirect(url_for('landing'))
+
+    token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
+    if not token or not secrets.compare_digest(token_hash, registration.resubmission_token_hash):
+        flash('This resubmission link is invalid.', 'error')
+        return redirect(url_for('landing'))
+
+    if request.method == 'POST':
+        expected = session.get('_csrf_token')
+        provided = request.form.get('csrf_token')
+        if not expected or not provided or not secrets.compare_digest(str(expected), str(provided)):
+            flash('Session expired. Please try again.', 'error')
+            return redirect(url_for('auth.resubmit_registration', registration_id=registration.id, token=token))
+
+        appeal_note = (request.form.get('appeal_note') or '').strip()
+
+        upload_errors = []
+        for document_key, (label, column_name) in REGISTRATION_DOCUMENTS.items():
+            doc_file = request.files.get(document_key)
+            if doc_file and doc_file.filename:
+                if not _valid_registration_document(doc_file):
+                    upload_errors.append(f'{label} must be a PDF, JPG, or PNG file no larger than 8 MB.')
+                    continue
+                uploaded_url = save_uploaded_document(doc_file, f'establishment_registrations/{registration.id}')
+                if not uploaded_url:
+                    upload_errors.append(f'Unable to upload {label}. Please try again.')
+                    continue
+                setattr(registration, column_name, uploaded_url)
+
+                reviews = dict(registration.document_reviews or {})
+                if document_key in reviews:
+                    reviews[document_key] = {'status': 'pending', 'note': 'Re-uploaded by applicant'}
+                    registration.document_reviews = reviews
+
+        if upload_errors:
+            for err in upload_errors:
+                flash(err, 'error')
+            return render_template('auth/resubmit_registration.html', registration=registration, token=token)
+
+        if appeal_note:
+            existing_note = registration.rejection_note or ''
+            registration.rejection_note = f'{existing_note}\n\n[Applicant Appeal]: {appeal_note}'.strip()
+
+        registration.status = 'pending'
+        registration.resubmission_token_hash = None
+        registration.resubmission_expires_at = None
+        registration.rejected_at = None
+        registration.rejected_by = None
+        db.session.commit()
+
+        applicant_sent, establishment_sent = send_registration_submitted(registration)
+        registration.acknowledgement_email_status = 'sent' if applicant_sent else 'failed'
+        registration.confirmation_email_status = 'sent' if establishment_sent else 'failed'
+        db.session.commit()
+
+        flash('Your appeal and documents have been resubmitted for Super Admin review.', 'success')
+        return redirect(url_for('auth.registration_success', role='zoo_admin'))
+
+    return render_template('auth/resubmit_registration.html', registration=registration, token=token)
+
+
 @auth_bp.get('/establishment-selection')
 def establishment_selection():
     # Staff should not self-register. Keep this page non-public.
