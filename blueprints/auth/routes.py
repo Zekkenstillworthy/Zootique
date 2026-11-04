@@ -578,6 +578,7 @@ def resubmit_registration():
         registration.resubmission_expires_at = None
         registration.rejected_at = None
         registration.rejected_by = None
+        registration.resubmitted_at = datetime.utcnow()
         db.session.commit()
 
         applicant_sent, establishment_sent = send_registration_submitted(registration)

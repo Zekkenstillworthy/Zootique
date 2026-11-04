@@ -31,7 +31,7 @@
       <tbody>
         {% for registration in registrations %}
         <tr>
-          <td class="fw-600">{{ registration.establishment_name }}{% if registration.is_legacy_migration %}<div style="margin-top:5px;"><span class="badge badge-pending">Legacy — no original documents</span></div>{% endif %}</td>
+          <td class="fw-600">{{ registration.establishment_name }}{% if registration.is_legacy_migration %}<div style="margin-top:5px;"><span class="badge badge-pending">Legacy — no original documents</span></div>{% endif %}{% if registration.resubmitted_at %}<div style="margin-top:5px;"><span style="display:inline-flex;align-items:center;gap:4px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:800;"><i class="fa-solid fa-rotate-left" style="font-size:10px;"></i> Resubmitted</span></div>{% endif %}</td>
           <td>{{ registration.establishment_type }}</td>
           <td>{{ registration.location }}</td>
           <td>{{ registration.created_at.strftime('%b %d, %Y %I:%M %p') if registration.created_at else 'Not available' }}</td>
