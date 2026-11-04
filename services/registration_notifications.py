@@ -1,19 +1,18 @@
 """Registration email notifications.
 
-Sends via Resend (HTTP API — works on Vercel and other serverless platforms).
-Falls back to SMTP if RESEND_API_KEY is not set, so local dev with an SMTP
-relay continues to work without any extra configuration.
-
-Priority:
-  1. Resend  — set RESEND_API_KEY and RESEND_FROM (or SMTP_FROM / MAIL_DEFAULT_SENDER).
-  2. SMTP    — set SMTP_HOST / SMTP_USERNAME / SMTP_PASSWORD as before.
-If neither is configured, the attempt is logged and the function returns False.
+Supports:
+  1. Brevo (Sendinblue) HTTP API (HTTPS port 443 — works seamlessly on Vercel to ANY email)
+  2. Resend HTTP API (HTTPS port 443)
+  3. SMTP (Local development fallback)
 """
 
 from __future__ import annotations
 
+import json
 import os
 import smtplib
+import urllib.request
+import urllib.error
 from email.message import EmailMessage
 
 from flask import current_app
@@ -21,28 +20,75 @@ from models import RegistrationEmailAttempt, db
 
 
 def _sender_address() -> str:
-    """Return the best available 'From' address from environment variables."""
+    """Return the sender email address."""
     return (
-        os.environ.get("RESEND_FROM")
+        os.environ.get("BREVO_SENDER_EMAIL")
+        or os.environ.get("RESEND_FROM")
         or os.environ.get("SMTP_FROM")
-        or os.environ.get("MAIL_DEFAULT_SENDER")
         or os.environ.get("SMTP_USERNAME")
-        or os.environ.get("MAIL_USERNAME")
-        or ""
+        or "zootique22@gmail.com"
     ).strip()
 
 
+def _send_via_brevo(*, recipient: str, subject: str, body: str, sender: str) -> bool:
+    """Send an email using Brevo's v3 Transactional Email REST API over HTTPS."""
+    api_key = os.environ.get("BREVO_API_KEY", "").strip()
+    if not api_key:
+        return False
+
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": api_key,
+        "content-type": "application/json",
+    }
+    
+    # Extract clean email if sender is in format 'Name <email@domain.com>'
+    clean_sender = sender
+    sender_name = "Zootique"
+    if "<" in sender and ">" in sender:
+        sender_name = sender.split("<")[0].strip() or "Zootique"
+        clean_sender = sender.split("<")[1].split(">")[0].strip()
+
+    payload = {
+        "sender": {"name": sender_name, "email": clean_sender},
+        "to": [{"email": recipient}],
+        "subject": subject,
+        "textContent": body,
+    }
+
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers=headers,
+        method="POST"
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=15) as response:
+            if response.status in (200, 201, 202):
+                return True
+            current_app.logger.warning("Brevo responded with status %s", response.status)
+            return False
+    except urllib.error.HTTPError as exc:
+        err_body = exc.read().decode("utf-8", errors="replace")
+        current_app.logger.warning("Brevo HTTP error %s: %s", exc.code, err_body)
+        raise RuntimeError(f"Brevo HTTP {exc.code}: {err_body}") from exc
+    except Exception as exc:
+        current_app.logger.warning("Brevo send error: %s", exc)
+        raise
+
+
 def _send_via_resend(*, recipient: str, subject: str, body: str, sender: str) -> bool:
-    """Send an email using the Resend HTTP API. Returns True on success."""
+    """Send an email using the Resend HTTP API."""
+    api_key = os.environ.get("RESEND_API_KEY", "").strip()
+    if not api_key:
+        return False
+
     try:
         import resend  # type: ignore[import]
     except ImportError:
-        current_app.logger.warning("resend package is not installed; cannot send via Resend.")
         return False
-
-    api_key = os.environ.get("RESEND_API_KEY", "").strip()
-    if not api_key:
-        return False  # caller will fall back to SMTP
 
     resend.api_key = api_key
     try:
@@ -56,29 +102,17 @@ def _send_via_resend(*, recipient: str, subject: str, body: str, sender: str) ->
         return True
     except Exception as exc:
         current_app.logger.warning("Resend failed for %s: %s", recipient, exc)
-        raise  # re-raise so the caller can record the error
+        raise
 
 
 def _send_via_smtp(*, recipient: str, subject: str, body: str, sender: str) -> bool:
-    """Send an email via SMTP. Returns True on success."""
-    username = (
-        os.environ.get("SMTP_USERNAME")
-        or os.environ.get("MAIL_USERNAME")
-        or ""
-    ).strip()
-    password = (
-        os.environ.get("SMTP_PASSWORD")
-        or os.environ.get("MAIL_PASSWORD")
-        or ""
-    ).strip()
-    host = (
-        os.environ.get("SMTP_HOST")
-        or os.environ.get("MAIL_SERVER")
-        or ("smtp.gmail.com" if (username or password) else "")
-    ).strip()
+    """Send an email via SMTP (local dev only)."""
+    username = (os.environ.get("SMTP_USERNAME") or os.environ.get("MAIL_USERNAME") or "").strip()
+    password = (os.environ.get("SMTP_PASSWORD") or os.environ.get("MAIL_PASSWORD") or "").strip()
+    host = (os.environ.get("SMTP_HOST") or os.environ.get("MAIL_SERVER") or "").strip()
 
     if not host or not sender:
-        return False  # not configured
+        return False
 
     message = EmailMessage()
     message["Subject"] = subject
@@ -115,12 +149,23 @@ def send_registration_notification(*, recipient: str | None, subject: str, body:
 
     sender = _sender_address()
 
-    # --- Try Resend first (works on Vercel / serverless) ---
-    resend_key = os.environ.get("RESEND_API_KEY", "").strip()
-    if resend_key:
+    # --- Priority 1: Brevo HTTP REST API (Best for sending from zootique22@gmail.com to ANY recipient) ---
+    if os.environ.get("BREVO_API_KEY", "").strip():
         try:
-            sent = _send_via_resend(recipient=recipient, subject=subject, body=body, sender=sender)
-            if sent:
+            if _send_via_brevo(recipient=recipient, subject=subject, body=body, sender=sender):
+                if attempt:
+                    attempt.status = "sent"
+                return True
+        except Exception as exc:
+            if attempt:
+                attempt.status = "failed"
+                attempt.error_message = f"[Brevo] {exc}"[:500]
+            return False
+
+    # --- Priority 2: Resend HTTP API ---
+    if os.environ.get("RESEND_API_KEY", "").strip():
+        try:
+            if _send_via_resend(recipient=recipient, subject=subject, body=body, sender=sender):
                 if attempt:
                     attempt.status = "sent"
                 return True
@@ -130,27 +175,23 @@ def send_registration_notification(*, recipient: str | None, subject: str, body:
                 attempt.error_message = f"[Resend] {exc}"[:500]
             return False
 
-    # --- Fall back to SMTP (local dev / self-hosted) ---
-    if not sender:
-        current_app.logger.info(
-            "Registration email not sent (neither RESEND_API_KEY nor SMTP/MAIL configured): %s", subject
-        )
-        if attempt:
-            attempt.status = "failed"
-            attempt.error_message = "No email provider configured (set RESEND_API_KEY or SMTP credentials)."
-        return False
-
+    # --- Priority 3: Local SMTP Fallback ---
     try:
-        _send_via_smtp(recipient=recipient, subject=subject, body=body, sender=sender)
-        if attempt:
-            attempt.status = "sent"
-        return True
+        if _send_via_smtp(recipient=recipient, subject=subject, body=body, sender=sender):
+            if attempt:
+                attempt.status = "sent"
+            return True
     except Exception as exc:
         current_app.logger.warning("SMTP failed for %s: %s", recipient, exc)
         if attempt:
             attempt.status = "failed"
             attempt.error_message = f"[SMTP] {str(exc)}"[:500]
         return False
+
+    if attempt:
+        attempt.status = "failed"
+        attempt.error_message = "No email provider configured (set BREVO_API_KEY, RESEND_API_KEY, or SMTP credentials)."
+    return False
 
 
 def send_registration_approved(registration, activation_token: str | None = None) -> bool:
@@ -210,7 +251,7 @@ def send_registration_submitted(registration) -> tuple[bool, bool]:
 def send_registration_email_verification(registration, token: str) -> bool:
     verification_url = current_app.config.get("PUBLIC_BASE_URL", "").rstrip("/")
     if not verification_url:
-        verification_url = "http://127.0.0.1:5000"
+        verification_url = "https://zootique.vercel.app"
     verification_url = f"{verification_url}/auth/verify-registration-email?registration_id={registration.id}&token={token}"
     return send_registration_notification(
         recipient=registration.admin_email,
