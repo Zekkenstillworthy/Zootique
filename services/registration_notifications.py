@@ -1,6 +1,13 @@
 """Registration email notifications.
 
-If SMTP is not configured, notifications are logged so local approval remains usable.
+Sends via Resend (HTTP API — works on Vercel and other serverless platforms).
+Falls back to SMTP if RESEND_API_KEY is not set, so local dev with an SMTP
+relay continues to work without any extra configuration.
+
+Priority:
+  1. Resend  — set RESEND_API_KEY and RESEND_FROM (or SMTP_FROM / MAIL_DEFAULT_SENDER).
+  2. SMTP    — set SMTP_HOST / SMTP_USERNAME / SMTP_PASSWORD as before.
+If neither is configured, the attempt is logged and the function returns False.
 """
 
 from __future__ import annotations
@@ -13,9 +20,87 @@ from flask import current_app
 from models import RegistrationEmailAttempt, db
 
 
+def _sender_address() -> str:
+    """Return the best available 'From' address from environment variables."""
+    return (
+        os.environ.get("RESEND_FROM")
+        or os.environ.get("SMTP_FROM")
+        or os.environ.get("MAIL_DEFAULT_SENDER")
+        or os.environ.get("SMTP_USERNAME")
+        or os.environ.get("MAIL_USERNAME")
+        or ""
+    ).strip()
+
+
+def _send_via_resend(*, recipient: str, subject: str, body: str, sender: str) -> bool:
+    """Send an email using the Resend HTTP API. Returns True on success."""
+    try:
+        import resend  # type: ignore[import]
+    except ImportError:
+        current_app.logger.warning("resend package is not installed; cannot send via Resend.")
+        return False
+
+    api_key = os.environ.get("RESEND_API_KEY", "").strip()
+    if not api_key:
+        return False  # caller will fall back to SMTP
+
+    resend.api_key = api_key
+    try:
+        params: resend.Emails.SendParams = {
+            "from": sender,
+            "to": [recipient],
+            "subject": subject,
+            "text": body,
+        }
+        resend.Emails.send(params)
+        return True
+    except Exception as exc:
+        current_app.logger.warning("Resend failed for %s: %s", recipient, exc)
+        raise  # re-raise so the caller can record the error
+
+
+def _send_via_smtp(*, recipient: str, subject: str, body: str, sender: str) -> bool:
+    """Send an email via SMTP. Returns True on success."""
+    username = (
+        os.environ.get("SMTP_USERNAME")
+        or os.environ.get("MAIL_USERNAME")
+        or ""
+    ).strip()
+    password = (
+        os.environ.get("SMTP_PASSWORD")
+        or os.environ.get("MAIL_PASSWORD")
+        or ""
+    ).strip()
+    host = (
+        os.environ.get("SMTP_HOST")
+        or os.environ.get("MAIL_SERVER")
+        or ("smtp.gmail.com" if (username or password) else "")
+    ).strip()
+
+    if not host or not sender:
+        return False  # not configured
+
+    message = EmailMessage()
+    message["Subject"] = subject
+    message["From"] = sender
+    message["To"] = recipient
+    message.set_content(body)
+
+    port = int(os.environ.get("SMTP_PORT") or os.environ.get("MAIL_PORT") or "587")
+    use_tls = (os.environ.get("SMTP_USE_TLS") or os.environ.get("MAIL_USE_TLS") or "true").lower() not in {"0", "false", "no"}
+    with smtplib.SMTP(host, port, timeout=15) as smtp:
+        if use_tls:
+            smtp.starttls()
+        if username and password:
+            smtp.login(username, password)
+        smtp.send_message(message)
+    return True
+
+
 def send_registration_notification(*, recipient: str | None, subject: str, body: str, registration=None, notification_type: str = "registration") -> bool:
     if not recipient:
         return False
+
     attempt = None
     if registration is not None:
         attempt = RegistrationEmailAttempt(
@@ -28,57 +113,43 @@ def send_registration_notification(*, recipient: str | None, subject: str, body:
         )
         db.session.add(attempt)
 
-    username = (
-        os.environ.get("SMTP_USERNAME")
-        or os.environ.get("MAIL_USERNAME")
-        or ""
-    ).strip()
-    password = (
-        os.environ.get("SMTP_PASSWORD")
-        or os.environ.get("MAIL_PASSWORD")
-        or ""
-    ).strip()
-    sender = (
-        os.environ.get("SMTP_FROM")
-        or os.environ.get("MAIL_DEFAULT_SENDER")
-        or username
-    ).strip()
-    host = (
-        os.environ.get("SMTP_HOST")
-        or os.environ.get("MAIL_SERVER")
-        or ("smtp.gmail.com" if (username or password) else "")
-    ).strip()
+    sender = _sender_address()
 
-    if not host or not sender:
-        current_app.logger.info("Registration email not sent (SMTP/MAIL not configured): %s", subject)
+    # --- Try Resend first (works on Vercel / serverless) ---
+    resend_key = os.environ.get("RESEND_API_KEY", "").strip()
+    if resend_key:
+        try:
+            sent = _send_via_resend(recipient=recipient, subject=subject, body=body, sender=sender)
+            if sent:
+                if attempt:
+                    attempt.status = "sent"
+                return True
+        except Exception as exc:
+            if attempt:
+                attempt.status = "failed"
+                attempt.error_message = f"[Resend] {exc}"[:500]
+            return False
+
+    # --- Fall back to SMTP (local dev / self-hosted) ---
+    if not sender:
+        current_app.logger.info(
+            "Registration email not sent (neither RESEND_API_KEY nor SMTP/MAIL configured): %s", subject
+        )
         if attempt:
             attempt.status = "failed"
-            attempt.error_message = "SMTP/MAIL is not configured."
+            attempt.error_message = "No email provider configured (set RESEND_API_KEY or SMTP credentials)."
         return False
 
-    message = EmailMessage()
-    message["Subject"] = subject
-    message["From"] = sender
-    message["To"] = recipient
-    message.set_content(body)
-
-    port = int(os.environ.get("SMTP_PORT") or os.environ.get("MAIL_PORT") or "587")
-    use_tls = (os.environ.get("SMTP_USE_TLS") or os.environ.get("MAIL_USE_TLS") or "true").lower() not in {"0", "false", "no"}
     try:
-        with smtplib.SMTP(host, port, timeout=10) as smtp:
-            if use_tls:
-                smtp.starttls()
-            if username and password:
-                smtp.login(username, password)
-            smtp.send_message(message)
+        _send_via_smtp(recipient=recipient, subject=subject, body=body, sender=sender)
         if attempt:
             attempt.status = "sent"
         return True
     except Exception as exc:
-        current_app.logger.warning("Failed to send registration email to %s: %s", recipient, exc)
+        current_app.logger.warning("SMTP failed for %s: %s", recipient, exc)
         if attempt:
             attempt.status = "failed"
-            attempt.error_message = str(exc)[:500]
+            attempt.error_message = f"[SMTP] {str(exc)}"[:500]
         return False
 
 
