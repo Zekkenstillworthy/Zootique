@@ -493,7 +493,7 @@ def resend_registration_email(registration_id: int, email_kind: str):
         sent = send_registration_email_verification(registration, token)
         if not sent:
             # SMTP unavailable — show the link so admin can copy-paste it
-            base_url = current_app.config.get("PUBLIC_BASE_URL", "").rstrip("/") or "http://127.0.0.1:5000"
+            base_url = current_app.config.get("PUBLIC_BASE_URL", "").rstrip("/") or "https://zootique.vercel.app"
             verify_link = (
                 f"{base_url}/auth/verify-registration-email"
                 f"?registration_id={registration.id}&token={token}"
