@@ -11,7 +11,7 @@
     <div class="stat-label">TOTAL FEEDBACK</div>
     <div class="sa-kpi-row">
       <div class="stat-value">{{ "{:,}".format(feedback_stats.total or 0) }}</div>
-      <span class="sa-pill sa-pill--ok"><i class="fa-solid fa-arrow-trend-up"></i> 12%</span>
+      {% if feedback_stats.growth_pct is not none %}<span class="sa-pill {% if feedback_stats.growth_pct >= 0 %}sa-pill--ok{% else %}sa-pill--danger{% endif %}"><i class="fa-solid {% if feedback_stats.growth_pct >= 0 %}fa-arrow-trend-up{% else %}fa-arrow-trend-down{% endif %}"></i> {{ feedback_stats.growth_pct | abs | int }}%</span>{% endif %}
     </div>
   </div>
   <div class="stat-card sa-kpi" style="--kpi-accent: #0f766e;">
@@ -31,11 +31,15 @@
   <div class="stat-card sa-kpi" style="--kpi-accent: var(--border);">
     <div class="stat-label">RATING MIX</div>
     <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
-      {% for n, pct, color in [(5,75,'#0f766e'), (4,85,'#14b8a6'), (3,30,'#cbd5e1'), (2,10,'#cbd5e1'), (1,5,'#cbd5e1')] %}
+      {% set _rating_colors = {5: '#0f766e', 4: '#14b8a6', 3: '#94a3b8', 2: '#cbd5e1', 1: '#e2e8f0'} %}
+      {% for n in [5, 4, 3, 2, 1] %}
+      {% set _cnt = feedback_stats.rating_counts.get(n, 0) if feedback_stats.rating_counts else 0 %}
+      {% set _max = feedback_stats.max_rating_count if feedback_stats.max_rating_count else 1 %}
+      {% set _pct = ((_cnt / _max) * 100) | int %}
       <div style="display:flex; align-items:center; gap:8px;">
         <span style="font-size:11px; font-weight:800; color:var(--text-secondary); width:10px;">{{ n }}</span>
         <div style="flex:1; height:6px; background:var(--border-light); border-radius:3px; overflow:hidden;">
-          <div style="width:{{ pct }}%; height:100%; background:{{ color }};"></div>
+          <div style="width:{{ _pct }}%; height:100%; background:{{ _rating_colors[n] }};"></div>
         </div>
       </div>
       {% endfor %}

@@ -1901,6 +1901,28 @@ def view_feedback():
 
     avg_rating = (rating_sum / total_feedback) if total_feedback else 0.0
 
+    # Rating distribution (counts per star 1-5)
+    rating_counts = {n: 0 for n in range(1, 6)}
+    for row in rows:
+        star = int(row.get('rating') or 0)
+        if star in rating_counts:
+            rating_counts[star] += 1
+    max_rating_count = max(rating_counts.values()) if any(rating_counts.values()) else 1
+
+    # Month-over-month growth: compare this month vs last month feedback count
+    _now_fb = datetime.utcnow()
+    _this_month_prefix = _now_fb.strftime('%Y-%m')
+    _prev_month_dt = (_now_fb.replace(day=1) - timedelta(days=1))
+    _prev_month_prefix = _prev_month_dt.strftime('%Y-%m')
+    _this_count = sum(1 for row in rows if row['created_at'].startswith(_this_month_prefix))
+    _prev_count = sum(1 for row in rows if row['created_at'].startswith(_prev_month_prefix))
+    if _prev_count > 0:
+        _growth_pct = round(((_this_count - _prev_count) / _prev_count) * 100, 1)
+    elif _this_count > 0:
+        _growth_pct = 100.0
+    else:
+        _growth_pct = None  # No data
+
     return render_template(
 
         "zootique_admin/feedback.html",
@@ -1916,6 +1938,12 @@ def view_feedback():
             'avg_rating': float(avg_rating),
 
             'pending_replies': int(pending_replies),
+
+            'rating_counts': rating_counts,
+
+            'max_rating_count': int(max_rating_count),
+
+            'growth_pct': _growth_pct,
 
         },
 
@@ -2050,32 +2078,38 @@ def view_reports():
     plan_distribution = [{'plan': n, 'count': int(c)} for n, c in plan_distribution]
 
     # Zoo performance (bookings & visitors)
-
-    zoo_perf = (
-
+    # Use outerjoin so zoos with 0 bookings appear in the least-active list.
+    _perf_q = (
         db.session.query(
-
             Zoo.name,
-
             db.func.count(Booking.id).label('bookings'),
-
             db.func.coalesce(db.func.sum(Booking.guests), 0).label('visitors'),
-
         )
-
-        .join(Booking, Booking.zoo_id == Zoo.id)
-
-        .group_by(Zoo.name)
-
-        .order_by(db.desc('bookings'))
-
-        .all()
-
+        .outerjoin(Booking, Booking.zoo_id == Zoo.id)
+        .group_by(Zoo.id, Zoo.name)
     )
 
-    most_active = [{'zoo': r[0], 'bookings': int(r[1] or 0), 'visitors': int(r[2] or 0)} for r in zoo_perf[:5]]
+    # Most active: highest bookings first
+    most_active_rows = (
+        _perf_q.order_by(db.desc('bookings'), db.desc('visitors')).limit(5).all()
+    )
+    most_active = [
+        {'zoo': r[0], 'bookings': int(r[1] or 0), 'visitors': int(r[2] or 0)}
+        for r in most_active_rows
+        if int(r[1] or 0) > 0  # only include zoos that actually have bookings
+    ]
 
-    least_active = [{'zoo': r[0], 'bookings': int(r[1] or 0), 'visitors': int(r[2] or 0)} for r in zoo_perf[-5:]]
+    # Least active: lowest bookings first (includes 0-booking zoos)
+    least_active_rows = (
+        _perf_q.order_by(db.asc('bookings'), db.asc('visitors')).limit(5).all()
+    )
+    least_active = [
+        {'zoo': r[0], 'bookings': int(r[1] or 0), 'visitors': int(r[2] or 0)}
+        for r in least_active_rows
+        # exclude zoos that already appear in most_active to avoid overlap
+        if r[0] not in {row['zoo'] for row in most_active}
+           or len(most_active_rows) <= 1
+    ]
 
     # Financial (monthly income + recent payments)
 
