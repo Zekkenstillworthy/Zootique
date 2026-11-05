@@ -498,18 +498,18 @@ def resend_registration_email(registration_id: int, email_kind: str):
         # Not yet verified — generate a fresh token and resend the verification email
         token = secrets.token_urlsafe(32)
         registration.email_verification_token_hash = hashlib.sha256(token.encode()).hexdigest()
-        registration.email_verification_expires_at = datetime.utcnow() + timedelta(minutes=60)
+        registration.email_verification_expires_at = datetime.utcnow() + timedelta(days=2)
         db.session.commit()
         sent = send_registration_email_verification(registration, token)
         if not sent:
             base_url = current_app.config.get("PUBLIC_BASE_URL", "").rstrip("/") or "https://zootique.vercel.app"
-            verify_link = (
-                f"{base_url}/auth/verify-registration-email"
-                f"?registration_id={registration.id}&token={token}"
-            )
+            if not registration.admin_email or not registration.admin_password_hash:
+                verify_link = f"{base_url}/auth/register-admin-step2?registration_id={registration.id}&token={token}"
+            else:
+                verify_link = f"{base_url}/auth/verify-registration-email?registration_id={registration.id}&token={token}"
             db.session.commit()
             flash(
-                f"Could not send email automatically to {target_email}. Share this verification link manually with the applicant: {verify_link}",
+                f"Could not send email automatically to {target_email}. Share this resume & verification link manually with the applicant: {verify_link}",
                 "warning",
             )
             return redirect(url_for("zootique_admin.registration_detail", registration_id=registration.id))

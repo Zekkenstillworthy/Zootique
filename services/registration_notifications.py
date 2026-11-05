@@ -414,53 +414,66 @@ def send_registration_rejected(registration, resubmission_token: str | None = No
 
 
 def send_registration_email_verification(registration, token: str) -> bool:
-    verification_url = f"{_base_url()}/auth/verify-registration-email?registration_id={registration.id}&token={token}"
+    is_incomplete = not registration.admin_email or not registration.admin_password_hash
 
-    content_html = f"""
-    <p style="margin: 0 0 16px 0; color: #334155; font-size: 14px; line-height: 1.6;">
-      Thank you for applying to register <strong>{html.escape(registration.establishment_name)}</strong> on Zootique.
-    </p>
-    <p style="margin: 0 0 20px 0; color: #475569; font-size: 14px; line-height: 1.6;">
-      To protect your establishment's account, please verify your email address to submit your application into the Super Admin review queue.
-    </p>
-    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 20px; text-align: center; margin: 16px 0 24px 0;">
-      <span style="display: block; font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b; letter-spacing: 1px; margin-bottom: 8px;">
-        Or enter this verification token directly:
-      </span>
-      <code style="font-family: monospace; font-size: 16px; font-weight: 700; color: #132a1c; background: #ffffff; padding: 6px 14px; border-radius: 4px; border: 1px dashed #cbd5e1; display: inline-block; word-break: break-all;">
-        {html.escape(token)}
-      </code>
-    </div>
-    """
+    if is_incomplete:
+        verification_url = f"{_base_url()}/auth/register-admin-step2?registration_id={registration.id}&token={token}"
+        headline = "Complete Administrator Setup & Verify"
+        subtitle = f"Finish setting up account for {registration.establishment_name}"
+        btn_label = "Complete Account & Verify"
+        content_html = f"""
+        <p style="margin: 0 0 16px 0; color: #334155; font-size: 14px; line-height: 1.6;">
+          Thank you for applying to register <strong>{html.escape(registration.establishment_name)}</strong> on Zootique.
+        </p>
+        <p style="margin: 0 0 20px 0; color: #475569; font-size: 14px; line-height: 1.6;">
+          Your establishment documents have been saved. Click the button below to set up your administrator password and automatically verify your application for Super Admin review.
+        </p>
+        """
+        plain_body = (
+            f"Click the link below to complete your administrator account and verify your email for {registration.establishment_name}:\n\n"
+            f"{verification_url}\n\n"
+            "This link will pre-fill your details and mark your email as verified upon submitting."
+        )
+    else:
+        verification_url = f"{_base_url()}/auth/verify-registration-email?registration_id={registration.id}&token={token}"
+        headline = "Verify Your Email Address"
+        subtitle = f"Application for {registration.establishment_name}"
+        btn_label = "Verify Email Address"
+        content_html = f"""
+        <p style="margin: 0 0 16px 0; color: #334155; font-size: 14px; line-height: 1.6;">
+          Thank you for applying to register <strong>{html.escape(registration.establishment_name)}</strong> on Zootique.
+        </p>
+        <p style="margin: 0 0 20px 0; color: #475569; font-size: 14px; line-height: 1.6;">
+          To protect your establishment's account, please verify your email address to submit your application into the Super Admin review queue.
+        </p>
+        """
+        plain_body = (
+            f"Use this link to verify the applicant email for {registration.establishment_name}:\n\n"
+            f"{verification_url}\n\n"
+            "Your application will be submitted for Super Admin review upon verification."
+        )
 
     html_email = _wrap_email_html(
-        preheader=f"Verify your email to complete registration for {registration.establishment_name}",
+        preheader=f"Complete registration and verify email for {registration.establishment_name}",
         badge_text="Email Verification",
         badge_bg="#ecfdf5",
         badge_color="#065f46",
         badge_border="#a7f3d0",
-        headline="Verify Your Email Address",
-        subtitle=f"Application for {registration.establishment_name}",
+        headline=headline,
+        subtitle=subtitle,
         content_html=content_html,
         call_to_action={
-            "label": "Verify Email Address",
+            "label": btn_label,
             "url": verification_url,
             "bg": "#1a4f32",
             "color": "#ffffff",
-            "note": "This link expires in 30 minutes. Your application is not queued for review until verified.",
+            "note": "Clicking the link will securely verify your email address and resume your submission.",
         },
-    )
-
-    plain_body = (
-        f"Use this link to verify the applicant email for {registration.establishment_name}:\n\n"
-        f"{verification_url}\n\n"
-        f"Verification token: {token}\n\n"
-        "This link expires in 30 minutes. Your application will not be submitted for review until verification is complete."
     )
 
     return send_registration_notification(
         recipient=_applicant_email(registration),
-        subject=f"Verify your Zootique registration email: {registration.establishment_name}",
+        subject=f"{'Complete & verify' if is_incomplete else 'Verify'} your Zootique registration: {registration.establishment_name}",
         body=plain_body,
         html_body=html_email,
         registration=registration,

@@ -59,8 +59,8 @@
                 <i class="fa-solid fa-map-location-dot"></i>
             </div>
             <div>
-                <h4 style="margin:0; color:#1e293b; font-size:14px;">{{ session.get('reg_zoo_name', 'Your Establishment') }}</h4>
-                <p style="margin:0; color:#64748b; font-size:12px;">{{ session.get('reg_zoo_type', 'Zoo') }} • {{ session.get('reg_zoo_location', 'Location') }}</p>
+                <h4 style="margin:0; color:#1e293b; font-size:14px;">{{ session.get('reg_zoo_name') or (registration.establishment_name if registration else 'Your Establishment') }}</h4>
+                <p style="margin:0; color:#64748b; font-size:12px;">{{ session.get('reg_zoo_type') or (registration.establishment_type if registration else 'Zoo') }} • {{ session.get('reg_zoo_location') or (registration.location if registration else 'Location') }}</p>
             </div>
         </div>
         <a href="{{ url_for('auth.register_admin_step1') }}" style="font-size: 12px; color: #0ea5e9; font-weight: 600; text-decoration: none;">Edit</a>
@@ -68,6 +68,8 @@
 
       <form action="{{ url_for('auth.register_admin_step2') }}" method="POST" style="display: grid; gap: 1.5rem;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="registration_id" value="{{ registration.id if registration else (request.args.get('registration_id') or session.get('reg_registration_id', '')) }}">
+        <input type="hidden" name="token" value="{{ token or request.args.get('token', '') }}">
 
         <div style="background: #e2e8f0; color: #334155; padding: 12px 16px; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 10px; border-radius: 6px; margin-bottom: 0.5rem;">
           <i class="fa-solid fa-user-shield"></i> PERSONAL ADMINISTRATOR ACCOUNT
@@ -75,13 +77,13 @@
 
         <div>
           <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Admin Full Name <span style="color:#ef4444;">*</span></label>
-          <input type="text" name="full_name" placeholder="John Doe" required style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px 16px; font-family: inherit; font-size: 14px;">
+          <input type="text" name="full_name" value="{{ request.form.get('full_name') or (registration.admin_full_name if registration and registration.admin_full_name else (registration.establishment_contact_name if registration else '')) }}" placeholder="John Doe" required style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px 16px; font-family: inherit; font-size: 14px;">
         </div>
 
         <div>
           <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Primary Email Address <span style="color:#ef4444;">*</span></label>
-          <input type="email" name="email" placeholder="admin@example.com" required style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px 16px; font-family: inherit; font-size: 14px;">
-          <input type="tel" name="phone" placeholder="Phone number (optional)" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px 16px; font-family: inherit; font-size: 14px; margin-top:8px;">
+          <input type="email" name="email" value="{{ request.form.get('email') or (registration.admin_email if registration and registration.admin_email else (registration.establishment_contact_email if registration else '')) }}" placeholder="admin@example.com" required style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px 16px; font-family: inherit; font-size: 14px;">
+          <input type="tel" name="phone" value="{{ request.form.get('phone') or (registration.admin_phone if registration and registration.admin_phone else (registration.establishment_contact_phone if registration else '')) }}" placeholder="Phone number (optional)" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px 16px; font-family: inherit; font-size: 14px; margin-top:8px;">
           <p style="font-size: 11px; color: #94a3b8; margin-top: 6px;">This will be used for your login and platform notifications.</p>
         </div>
 
@@ -92,7 +94,13 @@
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
           <a href="{{ url_for('auth.register_admin_step1') }}" style="color: #64748b; font-size: 14px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-arrow-left"></i> Back to Step 1</a>
-          <button type="submit" style="background: #d97706; color: white; border: none; border-radius: 6px; padding: 14px 28px; font-size: 15px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(217,119,6,0.25);">Create Account <i class="fa-solid fa-check"></i></button>
+          <button type="submit" style="background: #d97706; color: white; border: none; border-radius: 6px; padding: 14px 28px; font-size: 15px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(217,119,6,0.25);">
+            {% if token or (registration and registration.email_verification_token_hash) %}
+              Create Account &amp; Verify <i class="fa-solid fa-check-circle"></i>
+            {% else %}
+              Create Account <i class="fa-solid fa-check"></i>
+            {% endif %}
+          </button>
         </div>
       </form>
       
