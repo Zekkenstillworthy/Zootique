@@ -2111,7 +2111,6 @@ def view_ticket(booking_id: str):
     )
 
 
-@visitor_bp.post("/notifications/<int:notification_id>/read")
 @visitor_bp.post("/api/notifications/<int:notification_id>/read")
 def mark_visitor_notification_read(notification_id: int):
     user = _current_user()

@@ -465,7 +465,7 @@ def request_registration_resubmission(registration_id: int):
     else:
         sent = send_registration_resubmission(registration, missing)
         db.session.commit()
-        flash("Resubmission request logged and sent." if sent else "Resubmission request logged; SMTP is not configured.", "success")
+        flash("Resubmission request sent successfully." if sent else "Resubmission request logged; email delivery failed.", "success" if sent else "warning")
     return redirect(url_for("zootique_admin.registration_detail", registration_id=registration.id))
 
 
@@ -477,6 +477,16 @@ def resend_registration_email(registration_id: int, email_kind: str):
     if email_kind == "establishment" and registration.status != "approved":
         flash("Establishment confirmation can only be resent after approval.", "error")
         return redirect(url_for("zootique_admin.registration_detail", registration_id=registration.id))
+
+    target_email = (
+        registration.establishment_contact_email
+        if email_kind == "establishment"
+        else (registration.admin_email or registration.establishment_contact_email)
+    )
+    if not target_email:
+        flash("Cannot send email: no recipient email address was provided on this registration.", "error")
+        return redirect(url_for("zootique_admin.registration_detail", registration_id=registration.id))
+
     if email_kind == "establishment":
         sent = send_establishment_confirmation(registration, approved=registration.status == "approved")
     elif registration.status == "rejected":
@@ -492,7 +502,6 @@ def resend_registration_email(registration_id: int, email_kind: str):
         db.session.commit()
         sent = send_registration_email_verification(registration, token)
         if not sent:
-            # SMTP unavailable — show the link so admin can copy-paste it
             base_url = current_app.config.get("PUBLIC_BASE_URL", "").rstrip("/") or "https://zootique.vercel.app"
             verify_link = (
                 f"{base_url}/auth/verify-registration-email"
@@ -500,12 +509,12 @@ def resend_registration_email(registration_id: int, email_kind: str):
             )
             db.session.commit()
             flash(
-                f"SMTP is not configured. Share this verification link manually with the applicant: {verify_link}",
+                f"Could not send email automatically to {target_email}. Share this verification link manually with the applicant: {verify_link}",
                 "warning",
             )
             return redirect(url_for("zootique_admin.registration_detail", registration_id=registration.id))
     db.session.commit()
-    flash("Email sent successfully." if sent else "Email attempt logged; SMTP is not configured.", "success")
+    flash(f"Email sent successfully to {target_email}." if sent else "Email delivery attempt failed. Check the email log.", "success" if sent else "error")
     return redirect(url_for("zootique_admin.registration_detail", registration_id=registration.id))
 
 

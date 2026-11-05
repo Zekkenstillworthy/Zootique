@@ -23,10 +23,27 @@ def _sender_address() -> str:
     """Return the sender email address."""
     return (
         os.environ.get("BREVO_SENDER_EMAIL")
+        or os.environ.get("RESEND_FROM")
         or os.environ.get("SMTP_FROM")
         or os.environ.get("SMTP_USERNAME")
         or "zootique22@gmail.com"
     ).strip()
+
+
+def _base_url() -> str:
+    """Return canonical base URL for link generation."""
+    try:
+        return current_app.config.get("PUBLIC_BASE_URL", "").rstrip("/") or "https://zootique.vercel.app"
+    except RuntimeError:
+        return os.environ.get("PUBLIC_BASE_URL", "").rstrip("/") or "https://zootique.vercel.app"
+
+
+def _applicant_email(registration) -> str | None:
+    """Return recipient email address for registration, falling back to contact email."""
+    if not registration:
+        return None
+    email = (getattr(registration, "admin_email", None) or getattr(registration, "establishment_contact_email", None) or "").strip()
+    return email or None
 
 
 def _wrap_email_html(
@@ -254,20 +271,27 @@ def send_registration_notification(
     registration=None,
     notification_type: str = "registration"
 ) -> bool:
-    if not recipient:
-        return False
-
     attempt = None
     if registration is not None:
         attempt = RegistrationEmailAttempt(
             registration_id=registration.id,
-            recipient=recipient,
+            recipient=recipient or "(no recipient)",
             subject=subject,
             body=body,
             notification_type=notification_type,
             status="pending",
         )
         db.session.add(attempt)
+
+    if not recipient:
+        if attempt:
+            attempt.status = "failed"
+            attempt.error_message = "No recipient email address found on registration."
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+        return False
 
     sender = _sender_address()
 
@@ -278,11 +302,20 @@ def send_registration_notification(
             if _send_via_brevo(recipient=recipient, subject=subject, text_body=body, html_body=html_body, sender=sender):
                 if attempt:
                     attempt.status = "sent"
+                try:
+                    db.session.commit()
+                except Exception:
+                    pass
                 return True
         except Exception as exc:
+            current_app.logger.warning("Brevo send error for %s: %s", recipient, exc)
             if attempt:
                 attempt.status = "failed"
                 attempt.error_message = f"[Brevo] {exc}"[:500]
+                try:
+                    db.session.commit()
+                except Exception:
+                    pass
             return False
 
     # --- Local Dev Fallback: SMTP ---
@@ -290,23 +323,35 @@ def send_registration_notification(
         if _send_via_smtp(recipient=recipient, subject=subject, text_body=body, html_body=html_body, sender=sender):
             if attempt:
                 attempt.status = "sent"
+            try:
+                db.session.commit()
+            except Exception:
+                pass
             return True
     except Exception as exc:
         current_app.logger.warning("SMTP failed for %s: %s", recipient, exc)
         if attempt:
             attempt.status = "failed"
             attempt.error_message = f"[SMTP] {str(exc)}"[:500]
+            try:
+                db.session.commit()
+            except Exception:
+                pass
         return False
 
     if attempt:
         attempt.status = "failed"
-        attempt.error_message = "No email provider configured (set BREVO_API_KEY or SMTP credentials)."
+        attempt.error_message = "No email provider configured (set BREVO_API_KEY)."
+        try:
+            db.session.commit()
+        except Exception:
+            pass
     return False
 
 
 def send_registration_rejected(registration, resubmission_token: str | None = None) -> bool:
     note = registration.rejection_note or "No additional note was provided."
-    base_url = current_app.config.get("PUBLIC_BASE_URL", "").rstrip("/") or "https://zootique.vercel.app"
+    base_url = _base_url()
 
     resubmission_url = ""
     cta = None
@@ -359,7 +404,7 @@ def send_registration_rejected(registration, resubmission_token: str | None = No
     )
 
     return send_registration_notification(
-        recipient=registration.admin_email,
+        recipient=_applicant_email(registration),
         subject=f"Your Zootique registration needs attention: {registration.establishment_name}",
         body=plain_body,
         html_body=html_email,
@@ -369,8 +414,7 @@ def send_registration_rejected(registration, resubmission_token: str | None = No
 
 
 def send_registration_email_verification(registration, token: str) -> bool:
-    verification_url = current_app.config.get("PUBLIC_BASE_URL", "").rstrip("/") or "https://zootique.vercel.app"
-    verification_url = f"{verification_url}/auth/verify-registration-email?registration_id={registration.id}&token={token}"
+    verification_url = f"{_base_url()}/auth/verify-registration-email?registration_id={registration.id}&token={token}"
 
     content_html = f"""
     <p style="margin: 0 0 16px 0; color: #334155; font-size: 14px; line-height: 1.6;">
@@ -415,7 +459,7 @@ def send_registration_email_verification(registration, token: str) -> bool:
     )
 
     return send_registration_notification(
-        recipient=registration.admin_email,
+        recipient=_applicant_email(registration),
         subject=f"Verify your Zootique registration email: {registration.establishment_name}",
         body=plain_body,
         html_body=html_email,
@@ -425,7 +469,7 @@ def send_registration_email_verification(registration, token: str) -> bool:
 
 
 def send_registration_approved(registration, activation_token: str | None = None) -> bool:
-    base_url = current_app.config.get("PUBLIC_BASE_URL", "").rstrip("/") or "https://zootique.vercel.app"
+    base_url = _base_url()
     activation_url = ""
     cta = None
     act_plain = ""
@@ -473,7 +517,7 @@ def send_registration_approved(registration, activation_token: str | None = None
     )
 
     return send_registration_notification(
-        recipient=registration.admin_email,
+        recipient=_applicant_email(registration),
         subject=f"Approved: Welcome {registration.establishment_name} to Zootique",
         body=plain_body,
         html_body=html_email,
@@ -512,7 +556,7 @@ def send_registration_submitted(registration) -> tuple[bool, bool]:
     )
 
     applicant_sent = send_registration_notification(
-        recipient=registration.admin_email,
+        recipient=_applicant_email(registration),
         subject=f"Zootique registration received: {registration.establishment_name}",
         body=plain_body,
         html_body=html_email,
@@ -521,7 +565,7 @@ def send_registration_submitted(registration) -> tuple[bool, bool]:
     )
 
     establishment_sent = send_registration_notification(
-        recipient=registration.establishment_contact_email,
+        recipient=registration.establishment_contact_email or _applicant_email(registration),
         subject=f"Registration received for {registration.establishment_name}",
         body=plain_body,
         html_body=html_email,
@@ -570,7 +614,7 @@ def send_establishment_confirmation(registration, approved: bool) -> bool:
     )
 
     return send_registration_notification(
-        recipient=registration.establishment_contact_email,
+        recipient=registration.establishment_contact_email or _applicant_email(registration),
         subject=f"Zootique establishment registration {status_text}: {registration.establishment_name}",
         body=plain_body,
         html_body=html_email,
@@ -607,7 +651,7 @@ def send_registration_resubmission(registration, documents: list[str]) -> bool:
     )
 
     return send_registration_notification(
-        recipient=registration.admin_email,
+        recipient=_applicant_email(registration),
         subject=f"Documents need resubmission for {registration.establishment_name}",
         body=plain_body,
         html_body=html_email,
