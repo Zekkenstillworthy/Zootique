@@ -1,10 +1,10 @@
-<div>
-  <div class="stats-grid" style="--stats-cols: 4; margin-bottom:18px;">
+﻿<div>
+  <div class="stats-grid" style="--stats-cols: 3; margin-bottom:18px;">
     <div class="stat-card sa-kpi" style="--kpi-accent: #0f766e;">
       <div class="stat-label">ACTIVE SUBSCRIPTIONS</div>
       <div class="sa-kpi-row">
         <div class="stat-value">{{ "{:,}".format(sub_stats.active or 0) }}</div>
-        <span class="sa-pill sa-pill--ok">+12%</span>
+        <span class="sa-pill sa-pill--ok">{{ sub_stats.active }} Zoos</span>
       </div>
     </div>
     <div class="stat-card sa-kpi" style="--kpi-accent: #14b8a6;">
@@ -19,13 +19,6 @@
       <div class="sa-kpi-row">
         <div class="stat-value">{{ "{:,}".format(sub_stats.pending_renewals or 0) }}</div>
         <span class="sa-pill {% if (sub_stats.pending_renewals or 0) > 0 %}sa-pill--warn{% endif %}">{% if (sub_stats.pending_renewals or 0) > 0 %}Review{% else %}All good{% endif %}</span>
-      </div>
-    </div>
-    <div class="stat-card sa-kpi" style="--kpi-accent: #7c3aed;">
-      <div class="stat-label">PENDING APPROVALS</div>
-      <div class="sa-kpi-row">
-        <div class="stat-value">{{ "{:,}".format(sub_stats.pending_approvals or 0) }}</div>
-        <span class="sa-pill {% if (sub_stats.pending_approvals or 0) > 0 %}sa-pill--warn{% endif %}">{% if (sub_stats.pending_approvals or 0) > 0 %}Action Required{% else %}None{% endif %}</span>
       </div>
     </div>
   </div>
@@ -49,16 +42,23 @@
   {% endif %}
 
   <div id="zoo-membership-directory" class="card-panel" style="margin-bottom:0; scroll-margin-top:96px;">
-    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
       <h2>ZOO MEMBERSHIP DIRECTORY</h2>
-      <div style="display:flex; gap:10px; align-items:center;">
-        <input type="text" placeholder="Search Zoo Name..." style="max-width:260px;">
-        <button class="btn btn-ghost btn-sm" type="button"><i class="fa-solid fa-filter"></i> Filters</button>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <div style="position:relative;">
+          <input type="text" id="zoo-search-input" placeholder="Search Zoo Name..." style="padding:6px 12px; height:34px; border:1px solid var(--border-light); border-radius:6px; font-size:13px; min-width:220px;">
+        </div>
+        <select id="zoo-status-filter" style="height:34px; padding:4px 10px; font-size:13px; border:1px solid var(--border-light); border-radius:6px; background:#fff; cursor:pointer;">
+          <option value="">All Statuses</option>
+          <option value="ACTIVE">Active</option>
+          <option value="EXPIRED">Expired</option>
+          <option value="PENDING">Pending</option>
+        </select>
       </div>
     </div>
 
     <div class="table-wrap">
-      <table>
+      <table id="zoo-directory-table">
         <thead>
           <tr>
             <th>ZOO NAME</th>
@@ -72,7 +72,7 @@
         </thead>
         <tbody>
           {% for sub in subscriptions %}
-          <tr>
+          <tr data-zoo-row data-zoo-name="{{ sub.zoo_name|lower }}" data-plan-name="{{ sub.plan_name|lower }}" data-status="{{ sub.status|upper }}">
             <td class="fw-600">{{ sub.zoo_name }}</td>
             <td style="font-weight:700;">{{ sub.plan_name }}<div style="font-size:11px;color:var(--text-muted);">{{ sub.tier_label }}</div></td>
             <td>
@@ -80,8 +80,6 @@
               <span class="sa-pill sa-pill--ok">ACTIVE</span>
               {% elif sub.status == 'Pending' %}
               <span class="sa-pill sa-pill--warn">PENDING APPROVAL</span>
-              {% elif sub.status == 'Pending' %}
-              <span class="sa-pill" style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d;">PENDING</span>
               {% else %}
               <span class="sa-pill sa-pill--danger">EXPIRED</span>
               {% endif %}
@@ -122,8 +120,71 @@
         </tbody>
       </table>
     </div>
-    <div style="padding:12px 16px; border-top:1px solid var(--border-light); font-size:12px; color:var(--text-muted);">
+    <div id="zoo-directory-counter" style="padding:12px 16px; border-top:1px solid var(--border-light); font-size:12px; color:var(--text-muted);">
       Showing {{ subscriptions|length }} entries
     </div>
   </div>
 </div>
+
+<script>
+(function() {
+  function initZooDirectorySearch() {
+    var searchInput = document.getElementById('zoo-search-input');
+    var statusFilter = document.getElementById('zoo-status-filter');
+    var tableBody = document.querySelector('#zoo-directory-table tbody');
+    var counter = document.getElementById('zoo-directory-counter');
+    if (!searchInput || !tableBody) return;
+
+    function applyFilter() {
+      var q = (searchInput.value || '').toLowerCase().trim();
+      var status = (statusFilter ? statusFilter.value : '').toUpperCase().trim();
+      var rows = tableBody.querySelectorAll('tr[data-zoo-row]');
+      var visibleCount = 0;
+
+      rows.forEach(function(row) {
+        var name = (row.getAttribute('data-zoo-name') || '').toLowerCase();
+        var plan = (row.getAttribute('data-plan-name') || '').toLowerCase();
+        var rowStatus = (row.getAttribute('data-status') || '').toUpperCase();
+
+        var matchesQuery = !q || name.indexOf(q) !== -1 || plan.indexOf(q) !== -1;
+        var matchesStatus = !status || rowStatus === status;
+
+        if (matchesQuery && matchesStatus) {
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      if (counter) {
+        counter.textContent = 'Showing ' + visibleCount + ' of ' + rows.length + ' entries';
+      }
+
+      var emptyRow = tableBody.querySelector('.filter-empty-row');
+      if (visibleCount === 0 && rows.length > 0) {
+        if (!emptyRow) {
+          emptyRow = document.createElement('tr');
+          emptyRow.className = 'filter-empty-row';
+          emptyRow.innerHTML = '<td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">No matching subscriptions found.</td>';
+          tableBody.appendChild(emptyRow);
+        }
+        emptyRow.style.display = '';
+      } else if (emptyRow) {
+        emptyRow.style.display = 'none';
+      }
+    }
+
+    searchInput.addEventListener('input', applyFilter);
+    if (statusFilter) {
+      statusFilter.addEventListener('change', applyFilter);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initZooDirectorySearch);
+  } else {
+    initZooDirectorySearch();
+  }
+})();
+</script>

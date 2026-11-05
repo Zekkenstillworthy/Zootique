@@ -300,6 +300,29 @@ function initSuperAdminFeedback() {
 
   // Auto-select the first card
   selectCard(cards[0], false);
+
+  // Search input filter for sentiment/feedback
+  const searchInput = document.getElementById("feedback-search-input") || document.querySelector('input[placeholder*="Search sentiment"]');
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      const q = (e.target.value || "").toLowerCase().trim();
+      let firstVisible = null;
+      cards.forEach((card) => {
+        const zooName = (card.getAttribute("data-zoo-name") || "").toLowerCase();
+        const category = (card.getAttribute("data-category") || "").toLowerCase();
+        const comment = (card.getAttribute("data-comment") || "").toLowerCase();
+        const status = (card.getAttribute("data-status") || "").toLowerCase();
+
+        const match = !q || zooName.includes(q) || category.includes(q) || comment.includes(q) || status.includes(q);
+        card.style.display = match ? "block" : "none";
+        if (match && !firstVisible) firstVisible = card;
+      });
+      const currentActive = document.querySelector(".sa-feedback-card.is-active");
+      if (firstVisible && (!currentActive || currentActive.style.display === "none")) {
+        selectCard(firstVisible, false);
+      }
+    });
+  }
 }
 
 function initSuperAdminTabs() {

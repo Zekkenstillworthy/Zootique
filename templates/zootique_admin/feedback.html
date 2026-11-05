@@ -49,7 +49,7 @@
   <div class="card-panel" style="margin-bottom:0;">
     <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
       <h2>RECENT FEEDBACK</h2>
-      <input type="text" placeholder="Search sentiment..." class="zf-control" style="max-width:220px; height:34px; font-size:13px;">
+      <input type="text" id="feedback-search-input" placeholder="Search sentiment, zoo, category..." class="zf-control" style="max-width:240px; height:34px; font-size:13px;">
     </div>
     <div class="card-body" style="padding-top:0; display:flex; flex-direction:column; gap:10px;">
       {% for f in feedbacks %}
@@ -146,6 +146,45 @@
   window.ZootiqueSuperAdmin = window.ZootiqueSuperAdmin || {};
   window.ZootiqueSuperAdmin.replyUrlTemplate = "{{ url_for('zootique_admin.reply_feedback', feedback_id=0) }}";
   window.ZootiqueSuperAdmin.deleteUrlTemplate = "{{ url_for('zootique_admin.delete_feedback', feedback_id=0) }}";
+
+  (function() {
+    function initFeedbackSearch() {
+      var input = document.getElementById('feedback-search-input');
+      var cards = Array.from(document.querySelectorAll('.sa-feedback-card'));
+      if (!input || !cards.length) return;
+
+      input.addEventListener('input', function(e) {
+        var q = (e.target.value || '').toLowerCase().trim();
+        var firstVisible = null;
+
+        cards.forEach(function(card) {
+          var zooName = (card.getAttribute('data-zoo-name') || '').toLowerCase();
+          var category = (card.getAttribute('data-category') || '').toLowerCase();
+          var comment = (card.getAttribute('data-comment') || '').toLowerCase();
+          var status = (card.getAttribute('data-status') || '').toLowerCase();
+
+          var match = !q || zooName.indexOf(q) !== -1 || category.indexOf(q) !== -1 || comment.indexOf(q) !== -1 || status.indexOf(q) !== -1;
+          if (match) {
+            card.style.display = 'block';
+            if (!firstVisible) firstVisible = card;
+          } else {
+            card.style.display = 'none';
+          }
+        });
+
+        var currentActive = document.querySelector('.sa-feedback-card.is-active');
+        if (firstVisible && (!currentActive || currentActive.style.display === 'none')) {
+          firstVisible.click();
+        }
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initFeedbackSearch);
+    } else {
+      initFeedbackSearch();
+    }
+  })();
 </script>
 {% endblock %}
 
