@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}Super Admin{% endblock %}
 {% block page_title %}Super Admin{% endblock %}
@@ -13,8 +13,6 @@
             <div class="stat-value">{{ "{:,}".format(stats.total_zoos) }}</div>
             {% if stats.zoos_new_this_month %}
                 <span class="sa-pill sa-pill--ok">+{{ stats.zoos_new_this_month }} this mo.</span>
-            {% else %}
-                <span class="sa-pill">No new this mo.</span>
             {% endif %}
         </div>
     </div>
@@ -22,7 +20,7 @@
         <div class="stat-label">ACTIVE SUBSCRIPTIONS</div>
         <div class="sa-kpi-row">
             <div class="stat-value">{{ "{:,}".format(stats.active_subscriptions) }}</div>
-            <span class="sa-pill sa-pill--ok">{{ stats.subs_health_pct }}% Health</span>
+            <span class="sa-pill sa-pill--ok">{{ stats.subs_health_pct }}% Active</span>
         </div>
     </div>
     <div class="stat-card sa-kpi" style="--kpi-accent: var(--warning);">
@@ -40,15 +38,7 @@
         <div class="stat-label">MONTHLY REVENUE</div>
         <div class="sa-kpi-row">
             <div class="stat-value">₱{{ "{:,.0f}".format(stats.monthly_revenue) }}</div>
-            {% if stats.revenue_change_pct is not none %}
-                {% if stats.revenue_change_pct >= 0 %}
-                    <span class="sa-pill sa-pill--ok">+{{ "{:.1f}".format(stats.revenue_change_pct) }}%</span>
-                {% else %}
-                    <span class="sa-pill sa-pill--danger">{{ "{:.1f}".format(stats.revenue_change_pct) }}%</span>
-                {% endif %}
-            {% else %}
-                <span class="sa-pill">—</span>
-            {% endif %}
+            <span class="sa-pill sa-pill--ok">MRR</span>
         </div>
     </div>
 </div>
@@ -66,47 +56,50 @@
         </div>
     </div>
 
-    <!-- Revenue Growth -->
+    <!-- Revenue / Subscription Revenue -->
     <div class="card-panel">
         <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-            <h2>REVENUE GROWTH</h2>
-            <span class="sa-pill">Monthly</span>
+            <h2>SUBSCRIPTION REVENUE</h2>
+            <span class="sa-pill">Monthly Recurring</span>
         </div>
         <div class="card-body">
             <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
                 <div>
-                    <div style="font-size:34px; font-weight:900; color:var(--text); line-height:1;">
-                        {{ stats.revenue_goal_pct }}%
+                    <div style="font-size:30px; font-weight:900; color:var(--text); line-height:1;">
+                        ₱{{ "{:,.2f}".format(stats.monthly_revenue) }}
                     </div>
                     <div style="margin-top:6px; font-size:12px; color:var(--text-muted); font-weight:700;">
-                        Target reached
+                        Monthly Recurring Revenue (MRR)
                     </div>
                 </div>
                 <div style="text-align:right;">
-                    <div style="font-size:12px; color:var(--text-muted); font-weight:800;">Goal</div>
-                    <div style="font-size:16px; font-weight:900; color:var(--text);">₱{{ "{:,.2f}".format(stats.revenue_goal) }}</div>
+                    <div style="font-size:12px; color:var(--text-muted); font-weight:800;">Avg / Zoo</div>
+                    <div style="font-size:15px; font-weight:900; color:var(--text);">₱{{ "{:,.2f}".format(stats.arpu) }}</div>
                 </div>
             </div>
 
-            <div style="margin-top:14px;">
-                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px; color:var(--text-muted); font-weight:800; margin-bottom:8px;">
-                    <span>This month revenue</span>
-                    <span>₱{{ "{:,.2f}".format(stats.monthly_revenue) }}</span>
+            <!-- Tier Breakdown linked directly to Zoo Admin subscriptions -->
+            <div style="margin-top:16px; border-top:1px solid var(--border-light); padding-top:12px;">
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; letter-spacing:0.04em;">
+                    Active Subscription Tiers
                 </div>
-                <div class="sa-progress" aria-label="Revenue progress">
-                    <div class="sa-progress-bar" style="width: {{ stats.revenue_goal_pct }}%;"></div>
+                {% for tier in stats.tier_breakdown %}
+                <div style="margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; margin-bottom:4px;">
+                        <span style="font-weight:700;">{{ tier.name }} <span style="font-weight:500; color:var(--text-muted);">({{ tier.count }} zoo{{ 's' if tier.count != 1 else '' }})</span></span>
+                        <span style="font-weight:800;">₱{{ "{:,.2f}".format(tier.revenue) }}</span>
+                    </div>
+                    <div class="sa-progress" style="height:6px; background:#f1f5f9; border-radius:999px; overflow:hidden;">
+                        <div class="sa-progress-bar" style="width: {{ tier.pct }}%; height:100%; background:var(--primary); border-radius:999px;"></div>
+                    </div>
                 </div>
-                <div style="margin-top:10px; font-size:12px; color:var(--text-light);">
-                    {% if stats.revenue_change_pct is not none %}
-                        {% if stats.revenue_change_pct >= 0 %}
-                            <span class="sa-pill sa-pill--ok">+{{ "{:.1f}".format(stats.revenue_change_pct) }}%</span>
-                        {% else %}
-                            <span class="sa-pill sa-pill--danger">{{ "{:.1f}".format(stats.revenue_change_pct) }}%</span>
-                        {% endif %}
-                        <span style="margin-left:8px;">vs previous month</span>
-                    {% else %}
-                        <span class="sa-pill">No prior-month baseline</span>
-                    {% endif %}
+                {% else %}
+                <div style="font-size:12px; color:var(--text-muted);">No active subscriptions linked yet.</div>
+                {% endfor %}
+
+                <div style="margin-top:14px; display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-muted);">
+                    <span><i class="fa-solid fa-circle-check" style="color:var(--success); margin-right:4px;"></i> {{ stats.active_subscriptions }} Paying Zoos</span>
+                    <a href="{{ url_for('zootique_admin.manage_subscriptions') }}" style="color:var(--primary); font-weight:700; text-decoration:none; font-size:11px;">View All Subscriptions &rarr;</a>
                 </div>
             </div>
         </div>
@@ -155,14 +148,13 @@
                         </td>
                         <td style="text-align:right; font-weight:900;">
                             ₱{{ "{:,.2f}".format(row.revenue) }}
-                            {% if row.revenue_delta_pct is not none %}
-                                {% if row.revenue_delta_pct >= 0 %}
-                                    <span class="badge badge-active" style="margin-left:8px;">+{{ "{:.0f}".format(row.revenue_delta_pct) }}%</span>
-                                {% else %}
-                                    <span class="badge badge-pending" style="margin-left:8px;">{{ "{:.0f}".format(row.revenue_delta_pct) }}%</span>
-                                {% endif %}
-                            {% else %}
-                                <span class="badge" style="margin-left:8px;">—</span>
+                            {% if row.monthly_rate and row.monthly_rate > 0 %}
+                                <span class="badge badge-active" style="margin-left:6px; font-size:10px;">/mo</span>
+                            {% endif %}
+                            {% if row.total_paid and row.total_paid > row.revenue %}
+                                <div style="font-size:10px; color:var(--text-muted); font-weight:600; margin-top:2px;">
+                                    Total: ₱{{ "{:,.0f}".format(row.total_paid) }}
+                                </div>
                             {% endif %}
                         </td>
                         <td style="text-align:right;">
@@ -185,6 +177,6 @@
 <script>
   window.ZootiqueSuperAdmin = window.ZootiqueSuperAdmin || {};
   window.ZootiqueSuperAdmin.registrations = {{ reg_bars|tojson }};
-    window.ZootiqueSuperAdmin.zooPerformance = {{ zoo_performance|tojson }};
+  window.ZootiqueSuperAdmin.zooPerformance = {{ zoo_performance|tojson }};
 </script>
 {% endblock %}

@@ -143,8 +143,6 @@ def dashboard():
 
     month_start = _month_start(now)
     month_end = _next_month_start(now)
-    prev_month_end = month_start
-    prev_month_start = _month_start(prev_month_end - timedelta(days=1))
 
     total_zoos = db.session.query(db.func.count(Zoo.id)).scalar() or 0
 
@@ -161,43 +159,6 @@ def dashboard():
 
     total_subs = db.session.query(db.func.count(ZooSubscription.id)).scalar() or 0
     subs_health_pct = int(round((active_subs / total_subs) * 100)) if total_subs else 0
-
-    monthly_revenue = (
-        db.session.query(db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0))
-        .filter(SubscriptionPayment.paid_at >= month_start)
-        .filter(SubscriptionPayment.paid_at < month_end)
-        .scalar()
-        or 0.0
-    )
-
-    prev_month_revenue = (
-        db.session.query(db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0))
-        .filter(SubscriptionPayment.paid_at >= prev_month_start)
-        .filter(SubscriptionPayment.paid_at < prev_month_end)
-        .scalar()
-        or 0.0
-    )
-
-    revenue_change_pct = None
-    if prev_month_revenue and prev_month_revenue > 0:
-        revenue_change_pct = ((monthly_revenue - prev_month_revenue) / prev_month_revenue) * 100.0
-    elif monthly_revenue > 0:
-        revenue_change_pct = 100.0
-
-    # Revenue goal + progress (derived from recent performance)
-    # Goal = 10% above the higher of: current month revenue vs 6-month average.
-    last_6_months_start = _month_start(month_start - timedelta(days=30 * 5))
-    rev_last_6 = (
-        db.session.query(db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0))
-        .filter(SubscriptionPayment.paid_at >= last_6_months_start)
-        .filter(SubscriptionPayment.paid_at < month_end)
-        .scalar()
-        or 0.0
-    )
-    avg_6 = (rev_last_6 / 6.0) if rev_last_6 else 0.0
-    revenue_goal = max(float(monthly_revenue), float(avg_6)) * 1.10 if (monthly_revenue or avg_6) else 0.0
-    revenue_goal_pct = int(round((monthly_revenue / revenue_goal) * 100)) if revenue_goal else 0
-    revenue_goal_pct = max(0, min(revenue_goal_pct, 100))
 
     # New Zoo Registrations (last 6 months)
     reg_bars = []
@@ -223,11 +184,11 @@ def dashboard():
     for b in reg_bars:
         b['pct'] = int((b['count'] / max_reg) * 100)
 
-    # Zoo Performance (tier, rating, revenue contribution)
+    # Zoo Performance & Subscriptions
     zoo_rows = db.session.query(Zoo.id, Zoo.name).order_by(Zoo.name.asc()).all()
     zoo_ids = [zid for zid, _ in zoo_rows]
 
-    # Active subscription tier per zoo (pick the active subscription with the latest end_date)
+    # Active subscriptions per zoo (latest active subscription)
     active_sub_rows = (
         db.session.query(ZooSubscription)
         .filter(ZooSubscription.zoo_id.in_(zoo_ids) if zoo_ids else db.text('FALSE'))
@@ -236,10 +197,51 @@ def dashboard():
         .all()
     )
     tier_by_zoo: dict[int, str] = {}
+    sub_monthly_by_zoo: dict[int, float] = {}
+    tier_counts: dict[str, int] = {}
+    tier_revenue: dict[str, float] = {}
+
     for s in active_sub_rows:
         if s.zoo_id not in tier_by_zoo:
-            tier_by_zoo[s.zoo_id] = s.plan.name if s.plan else '—'
+            plan_name = s.plan.name if s.plan else 'Standard'
+            tier_by_zoo[s.zoo_id] = plan_name
+            dur = max(int(getattr(s.plan, 'duration_months', 1) or 1), 1)
+            price = float(getattr(s.plan, 'price', 0.0) or 0.0)
+            monthly_val = price / dur
+            sub_monthly_by_zoo[s.zoo_id] = monthly_val
 
+            tier_counts[plan_name] = tier_counts.get(plan_name, 0) + 1
+            tier_revenue[plan_name] = tier_revenue.get(plan_name, 0.0) + monthly_val
+
+    mrr_total = sum(sub_monthly_by_zoo.values())
+
+    # Payments recorded this month
+    payments_this_month = (
+        db.session.query(db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0))
+        .filter(SubscriptionPayment.paid_at >= month_start)
+        .filter(SubscriptionPayment.paid_at < month_end)
+        .filter(SubscriptionPayment.status == 'paid')
+        .scalar()
+        or 0.0
+    )
+
+    # Monthly subscription revenue links to Zoo admin subscriptions (MRR)
+    monthly_revenue = max(float(mrr_total), float(payments_this_month))
+
+    # All-time subscription payments per zoo
+    all_time_rev_rows = (
+        db.session.query(
+            ZooSubscription.zoo_id,
+            db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0).label('total'),
+        )
+        .join(SubscriptionPayment, SubscriptionPayment.subscription_id == ZooSubscription.id)
+        .filter(SubscriptionPayment.status == 'paid')
+        .group_by(ZooSubscription.zoo_id)
+        .all()
+    )
+    all_time_by_zoo = {int(zid): float(total or 0.0) for zid, total in all_time_rev_rows}
+
+    # Ratings
     rating_rows = (
         db.session.query(
             Feedback.zoo_id,
@@ -259,42 +261,12 @@ def dashboard():
         if r.zoo_id is not None
     }
 
-    cur_rev_rows = (
-        db.session.query(
-            ZooSubscription.zoo_id,
-            db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0).label('total'),
-        )
-        .join(SubscriptionPayment, SubscriptionPayment.subscription_id == ZooSubscription.id)
-        .filter(SubscriptionPayment.paid_at >= month_start)
-        .filter(SubscriptionPayment.paid_at < month_end)
-        .group_by(ZooSubscription.zoo_id)
-        .all()
-    )
-    prev_rev_rows = (
-        db.session.query(
-            ZooSubscription.zoo_id,
-            db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0).label('total'),
-        )
-        .join(SubscriptionPayment, SubscriptionPayment.subscription_id == ZooSubscription.id)
-        .filter(SubscriptionPayment.paid_at >= prev_month_start)
-        .filter(SubscriptionPayment.paid_at < prev_month_end)
-        .group_by(ZooSubscription.zoo_id)
-        .all()
-    )
-
-    cur_rev_by_zoo = {int(zid): float(total or 0.0) for zid, total in cur_rev_rows}
-    prev_rev_by_zoo = {int(zid): float(total or 0.0) for zid, total in prev_rev_rows}
-
     zoo_performance = []
     for zoo_id, zoo_name in zoo_rows:
-        cur_rev = float(cur_rev_by_zoo.get(int(zoo_id), 0.0))
-        prev_rev = float(prev_rev_by_zoo.get(int(zoo_id), 0.0))
-
-        rev_delta_pct = None
-        if prev_rev > 0:
-            rev_delta_pct = ((cur_rev - prev_rev) / prev_rev) * 100.0
-        elif cur_rev > 0:
-            rev_delta_pct = 100.0
+        # Zoo's revenue contribution: monthly subscription rate or all-time if no active plan
+        monthly_contrib = sub_monthly_by_zoo.get(int(zoo_id), 0.0)
+        total_paid = all_time_by_zoo.get(int(zoo_id), 0.0)
+        rev = monthly_contrib if monthly_contrib > 0 else total_paid
 
         rating_info = rating_by_zoo.get(int(zoo_id), {'avg': None, 'count': 0})
 
@@ -305,13 +277,25 @@ def dashboard():
                 'tier': tier_by_zoo.get(int(zoo_id), '—'),
                 'avg_rating': rating_info.get('avg'),
                 'rating_count': rating_info.get('count', 0),
-                'revenue': cur_rev,
-                'revenue_delta_pct': rev_delta_pct,
+                'revenue': rev,
+                'total_paid': total_paid,
+                'monthly_rate': monthly_contrib,
             }
         )
 
     zoo_performance.sort(key=lambda r: (r['revenue'], (r['avg_rating'] or 0.0)), reverse=True)
     zoo_performance = zoo_performance[:5]
+
+    arpu = (monthly_revenue / active_subs) if active_subs else 0.0
+    tier_breakdown = [
+        {
+            'name': name,
+            'count': count,
+            'revenue': tier_revenue.get(name, 0.0),
+            'pct': int(round((tier_revenue.get(name, 0.0) / mrr_total) * 100)) if mrr_total else 0,
+        }
+        for name, count in sorted(tier_counts.items(), key=lambda x: tier_revenue.get(x[0], 0.0), reverse=True)
+    ]
 
     stats = {
         'total_zoos': int(total_zoos),
@@ -320,9 +304,9 @@ def dashboard():
         'expired_subscriptions': int(expired_subs),
         'subs_health_pct': int(subs_health_pct),
         'monthly_revenue': float(monthly_revenue),
-        'revenue_change_pct': float(revenue_change_pct) if revenue_change_pct is not None else None,
-        'revenue_goal': float(revenue_goal),
-        'revenue_goal_pct': int(revenue_goal_pct),
+        'mrr': float(mrr_total),
+        'arpu': float(arpu),
+        'tier_breakdown': tier_breakdown,
     }
 
     return render_template(
