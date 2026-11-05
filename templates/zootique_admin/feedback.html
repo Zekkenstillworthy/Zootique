@@ -74,12 +74,11 @@
             </div>
             <span class="sa-pill {% if status == 'REPLIED' %}sa-pill--ok{% else %}sa-pill--warn{% endif %}">{{ status }}</span>
           </div>
-          <div style="margin-top:10px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+          <div style="margin-top:10px; display:flex; align-items:center; gap:10px;">
             <div style="font-size:13px; color:#eab308; font-weight:800;">
               {% for star in range(f.rating) %}<i class="fa-solid fa-star"></i>{% endfor %}{% for star in range(5 - f.rating) %}<i class="fa-regular fa-star" style="color:#cbd5e1;"></i>{% endfor %}
               <span style="font-size:12px; color:var(--text-muted); font-weight:700; margin-left:4px;">{{ f.rating }}/5</span>
             </div>
-            <span style="font-size:12px; color:var(--primary, #1a4f32); font-weight:800; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-eye"></i> View Full Details</span>
           </div>
           <div style="margin-top:8px; color:var(--text-secondary); font-size:13px; line-height:1.5;">
             {{ f.comment[:140] }}{% if f.comment|length > 140 %}...{% endif %}
