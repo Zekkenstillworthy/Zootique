@@ -590,7 +590,7 @@ def approve_registration(registration_id: int):
             role='zoo_admin',
             zoo_id=new_zoo.id,
             password_hash=registration.admin_password_hash,
-            status='pending_activation',
+            status='active',
         )
         db.session.add(new_user)
         registration.zoo_id = new_zoo.id
@@ -653,6 +653,30 @@ def reject_registration(registration_id: int):
         flash('Registration rejected and both notification emails were sent.', 'success')
     else:
         flash('Registration rejected, but one or more notification emails failed. Review the email attempts.', 'error')
+    return redirect(url_for('zootique_admin.registration_detail', registration_id=registration.id))
+
+
+@admin_bp.post('/registrations/<int:registration_id>/reopen')
+def reopen_registration(registration_id: int):
+    """Re-opens a rejected registration back to pending so it can be re-reviewed."""
+    reviewer = _current_user()
+    if not reviewer:
+        return redirect(url_for('auth.login', module_name='zootique_admin'))
+    registration = db.session.get(EstablishmentRegistration, registration_id)
+    if not registration:
+        flash('Registration not found.', 'error')
+        return redirect(url_for('zootique_admin.registrations'))
+    if registration.status != 'rejected':
+        flash('Only rejected registrations can be reopened.', 'error')
+        return redirect(url_for('zootique_admin.registration_detail', registration_id=registration.id))
+    registration.status = 'pending'
+    registration.rejected_by = None
+    registration.rejected_at = None
+    registration.rejection_note = None
+    registration.resubmission_token_hash = None
+    registration.resubmission_expires_at = None
+    db.session.commit()
+    flash('Registration reopened for review.', 'success')
     return redirect(url_for('zootique_admin.registration_detail', registration_id=registration.id))
 
 
