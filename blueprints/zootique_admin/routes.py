@@ -217,21 +217,20 @@ def _parse_date_yyyy_mm_dd(value: str | None) -> datetime | None:
         return None
 
 def _current_user() -> User | None:
-
-    user_id = session.get('user_id')
-
+    auth_by_role = session.get('auth_by_role')
+    user_id = None
+    if isinstance(auth_by_role, dict) and 'zootique_admin' in auth_by_role:
+        st = auth_by_role.get('zootique_admin')
+        if isinstance(st, dict):
+            user_id = st.get('user_id')
     if not user_id:
-
+        user_id = session.get('user_id')
+    if not user_id:
         return None
-
     try:
-
         user_id_int = int(user_id)
-
     except (TypeError, ValueError):
-
         return None
-
     return db.session.get(User, user_id_int)
 
 @admin_bp.get("/")
@@ -2959,13 +2958,15 @@ def update_profile():
 
         user.email = email
 
-    if username and username != user.username:
+    if username != user.username:
 
-        if User.query.filter(User.username == username, User.id != user.id).first():
+        if username:
 
-            flash('Username already exists.', 'error')
+            if User.query.filter(User.username == username, User.id != user.id).first():
 
-            return redirect(url_for('zootique_admin.settings'))
+                flash('Username already exists.', 'error')
+
+                return redirect(url_for('zootique_admin.settings'))
 
         user.username = username
 
@@ -2986,10 +2987,19 @@ def update_profile():
     db.session.commit()
 
     session['full_name'] = user.full_name
+    session['username'] = user.username
 
     if user.profile_image:
 
         session['profile_image'] = user.profile_image
+
+    auth_by_role = session.get('auth_by_role')
+    if isinstance(auth_by_role, dict) and 'zootique_admin' in auth_by_role:
+        auth_by_role['zootique_admin']['full_name'] = user.full_name
+        auth_by_role['zootique_admin']['profile_image'] = user.profile_image
+        session['auth_by_role'] = auth_by_role
+
+    session.modified = True
 
     flash('Profile updated successfully.', 'success')
 
@@ -3005,8 +3015,6 @@ def update_security():
 
         return redirect(url_for('auth.login', module_name='zootique_admin'))
 
-    new_username = (request.form.get('new_username') or '').strip()
-
     current_password = request.form.get('current_password') or ''
 
     new_password = request.form.get('new_password') or ''
@@ -3019,31 +3027,25 @@ def update_security():
 
         return redirect(url_for('zootique_admin.settings'))
 
-    if new_username and new_username != user.username:
+    if not new_password:
 
-        if User.query.filter(User.username == new_username, User.id != user.id).first():
+        flash('Please enter a new password.', 'error')
 
-            flash('Username already exists.', 'error')
+        return redirect(url_for('zootique_admin.settings'))
 
-            return redirect(url_for('zootique_admin.settings'))
+    if new_password != confirm_password:
 
-        user.username = new_username
+        flash('New password and confirmation do not match.', 'error')
 
-    if new_password:
+        return redirect(url_for('zootique_admin.settings'))
 
-        if new_password != confirm_password:
+    if len(new_password) < 8:
 
-            flash('New password and confirmation do not match.', 'error')
+        flash('New password must be at least 8 characters.', 'error')
 
-            return redirect(url_for('zootique_admin.settings'))
+        return redirect(url_for('zootique_admin.settings'))
 
-        if len(new_password) < 8:
-
-            flash('New password must be at least 8 characters.', 'error')
-
-            return redirect(url_for('zootique_admin.settings'))
-
-        user.set_password(new_password)
+    user.set_password(new_password)
 
     db.session.commit()
 

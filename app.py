@@ -102,11 +102,15 @@ def create_app() -> Flask:
             auth_by_role = session.get('auth_by_role')
             if isinstance(auth_by_role, dict):
                 blueprint = request.blueprint or ''
-                if 'staff' in blueprint and 'zoo_staff' in auth_by_role:
+                if blueprint.startswith('zootique_admin'):
+                    st = auth_by_role.get('zootique_admin')
+                    if isinstance(st, dict):
+                        user_id = st.get('user_id') or user_id
+                elif 'staff' in blueprint and 'zoo_staff' in auth_by_role:
                     st = auth_by_role.get('zoo_staff')
                     if isinstance(st, dict):
                         user_id = st.get('user_id') or user_id
-                elif 'admin' in blueprint and 'zoo_admin' in auth_by_role:
+                elif blueprint.startswith('animal_farm_admin') and 'zoo_admin' in auth_by_role:
                     st = auth_by_role.get('zoo_admin')
                     if isinstance(st, dict):
                         user_id = st.get('user_id') or user_id

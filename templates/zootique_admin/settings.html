@@ -100,18 +100,7 @@
             <div class="zf-form-body">
                 <div class="zf-alert zf-alert-info">
                     <i class="fa-solid fa-circle-info"></i>
-                    <span>Update your administrative handle or password. Current password verification is required.</span>
-                </div>
-
-                <div class="zf-section">
-                    <div class="zf-section-label">
-                        <i class="fa-solid fa-user-tag"></i> Admin Username
-                    </div>
-                    <div class="zf-field zf-full">
-                        <label class="zf-label" for="new_username">Change Username</label>
-                        <input type="text" id="new_username" name="new_username" class="zf-control" placeholder="New administrator handle" value="">
-                        <span class="zf-hint">Leave blank to retain current username</span>
-                    </div>
+                    <span>Update your administrator password. Current password verification is required.</span>
                 </div>
 
                 <div class="zf-section">
@@ -126,14 +115,15 @@
                         </div>
 
                         <div class="zf-field">
-                            <label class="zf-label" for="new_password">New Password</label>
-                            <input id="new_password" type="password" name="new_password" class="zf-control" placeholder="Enter new password" autocomplete="new-password">
+                            <label class="zf-label" for="new_password">New Password <span class="zf-req">*</span></label>
+                            <input id="new_password" type="password" name="new_password" class="zf-control" placeholder="Enter new password (min. 8 characters)" required autocomplete="new-password">
+                            <span class="zf-error" id="sa_new_pw_err"><i class="fa-solid fa-triangle-exclamation"></i> Password must be at least 8 characters.</span>
                             <div id="pw_strength" style="margin-top:6px; font-size:12px; color:var(--text-muted); font-weight:600;">Strength: —</div>
                         </div>
 
                         <div class="zf-field">
-                            <label class="zf-label" for="confirm_password">Confirm New Password</label>
-                            <input id="confirm_password" type="password" name="confirm_password" class="zf-control" placeholder="Confirm new password" autocomplete="new-password">
+                            <label class="zf-label" for="confirm_password">Confirm New Password <span class="zf-req">*</span></label>
+                            <input id="confirm_password" type="password" name="confirm_password" class="zf-control" placeholder="Confirm new password" required autocomplete="new-password">
                             <span class="zf-error" id="sa_conf_pw_err"><i class="fa-solid fa-triangle-exclamation"></i> Passwords do not match.</span>
                         </div>
 
@@ -279,7 +269,7 @@
 
             const btn = document.getElementById('saveSaProfileBtn');
             if (btn) {
-                btn.disabled = true;
+                setTimeout(function() { btn.disabled = true; }, 0);
                 btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
             }
         });
@@ -291,24 +281,36 @@
             const cur = document.getElementById('current_password');
             const np = document.getElementById('new_password');
             const cp = document.getElementById('confirm_password');
+            const curErr = document.getElementById('sa_cur_pw_err');
+            const newErr = document.getElementById('sa_new_pw_err');
+            const confErr = document.getElementById('sa_conf_pw_err');
             let invalid = false;
 
             if (!cur.value) {
                 cur.classList.add('is-invalid');
-                document.getElementById('sa_cur_pw_err').style.display = 'block';
+                if (curErr) curErr.style.display = 'block';
                 invalid = true;
             } else {
                 cur.classList.remove('is-invalid');
-                document.getElementById('sa_cur_pw_err').style.display = 'none';
+                if (curErr) curErr.style.display = 'none';
             }
 
-            if (np.value && np.value !== cp.value) {
+            if (!np.value || np.value.length < 8) {
+                np.classList.add('is-invalid');
+                if (newErr) newErr.style.display = 'block';
+                invalid = true;
+            } else {
+                np.classList.remove('is-invalid');
+                if (newErr) newErr.style.display = 'none';
+            }
+
+            if (!cp.value || np.value !== cp.value) {
                 cp.classList.add('is-invalid');
-                document.getElementById('sa_conf_pw_err').style.display = 'block';
+                if (confErr) confErr.style.display = 'block';
                 invalid = true;
             } else {
                 cp.classList.remove('is-invalid');
-                document.getElementById('sa_conf_pw_err').style.display = 'none';
+                if (confErr) confErr.style.display = 'none';
             }
 
             if (invalid) {
@@ -318,7 +320,7 @@
 
             const btn = document.getElementById('saveSaSecurityBtn');
             if (btn) {
-                btn.disabled = true;
+                setTimeout(function() { btn.disabled = true; }, 0);
                 btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
             }
         });
