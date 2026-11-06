@@ -373,7 +373,7 @@ def dashboard():
             )
             plan_price = float(getattr(s.plan, 'price', 0.0) or 0.0)
             payment_amount = float(latest_payment.amount) if (latest_payment and latest_payment.amount) else 0.0
-            price = payment_amount if payment_amount > 0 else plan_price
+            price = plan_price
 
             monthly_val = price / dur
 
@@ -1313,7 +1313,7 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
             plan_price = 0.0
 
         payment_amount = float(latest_payment.amount) if (latest_payment and latest_payment.amount) else 0.0
-        effective_amount = payment_amount if payment_amount > 0 else plan_price
+        effective_amount = plan_price
 
         if is_active:
             mrr_total += effective_amount / duration_months
