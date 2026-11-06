@@ -2075,25 +2075,32 @@ def view_reports():
 
     total_revenue = db.session.query(db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0)).scalar() or 0.0
 
-    active_subs = db.session.query(db.func.count(ZooSubscription.id)).filter(ZooSubscription.end_date >= now).scalar() or 0
-
-    expired_subs = db.session.query(db.func.count(ZooSubscription.id)).filter(ZooSubscription.end_date < now).scalar() or 0
-
-    plan_distribution = (
-
-        db.session.query(SubscriptionPlan.name, db.func.count(ZooSubscription.id))
-
-        .join(ZooSubscription, ZooSubscription.plan_id == SubscriptionPlan.id)
-
-        .group_by(SubscriptionPlan.name)
-
-        .order_by(db.desc(db.func.count(ZooSubscription.id)))
-
+    # Count active/expired per zoo (deduplicated — one record per zoo based on best subscription)
+    _all_zoo_subs_r = (
+        db.session.query(ZooSubscription)
+        .order_by(ZooSubscription.zoo_id.asc(), ZooSubscription.end_date.desc())
         .all()
-
     )
+    _subs_by_zoo_r: dict = {}
+    for _s in _all_zoo_subs_r:
+        if _s.zoo_id not in _subs_by_zoo_r:
+            _subs_by_zoo_r[_s.zoo_id] = _s
+        elif _s.status == 'active' and _s.end_date >= now:
+            _subs_by_zoo_r[_s.zoo_id] = _s
 
-    plan_distribution = [{'plan': n, 'count': int(c)} for n, c in plan_distribution]
+    active_subs = sum(1 for _s in _subs_by_zoo_r.values() if _s.status == 'active' and _s.end_date >= now)
+    expired_subs = sum(1 for _s in _subs_by_zoo_r.values() if not (_s.status == 'active' and _s.end_date >= now) and _s.status != 'pending')
+
+    # Plan distribution: count only the best (active) subscription per zoo
+    _plan_counts: dict = {}
+    for _s in _subs_by_zoo_r.values():
+        if _s.status == 'active' and _s.end_date >= now and _s.plan:
+            _plan_counts[_s.plan.name] = _plan_counts.get(_s.plan.name, 0) + 1
+    plan_distribution = sorted(
+        [{'plan': n, 'count': c} for n, c in _plan_counts.items()],
+        key=lambda x: x['count'],
+        reverse=True,
+    )
 
     # Zoo performance (bookings & visitors)
     # Use outerjoin so zoos with 0 bookings appear in the least-active list.
@@ -2257,9 +2264,20 @@ def export_reports_csv():
 
     total_revenue = db.session.query(db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0)).scalar() or 0.0
 
-    active_subs = db.session.query(db.func.count(ZooSubscription.id)).filter(ZooSubscription.end_date >= now).scalar() or 0
-
-    expired_subs = db.session.query(db.func.count(ZooSubscription.id)).filter(ZooSubscription.end_date < now).scalar() or 0
+    # Count active/expired per zoo (deduplicated — one record per zoo based on best subscription)
+    _all_zoo_subs_csv = (
+        db.session.query(ZooSubscription)
+        .order_by(ZooSubscription.zoo_id.asc(), ZooSubscription.end_date.desc())
+        .all()
+    )
+    _subs_by_zoo_csv: dict = {}
+    for _s in _all_zoo_subs_csv:
+        if _s.zoo_id not in _subs_by_zoo_csv:
+            _subs_by_zoo_csv[_s.zoo_id] = _s
+        elif _s.status == 'active' and _s.end_date >= now:
+            _subs_by_zoo_csv[_s.zoo_id] = _s
+    active_subs = sum(1 for _s in _subs_by_zoo_csv.values() if _s.status == 'active' and _s.end_date >= now)
+    expired_subs = sum(1 for _s in _subs_by_zoo_csv.values() if not (_s.status == 'active' and _s.end_date >= now) and _s.status != 'pending')
 
     year_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 
@@ -2395,9 +2413,20 @@ def export_reports_pdf():
 
     total_revenue = db.session.query(db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0)).scalar() or 0.0
 
-    active_subs = db.session.query(db.func.count(ZooSubscription.id)).filter(ZooSubscription.end_date >= now).scalar() or 0
-
-    expired_subs = db.session.query(db.func.count(ZooSubscription.id)).filter(ZooSubscription.end_date < now).scalar() or 0
+    # Count active/expired per zoo (deduplicated — one record per zoo based on best subscription)
+    _all_zoo_subs_csv = (
+        db.session.query(ZooSubscription)
+        .order_by(ZooSubscription.zoo_id.asc(), ZooSubscription.end_date.desc())
+        .all()
+    )
+    _subs_by_zoo_csv: dict = {}
+    for _s in _all_zoo_subs_csv:
+        if _s.zoo_id not in _subs_by_zoo_csv:
+            _subs_by_zoo_csv[_s.zoo_id] = _s
+        elif _s.status == 'active' and _s.end_date >= now:
+            _subs_by_zoo_csv[_s.zoo_id] = _s
+    active_subs = sum(1 for _s in _subs_by_zoo_csv.values() if _s.status == 'active' and _s.end_date >= now)
+    expired_subs = sum(1 for _s in _subs_by_zoo_csv.values() if not (_s.status == 'active' and _s.end_date >= now) and _s.status != 'pending')
 
     year_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 

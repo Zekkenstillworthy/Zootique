@@ -29,8 +29,8 @@ def renew_zoo_subscription(*, subscription: ZooSubscription, months: int | None 
     plan = subscription.plan
     if not plan or not plan.is_active:
         raise SubscriptionValidationError("Subscription plan is not active.")
-    if float(plan.price or 0) < 0:
-        raise SubscriptionValidationError("Subscription plan price cannot be negative.")
+    if float(plan.price or 0) <= 0:
+        raise SubscriptionValidationError("Subscription plan price must be greater than zero.")
 
     cycle_months = months or int(plan.duration_months or 1)
     if cycle_months < 1:
