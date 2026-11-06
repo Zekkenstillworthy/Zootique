@@ -10,7 +10,12 @@
     <div class="stat-card sa-kpi" style="--kpi-accent: #14b8a6;">
       <div class="stat-label">TOTAL REVENUE (MRR)</div>
       <div class="sa-kpi-row">
-        <div class="stat-value">&#8369;{{ "{:,.2f}".format(sub_stats.mrr or 0) }}</div>
+        <div>
+          <div class="stat-value">&#8369;{{ "{:,.2f}".format(sub_stats.mrr or 0) }}</div>
+          {% if sub_stats.mrr_month %}
+          <div style="font-size: 11px; color: var(--text-muted, #64748b); font-weight: 600; margin-top: 2px;">{{ sub_stats.mrr_month }}</div>
+          {% endif %}
+        </div>
         <span class="sa-pill">Monthly</span>
       </div>
     </div>

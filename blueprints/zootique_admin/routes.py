@@ -1211,6 +1211,20 @@ def layout_manager():
 
     return redirect(url_for('zootique_admin.dashboard'))
 
+def _get_monthly_subscription_income():
+    month_income = (
+        db.session.query(
+            db.func.to_char(SubscriptionPayment.paid_at, 'YYYY-MM').label('month'),
+            db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0).label('total'),
+        )
+        .filter(SubscriptionPayment.status == 'paid')
+        .group_by('month')
+        .order_by('month')
+        .all()
+    )
+    return [{'month': m, 'total': float(t)} for m, t in month_income]
+
+
 def _build_subscription_management_context(edit_plan_id: str | None = None):
     now = datetime.utcnow()
     edit_plan = db.session.get(SubscriptionPlan, int(edit_plan_id)) if (edit_plan_id and edit_plan_id.isdigit()) else None
@@ -1340,23 +1354,18 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
             "is_popular": bool(popular_plan_id and plan.id == popular_plan_id),
         })
 
-    # MRR = sum of paid payments for the current calendar month
-    now_subs = datetime.utcnow()
-    subs_month_start = now_subs.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    subs_month_end = (
-        subs_month_start.replace(year=subs_month_start.year + 1, month=1)
-        if subs_month_start.month == 12
-        else subs_month_start.replace(month=subs_month_start.month + 1)
-    )
-    subs_mrr_from_payments = (
-        db.session.query(db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0))
-        .filter(SubscriptionPayment.paid_at >= subs_month_start)
-        .filter(SubscriptionPayment.paid_at < subs_month_end)
-        .filter(SubscriptionPayment.status == 'paid')
-        .scalar()
-        or 0.0
-    )
-    final_sub_mrr = float(subs_mrr_from_payments) if subs_mrr_from_payments > 0 else float(mrr_total)
+    # Reuse Financial Reports monthly revenue query for the most recent month
+    monthly_income_records = _get_monthly_subscription_income()
+    if monthly_income_records:
+        latest_record = monthly_income_records[-1]
+        final_sub_mrr = float(latest_record['total'])
+        try:
+            mrr_month_label = datetime.strptime(latest_record['month'], '%Y-%m').strftime('%B %Y')
+        except Exception:
+            mrr_month_label = latest_record['month']
+    else:
+        final_sub_mrr = 0.0
+        mrr_month_label = ''
 
     return {
         "subscriptions": sub_rows,
@@ -1364,6 +1373,7 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
         "sub_stats": {
             "active": int(active_count),
             "mrr": float(final_sub_mrr),
+            "mrr_month": mrr_month_label,
             "pending_approvals": int(pending_count),
             "pending_renewals": 0,
             "churn_rate": float(churn_rate),
@@ -2151,27 +2161,7 @@ def view_reports():
 
     # Financial (monthly income + recent payments)
 
-    month_income = (
-
-        db.session.query(
-
-            db.func.to_char(SubscriptionPayment.paid_at, 'YYYY-MM').label('month'),
-
-            db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0).label('total'),
-
-        )
-
-        .filter(SubscriptionPayment.status == 'paid')
-
-        .group_by('month')
-
-        .order_by('month')
-
-        .all()
-
-    )
-
-    month_income = [{'month': m, 'total': float(t)} for m, t in month_income][-12:]
+    month_income = _get_monthly_subscription_income()[-12:]
 
     year_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 
