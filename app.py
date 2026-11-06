@@ -183,8 +183,8 @@ def create_app() -> Flask:
 
     with app.app_context():
         backend = db.engine.url.get_backend_name().lower()
-        # if backend != "postgresql":
-        #     raise RuntimeError(f"Unsupported database backend '{backend}'. Zootique is configured for Postgres only.")
+        if backend != "postgresql":
+            raise RuntimeError(f"Unsupported database backend '{backend}'. Zootique is configured for Supabase Postgres only.")
 
         # In production (Vercel) skip the eager connection probe.
         # Supabase validates the connection on first use via pool_pre_ping.
