@@ -233,28 +233,9 @@ def _current_user() -> User | None:
         return None
     return db.session.get(User, user_id_int)
 
-def _ensure_canonical_subscription_plans() -> None:
-    """Ensure canonical default pricing (Standard=4999, Pro=9999) if DB still has legacy values."""
-    try:
-        updated = False
-        for p in SubscriptionPlan.query.all():
-            p_name = (p.name or "").strip().lower()
-            current_p = float(p.price or 0.0)
-            if p_name == "standard" and current_p < 1000:
-                p.price = 4999.0
-                updated = True
-            elif p_name == "pro" and current_p < 1000:
-                p.price = 9999.0
-                updated = True
-        if updated:
-            db.session.commit()
-    except Exception:
-        db.session.rollback()
-
 @admin_bp.get("/")
 
 def dashboard():
-    _ensure_canonical_subscription_plans()
 
     now = datetime.utcnow()
 
@@ -390,12 +371,7 @@ def dashboard():
             )
             plan_price = float(getattr(s.plan, 'price', 0.0) or 0.0)
             payment_amount = float(latest_payment.amount) if (latest_payment and latest_payment.amount) else 0.0
-            if plan_price >= 1000:
-                price = plan_price
-            elif payment_amount >= 1000:
-                price = payment_amount
-            else:
-                price = plan_price if plan_price > 0 else payment_amount
+            price = plan_price
 
             monthly_val = price / dur
 
@@ -1243,7 +1219,6 @@ def layout_manager():
     return redirect(url_for('zootique_admin.dashboard'))
 
 def _build_subscription_management_context(edit_plan_id: str | None = None):
-    _ensure_canonical_subscription_plans()
     now = datetime.utcnow()
     edit_plan = db.session.get(SubscriptionPlan, int(edit_plan_id)) if (edit_plan_id and edit_plan_id.isdigit()) else None
     edit_plan_limits = {}
@@ -1320,12 +1295,7 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
             plan_price = 0.0
 
         payment_amount = float(latest_payment.amount) if (latest_payment and latest_payment.amount) else 0.0
-        if plan_price >= 1000:
-            effective_amount = plan_price
-        elif payment_amount >= 1000:
-            effective_amount = payment_amount
-        else:
-            effective_amount = plan_price if plan_price > 0 else payment_amount
+        effective_amount = plan_price
 
         if is_active:
             mrr_total += effective_amount / duration_months
