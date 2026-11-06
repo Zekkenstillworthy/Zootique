@@ -202,6 +202,7 @@ def subscriptions():
         SubscriptionPayment.query
         .join(ZooSubscription, SubscriptionPayment.subscription_id == ZooSubscription.id)
         .filter(ZooSubscription.zoo_id == zoo.id)
+        .filter(SubscriptionPayment.status == 'paid')
         .order_by(SubscriptionPayment.paid_at.desc())
         .limit(50)
         .all()
