@@ -259,11 +259,23 @@ def dashboard():
 
     )
 
-    active_subs = db.session.query(db.func.count(ZooSubscription.id)).filter(ZooSubscription.end_date >= now).scalar() or 0
+    # Count active/expired per zoo (deduplicated — one record per zoo based on best subscription)
+    _all_zoo_subs = (
+        db.session.query(ZooSubscription)
+        .order_by(ZooSubscription.zoo_id.asc(), ZooSubscription.end_date.desc())
+        .all()
+    )
+    _subs_by_zoo: dict = {}
+    for _s in _all_zoo_subs:
+        if _s.zoo_id not in _subs_by_zoo:
+            _subs_by_zoo[_s.zoo_id] = _s
+        elif _s.status == 'active' and _s.end_date >= now:
+            # Prefer active over any previously-seen record for this zoo
+            _subs_by_zoo[_s.zoo_id] = _s
 
-    expired_subs = db.session.query(db.func.count(ZooSubscription.id)).filter(ZooSubscription.end_date < now).scalar() or 0
-
-    total_subs = db.session.query(db.func.count(ZooSubscription.id)).scalar() or 0
+    active_subs = sum(1 for _s in _subs_by_zoo.values() if _s.status == 'active' and _s.end_date >= now)
+    expired_subs = sum(1 for _s in _subs_by_zoo.values() if not (_s.status == 'active' and _s.end_date >= now) and _s.status != 'pending')
+    total_subs = len(_subs_by_zoo)
 
     subs_health_pct = int(round((active_subs / total_subs) * 100)) if total_subs else 0
 
@@ -389,9 +401,8 @@ def dashboard():
 
     )
 
-    # Monthly subscription revenue links to Zoo admin subscriptions (MRR)
-
-    monthly_revenue = max(float(mrr_total), float(payments_this_month))
+    # Monthly subscription revenue = sum of active zoo MRR (not raw payments, which include stale records)
+    monthly_revenue = float(mrr_total)
 
     # All-time subscription payments per zoo
 
