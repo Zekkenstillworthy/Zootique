@@ -365,13 +365,15 @@ def dashboard():
 
             latest_payment = (
                 SubscriptionPayment.query
-                .filter_by(subscription_id=s.id)
+                .join(ZooSubscription, SubscriptionPayment.subscription_id == ZooSubscription.id)
+                .filter(ZooSubscription.zoo_id == s.zoo_id)
+                .filter(SubscriptionPayment.status == 'paid')
                 .order_by(SubscriptionPayment.paid_at.desc())
                 .first()
             )
             plan_price = float(getattr(s.plan, 'price', 0.0) or 0.0)
             payment_amount = float(latest_payment.amount) if (latest_payment and latest_payment.amount) else 0.0
-            price = plan_price
+            price = payment_amount if payment_amount > 0 else plan_price
 
             monthly_val = price / dur
 
@@ -381,7 +383,21 @@ def dashboard():
 
             tier_revenue[plan_name] = tier_revenue.get(plan_name, 0.0) + monthly_val
 
-    mrr_total = sum(sub_monthly_by_zoo.values())
+    # Pull MRR from Financial Reports for the most recent month
+    recent_month_financial = (
+        db.session.query(
+            db.func.to_char(SubscriptionPayment.paid_at, 'YYYY-MM').label('month'),
+            db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0).label('total'),
+        )
+        .filter(SubscriptionPayment.status == 'paid')
+        .group_by('month')
+        .order_by(db.desc('month'))
+        .first()
+    )
+    if recent_month_financial and float(recent_month_financial.total or 0.0) > 0:
+        mrr_total = float(recent_month_financial.total)
+    else:
+        mrr_total = sum(sub_monthly_by_zoo.values())
 
     # Payments recorded this month
 
@@ -1278,7 +1294,9 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
 
         latest_payment = (
             SubscriptionPayment.query
-            .filter_by(subscription_id=s.id)
+            .join(ZooSubscription, SubscriptionPayment.subscription_id == ZooSubscription.id)
+            .filter(ZooSubscription.zoo_id == s.zoo_id)
+            .filter(SubscriptionPayment.status == 'paid')
             .order_by(SubscriptionPayment.paid_at.desc())
             .first()
         )
@@ -1295,7 +1313,7 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
             plan_price = 0.0
 
         payment_amount = float(latest_payment.amount) if (latest_payment and latest_payment.amount) else 0.0
-        effective_amount = plan_price
+        effective_amount = payment_amount if payment_amount > 0 else plan_price
 
         if is_active:
             mrr_total += effective_amount / duration_months
@@ -1345,12 +1363,25 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
             "is_popular": bool(popular_plan_id and plan.id == popular_plan_id),
         })
 
+    # Pull MRR from Financial Reports for the most recent month
+    recent_month_financial = (
+        db.session.query(
+            db.func.to_char(SubscriptionPayment.paid_at, 'YYYY-MM').label('month'),
+            db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0).label('total'),
+        )
+        .filter(SubscriptionPayment.status == 'paid')
+        .group_by('month')
+        .order_by(db.desc('month'))
+        .first()
+    )
+    final_sub_mrr = float(recent_month_financial.total) if (recent_month_financial and float(recent_month_financial.total or 0.0) > 0) else float(mrr_total)
+
     return {
         "subscriptions": sub_rows,
         "plans": plans,
         "sub_stats": {
             "active": int(active_count),
-            "mrr": float(mrr_total),
+            "mrr": float(final_sub_mrr),
             "pending_approvals": int(pending_count),
             "pending_renewals": 0,
             "churn_rate": float(churn_rate),
