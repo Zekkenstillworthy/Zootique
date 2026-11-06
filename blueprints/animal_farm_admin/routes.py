@@ -338,11 +338,10 @@ def self_subscribe():
         subscribe_zoo_to_plan(
             zoo_id=zoo.id,
             plan=plan,
-            auto_approve=False,  # Set True to skip Super Admin approval
+            auto_approve=True,
         )
         flash(
-            f'Your subscription request for <strong>{plan.name}</strong> has been submitted. '
-            f'A Super Administrator will review and activate it shortly.',
+            f'You have successfully subscribed to the <strong>{plan.name}</strong> plan.',
             'success',
         )
     except SubscriptionValidationError as exc:

@@ -351,7 +351,15 @@ def dashboard():
 
             dur = max(int(getattr(s.plan, 'duration_months', 1) or 1), 1)
 
-            price = float(getattr(s.plan, 'price', 0.0) or 0.0)
+            latest_payment = (
+                SubscriptionPayment.query
+                .filter_by(subscription_id=s.id)
+                .order_by(SubscriptionPayment.paid_at.desc())
+                .first()
+            )
+            plan_price = float(getattr(s.plan, 'price', 0.0) or 0.0)
+            payment_amount = float(latest_payment.amount) if (latest_payment and latest_payment.amount) else 0.0
+            price = payment_amount if payment_amount > 0 else plan_price
 
             monthly_val = price / dur
 
@@ -1241,7 +1249,6 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
     active_count = 0
     expired_count = 0
     pending_count = 0
-    pending_renewals = 0
     mrr_total = 0.0
     active_by_plan: dict[int, int] = {}
     for s in current_subscriptions:
@@ -1258,31 +1265,32 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
             else:
                 expired_count += 1
 
-        # Pending renewals: active subs ending within the next 30 days.
-        if is_active and s.end_date < (now + timedelta(days=30)):
-            pending_renewals += 1
-
-        # Monthly recurring revenue: normalize by duration months.
-        try:
-            duration_months = int(getattr(s.plan, "duration_months", 1) or 1)
-        except Exception:
-            duration_months = 1
-        duration_months = max(duration_months, 1)
-        try:
-            plan_price = float(getattr(s.plan, "price", 0) or 0)
-        except Exception:
-            plan_price = 0.0
-        if is_active:
-            mrr_total += plan_price / duration_months
-            if s.plan_id:
-                active_by_plan[int(s.plan_id)] = active_by_plan.get(int(s.plan_id), 0) + 1
-
         latest_payment = (
             SubscriptionPayment.query
             .filter_by(subscription_id=s.id)
             .order_by(SubscriptionPayment.paid_at.desc())
             .first()
         )
+
+        try:
+            duration_months = int(getattr(s.plan, "duration_months", 1) or 1)
+        except Exception:
+            duration_months = 1
+        duration_months = max(duration_months, 1)
+
+        try:
+            plan_price = float(getattr(s.plan, "price", 0) or 0)
+        except Exception:
+            plan_price = 0.0
+
+        payment_amount = float(latest_payment.amount) if (latest_payment and latest_payment.amount) else 0.0
+        effective_amount = payment_amount if payment_amount > 0 else plan_price
+
+        if is_active:
+            mrr_total += effective_amount / duration_months
+            if s.plan_id:
+                active_by_plan[int(s.plan_id)] = active_by_plan.get(int(s.plan_id), 0) + 1
+
         sub_rows.append({
             'subscription_id': s.id,
             'zoo_id': s.zoo_id,
@@ -1295,7 +1303,7 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
             'start_date': s.start_date.date().isoformat(),
             'end_date': s.end_date.date().isoformat(),
             'latest_payment_date': latest_payment.paid_at.date().isoformat() if latest_payment else '—',
-            'latest_payment_amount': float(latest_payment.amount) if latest_payment else 0,
+            'latest_payment_amount': effective_amount,
         })
 
     plans = sort_plans(SubscriptionPlan.query.all())
@@ -1333,7 +1341,7 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
             "active": int(active_count),
             "mrr": float(mrr_total),
             "pending_approvals": int(pending_count),
-            "pending_renewals": int(pending_renewals),
+            "pending_renewals": 0,
             "churn_rate": float(churn_rate),
             "expired": int(expired_count),
             "total": int(total_subs),

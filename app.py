@@ -379,26 +379,6 @@ def create_app() -> Flask:
                         "badge": "New Message",
                     })
 
-                # Pending subscriptions
-                pending_subs = (
-                    ZooSubscription.query.filter(ZooSubscription.status.ilike("pending"))
-                    .order_by(ZooSubscription.start_date.desc())
-                    .limit(5)
-                    .all()
-                )
-                for ps in pending_subs:
-                    zoo_name = ps.zoo.name if ps.zoo else "Zoo"
-                    sa_alerts.append({
-                        "id": f"sub-{ps.id}",
-                        "type": "subscription",
-                        "title": "Subscription Activation",
-                        "message": f"{zoo_name} has a pending subscription request",
-                        "time": ps.start_date,
-                        "url": url_for("zootique_admin.manage_subscriptions"),
-                        "icon": "fa-credit-card",
-                        "badge": "Pending",
-                    })
-
                 # Personal user notifications
                 for un in notifs:
                     sa_alerts.append({
@@ -413,7 +393,7 @@ def create_app() -> Flask:
                     })
 
                 result["sa_notifications"] = sa_alerts
-                result["sa_unread_count"] = len(pending_regs) + len(open_feedback) + len(pending_subs) + unread_count
+                result["sa_unread_count"] = len(pending_regs) + len(open_feedback) + unread_count
 
             return result
         except Exception:

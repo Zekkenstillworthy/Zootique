@@ -15,11 +15,11 @@
         <span class="sa-pill">Monthly</span>
       </div>
     </div>
-    <div class="stat-card sa-kpi" style="--kpi-accent: var(--warning);">
-      <div class="stat-label">PENDING RENEWALS</div>
+    <div class="stat-card sa-kpi" style="--kpi-accent: {% if (sub_stats.expired or 0) > 0 %}var(--danger, #dc2626){% else %}#f59e0b{% endif %};">
+      <div class="stat-label">EXPIRED SUBSCRIPTION</div>
       <div class="sa-kpi-row">
-        <div class="stat-value">{{ "{:,}".format(sub_stats.pending_renewals or 0) }}</div>
-        <span class="sa-pill {% if (sub_stats.pending_renewals or 0) > 0 %}sa-pill--warn{% endif %}">{% if (sub_stats.pending_renewals or 0) > 0 %}Review{% else %}All good{% endif %}</span>
+        <div class="stat-value">{{ "{:,}".format(sub_stats.expired or 0) }}</div>
+        <span class="sa-pill {% if (sub_stats.expired or 0) > 0 %}sa-pill--danger{% else %}sa-pill--ok{% endif %}">{% if (sub_stats.expired or 0) > 0 %}Review{% else %}All good{% endif %}</span>
       </div>
     </div>
     <div class="stat-card sa-kpi" style="--kpi-accent: var(--danger);">
@@ -31,8 +31,7 @@
     </div>
   </div>
 
-  {% set _needs_attention = (sub_stats.pending_renewals or 0) > 0 or (sub_stats.expired or 0) > 0 %}
-  {% if _needs_attention %}
+  {% if (sub_stats.expired or 0) > 0 %}
   <div class="card-panel" style="margin-bottom:16px; border-left:4px solid var(--warning); background:var(--warning-bg);">
     <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px;">
       <div style="display:flex; align-items:flex-start; gap:10px;">
@@ -40,7 +39,7 @@
         <div>
           <div style="font-weight:900; letter-spacing:0.02em;">SUBSCRIPTION ATTENTION REQUIRED</div>
           <div style="font-size:12px; color:#92400e; font-weight:700;">
-            {{ sub_stats.pending_renewals or 0 }} pending renewals • {{ sub_stats.expired or 0 }} expired
+            {{ sub_stats.expired }} expired subscription{{ 's' if (sub_stats.expired or 0) != 1 else '' }}
           </div>
         </div>
       </div>
@@ -89,15 +88,14 @@
             <td style="text-align:right; font-weight:800; color:var(--primary);">₱{{ "{:,.2f}".format(sub.latest_payment_amount or 0) }}</td>
             <td style="text-align:right;">
               <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center;">
-                <form method="post" action="{{ url_for('zootique_admin.renew_subscription', subscription_id=sub.subscription_id) }}" style="display:inline;">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <input type="hidden" name="months" value="1">
-                  <button class="btn btn-outline btn-sm" type="submit"><i class="fa-solid fa-check"></i> Confirm</button>
-                </form>
+                {% if sub.status == 'Active' %}
                 <form method="post" action="{{ url_for('zootique_admin.cancel_subscription', subscription_id=sub.subscription_id) }}" style="display:inline;" onsubmit="return confirm('Cancel this subscription?');">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger);"><i class="fa-solid fa-xmark"></i> Cancel</button>
                 </form>
+                {% else %}
+                <span style="font-size:12px; color:var(--text-muted); font-weight:600;">—</span>
+                {% endif %}
               </div>
             </td>
           </tr>

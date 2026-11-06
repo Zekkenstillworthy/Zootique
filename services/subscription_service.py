@@ -108,14 +108,12 @@ def subscribe_zoo_to_plan(
     *,
     zoo_id: int,
     plan: SubscriptionPlan,
-    auto_approve: bool = False,
+    auto_approve: bool = True,
 ) -> ZooSubscription:
-    """Create a new subscription request from a Zoo Admin.
+    """Create a new subscription for a Zoo Admin.
 
-    If *auto_approve* is True the subscription is immediately set to 'active'
-    and a payment record is created (useful for demo environments).
-    Otherwise the subscription is created with status='pending' and awaits
-    Super Admin approval via ``approve_pending_subscription()``.
+    Subscriptions are activated immediately upon subscribing, with an accompanying
+    payment record created.
     """
     if not plan or not plan.is_active:
         raise SubscriptionValidationError("Selected plan is not active.")
@@ -145,6 +143,19 @@ def subscribe_zoo_to_plan(
     db.session.flush()  # get the id before creating payment
 
     if auto_approve:
+        previous_active = (
+            ZooSubscription.query
+            .filter(
+                ZooSubscription.zoo_id == zoo_id,
+                ZooSubscription.id != subscription.id,
+                ZooSubscription.status == "active",
+            )
+            .all()
+        )
+        for previous in previous_active:
+            previous.status = "expired"
+            previous.end_date = now
+
         payment = SubscriptionPayment(
             subscription_id=subscription.id,
             amount=float(plan.price),

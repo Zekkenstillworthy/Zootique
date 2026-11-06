@@ -101,8 +101,7 @@
       <i class="fa-solid fa-lock"></i>
       <div class="paywall-banner-body">
         <strong>No Active Subscription</strong>
-        <span>Select a plan below to unlock features for {{ zoo.name }}.
-          Your request will be reviewed by a Super Administrator.</span>
+        <span>Select a plan below to activate features for {{ zoo.name }}.</span>
       </div>
     </div>
   {% elif subscription.status == 'pending' %}
@@ -262,8 +261,7 @@
       {% endif %}
       <div style="margin-top:14px; font-size:12px; color:var(--text-muted);">
         <i class="fa-solid fa-circle-info" style="margin-right:4px;"></i>
-        Subscriptions are reviewed and activated by a Super Administrator.
-        Features unlock once your plan is marked active.
+        Subscriptions take effect immediately upon subscribing.
       </div>
       <div style="margin-top:18px; border-top:1px solid var(--border-light); padding-top:14px;">
         <strong style="font-size:13px;">Feature access by tier</strong>
