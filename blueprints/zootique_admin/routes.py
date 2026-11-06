@@ -371,7 +371,7 @@ def dashboard():
             )
             plan_price = float(getattr(s.plan, 'price', 0.0) or 0.0)
             payment_amount = float(latest_payment.amount) if (latest_payment and latest_payment.amount) else 0.0
-            price = payment_amount if payment_amount > 0 else plan_price
+            price = plan_price if plan_price > 0 else payment_amount
 
             monthly_val = price / dur
 
@@ -401,8 +401,8 @@ def dashboard():
 
     )
 
-    # Monthly subscription revenue = sum of active zoo MRR (not raw payments, which include stale records)
-    monthly_revenue = float(mrr_total)
+    # Monthly subscription revenue records all completed subscription payments this month
+    monthly_revenue = float(payments_this_month) if payments_this_month > 0 else float(mrr_total)
 
     # All-time subscription payments per zoo
 
@@ -1295,7 +1295,7 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
             plan_price = 0.0
 
         payment_amount = float(latest_payment.amount) if (latest_payment and latest_payment.amount) else 0.0
-        effective_amount = payment_amount if payment_amount > 0 else plan_price
+        effective_amount = plan_price if plan_price > 0 else payment_amount
 
         if is_active:
             mrr_total += effective_amount / duration_months
@@ -2148,6 +2148,8 @@ def view_reports():
 
         )
 
+        .filter(SubscriptionPayment.status == 'paid')
+
         .group_by('month')
 
         .order_by('month')
@@ -2169,6 +2171,8 @@ def view_reports():
         .filter(SubscriptionPayment.paid_at >= year_start)
 
         .filter(SubscriptionPayment.paid_at < year_end)
+
+        .filter(SubscriptionPayment.status == 'paid')
 
         .scalar()
 
@@ -2290,6 +2294,8 @@ def export_reports_csv():
         .filter(SubscriptionPayment.paid_at >= year_start)
 
         .filter(SubscriptionPayment.paid_at < year_end)
+
+        .filter(SubscriptionPayment.status == 'paid')
 
         .scalar()
 
@@ -2439,6 +2445,8 @@ def export_reports_pdf():
         .filter(SubscriptionPayment.paid_at >= year_start)
 
         .filter(SubscriptionPayment.paid_at < year_end)
+
+        .filter(SubscriptionPayment.status == 'paid')
 
         .scalar()
 

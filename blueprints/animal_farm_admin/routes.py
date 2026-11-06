@@ -198,14 +198,14 @@ def subscriptions():
         db.session.commit()
 
     plans = sort_plans(SubscriptionPlan.query.filter_by(is_active=True).all())
-    payments = []
-    if subscription:
-        payments = (
-            SubscriptionPayment.query.filter_by(subscription_id=subscription.id)
-            .order_by(SubscriptionPayment.paid_at.desc())
-            .limit(25)
-            .all()
-        )
+    payments = (
+        SubscriptionPayment.query
+        .join(ZooSubscription, SubscriptionPayment.subscription_id == ZooSubscription.id)
+        .filter(ZooSubscription.zoo_id == zoo.id)
+        .order_by(SubscriptionPayment.paid_at.desc())
+        .limit(50)
+        .all()
+    )
 
     return render_template(
         'animal_farm_admin/subscriptions.html',
