@@ -1,4 +1,4 @@
-"""update default subscription plan prices to Standard=4999 and Pro=9999
+"""update default subscription plan prices
 
 Revision ID: b1c2d3e4f5a6
 Revises: z9a0b1c2d3e4
@@ -16,23 +16,8 @@ depends_on = None
 
 
 def upgrade():
-    plans = sa.table(
-        "subscription_plans",
-        sa.column("name", sa.String()),
-        sa.column("price", sa.Float()),
-    )
-    op.execute(
-        plans.update()
-        .where(sa.func.lower(plans.c.name) == "standard")
-        .where(plans.c.price < 1000)
-        .values(price=4999.0)
-    )
-    op.execute(
-        plans.update()
-        .where(sa.func.lower(plans.c.name) == "pro")
-        .where(plans.c.price < 1000)
-        .values(price=9999.0)
-    )
+    # Retain database-defined prices without forced overrides
+    pass
 
 
 def downgrade():
