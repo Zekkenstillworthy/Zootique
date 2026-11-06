@@ -383,42 +383,19 @@ def dashboard():
 
             tier_revenue[plan_name] = tier_revenue.get(plan_name, 0.0) + monthly_val
 
-    # Pull MRR from Financial Reports for the most recent month
-    recent_month_financial = (
-        db.session.query(
-            db.func.to_char(SubscriptionPayment.paid_at, 'YYYY-MM').label('month'),
-            db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0).label('total'),
-        )
-        .filter(SubscriptionPayment.status == 'paid')
-        .group_by('month')
-        .order_by(db.desc('month'))
-        .first()
-    )
-    if recent_month_financial and float(recent_month_financial.total or 0.0) > 0:
-        mrr_total = float(recent_month_financial.total)
-    else:
-        mrr_total = sum(sub_monthly_by_zoo.values())
-
-    # Payments recorded this month
-
-    payments_this_month = (
-
+    # MRR = total paid payments for the current calendar month
+    mrr_total_from_payments = (
         db.session.query(db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0))
-
         .filter(SubscriptionPayment.paid_at >= month_start)
-
         .filter(SubscriptionPayment.paid_at < month_end)
-
         .filter(SubscriptionPayment.status == 'paid')
-
         .scalar()
-
         or 0.0
-
     )
+    mrr_total = float(mrr_total_from_payments) if mrr_total_from_payments > 0 else sum(sub_monthly_by_zoo.values())
 
-    # Monthly subscription revenue records all completed subscription payments this month
-    monthly_revenue = float(payments_this_month) if payments_this_month > 0 else float(mrr_total)
+    # Monthly subscription revenue = current month's paid total (same as mrr_total above)
+    monthly_revenue = float(mrr_total)
 
     # All-time subscription payments per zoo
 
@@ -1363,18 +1340,23 @@ def _build_subscription_management_context(edit_plan_id: str | None = None):
             "is_popular": bool(popular_plan_id and plan.id == popular_plan_id),
         })
 
-    # Pull MRR from Financial Reports for the most recent month
-    recent_month_financial = (
-        db.session.query(
-            db.func.to_char(SubscriptionPayment.paid_at, 'YYYY-MM').label('month'),
-            db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0).label('total'),
-        )
-        .filter(SubscriptionPayment.status == 'paid')
-        .group_by('month')
-        .order_by(db.desc('month'))
-        .first()
+    # MRR = sum of paid payments for the current calendar month
+    now_subs = datetime.utcnow()
+    subs_month_start = now_subs.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    subs_month_end = (
+        subs_month_start.replace(year=subs_month_start.year + 1, month=1)
+        if subs_month_start.month == 12
+        else subs_month_start.replace(month=subs_month_start.month + 1)
     )
-    final_sub_mrr = float(recent_month_financial.total) if (recent_month_financial and float(recent_month_financial.total or 0.0) > 0) else float(mrr_total)
+    subs_mrr_from_payments = (
+        db.session.query(db.func.coalesce(db.func.sum(SubscriptionPayment.amount), 0.0))
+        .filter(SubscriptionPayment.paid_at >= subs_month_start)
+        .filter(SubscriptionPayment.paid_at < subs_month_end)
+        .filter(SubscriptionPayment.status == 'paid')
+        .scalar()
+        or 0.0
+    )
+    final_sub_mrr = float(subs_mrr_from_payments) if subs_mrr_from_payments > 0 else float(mrr_total)
 
     return {
         "subscriptions": sub_rows,
