@@ -130,27 +130,58 @@ def build_zoo_dashboard_widget_map(zoo: Zoo | None, now: datetime | None = None)
     if zoo is None:
         return {}
 
-    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    next_month = month_start.replace(
-        year=month_start.year + (1 if month_start.month == 12 else 0),
-        month=1 if month_start.month == 12 else month_start.month + 1,
-    )
-    prev_month_end = month_start
-    prev_month_start = (prev_month_end - timedelta(days=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
     bookings = Booking.query.filter(Booking.zoo_id == zoo.id).all()
-    monthly_bookings = [b for b in bookings if (b.date or '').startswith(now.strftime('%Y-%m'))]
+
+    def _booking_month(b: Booking) -> str | None:
+        if b.date and len(str(b.date).strip()) >= 7:
+            return str(b.date).strip()[:7]
+        if b.created_at:
+            return b.created_at.strftime('%Y-%m')
+        if b.paid_at:
+            return b.paid_at.strftime('%Y-%m')
+        return None
+
+    cur_month_str = now.strftime('%Y-%m')
+    cur_month_bookings = [b for b in bookings if _booking_month(b) == cur_month_str]
+
+    if cur_month_bookings:
+        target_month_str = cur_month_str
+        monthly_bookings = cur_month_bookings
+    else:
+        # Fall back to the most recent month with recorded bookings
+        available_months = sorted({_booking_month(b) for b in bookings if _booking_month(b)}, reverse=True)
+        if available_months:
+            target_month_str = available_months[0]
+            monthly_bookings = [b for b in bookings if _booking_month(b) == target_month_str]
+        else:
+            target_month_str = cur_month_str
+            monthly_bookings = []
+
     monthly_revenue = sum(float(b.amount or 0) for b in monthly_bookings)
-    prev_month_bookings = [b for b in bookings if (b.date or '').startswith(prev_month_start.strftime('%Y-%m'))]
+    month_bookings_count = len(monthly_bookings)
+
+    try:
+        target_dt = datetime.strptime(target_month_str, '%Y-%m')
+        month_name = target_dt.strftime('%B %Y')
+        month_start = target_dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        prev_dt = (month_start - timedelta(days=1)).replace(day=1)
+        prev_month_str = prev_dt.strftime('%Y-%m')
+        next_month = month_start.replace(
+            year=month_start.year + (1 if month_start.month == 12 else 0),
+            month=1 if month_start.month == 12 else month_start.month + 1,
+        )
+    except Exception:
+        month_name = cur_month_str
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        next_month = month_start
+        prev_month_str = ''
+
+    prev_month_bookings = [b for b in bookings if _booking_month(b) == prev_month_str]
     prev_month_revenue = sum(float(b.amount or 0) for b in prev_month_bookings)
     revenue_change_pct = None
     if prev_month_revenue > 0:
         revenue_change_pct = ((monthly_revenue - prev_month_revenue) / prev_month_revenue) * 100.0
-    elif monthly_revenue > 0:
-        revenue_change_pct = 100.0
 
-    month_bookings_count = len(monthly_bookings)
-    month_open_tasks = StaffTask.query.filter_by(zoo_id=zoo.id).filter(StaffTask.status != 'done').count()
     active_subscription = (
         ZooSubscription.query.filter_by(zoo_id=zoo.id)
         .order_by(ZooSubscription.end_date.desc())
@@ -162,10 +193,6 @@ def build_zoo_dashboard_widget_map(zoo: Zoo | None, now: datetime | None = None)
         .limit(5)
         .all()
     )
-
-    revenue_goal = max(monthly_revenue, prev_month_revenue) * 1.10 if (monthly_revenue or prev_month_revenue) else 0.0
-    revenue_goal_pct = int(round((monthly_revenue / revenue_goal) * 100)) if revenue_goal else 0
-    revenue_goal_pct = max(0, min(revenue_goal_pct, 100))
 
     days_remaining = None
     renewal_status = 'No active subscription'
@@ -180,18 +207,16 @@ def build_zoo_dashboard_widget_map(zoo: Zoo | None, now: datetime | None = None)
             'icon': 'fa-solid fa-chart-line',
             'monthly_revenue': float(monthly_revenue),
             'revenue_change_pct': float(revenue_change_pct) if revenue_change_pct is not None else None,
-            'revenue_goal': float(revenue_goal),
-            'revenue_goal_pct': revenue_goal_pct,
             'booking_count': int(month_bookings_count),
             'prev_month_revenue': float(prev_month_revenue),
             'month_start': month_start,
             'next_month': next_month,
+            'month_name': month_name,
         },
         'membership_stats': {
             'id': 'membership_stats',
             'label': 'Membership Stats',
             'icon': 'fa-solid fa-id-card',
-            'open_tasks': int(month_open_tasks),
             'subscription': active_subscription,
             'status': renewal_status,
             'days_remaining': days_remaining,

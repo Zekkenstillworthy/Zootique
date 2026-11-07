@@ -161,8 +161,6 @@ def dashboard():
         .first()
     )
 
-    open_tasks = StaffTask.query.filter_by(zoo_id=zoo.id).filter(StaffTask.status != 'done').count()
-
     return render_template(
         'animal_farm_admin/dashboard.html',
         zoo=zoo,
@@ -171,7 +169,6 @@ def dashboard():
         bookings_count=bookings_count,
         monthly_revenue=monthly_revenue,
         subscription=subscription,
-        open_tasks=open_tasks,
         layout_config=layout_config,
         layout_style=layout_config.get('layout_style', 'grid'),
         dashboard_widgets=dashboard_widgets,

@@ -44,7 +44,7 @@
 
     .zoo-dashboard-summary {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 12px;
     }
 
@@ -155,18 +155,7 @@
         line-height: 1;
     }
 
-    .dashboard-progress {
-        height: 10px;
-        background: #e2e8f0;
-        border-radius: 999px;
-        overflow: hidden;
-    }
 
-    .dashboard-progress-bar {
-        height: 100%;
-        border-radius: inherit;
-        background: linear-gradient(90deg, var(--dashboard-accent), color-mix(in srgb, var(--dashboard-accent) 65%, #ffffff 35%));
-    }
 
     .dashboard-feedback-item {
         padding: 12px;
@@ -220,10 +209,6 @@
                     <div class="label">Bookings</div>
                     <div class="value">{{ bookings_count }}</div>
                 </div>
-                <div class="summary-chip">
-                    <div class="label">Open Tasks</div>
-                    <div class="value">{{ open_tasks }}</div>
-                </div>
             </div>
         </section>
 
@@ -238,54 +223,45 @@
                 <div class="dashboard-widget-body">
                     {% if widget.id == 'revenue_summary' %}
                         <div class="dashboard-metric">
-                            <span class="metric-label">Monthly revenue</span>
+                            <span class="metric-label">Monthly revenue{% if widget.month_name %} <small style="color:var(--text-muted); font-size:11px; font-weight:normal;">({{ widget.month_name }})</small>{% endif %}</span>
                             <span class="metric-value">₱{{ '{:,.0f}'.format(widget.monthly_revenue or 0) }}</span>
                         </div>
                         <div class="dashboard-metric">
-                            <span class="metric-label">Bookings this month</span>
+                            <span class="metric-label">Bookings this month{% if widget.month_name %} <small style="color:var(--text-muted); font-size:11px; font-weight:normal;">({{ widget.month_name }})</small>{% endif %}</span>
                             <span class="metric-value">{{ widget.booking_count }}</span>
                         </div>
-                        <div>
-                            <div class="dashboard-metric" style="margin-bottom:8px;">
-                                <span class="metric-label">Goal progress</span>
-                                <span class="metric-label">{{ widget.revenue_goal_pct }}%</span>
-                            </div>
-                            <div class="dashboard-progress">
-                                <div class="dashboard-progress-bar" data-progress-width="{{ widget.revenue_goal_pct }}"></div>
-                            </div>
-                            {% if saved_graphs %}
-                            <section style="margin-top:24px;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                                    <h2 style="margin:0;">Saved graphs</h2>
-                                    <a class="btn btn-ghost" href="{{ url_for('animal_farm_admin.graph_builder') }}">Manage graphs</a>
-                                </div>
-                                <div class="zoo-dashboard-grid">
-                                {% for graph in saved_graphs %}
-                                    {% set data = graph_data.get(graph.id) %}
-                                    <article class="dashboard-widget">
-                                        <div class="dashboard-widget-header"><h3><i class="fa-solid fa-chart-pie"></i> {{ graph.name }}</h3></div>
-                                        <div class="dashboard-widget-body">
-                                        {% if data %}
-                                            <div style="display:grid;grid-template-columns:repeat({{ data.labels|length }},1fr);align-items:end;gap:6px;min-height:140px;">
-                                            {% for label in data.labels %}
-                                                <div style="text-align:center;">
-                                                    <div style="height:{{ [((data.values[loop.index0] / (data.values|max or 1)) * 100), 4]|max }}px;background:#2d8c5a;border-radius:5px 5px 0 0;" title="{{ data.values[loop.index0] }}"></div>
-                                                    <small>{{ label }}</small>
-                                                </div>
-                                            {% endfor %}
-                                            </div>
-                                        {% else %}<div class="dashboard-empty-state">No graph data yet.</div>{% endif %}
-                                        </div>
-                                    </article>
-                                {% endfor %}
-                                </div>
-                            </section>
-                            {% endif %}
-                        </div>
                         {% if widget.revenue_change_pct is not none %}
-                            <div class="sa-pill {% if widget.revenue_change_pct >= 0 %}sa-pill--ok{% else %}sa-pill--danger{% endif %}">
+                            <div class="sa-pill {% if widget.revenue_change_pct >= 0 %}sa-pill--ok{% else %}sa-pill--danger{% endif %}" style="margin-top: 8px;">
                                 {% if widget.revenue_change_pct >= 0 %}+{% endif %}{{ '{:.1f}'.format(widget.revenue_change_pct) }}% vs previous month
                             </div>
+                        {% endif %}
+                        {% if saved_graphs %}
+                        <section style="margin-top:24px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                                <h2 style="margin:0;">Saved graphs</h2>
+                                <a class="btn btn-ghost" href="{{ url_for('animal_farm_admin.graph_builder') }}">Manage graphs</a>
+                            </div>
+                            <div class="zoo-dashboard-grid">
+                            {% for graph in saved_graphs %}
+                                {% set data = graph_data.get(graph.id) %}
+                                <article class="dashboard-widget">
+                                    <div class="dashboard-widget-header"><h3><i class="fa-solid fa-chart-pie"></i> {{ graph.name }}</h3></div>
+                                    <div class="dashboard-widget-body">
+                                    {% if data %}
+                                        <div style="display:grid;grid-template-columns:repeat({{ data.labels|length }},1fr);align-items:end;gap:6px;min-height:140px;">
+                                        {% for label in data.labels %}
+                                            <div style="text-align:center;">
+                                                <div style="height:{{ [((data.values[loop.index0] / (data.values|max or 1)) * 100), 4]|max }}px;background:#2d8c5a;border-radius:5px 5px 0 0;" title="{{ data.values[loop.index0] }}"></div>
+                                                <small>{{ label }}</small>
+                                            </div>
+                                        {% endfor %}
+                                        </div>
+                                    {% else %}<div class="dashboard-empty-state">No graph data yet.</div>{% endif %}
+                                    </div>
+                                </article>
+                            {% endfor %}
+                            </div>
+                        </section>
                         {% endif %}
                     {% elif widget.id == 'membership_stats' %}
                         <div class="dashboard-metric">
@@ -295,10 +271,6 @@
                         <div class="dashboard-metric">
                             <span class="metric-label">Days remaining</span>
                             <span class="metric-value">{{ widget.days_remaining if widget.days_remaining is not none else '—' }}</span>
-                        </div>
-                        <div class="dashboard-metric">
-                            <span class="metric-label">Open tasks</span>
-                            <span class="metric-value">{{ widget.open_tasks }}</span>
                         </div>
                         <div style="color: var(--text-secondary); font-size: 13px;">
                             {% if subscription %}
@@ -350,15 +322,4 @@
 {% endif %}
 {% endblock %}
 
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const bars = document.querySelectorAll('.dashboard-progress-bar[data-progress-width]');
-    bars.forEach((bar) => {
-        const raw = Number(bar.getAttribute('data-progress-width') || '0');
-        const pct = Number.isFinite(raw) ? Math.max(0, Math.min(raw, 100)) : 0;
-        bar.style.width = pct + '%';
-    });
-});
-</script>
-{% endblock %}
+
