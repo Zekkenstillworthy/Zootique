@@ -162,6 +162,7 @@ def create_app() -> Flask:
             "pool_size": 10,
             "max_overflow": 20,
             "pool_recycle": 300,
+            "connect_args": {"prepare_threshold": None},
         }
     else:
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
@@ -169,6 +170,7 @@ def create_app() -> Flask:
             "pool_size": 5,
             "max_overflow": 10,
             "pool_recycle": 300,
+            "connect_args": {"prepare_threshold": None},
         }
     app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "uploads")
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
