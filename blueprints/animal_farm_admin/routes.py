@@ -417,22 +417,36 @@ def save_layout():
     return redirect(url_for('animal_farm_admin.layout_changer'))
 
 
-@animal_farm_admin_bp.route('/bookings', methods=['GET', 'POST'])
+@animal_farm_admin_bp.route('/bookings')
 def booking_management():
-    if request.method == 'POST':
-        return create_booking()
-
     zoo = _current_zoo()
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.dashboard'))
 
-    status = request.args.get('status')
+    # Load ticket scans for this zoo so checked-in bookings match Recent Scans
+    checked_in_scans = (
+        BookingTicketScan.query.filter_by(zoo_id=zoo.id, result='checked_in')
+        .all()
+    )
+    checked_in_ids = {s.booking_id for s in checked_in_scans if s.booking_id}
+
     query = Booking.query.filter_by(zoo_id=zoo.id)
-    valid_statuses = {'Pending', 'Confirmed', 'Cancelled', 'Finished'}
-    if status and status in valid_statuses:
-        query = query.filter_by(status=status)
-    bookings = query.order_by(Booking.created_at.desc()).limit(200).all()
+    all_bookings = query.order_by(Booking.created_at.desc()).limit(200).all()
+
+    for b in all_bookings:
+        b._is_checked_in = b.id in checked_in_ids
+
+    status_filter = (request.args.get('status') or '').strip()
+    valid_statuses = ['Unpaid', 'Paid', 'Checked in', 'Finished', 'Cancelled']
+    matched_status = next((s for s in valid_statuses if s.lower() == status_filter.lower()), None)
+
+    if matched_status:
+        bookings = [b for b in all_bookings if b.derived_status == matched_status]
+        selected_status = matched_status
+    else:
+        bookings = all_bookings
+        selected_status = ''
 
     services = (
         Service.query
@@ -445,7 +459,7 @@ def booking_management():
         'animal_farm_admin/bookings.html',
         zoo=zoo,
         bookings=bookings,
-        selected_status=status,
+        selected_status=selected_status,
         services=services,
     )
 
@@ -568,145 +582,6 @@ def _bundle_from_request(zoo: Zoo, bundle: BookingBundle | None = None):
     target.is_active = request.form.get('is_active') == 'on'
     return target, None
 
-
-
-@animal_farm_admin_bp.post('/bookings/create')
-def create_booking():
-    zoo = _current_zoo()
-    if not zoo:
-        flash('No zoo assigned.', 'error')
-        return redirect(url_for('animal_farm_admin.booking_management'))
-
-    service_id_raw = (request.form.get('service_id') or '').strip()
-    date = (request.form.get('date') or '').strip()
-    time = (request.form.get('time') or '').strip()
-    guests = request.form.get('guests', type=int) or 1
-    amount_raw = (request.form.get('amount') or '').strip()
-    status = (request.form.get('status') or 'Pending').strip()
-    staff_user_id_raw = (request.form.get('assigned_staff_user_id') or '').strip()
-    visitor_name = (request.form.get('visitor_name') or '').strip() or 'Walk-in Visitor'
-    image_file = request.files.get('image_file')
-
-    if not date or not time:
-        flash('Date and time are required.', 'error')
-        return redirect(url_for('animal_farm_admin.booking_management'))
-
-    service = None
-    if service_id_raw and service_id_raw.isdigit():
-        service = Service.query.filter_by(id=int(service_id_raw), zoo_id=zoo.id).first()
-
-    amount = None
-    if amount_raw:
-        try:
-            amount = float(amount_raw)
-        except Exception:
-            pass
-    if amount is None and service:
-        amount = float(service.price or 0)
-
-    import secrets
-    booking = Booking(
-        id=secrets.token_hex(8),
-        zoo_id=zoo.id,
-        visitor_name=visitor_name,
-        service_id=service.id if service else None,
-        service_name=service.name if service else None,
-        date=date,
-        time=time,
-        guests=guests,
-        amount=amount or 0,
-        status=status if status in {'Pending', 'Confirmed', 'Cancelled', 'Finished'} else 'Pending',
-        assigned_staff_user_id=None,
-    )
-    db.session.add(booking)
-
-    if image_file and image_file.filename:
-        uploaded_url = _save_uploaded_image(image_file, 'booking_images')
-        if uploaded_url:
-            booking.image_url = uploaded_url
-
-    db.session.commit()
-    flash('Booking created.', 'success')
-    return redirect(url_for('animal_farm_admin.booking_management'))
-
-
-@animal_farm_admin_bp.post('/bookings/<booking_id>/update')
-def update_booking(booking_id: str):
-    zoo = _current_zoo()
-    if not zoo:
-        flash('No zoo assigned.', 'error')
-        return redirect(url_for('animal_farm_admin.booking_management'))
-
-    booking = Booking.query.filter_by(id=booking_id, zoo_id=zoo.id).first()
-    if not booking:
-        flash('Booking not found.', 'error')
-        return redirect(url_for('animal_farm_admin.booking_management'))
-
-    service_id_raw = (request.form.get('service_id') or '').strip()
-    date = (request.form.get('date') or '').strip()
-    time = (request.form.get('time') or '').strip()
-    guests = request.form.get('guests', type=int) or 1
-    amount_raw = (request.form.get('amount') or '').strip()
-    status = (request.form.get('status') or '').strip()
-    visitor_name = (request.form.get('visitor_name') or '').strip()
-    image_file = request.files.get('image_file')
-
-    if not date:
-        flash('Booking date is required.', 'error')
-        return redirect(url_for('animal_farm_admin.booking_management'))
-    if not time:
-        flash('Booking time is required.', 'error')
-        return redirect(url_for('animal_farm_admin.booking_management'))
-    if guests < 1:
-        guests = 1
-    if status and status not in {'Pending', 'Confirmed', 'Cancelled', 'Finished'}:
-        flash('Invalid status.', 'error')
-        return redirect(url_for('animal_farm_admin.booking_management'))
-
-    service = None
-    if service_id_raw:
-        if not service_id_raw.isdigit():
-            flash('Invalid service selection.', 'error')
-            return redirect(url_for('animal_farm_admin.booking_management'))
-        service = Service.query.filter_by(id=int(service_id_raw), zoo_id=zoo.id).first()
-        if not service:
-            flash('Selected service was not found.', 'error')
-            return redirect(url_for('animal_farm_admin.booking_management'))
-
-    amount = None
-    if amount_raw:
-        try:
-            amount = float(amount_raw)
-        except Exception:
-            flash('Amount must be a number.', 'error')
-            return redirect(url_for('animal_farm_admin.booking_management'))
-
-    if visitor_name:
-        booking.visitor_name = visitor_name
-    booking.date = date
-    booking.time = time
-    booking.guests = guests
-    if status:
-        booking.status = status
-
-    if service:
-        booking.service_id = service.id
-        booking.service_name = service.name
-        booking.zoo_id = service.zoo_id
-        if amount is None:
-            booking.amount = float(service.price or 0)
-    if amount is not None:
-        booking.amount = amount
-
-    if image_file and image_file.filename:
-        uploaded_url = _save_uploaded_image(image_file, 'booking_images')
-        if not uploaded_url:
-            return redirect(url_for('animal_farm_admin.booking_management'))
-        booking.image_url = uploaded_url
-
-    db.session.commit()
-    flash('Booking updated.', 'success')
-    return redirect(url_for('animal_farm_admin.booking_management'))
 
 
 @animal_farm_admin_bp.post('/bookings/<booking_id>/status')

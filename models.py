@@ -263,6 +263,33 @@ class Booking(db.Model):
     notifications = db.relationship('Notification', back_populates='booking', cascade='all, delete-orphan', passive_deletes=True, lazy=True)
     bundle = db.relationship('BookingBundle', lazy=True)
 
+    @property
+    def derived_status(self) -> str:
+        st = (self.status or '').strip().lower()
+        if st == 'cancelled':
+            return 'Cancelled'
+        if st == 'finished':
+            return 'Finished'
+
+        if getattr(self, '_is_checked_in', None) is not None:
+            has_checked_in = bool(self._is_checked_in)
+        else:
+            has_checked_in = (
+                any(getattr(s, 'result', '') == 'checked_in' for s in (self.ticket_scans or []))
+                or any(getattr(t, 'status', '') == 'checked_in' for t in (self.tickets or []))
+            )
+        if has_checked_in:
+            return 'Checked in'
+
+        is_paid = (
+            (self.payment_status or '').strip().lower() == 'paid'
+            or any(getattr(p, 'status', '') == 'paid' for p in (self.payments or []))
+        )
+        if is_paid:
+            return 'Paid'
+
+        return 'Unpaid'
+
 
 class Notification(db.Model):
     __tablename__ = 'notifications'
