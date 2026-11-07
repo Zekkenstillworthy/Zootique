@@ -213,6 +213,9 @@ class BookingBundle(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     zoo_id = db.Column(db.Integer, db.ForeignKey('zoos.id', ondelete='CASCADE'), nullable=False, index=True)
     service_id = db.Column(db.Integer, db.ForeignKey('services.id', ondelete='CASCADE'), nullable=True, index=True)
+    # service_ids stores a JSON list of service IDs for multi-service bundles.
+    # Empty/null means the bundle applies to all services (same as service_id=None).
+    service_ids = db.Column(db.Text, nullable=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=True)
     eligibility = db.Column(db.String(255), nullable=True)
@@ -228,6 +231,35 @@ class BookingBundle(db.Model):
 
     zoo = db.relationship('Zoo', lazy=True)
     service = db.relationship('Service', back_populates='bundles', lazy=True)
+
+    def get_service_id_list(self) -> list:
+        """Return the list of selected service IDs. Empty list = applies to all services."""
+        import json as _json
+        if self.service_ids:
+            try:
+                ids = _json.loads(self.service_ids)
+                return [int(x) for x in ids if str(x).lstrip('-').isdigit()]
+            except (ValueError, TypeError):
+                pass
+        # Fall back to legacy single service_id column
+        if self.service_id:
+            return [self.service_id]
+        return []
+
+    def applies_to_service(self, service_id: int) -> bool:
+        """True when this bundle covers the given service_id, or covers all services."""
+        ids = self.get_service_id_list()
+        return not ids or service_id in ids
+
+    def is_valid_today(self) -> bool:
+        """True when today is within valid_from..valid_until (blank = no limit)."""
+        from datetime import date as _date
+        today = _date.today()
+        if self.valid_from and today < self.valid_from:
+            return False
+        if self.valid_until and today > self.valid_until:
+            return False
+        return True
 
 class Booking(db.Model):
     __tablename__ = 'bookings'

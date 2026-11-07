@@ -541,17 +541,29 @@ def toggle_booking_bundle(bundle_id: int):
 
 
 def _bundle_from_request(zoo: Zoo, bundle: BookingBundle | None = None):
+    import json as _json
     name = (request.form.get('name') or '').strip()
     if not name:
         return None, 'Bundle name is required.'
-    service_id_raw = (request.form.get('service_id') or '').strip()
-    service = None
-    if service_id_raw:
-        if not service_id_raw.isdigit():
-            return None, 'Select a valid service.'
-        service = Service.query.filter_by(id=int(service_id_raw), zoo_id=zoo.id).first()
-        if not service:
-            return None, 'Selected service does not belong to this zoo.'
+
+    # Multi-service: collect list from checkboxes named 'service_ids'
+    service_id_list_raw = request.form.getlist('service_ids')
+    selected_service_ids = []
+    for sid in service_id_list_raw:
+        sid = str(sid).strip()
+        if sid.isdigit():
+            svc = Service.query.filter_by(id=int(sid), zoo_id=zoo.id).first()
+            if svc:
+                selected_service_ids.append(svc.id)
+
+    # Backcompat: also read legacy single service_id if no multi-select sent
+    if not selected_service_ids:
+        service_id_raw = (request.form.get('service_id') or '').strip()
+        if service_id_raw and service_id_raw.isdigit():
+            svc = Service.query.filter_by(id=int(service_id_raw), zoo_id=zoo.id).first()
+            if svc:
+                selected_service_ids.append(svc.id)
+
     def number(field, default, integer=False):
         raw = (request.form.get(field) or '').strip()
         try:
@@ -568,7 +580,9 @@ def _bundle_from_request(zoo: Zoo, bundle: BookingBundle | None = None):
     if price < 0 or discount_value < 0 or discount_type not in {'none', 'fixed', 'percent'}:
         return None, 'Bundle pricing is invalid.'
     target = bundle or BookingBundle(zoo_id=zoo.id)
-    target.service_id = service.id if service else None
+    # Store selected service IDs as JSON; also set legacy service_id to first entry for compatibility
+    target.service_ids = _json.dumps(selected_service_ids) if selected_service_ids else None
+    target.service_id = selected_service_ids[0] if len(selected_service_ids) == 1 else None
     target.name = name
     target.description = (request.form.get('description') or '').strip() or None
     target.eligibility = (request.form.get('eligibility') or '').strip() or None

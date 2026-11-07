@@ -800,7 +800,11 @@ def my_bookings():
     )
     notification_bookings = booking_query.all()
     services = _maybe_filter_by_selected_zoo(Service.query, Service).order_by(Service.name.asc()).all()
-    bundles = _maybe_filter_by_selected_zoo(BookingBundle.query, BookingBundle).filter_by(is_active=True).order_by(BookingBundle.name.asc()).all()
+    bundles = [
+        b for b in _maybe_filter_by_selected_zoo(BookingBundle.query, BookingBundle)
+        .filter_by(is_active=True).order_by(BookingBundle.name.asc()).all()
+        if b.is_valid_today()
+    ]
     promotions = _maybe_filter_by_selected_zoo(Promotion.query, Promotion).order_by(Promotion.name.asc()).all()
     events = _maybe_filter_by_selected_zoo(Event.query, Event).order_by(Event.name.asc()).all()
     add_on_services = services
@@ -1334,7 +1338,15 @@ def services():
         return redirect(url_for("visitor.choose_zoo", next=next_url))
 
     all_services = _maybe_filter_by_selected_zoo(Service.query, Service).order_by(Service.id.asc()).all()
-    return render_template("visitor/services.html", services=all_services)
+    # Load active, currently-valid bundles for the visitor services page
+    from datetime import date as _date
+    _today = _date.today()
+    _bundle_q = _maybe_filter_by_selected_zoo(BookingBundle.query, BookingBundle).filter_by(is_active=True)
+    all_bundles = [
+        b for b in _bundle_q.order_by(BookingBundle.name.asc()).all()
+        if b.is_valid_today()
+    ]
+    return render_template("visitor/services.html", services=all_services, bundles=all_bundles)
 
 @visitor_bp.get("/promotions")
 def promotions():

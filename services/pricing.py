@@ -77,7 +77,12 @@ def calculate_booking_price(
     if bundle:
         if not bundle.is_active or bundle.zoo_id != service.zoo_id:
             raise PricingError("The selected bundle is unavailable for this service.")
-        if getattr(bundle, "service_id", None) and bundle.service_id != service.id:
+        # Support multi-service bundles: use applies_to_service() when available,
+        # fall back to legacy service_id check for SimpleNamespace objects in tests.
+        if callable(getattr(bundle, "applies_to_service", None)):
+            if not bundle.applies_to_service(service.id):
+                raise PricingError("The selected bundle is not available for this service.")
+        elif getattr(bundle, "service_id", None) and bundle.service_id != service.id:
             raise PricingError("The selected bundle is not available for this service.")
         if guests < bundle.min_guests or guests > bundle.max_guests:
             raise PricingError("Guest quantity is outside the selected bundle limits.")

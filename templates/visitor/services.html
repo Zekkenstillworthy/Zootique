@@ -11,7 +11,7 @@
 
         <div style="display:flex; justify-content:space-between; align-items:flex-end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
             <div>
-                <h1 style="margin: 0; font-size: 2rem; color: var(--primary);">Experiences & Services</h1>
+                <h1 style="margin: 0; font-size: 2rem; color: var(--primary);">Experiences &amp; Services</h1>
                 <p style="margin: 0.25rem 0 0; color: var(--text-muted);">Showing {{ services|length }} experience{% if services|length != 1 %}s{% endif %}</p>
             </div>
             <a href="{{ url_for('visitor.my_bookings') }}#new-booking" class="btn" style="background: var(--primary); color: white; padding: 0.7rem 1.2rem; border-radius: 8px; font-weight: 900; border: none; text-decoration:none;">
@@ -48,6 +48,73 @@
             </div>
             {% endfor %}
         </div>
+
+        {# ── Booking Bundles section ── #}
+        {% if bundles %}
+        <div style="margin-top: 3rem;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; flex-wrap:wrap; margin-bottom:1.25rem;">
+                <div>
+                    <h2 style="margin:0; font-size:1.5rem; color:var(--primary);">
+                        <i class="fa-solid fa-gift" style="margin-right:8px;"></i>Booking Bundles
+                    </h2>
+                    <p style="margin:0.25rem 0 0; color:var(--text-muted); font-size:0.9rem;">
+                        Discounted packages combining services for the best value.
+                    </p>
+                </div>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1.25rem;">
+                {% for bundle in bundles %}
+                {% set svc_ids = bundle.get_service_id_list() %}
+                <div style="background:white; border:1.5px solid var(--border); border-radius:14px; padding:1.5rem; display:flex; flex-direction:column; gap:0.75rem; box-shadow:0 2px 8px rgba(20,56,35,0.07);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem;">
+                        <div style="font-weight:900; color:var(--primary); font-size:1.1rem;">{{ bundle.name }}</div>
+                        <span style="background:#dcfce7; color:#166534; font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; white-space:nowrap;">
+                            ₱{{ '%.2f'|format(bundle.price) }}
+                        </span>
+                    </div>
+                    {% if bundle.description %}
+                    <div style="color:var(--text-muted); font-size:0.88rem; line-height:1.45;">{{ bundle.description }}</div>
+                    {% endif %}
+                    {# Included services #}
+                    <div style="font-size:12px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:.04em;">Included services</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:5px;">
+                        {% set shown = namespace(any=false) %}
+                        {% for s in services %}
+                            {% if not svc_ids or s.id in svc_ids %}
+                            <span style="display:inline-block; background:#e0f2fe; color:#0369a1; font-size:12px;
+                                         font-weight:700; padding:3px 10px; border-radius:20px;">{{ s.name }}</span>
+                            {% set shown.any = true %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if not shown.any %}
+                        <span style="font-size:12px; color:var(--text-muted); font-style:italic;">All services</span>
+                        {% endif %}
+                    </div>
+                    {# Guest range #}
+                    <div style="font-size:13px; color:var(--text-secondary);">
+                        <i class="fa-solid fa-users" style="margin-right:5px; color:var(--primary);"></i>
+                        {{ bundle.min_guests }}–{{ bundle.max_guests }} guests
+                    </div>
+                    {# Eligibility #}
+                    {% if bundle.eligibility %}
+                    <div style="font-size:12px; color:#92400e; background:#fef3c7; border:1px solid #fde68a; border-radius:8px; padding:6px 10px;">
+                        <i class="fa-solid fa-circle-info" style="margin-right:5px;"></i>{{ bundle.eligibility }}
+                    </div>
+                    {% endif %}
+                    <a href="{{ url_for('visitor.my_bookings') }}#new-booking"
+                       class="btn"
+                       style="background:var(--primary); color:white; border:none; padding:0.55rem 1.1rem;
+                              border-radius:10px; font-weight:800; text-decoration:none;
+                              display:inline-flex; align-items:center; gap:0.5rem;
+                              margin-top:auto; box-shadow:0 2px 8px rgba(20,56,35,0.2);">
+                        Book Bundle <i class="fa-solid fa-arrow-right" style="font-size:0.75rem;"></i>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
     </div>
 </section>
 {% endblock %}

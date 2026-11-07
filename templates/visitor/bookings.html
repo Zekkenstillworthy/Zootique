@@ -1111,6 +1111,43 @@
         <input type="hidden" id="new_time" name="time" value="{{ selected_event_time or '08:00' }}">
         <input type="hidden" id="new_bundle_id" name="bundle_id" value="">
 
+        {# ── Bundle selector row (shown below service/guests) ── #}
+        {% if bundles %}
+        <div class="vb-top-fields" style="margin-top:0.75rem;">
+          <div class="vb-field-group" style="flex:2; min-width:260px;">
+            <label class="vb-field-label" for="bundle_select_ui">
+              <i class="fa-solid fa-gift" style="color:var(--vb-terracotta);"></i>
+              <span>Booking Bundle <span style="font-size:0.75rem; font-weight:600; color:var(--vb-text-muted);">(Optional)</span></span>
+            </label>
+            <select id="bundle_select_ui" class="vb-select-control"
+                    style="font-size:0.9rem;">
+              <option value="">No bundle — book a single service</option>
+              {% for bundle in bundles %}
+              {% set svc_ids = bundle.get_service_id_list() %}
+              <option value="{{ bundle.id }}"
+                      data-service-ids="{{ svc_ids|tojson }}"
+                      data-min-guests="{{ bundle.min_guests }}"
+                      data-max-guests="{{ bundle.max_guests }}"
+                      data-price="{{ bundle.price }}"
+                      data-eligibility="{{ bundle.eligibility or '' }}"
+                      data-name="{{ bundle.name }}">
+                {{ bundle.name }} — ₱{{ "{:,.2f}".format(bundle.price) }}
+                ({{ bundle.min_guests }}–{{ bundle.max_guests }} guests)
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div id="bundle-eligibility-note"
+               style="display:none; align-self:flex-end; padding:0.55rem 0.9rem;
+                      background:#fef3c7; border:1px solid #fde68a; border-radius:10px;
+                      font-size:0.82rem; color:#92400e; font-weight:700;
+                      flex:1; min-width:200px;">
+            <i class="fa-solid fa-circle-info" style="margin-right:5px;"></i>
+            <span id="bundle-eligibility-text"></span>
+          </div>
+        </div>
+        {% endif %}
+
         <!-- Step 1: Experience & Guests -->
         <div class="vb-top-fields">
           <div class="vb-field-group" style="flex: 1.8; min-width: 260px;">
@@ -2008,6 +2045,18 @@
           if (element) element.addEventListener('change', updateFormState);
         });
       }
+      // Filter bundle UI dropdown by selected service
+      var bundleUiSelect = document.getElementById('bundle_select_ui');
+      if (bundleUiSelect) {
+        var currentSvc = serviceSelect.value;
+        Array.prototype.forEach.call(bundleUiSelect.options, function(opt, i) {
+          if (i === 0) return; // keep "No bundle"
+          var svcIds = [];
+          try { svcIds = JSON.parse(opt.getAttribute('data-service-ids') || '[]'); } catch(e) {}
+          opt.hidden = svcIds.length > 0 && svcIds.indexOf(parseInt(currentSvc, 10)) === -1;
+          if (opt.hidden && opt.selected) { bundleUiSelect.selectedIndex = 0; syncBundleUi(); }
+        });
+      }
       syncServiceDropdown();
       selectedServiceId = this.value;
       selectedTime = '';
@@ -2224,6 +2273,47 @@
   })();
 
   // Initial Load and URL Parameter Processing
+  // Bundle UI select synchronizes hidden bundle_id input and enforces guest limits
+  function syncBundleUi() {
+    var bundleUiSelect = document.getElementById('bundle_select_ui');
+    var bundleIdInput = document.getElementById('new_bundle_id');
+    var guestInput = document.getElementById('new_guests');
+    var eligNote = document.getElementById('bundle-eligibility-note');
+    var eligText = document.getElementById('bundle-eligibility-text');
+    if (!bundleUiSelect) return;
+    var selOpt = bundleUiSelect.options[bundleUiSelect.selectedIndex];
+    if (!selOpt || !selOpt.value) {
+      if (bundleIdInput) bundleIdInput.value = '';
+      if (eligNote) eligNote.style.display = 'none';
+      return;
+    }
+    if (bundleIdInput) bundleIdInput.value = selOpt.value;
+    var eligibility = selOpt.getAttribute('data-eligibility') || '';
+    if (eligNote && eligText) {
+      if (eligibility) {
+        eligText.textContent = eligibility;
+        eligNote.style.display = 'flex';
+      } else {
+        eligNote.style.display = 'none';
+      }
+    }
+    // Enforce guest limits
+    var minG = parseInt(selOpt.getAttribute('data-min-guests') || '1', 10);
+    var maxG = parseInt(selOpt.getAttribute('data-max-guests') || '50', 10);
+    if (guestInput) {
+      var curGuests = parseInt(guestInput.value || '1', 10);
+      if (curGuests < minG) guestInput.value = minG;
+      if (curGuests > maxG) guestInput.value = maxG;
+      guestInput.min = minG;
+      guestInput.max = maxG;
+    }
+    updateFormState();
+  }
+  var bundleUiSelectEl = document.getElementById('bundle_select_ui');
+  if (bundleUiSelectEl) {
+    bundleUiSelectEl.addEventListener('change', syncBundleUi);
+  }
+
   document.addEventListener('DOMContentLoaded', function() {
     var urlParams = new URLSearchParams(window.location.search);
 
