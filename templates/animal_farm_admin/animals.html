@@ -354,10 +354,15 @@
                   {% else %}-{% endif %}
                 </td>
                 <td>
-                  <button class="btn btn-outline btn-sm" type="button"
-                      {% if not can_edit_feature('animals') %}disabled title="Active subscription required to edit" style="opacity:0.5; cursor:not-allowed;"                      {% else %}onclick='fillAnimalForm({{ a.id|tojson }}, {{ a.name|tojson }}, {{ (a.species or "")|tojson }}, {{ (a.habitat or "")|tojson }}, {{ (a.status or "")|tojson }}, {{ (a.description or "")|tojson }}, {{ (a.age or "")|tojson }}, {{ (a.fun_facts or "")|tojson }}, {{ (a.image_url or "")|tojson }})'{% endif %}>
+                  {% if can_edit_feature('animals') %}
+                  <a class="btn btn-outline btn-sm" href="{{ url_for('animal_farm_admin.animals_management', tab='add', edit_id=a.id) }}">
+                    <i class="fa-solid fa-pen"></i> Edit
+                  </a>
+                  {% else %}
+                  <button class="btn btn-outline btn-sm" type="button" disabled title="Active subscription required to edit" style="opacity:0.5; cursor:not-allowed;">
                     <i class="fa-solid fa-pen"></i> Edit
                   </button>
+                  {% endif %}
                   <form method="post" action="{{ url_for('animal_farm_admin.delete_animal', animal_id=a.id) }}" style="display:inline;" onsubmit="return confirm('Delete this animal?');">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button class="btn btn-ghost btn-sm" type="submit" {% if not can_edit_feature('animals') %}disabled title="Active subscription required to delete" style="opacity:0.5; cursor:not-allowed;"{% endif %}><i class="fa-solid fa-trash"></i> Delete</button>
@@ -391,7 +396,7 @@
   window.fillAnimalForm = function(id, name, species, habitat, status, description, age, fun_facts, imageUrl) {
     var form = document.getElementById('animalForm');
     if (!form) {
-      window.location.href = "{{ url_for('animal_farm_admin.animals_management') }}?tab=add&edit_id=" + id;
+      window.location.href = "{{ url_for('animal_farm_admin.animals_management', tab='add') }}&edit_id=" + id;
       return;
     }
     document.getElementById('animal_id').value = id;

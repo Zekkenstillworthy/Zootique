@@ -1158,7 +1158,7 @@
             <select id="new_service_id" name="service_id" required class="vb-select-control{% if selected_service_id %} has-value{% endif %}">
               <option value="" {% if not selected_service_id %}selected{% endif %} disabled>Select an experience to check availability…</option>
               {% for service in services %}
-              <option value="{{ service.id }}" data-max-guest-capacity="{{ service.max_guest_capacity or 50 }}" {% if selected_service_id == service.id %}selected{% endif %}>{{ service.name }} — ₱{{ "{:,.2f}".format(service.price or 0) }}</option>
+              <option value="{{ service.id }}" data-category="{{ service.category or '' }}" data-max-guest-capacity="{{ service.max_guest_capacity or 50 }}" {% if selected_service_id == service.id %}selected{% endif %}>{{ service.name }} — ₱{{ "{:,.2f}".format(service.price or 0) }}</option>
               {% endfor %}
             </select>
           </div>
@@ -1207,7 +1207,7 @@
                 <select id="new_promotion" name="promotion_code_select" class="vb-select-control" style="font-size:0.82rem;padding:0.35rem 0.6rem;height:auto;flex:1;">
                   <option value="" {% if not selected_promo_code %}selected{% endif %}>Or browse active deals…</option>
                   {% for promotion in promotions or [] %}
-                  <option value="{{ promotion.code }}" {% if selected_promo_code == promotion.code %}selected{% endif %} data-discount-type="{{ promotion.discount_type or 'percent' }}" data-discount-value="{{ promotion.discount_value or 0 }}">{{ promotion.code }} — {{ promotion.name }}{% if promotion.discount_value %} ({{ promotion.discount_value }}{% if promotion.discount_type == 'percent' %}%{% else %} PHP{% endif %} off){% endif %}</option>
+                  <option value="{{ promotion.code }}" data-category="{{ promotion.promo_type or '' }}" {% if selected_promo_code == promotion.code %}selected{% endif %} data-discount-type="{{ promotion.discount_type or 'percent' }}" data-discount-value="{{ promotion.discount_value or 0 }}">{{ promotion.code }} — {{ promotion.name }}{% if promotion.discount_value %} ({{ promotion.discount_value }}{% if promotion.discount_type == 'percent' %}%{% else %} PHP{% endif %} off){% endif %}</option>
                   {% endfor %}
                 </select>
               </div>
@@ -2212,6 +2212,29 @@
     var promoStatusMsg = document.getElementById('promo-status-msg');
     var promoStatusText = document.getElementById('promo-status-text');
 
+    function filterServicesByPromotion() {
+      if (!serviceSelect || !promoSelect) return;
+      var selectedPromo = promoSelect.options[promoSelect.selectedIndex];
+      var category = selectedPromo ? (selectedPromo.getAttribute('data-category') || '') : '';
+      Array.prototype.forEach.call(serviceSelect.options, function(option, index) {
+        if (index === 0) return;
+        var matches = !category || (option.getAttribute('data-category') || '') === category;
+        option.hidden = !matches;
+        option.disabled = !matches;
+        if (!matches && option.selected) {
+          serviceSelect.selectedIndex = 0;
+          selectedServiceId = null;
+        }
+      });
+      if (category && promoStatusText && promoStatusMsg) {
+        promoStatusMsg.style.display = 'flex';
+        promoStatusMsg.style.background = '#FEF3C7';
+        promoStatusMsg.style.color = '#92400E';
+        promoStatusMsg.style.border = '1px solid #FDE68A';
+        promoStatusText.innerHTML = '<i class="fa-solid fa-filter" style="margin-right:6px;"></i>Showing services in the <strong>' + category + '</strong> category';
+      }
+    }
+
     function setPromoCode(code) {
       code = (code || '').trim().toUpperCase();
       if (promoInput) promoInput.value = code;
@@ -2240,6 +2263,7 @@
         if (promoStatusMsg) promoStatusMsg.style.display = 'none';
         if (promoSelect) promoSelect.selectedIndex = 0;
       }
+      filterServicesByPromotion();
       updatePriceSummary();
     }
 
@@ -2286,6 +2310,7 @@
         setPromoCode(promoSelect.value);
       });
     }
+    filterServicesByPromotion();
 
     if (promoRemoveBtn) {
       promoRemoveBtn.addEventListener('click', function() {

@@ -689,7 +689,13 @@ def my_bookings():
             return redirect(url_for("visitor.my_bookings"))
         bundle = db.session.get(BookingBundle, bundle_id) if bundle_id else None
         promotion_code = (request.form.get("promotion_code") or request.form.get("promotion_code_select") or "").strip().upper()
-        promotion = Promotion.query.filter_by(code=promotion_code).first() if promotion_code else None
+        promotion = (
+            Promotion.query.filter_by(code=promotion_code, zoo_id=service.zoo_id).first()
+            if promotion_code else None
+        )
+        if promotion and promotion.promo_type and promotion.promo_type != service.category:
+            flash("This promotion is only valid for services in the same category.", "error")
+            return redirect(url_for("visitor.my_bookings"))
         add_ons = Service.query.filter(
             Service.id.in_(add_on_ids),
             Service.zoo_id == service.zoo_id,
@@ -876,6 +882,17 @@ def my_bookings():
     # URL parameters for pre-selection
     selected_service_id = request.args.get("service_id", type=int)
     selected_promo_code = (request.args.get("promo") or request.args.get("code") or request.args.get("promotion_code") or "").strip().upper()
+    selected_promotion = next(
+        (promotion for promotion in promotions if promotion.code == selected_promo_code),
+        None,
+    )
+    if selected_promotion and selected_promotion.promo_type:
+        services = [
+            service for service in services
+            if service.category == selected_promotion.promo_type
+        ]
+        add_on_services = services
+        availability_service = services[0] if services else None
     selected_event_id = request.args.get("event_id", type=int)
     selected_event_name = (request.args.get("event") or request.args.get("event_name") or "").strip()
     selected_event_time = (request.args.get("event_time") or request.args.get("time") or "").strip()
@@ -951,7 +968,15 @@ def booking_quote():
     add_on_ids = [value for value in request.args.getlist("add_on_ids", type=int) if value]
     add_ons = Service.query.filter(Service.id.in_(add_on_ids), Service.zoo_id == service.zoo_id).all() if add_on_ids else []
     promotion_code = (request.args.get("promotion_code") or "").strip().upper()
-    promotion = Promotion.query.filter_by(code=promotion_code).first() if promotion_code else None
+    promotion = (
+        Promotion.query.filter_by(code=promotion_code, zoo_id=service.zoo_id).first()
+        if promotion_code else None
+    )
+    if promotion and promotion.promo_type and promotion.promo_type != service.category:
+        return jsonify({
+            "success": False,
+            "error": "This promotion is only valid for services in the same category.",
+        }), 422
     try:
         raw_date = (request.args.get("date") or "").strip()
         visit_date = date.fromisoformat(raw_date) if raw_date else None
