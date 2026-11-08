@@ -857,6 +857,28 @@
                     </div>
                 </div>
 
+                <!-- Services Dropdown -->
+                <div class="nav-dropdown">
+                    <button
+                        class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.services_management' %}active{% endif %}"
+                        onclick="toggleDropdown(event, 'services-dropdown')">
+                        <span class="trigger-label"><i class="fa-solid fa-list-check"></i> Services
+                          {% if _sub_tier < feature_required_tier('services') %}<i class="fa-solid fa-lock" title="Requires Standard Tier" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
+                        </span>
+                        <i class="fa-solid fa-chevron-down chevron"></i>
+                    </button>
+                    <div class="nav-dropdown-menu" id="services-dropdown">
+                        <a href="{{ url_for('animal_farm_admin.services_management') }}?tab=add"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.services_management' and request.args.get('tab') == 'add' %}active{% endif %}">
+                            <i class="fa-solid fa-plus-circle"></i> Add/Edit Service
+                        </a>
+                        <a href="{{ url_for('animal_farm_admin.services_management') }}?tab=list"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.services_management' and request.args.get('tab') == 'list' %}active{% endif %}">
+                            <i class="fa-solid fa-list"></i> Service List
+                        </a>
+                    </div>
+                </div>
+
                 <!-- Animals Dropdown -->
                 <div class="nav-dropdown">
                     <button
