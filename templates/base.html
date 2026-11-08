@@ -868,11 +868,11 @@
                         <i class="fa-solid fa-chevron-down chevron"></i>
                     </button>
                     <div class="nav-dropdown-menu" id="services-dropdown">
-                        <a href="{{ url_for('animal_farm_admin.services_management') }}?tab=add"
+                        <a href="{{ url_for('animal_farm_admin.services_management', tab='add') }}"
                             class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.services_management' and request.args.get('tab') == 'add' %}active{% endif %}">
                             <i class="fa-solid fa-plus-circle"></i> Add/Edit Service
                         </a>
-                        <a href="{{ url_for('animal_farm_admin.services_management') }}?tab=list"
+                        <a href="{{ url_for('animal_farm_admin.services_management', tab='list') }}"
                             class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.services_management' and request.args.get('tab') == 'list' %}active{% endif %}">
                             <i class="fa-solid fa-list"></i> Service List
                         </a>

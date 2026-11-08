@@ -249,7 +249,7 @@
   window.fillServiceForm = function(id, name, price, description, category, svcStatus, maxGuestCapacity) {
     var form = document.getElementById('serviceForm');
     if (!form) {
-      window.location.href = "{{ url_for('animal_farm_admin.services_management') }}?tab=add&edit_id=" + id;
+      window.location.href = "{{ url_for('animal_farm_admin.services_management', tab='add') }}&edit_id=" + id;
       return;
     }
     document.getElementById('service_id').value = id;
