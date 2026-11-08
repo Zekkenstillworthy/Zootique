@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+import hmac
 import json
 import os
 import re
 from sqlalchemy import or_
 
-from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, session, url_for
 
 from services.storage import save_uploaded_image as _save_uploaded_image
 
@@ -118,6 +119,13 @@ def _parse_date(value: str | None):
         return datetime.strptime(value, "%Y-%m-%d").date()
     except Exception:
         return None
+
+
+def _validate_csrf():
+    expected = session.get('_csrf_token')
+    provided = request.form.get('csrf_token') or request.headers.get('X-CSRF-Token')
+    if not expected or not provided or not hmac.compare_digest(str(expected), str(provided)):
+        abort(400, description='Invalid or missing CSRF token.')
 
 
 def _uploaded_file_size(file_storage) -> int | None:
@@ -484,6 +492,7 @@ def booking_bundles():
 
 @animal_farm_admin_bp.post('/booking-bundles/create')
 def create_booking_bundle():
+    _validate_csrf()
     zoo = _current_zoo()
     if not zoo:
         flash('No zoo assigned.', 'error')
@@ -509,6 +518,7 @@ def create_booking_bundle():
 
 @animal_farm_admin_bp.post('/booking-bundles/<int:bundle_id>/update')
 def update_booking_bundle(bundle_id: int):
+    _validate_csrf()
     zoo = _current_zoo()
     bundle = BookingBundle.query.filter_by(id=bundle_id, zoo_id=zoo.id if zoo else None).first()
     if not zoo or not bundle:
@@ -525,8 +535,9 @@ def update_booking_bundle(bundle_id: int):
     return redirect(url_for('animal_farm_admin.booking_bundles'))
 
 
-@animal_farm_admin_bp.post('/booking-bundles/<int:bundle_id>/toggle')
-def toggle_booking_bundle(bundle_id: int):
+@animal_farm_admin_bp.post('/booking-bundles/<int:bundle_id>/delete')
+def delete_booking_bundle(bundle_id: int):
+    _validate_csrf()
     zoo = _current_zoo()
     bundle = BookingBundle.query.filter_by(id=bundle_id, zoo_id=zoo.id if zoo else None).first()
     if not zoo or not bundle:
@@ -534,9 +545,14 @@ def toggle_booking_bundle(bundle_id: int):
         return redirect(url_for('animal_farm_admin.booking_bundles'))
     if not can_edit_feature(zoo, 'booking_bundles'):
         return paywall_edit_error('Booking Bundles', required_tier=FEATURE_TIERS.get('booking_bundles', 1))
-    bundle.is_active = not bundle.is_active
-    db.session.commit()
-    flash('Booking bundle status updated.', 'success')
+    try:
+        db.session.delete(bundle)
+        db.session.commit()
+        flash('Booking bundle deleted.', 'success')
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.exception('Failed to delete booking bundle %s: %s', bundle_id, exc)
+        flash('Unable to delete booking bundle. Please try again.', 'error')
     return redirect(url_for('animal_farm_admin.booking_bundles'))
 
 
@@ -570,6 +586,9 @@ def _bundle_from_request(zoo: Zoo, bundle: BookingBundle | None = None):
             return int(raw) if integer else float(raw)
         except ValueError:
             return default
+    price_raw = (request.form.get('price') or '').strip()
+    if not price_raw:
+        return None, 'Bundle price is required.'
     min_guests = number('min_guests', 1, True)
     max_guests = number('max_guests', 50, True)
     price = number('price', 0)
@@ -579,6 +598,10 @@ def _bundle_from_request(zoo: Zoo, bundle: BookingBundle | None = None):
         return None, 'Guest limits are invalid.'
     if price < 0 or discount_value < 0 or discount_type not in {'none', 'fixed', 'percent'}:
         return None, 'Bundle pricing is invalid.'
+    valid_from = _parse_date(request.form.get('valid_from'))
+    valid_until = _parse_date(request.form.get('valid_until'))
+    if valid_from and valid_until and valid_until < valid_from:
+        return None, 'Valid until cannot be before valid from.'
     target = bundle or BookingBundle(zoo_id=zoo.id)
     # Store selected service IDs as JSON; also set legacy service_id to first entry for compatibility
     target.service_ids = _json.dumps(selected_service_ids) if selected_service_ids else None
@@ -591,8 +614,8 @@ def _bundle_from_request(zoo: Zoo, bundle: BookingBundle | None = None):
     target.price = price
     target.discount_type = discount_type
     target.discount_value = discount_value
-    target.valid_from = _parse_date(request.form.get('valid_from'))
-    target.valid_until = _parse_date(request.form.get('valid_until'))
+    target.valid_from = valid_from
+    target.valid_until = valid_until
     target.is_active = request.form.get('is_active') == 'on'
     return target, None
 

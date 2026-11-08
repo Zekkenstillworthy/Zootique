@@ -261,36 +261,34 @@
             <td style="padding:14px 14px; text-align:right; vertical-align:top; white-space:nowrap;">
               {% if can_edit %}
               {# Edit button #}
-              <button type="button" class="btn btn-ghost btn-sm"
+              <button type="button" class="btn btn-ghost btn-sm js-edit-bundle"
                       title="Edit bundle"
-                      onclick="openEditBundle({{ bundle.id }},
-                        {{ bundle.name|tojson }},
-                        {{ (bundle.description or '')|tojson }},
-                        {{ (bundle.eligibility or '')|tojson }},
-                        {{ bundle.min_guests }},
-                        {{ bundle.max_guests }},
-                        {{ bundle.price }},
-                        {{ bundle.discount_type|tojson }},
-                        {{ bundle.discount_value }},
-                        {{ (bundle.valid_from|string if bundle.valid_from else '')|tojson }},
-                        {{ (bundle.valid_until|string if bundle.valid_until else '')|tojson }},
-                        {{ bundle.is_active|tojson }},
-                        {{ svc_ids|tojson }})"
+                      data-bundle="{{ {
+                        'id': bundle.id,
+                        'name': bundle.name,
+                        'description': bundle.description or '',
+                        'eligibility': bundle.eligibility or '',
+                        'min_guests': bundle.min_guests,
+                        'max_guests': bundle.max_guests,
+                        'price': bundle.price,
+                        'discount_type': bundle.discount_type,
+                        'discount_value': bundle.discount_value,
+                        'valid_from': bundle.valid_from|string if bundle.valid_from else '',
+                        'valid_until': bundle.valid_until|string if bundle.valid_until else '',
+                        'is_active': bundle.is_active,
+                        'service_ids': svc_ids
+                      }|tojson|forceescape }}"
                       style="color:var(--primary,#1a4f32);">
                 <i class="fa-solid fa-pen"></i> Edit
               </button>
-              {# Deactivate / Activate button #}
+              {# Delete bundle; Booking.bundle_id uses ON DELETE SET NULL so past bookings remain intact. #}
               <form method="post"
-                    action="{{ url_for('animal_farm_admin.toggle_booking_bundle', bundle_id=bundle.id) }}"
-                    style="display:inline;">
+                    action="{{ url_for('animal_farm_admin.delete_booking_bundle', bundle_id=bundle.id) }}"
+                    style="display:inline;"
+                    onsubmit="return confirm('Delete this bundle? This cannot be undone.');">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button class="btn btn-ghost btn-sm" type="submit"
-                        style="{% if bundle.is_active %}color:var(--danger, #dc2626);{% endif %}">
-                  {% if bundle.is_active %}
-                  <i class="fa-solid fa-toggle-off"></i> Deactivate
-                  {% else %}
-                  <i class="fa-solid fa-toggle-on"></i> Activate
-                  {% endif %}
+                <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger, #dc2626);">
+                  <i class="fa-solid fa-trash"></i> Delete
                 </button>
               </form>
               {% else %}
@@ -367,42 +365,47 @@ function resetBundleForm() {
   if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function openEditBundle(id, name, description, eligibility, minGuests, maxGuests,
-                         price, discountType, discountValue, validFrom, validUntil,
-                         isActive, svcIds) {
+function openEditBundle(bundle) {
   if (!BUNDLE_FORM) return;
   // Set action to update URL
-  BUNDLE_FORM.action = EDIT_TEMPLATE.replace('BUNDLE_ID', encodeURIComponent(String(id)));
-  document.getElementById('form-bundle-id').value = id;
+  BUNDLE_FORM.action = EDIT_TEMPLATE.replace('BUNDLE_ID', encodeURIComponent(String(bundle.id)));
+  document.getElementById('form-bundle-id').value = bundle.id;
 
   // Fill fields
-  document.getElementById('bb_name').value = name || '';
-  document.getElementById('bb_desc').value = description || '';
-  document.getElementById('bb_eligibility').value = eligibility || '';
-  document.getElementById('bb_min').value = minGuests || 1;
-  document.getElementById('bb_max').value = maxGuests || 50;
-  document.getElementById('bb_price').value = price || 0;
-  document.getElementById('bb_dtype').value = discountType || 'none';
-  document.getElementById('bb_dval').value = discountValue || 0;
-  document.getElementById('bb_from').value = validFrom || '';
-  document.getElementById('bb_until').value = validUntil || '';
-  document.getElementById('bb_active').checked = !!isActive;
+  document.getElementById('bb_name').value = bundle.name || '';
+  document.getElementById('bb_desc').value = bundle.description || '';
+  document.getElementById('bb_eligibility').value = bundle.eligibility || '';
+  document.getElementById('bb_min').value = bundle.min_guests || 1;
+  document.getElementById('bb_max').value = bundle.max_guests || 50;
+  document.getElementById('bb_price').value = bundle.price || 0;
+  document.getElementById('bb_dtype').value = bundle.discount_type || 'none';
+  document.getElementById('bb_dval').value = bundle.discount_value || 0;
+  document.getElementById('bb_from').value = bundle.valid_from || '';
+  document.getElementById('bb_until').value = bundle.valid_until || '';
+  document.getElementById('bb_active').checked = !!bundle.is_active;
 
   // Set service checkboxes
   document.querySelectorAll('.bb-svc-check').forEach(function(chk) {
-    chk.checked = Array.isArray(svcIds) && svcIds.indexOf(parseInt(chk.value, 10)) !== -1;
+    chk.checked = Array.isArray(bundle.service_ids)
+      && bundle.service_ids.indexOf(parseInt(chk.value, 10)) !== -1;
   });
 
   // Update form header
-  document.getElementById('form-title').textContent = 'Edit Bundle';
+  document.getElementById('form-title').textContent = 'Update Bundle';
   document.getElementById('form-icon').className = 'fa-solid fa-pen';
   document.getElementById('submit-icon').className = 'fa-solid fa-floppy-disk';
-  document.getElementById('submit-label').textContent = 'Save Changes';
+  document.getElementById('submit-label').textContent = 'Update Bundle';
   document.getElementById('btn-cancel-edit').style.display = '';
 
   // Scroll to form
   var card = document.getElementById('bundle-form-card');
   if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+
+document.querySelectorAll('.js-edit-bundle').forEach(function(button) {
+  button.addEventListener('click', function() {
+    openEditBundle(JSON.parse(button.dataset.bundle));
+  });
+});
 </script>
 {% endblock %}
