@@ -1987,6 +1987,7 @@
       guestsInput.max = slot.remaining;
       validateGuests();
     }
+    if (window.updateGuestChipAvailability) window.updateGuestChipAvailability();
 
     updateFormState();
   }
@@ -2071,6 +2072,7 @@
           guestsInput.value = guestsInput.max;
         }
       }
+      if (window.updateGuestChipAvailability) window.updateGuestChipAvailability();
       selectedTime = '';
       if (hiddenTime) hiddenTime.value = '';
       if (timeSection) timeSection.style.display = 'none';
@@ -2110,8 +2112,25 @@
     var customStepper = document.getElementById('custom-guests-stepper');
     var customValue = document.getElementById('custom-guests-value');
     var customGuests = 6;
+    function guestLimit() {
+      return Math.min(maxSlotCapacity, getServiceMaxGuests());
+    }
+    function updateChipAvailability() {
+      var limit = guestLimit();
+      chips.forEach(function(chip) {
+        var value = chip.dataset.guests === 'custom' ? 6 : parseInt(chip.dataset.guests, 10);
+        var unavailable = value > limit;
+        chip.hidden = unavailable;
+        chip.disabled = unavailable;
+        if (unavailable && chip.classList.contains('is-selected')) {
+          chip.classList.remove('is-selected');
+          if (customStepper) customStepper.style.display = 'none';
+        }
+      });
+      if (plus) plus.disabled = customGuests >= limit;
+    }
     function setCustomGuests(value) {
-      customGuests = Math.max(6, Math.min(50, value));
+      customGuests = Math.max(6, Math.min(guestLimit(), value));
       if (guestsInput) guestsInput.value = customGuests;
       if (customValue) customValue.textContent = customGuests;
       validateGuests();
@@ -2143,6 +2162,8 @@
     var plus = document.getElementById('guest-stepper-plus');
     if (minus) minus.addEventListener('click', function() { setCustomGuests(customGuests - 1); });
     if (plus) plus.addEventListener('click', function() { setCustomGuests(customGuests + 1); });
+    updateChipAvailability();
+    window.updateGuestChipAvailability = updateChipAvailability;
   })();
 
   // Payment method card selector

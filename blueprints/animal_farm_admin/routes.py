@@ -482,7 +482,7 @@ def booking_bundles():
     bundles = BookingBundle.query.filter_by(zoo_id=zoo.id).order_by(BookingBundle.created_at.desc()).all()
     services = Service.query.filter(
         Service.zoo_id == zoo.id,
-        Service.service_status != 'Coming Soon',
+        Service.service_status == 'Active',
     ).order_by(Service.name.asc()).all()
     return render_template(
         'animal_farm_admin/booking_bundles.html',
@@ -1195,13 +1195,14 @@ def promotions_management():
         .filter(Promotion.zoo_id == zoo.id, Promotion.promo_type.isnot(None))
         .distinct().all()
     }
-    promo_types = list(SERVICE_CATEGORY_VALUES) + sorted(existing_types - set(SERVICE_CATEGORY_VALUES))
+    legacy_types = sorted(existing_types - set(SERVICE_CATEGORY_VALUES))
+    promo_categories = list(SERVICE_CATEGORIES) + [(value, value) for value in legacy_types]
 
     return render_template(
         'animal_farm_admin/promotions.html',
         zoo=zoo,
         promotions=promotions,
-        promo_types=promo_types,
+        promo_categories=promo_categories,
         selected_promo_type=promo_type,
     )
 

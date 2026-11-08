@@ -19,8 +19,8 @@
             <label class="zf-label" style="margin:0; font-weight:600;"><i class="fa-solid fa-filter" style="color:var(--primary); margin-right:4px;"></i> Promo Type:</label>
             <select name="promo_type" class="zf-control" style="width:auto; min-width:160px; padding:6px 12px; height:38px;">
                 <option value="" {% if not selected_promo_type %}selected{% endif %}>All types</option>
-                {% for t in promo_types %}
-                    <option value="{{ t }}" {% if selected_promo_type==t %}selected{% endif %}>{{ t }}</option>
+                {% for value, label in promo_categories %}
+                    <option value="{{ value }}" {% if selected_promo_type==value %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
             </select>
             <button class="btn btn-primary btn-sm" type="submit" style="height:38px;">Apply Filter</button>
@@ -78,8 +78,8 @@
                         <div class="zf-field">
                             <label class="zf-label" for="promo_type">Category</label>
                             <select id="promo_type" name="promo_type" class="zf-control">
-                                {% for t in promo_types %}
-                                    <option value="{{ t }}">{{ t }}</option>
+                                {% for value, label in promo_categories %}
+                                    <option value="{{ value }}">{{ label }}</option>
                                 {% endfor %}
                             </select>
                         </div>

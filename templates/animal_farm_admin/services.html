@@ -99,7 +99,10 @@
             </div>
             <div class="zf-field">
               <label class="zf-label" for="service_max_guest_capacity">Maximum Guest Capacity <span class="zf-req">*</span></label>
-              <input type="number" id="service_max_guest_capacity" name="max_guest_capacity" class="zf-control" min="1" value="50" required>
+              <input type="number" id="service_max_guest_capacity" name="max_guest_capacity" class="zf-control"
+                     min="1" value="50" placeholder="e.g. 30 guests" required
+                     aria-describedby="service_capacity_help service_capacity_error">
+              <small id="service_capacity_help" class="zf-help">Maximum number of guests allowed for this service per booking.</small>
               <span class="zf-error" id="service_capacity_error" role="alert">
                 <i class="fa-solid fa-triangle-exclamation"></i> Maximum guest capacity must be at least 1.
               </span>
