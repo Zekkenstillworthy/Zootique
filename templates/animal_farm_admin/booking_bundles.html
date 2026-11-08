@@ -182,7 +182,7 @@
 {% if can_edit %}
 <div class="bundle-modal" id="bundle-modal" hidden aria-hidden="true">
   <div class="bundle-modal-backdrop" data-modal-close></div>
-  <section class="bundle-modal-dialog" role="dialog" aria-modal="true"
+  <section class="bundle-modal-dialog" id="bundle-form-card" role="dialog" aria-modal="true"
            aria-labelledby="bundle-modal-title" tabindex="-1">
     <div class="bundle-modal-header">
       <div>
@@ -197,7 +197,8 @@
       <form method="post" id="bundle-form"
             action="{{ url_for('animal_farm_admin.create_booking_bundle') }}"
             data-create-action="{{ url_for('animal_farm_admin.create_booking_bundle') }}"
-            data-edit-template="/animal-farm-admin/booking-bundles/BUNDLE_ID/update">
+            data-edit-template="/animal-farm-admin/booking-bundles/BUNDLE_ID/update"
+            novalidate>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="bundle_id" id="form-bundle-id" value="">
         <div class="bundle-form-grid two">
@@ -310,6 +311,8 @@ var modal = document.getElementById('bundle-modal');
 var form = document.getElementById('bundle-form');
 var opener = null;
 var submitting = false;
+var initialState = null;
+var restoreKey = 'zootique-booking-bundle-form';
 var focusable = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])';
 var createAction = form ? form.dataset.createAction : '';
 var editTemplate = form ? form.dataset.editTemplate : '';
@@ -328,46 +331,86 @@ function resetForm() {
   document.getElementById('submit-label').textContent = 'Create Bundle';
   clearErrors();
 }
+function getFormState() {
+  return {
+    bundle_id: document.getElementById('form-bundle-id').value,
+    name: document.getElementById('bb_name').value,
+    description: document.getElementById('bb_desc').value,
+    eligibility: document.getElementById('bb_eligibility').value,
+    min_guests: document.getElementById('bb_min').value,
+    max_guests: document.getElementById('bb_max').value,
+    price: document.getElementById('bb_price').value,
+    discount_type: document.getElementById('bb_dtype').value,
+    discount_value: document.getElementById('bb_dval').value,
+    valid_from: document.getElementById('bb_from').value,
+    valid_until: document.getElementById('bb_until').value,
+    is_active: document.getElementById('bb_active').checked,
+    service_ids: Array.from(document.querySelectorAll('.bb-svc-check:checked')).map(function(node) { return node.value; })
+  };
+}
+function setEditMode(bundleId) {
+  form.action = editTemplate.replace('BUNDLE_ID', encodeURIComponent(String(bundleId)));
+  document.getElementById('form-bundle-id').value = bundleId;
+  document.getElementById('form-title').textContent = 'Edit Bundle';
+  document.getElementById('form-icon').className = 'fa-solid fa-pen';
+  document.getElementById('submit-icon').className = 'fa-solid fa-floppy-disk';
+  document.getElementById('submit-label').textContent = 'Update Bundle';
+}
+function applyFormState(state) {
+  document.getElementById('bb_name').value = state.name || '';
+  document.getElementById('bb_desc').value = state.description || '';
+  document.getElementById('bb_eligibility').value = state.eligibility || '';
+  document.getElementById('bb_min').value = state.min_guests || 1;
+  document.getElementById('bb_max').value = state.max_guests || 50;
+  document.getElementById('bb_price').value = state.price || '';
+  document.getElementById('bb_dtype').value = state.discount_type || 'none';
+  document.getElementById('bb_dval').value = state.discount_value || 0;
+  document.getElementById('bb_from').value = state.valid_from || '';
+  document.getElementById('bb_until').value = state.valid_until || '';
+  document.getElementById('bb_active').checked = state.is_active !== false;
+  document.querySelectorAll('.bb-svc-check').forEach(function(checkbox) {
+    checkbox.checked = (state.service_ids || []).indexOf(checkbox.value) !== -1;
+  });
+  if (state.bundle_id) setEditMode(state.bundle_id);
+}
 function openModal(button, bundle) {
   opener = button;
   modal.hidden = false;
   modal.setAttribute('aria-hidden', 'false');
   document.body.classList.add('bundle-modal-open');
   if (bundle) {
-    form.action = editTemplate.replace('BUNDLE_ID', encodeURIComponent(String(bundle.id)));
-    document.getElementById('form-bundle-id').value = bundle.id;
-    document.getElementById('bb_name').value = bundle.name || '';
-    document.getElementById('bb_desc').value = bundle.description || '';
-    document.getElementById('bb_eligibility').value = bundle.eligibility || '';
-    document.getElementById('bb_min').value = bundle.min_guests || 1;
-    document.getElementById('bb_max').value = bundle.max_guests || 50;
-    document.getElementById('bb_price').value = bundle.price || 0;
-    document.getElementById('bb_dtype').value = bundle.discount_type || 'none';
-    document.getElementById('bb_dval').value = bundle.discount_value || 0;
-    document.getElementById('bb_from').value = bundle.valid_from || '';
-    document.getElementById('bb_until').value = bundle.valid_until || '';
-    document.getElementById('bb_active').checked = bundle.is_active;
-    document.getElementById('form-title').textContent = 'Edit Bundle';
-    document.getElementById('form-icon').className = 'fa-solid fa-pen';
-    document.getElementById('submit-icon').className = 'fa-solid fa-floppy-disk';
-    document.getElementById('submit-label').textContent = 'Update Bundle';
-    (bundle.service_ids || []).forEach(function(id) {
-      var checkbox = document.querySelector('.bb-svc-check[value="' + id + '"]');
-      if (checkbox) checkbox.checked = true;
+    applyFormState({
+      bundle_id: bundle.id,
+      name: bundle.name,
+      description: bundle.description,
+      eligibility: bundle.eligibility,
+      min_guests: bundle.min_guests,
+      max_guests: bundle.max_guests,
+      price: bundle.price,
+      discount_type: bundle.discount_type,
+      discount_value: bundle.discount_value,
+      valid_from: bundle.valid_from,
+      valid_until: bundle.valid_until,
+      is_active: bundle.is_active,
+      service_ids: (bundle.service_ids || []).map(String)
     });
   }
+  initialState = JSON.stringify(getFormState());
   modal.querySelector('.bundle-modal-dialog').focus();
   var first = modal.querySelector('#bb_name');
   if (first) first.focus();
 }
-function closeModal() {
+function closeModal(force) {
   if (submitting) return;
+  if (!force && initialState !== JSON.stringify(getFormState())
+      && !window.confirm('Discard unsaved changes?')) return;
   modal.hidden = true;
   modal.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('bundle-modal-open');
   resetForm();
   if (opener) opener.focus();
   opener = null;
+  initialState = null;
 }
 document.getElementById('btn-create-bundle').addEventListener('click', function() {
   resetForm(); openModal(this);
@@ -429,9 +472,37 @@ form.addEventListener('submit', function(event) {
     event.preventDefault();
     return;
   }
+  try { localStorage.setItem(restoreKey, JSON.stringify(getFormState())); } catch (error) {}
   submitting = true;
   document.getElementById('btn-submit-bundle').disabled = true;
 });
+
+var serverErrorText = document.body.innerText || '';
+var hasServerError = [
+  'Bundle name is required.',
+  'Bundle price is required.',
+  'Bundle pricing is invalid.',
+  'Guest limits are invalid.',
+  'Valid until cannot be before valid from.'
+].some(function(message) { return serverErrorText.indexOf(message) !== -1; });
+if (hasServerError) {
+  try {
+    var savedState = JSON.parse(localStorage.getItem(restoreKey) || 'null');
+    if (savedState) {
+      localStorage.removeItem(restoreKey);
+      resetForm();
+      applyFormState(savedState);
+      openModal(null);
+      if (serverErrorText.indexOf('Bundle name is required.') !== -1) document.querySelector('[data-error-for="name"]').textContent = 'Bundle name is required.';
+      if (serverErrorText.indexOf('Bundle price is required.') !== -1) document.querySelector('[data-error-for="price"]').textContent = 'Bundle price is required.';
+      if (serverErrorText.indexOf('Bundle pricing is invalid.') !== -1) document.querySelector('[data-error-for="price"]').textContent = 'Bundle pricing is invalid.';
+      if (serverErrorText.indexOf('Guest limits are invalid.') !== -1) document.querySelector('[data-error-for="guests"]').textContent = 'Guest limits are invalid.';
+      if (serverErrorText.indexOf('Valid until cannot be before valid from.') !== -1) document.querySelector('[data-error-for="dates"]').textContent = 'Valid until cannot be before valid from.';
+    }
+  } catch (error) {}
+} else {
+  try { localStorage.removeItem(restoreKey); } catch (error) {}
+}
 }
 </script>
 {% endblock %}
