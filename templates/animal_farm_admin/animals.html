@@ -219,17 +219,8 @@
 
             <div class="zf-field">
               <label class="zf-label" for="animal_habitat">Habitat</label>
-              <select id="animal_habitat" name="habitat" class="zf-control">
-                <option value="">-- Select habitat --</option>
-                <option value="Forest">Forest</option>
-                <option value="Savanna">Savanna</option>
-                <option value="Aquatic">Aquatic</option>
-                <option value="Aviary">Aviary</option>
-                <option value="Grassland">Grassland</option>
-                <option value="Wetland">Wetland</option>
-                <option value="Desert">Desert</option>
-                <option value="Arctic">Arctic</option>
-              </select>
+              <input type="text" id="animal_habitat" name="habitat" class="zf-control"
+                     placeholder="e.g., Forest, Farm Pasture" autocomplete="off">
             </div>
 
             <div class="zf-field">
@@ -266,12 +257,6 @@
               <label class="zf-label" for="animal_description">Description</label>
               <textarea id="animal_description" name="description" class="zf-control" rows="3"
                         placeholder="Briefly describe the animal characteristics, behaviour, or history..."></textarea>
-            </div>
-
-            <div class="zf-field zf-full">
-              <label class="zf-label" for="animal_fun_facts">Fun Facts / Trivia</label>
-              <textarea id="animal_fun_facts" name="fun_facts" class="zf-control" rows="2"
-                        placeholder="Fascinating trivia, unique habits, or fun facts about this animal..."></textarea>
             </div>
 
             <div class="zf-field zf-full">

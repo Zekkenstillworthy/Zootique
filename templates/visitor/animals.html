@@ -105,6 +105,12 @@
                     {% if animal.habitat %}
                     <div style="color: #64748b; font-size: 0.8rem;">Habitat: {{ animal.habitat }}</div>
                     {% endif %}
+                    {% if animal.age %}
+                    <div style="color: #64748b; font-size: 0.8rem;">Age: {{ animal.age }}</div>
+                    {% endif %}
+                    {% if animal.description %}
+                    <div style="color: #475569; font-size: 0.82rem; line-height:1.45; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden;" title="{{ animal.description }}">{{ animal.description }}</div>
+                    {% endif %}
                 </div>
             </div>
         </a>

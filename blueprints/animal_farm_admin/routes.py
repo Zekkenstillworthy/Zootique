@@ -1028,7 +1028,8 @@ def save_animal():
     animal.status = status
     animal.description = description
     animal.age = age
-    animal.fun_facts = fun_facts
+    if 'fun_facts' in request.form:
+        animal.fun_facts = fun_facts
     animal.zone_id = zone_id
 
     if image_file and image_file.filename:
