@@ -21,157 +21,19 @@
   {% endif %}
 
   {# ═══════════════════════════════════════════
-     CREATE / EDIT BUNDLE FORM
-  ═══════════════════════════════════════════ #}
-  <div class="card-panel" id="bundle-form-card">
-    <div class="card-header">
-      <h2><i class="fa-solid fa-plus-circle" style="margin-right:8px;" id="form-icon"></i><span id="form-title">Create Bundle</span></h2>
-      <span class="card-header-sub" style="font-size:13px; color:var(--text-muted);">
-        Combine services into a discounted package for your visitors.
-      </span>
-    </div>
-    <div class="card-body">
-      {# Single form reused for create and edit #}
-      <form method="post"
-            id="bundle-form"
-            action="{{ url_for('animal_farm_admin.create_booking_bundle') }}"
-            data-create-action="{{ url_for('animal_farm_admin.create_booking_bundle') }}"
-            data-edit-template="/animal-farm-admin/booking-bundles/BUNDLE_ID/update"
-            {% if not can_edit %}onsubmit="return false;"{% endif %}>
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        {# Unused when creating; set by JS when editing #}
-        <input type="hidden" name="bundle_id" id="form-bundle-id" value="">
-
-        {# Row 1: Name + Service multi-select #}
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-          <div>
-            <label class="zf-label" for="bb_name">Bundle Name <span style="color:#dc2626;">*</span></label>
-            <input class="zf-control" id="bb_name" name="name" required
-                   placeholder="e.g. Family Safari Pack">
-          </div>
-          <div>
-            <label class="zf-label">Services</label>
-            {# Checkbox-chip multi-select #}
-            <div id="bb-service-chips"
-                 style="display:flex; flex-wrap:wrap; gap:8px; min-height:40px;
-                        border:1.5px solid var(--border-light,#e2e8f0); border-radius:8px;
-                        padding:8px 10px; background:#fff; cursor:default;">
-              {% for service in services %}
-              <label class="bb-chip" style="display:inline-flex; align-items:center; gap:5px;
-                     background:#f1f5f9; border:1.5px solid #e2e8f0; border-radius:20px;
-                     padding:4px 11px; font-size:12px; font-weight:600; cursor:pointer;
-                     color:var(--text,#1e293b); user-select:none; transition:all .15s;">
-                <input type="checkbox" name="service_ids" value="{{ service.id }}"
-                       class="bb-svc-check"
-                       style="accent-color:var(--primary,#1a4f32); width:14px; height:14px;">
-                {{ service.name }}
-              </label>
-              {% else %}
-              <span style="font-size:13px; color:var(--text-muted);">No services found.</span>
-              {% endfor %}
-            </div>
-            <small class="zf-hint">Leave blank to apply to all services.</small>
-          </div>
-        </div>
-
-        {# Row 2: Guest range + Price #}
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
-          <div>
-            <label class="zf-label" for="bb_min">Minimum Guests</label>
-            <input class="zf-control" id="bb_min" name="min_guests"
-                   type="number" min="1" value="1">
-          </div>
-          <div>
-            <label class="zf-label" for="bb_max">Maximum Guests</label>
-            <input class="zf-control" id="bb_max" name="max_guests"
-                   type="number" min="1" value="50">
-          </div>
-          <div>
-            <label class="zf-label" for="bb_price">Package Price (₱) <span style="color:#dc2626;">*</span></label>
-            <input class="zf-control" id="bb_price" name="price"
-                   type="number" min="0" step="0.01" required placeholder="0.00">
-          </div>
-        </div>
-
-        {# Row 3: Discount type + value + eligibility #}
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
-          <div>
-            <label class="zf-label" for="bb_dtype">Discount Type</label>
-            <select class="zf-control" id="bb_dtype" name="discount_type">
-              <option value="none">No discount</option>
-              <option value="fixed">Fixed amount (₱)</option>
-              <option value="percent">Percentage (%)</option>
-            </select>
-          </div>
-          <div>
-            <label class="zf-label" for="bb_dval">Discount Value</label>
-            <input class="zf-control" id="bb_dval" name="discount_value"
-                   type="number" min="0" step="0.01" value="0">
-            <small class="zf-hint">Enter 0 if no discount is applied.</small>
-          </div>
-          <div>
-            <label class="zf-label" for="bb_eligibility">Eligibility</label>
-            <input class="zf-control" id="bb_eligibility" name="eligibility"
-                   placeholder="e.g. Senior citizens, PWD">
-            <small class="zf-hint">Optional — leave blank for everyone.</small>
-          </div>
-        </div>
-
-        {# Row 4: Valid from + until + Description #}
-        <div style="display:grid; grid-template-columns:1fr 1fr 2fr; gap:16px; margin-bottom:20px;">
-          <div>
-            <label class="zf-label" for="bb_from">Valid From</label>
-            <input class="zf-control" id="bb_from" name="valid_from" type="date">
-            <small class="zf-hint">Leave blank for no start restriction.</small>
-          </div>
-          <div>
-            <label class="zf-label" for="bb_until">Valid Until</label>
-            <input class="zf-control" id="bb_until" name="valid_until" type="date">
-            <small class="zf-hint">Leave blank for no expiry.</small>
-          </div>
-          <div>
-            <label class="zf-label" for="bb_desc">Description</label>
-            <textarea class="zf-control" id="bb_desc" name="description" rows="2"
-                      placeholder="Brief summary for visitors (optional)"></textarea>
-          </div>
-        </div>
-
-        {# Bottom bar: Active toggle + submit + cancel (cancel only shown in edit mode) #}
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;
-                    border-top:1px solid var(--border-light, #e2e8f0); padding-top:16px;">
-          <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:14px; font-weight:600; color:var(--text, #1e293b);">
-            <input type="checkbox" name="is_active" id="bb_active" checked
-                   style="width:16px; height:16px; accent-color:var(--primary, #1a4f32);">
-            Active
-            <span style="font-size:12px; font-weight:400; color:var(--text-muted, #64748b);">
-              — bundle is visible and can be selected by visitors
-            </span>
-          </label>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <button type="button" id="btn-cancel-edit"
-                    class="btn btn-ghost btn-sm" style="display:none;"
-                    onclick="resetBundleForm()">
-              <i class="fa-solid fa-xmark"></i> Cancel
-            </button>
-            <button class="btn btn-primary" type="submit" id="btn-submit-bundle"
-                    {% if not can_edit %}disabled title="Requires active subscription"{% endif %}>
-              <i class="fa-solid fa-plus" id="submit-icon"></i>
-              <span id="submit-label">Create Bundle</span>
-            </button>
-          </div>
-        </div>
-
-      </form>
-    </div>
-  </div>
-
-  {# ═══════════════════════════════════════════
      CONFIGURED BUNDLES TABLE
   ═══════════════════════════════════════════ #}
   <div class="card-panel" style="margin-bottom:0;">
     <div class="card-header">
       <h2><i class="fa-solid fa-boxes-stacked" style="margin-right:8px;"></i>Configured Bundles</h2>
-      <span style="font-size:13px; color:var(--text-muted);">{{ bundles|length }} bundle{{ 's' if bundles|length != 1 else '' }} configured</span>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span style="font-size:13px; color:var(--text-muted);">{{ bundles|length }} bundle{{ 's' if bundles|length != 1 else '' }} configured</span>
+        {% if can_edit %}
+        <button type="button" class="btn btn-primary btn-sm" id="btn-create-bundle">
+          <i class="fa-solid fa-plus"></i> Create Bundle
+        </button>
+        {% endif %}
+      </div>
     </div>
     <div class="table-wrap" style="padding:0; overflow-x:auto;">
       <table style="width:100%; border-collapse:collapse; font-size:14px; table-layout:fixed;">
@@ -263,21 +125,19 @@
               {# Edit button #}
               <button type="button" class="btn btn-ghost btn-sm js-edit-bundle"
                       title="Edit bundle"
-                      data-bundle="{{ {
-                        'id': bundle.id,
-                        'name': bundle.name,
-                        'description': bundle.description or '',
-                        'eligibility': bundle.eligibility or '',
-                        'min_guests': bundle.min_guests,
-                        'max_guests': bundle.max_guests,
-                        'price': bundle.price,
-                        'discount_type': bundle.discount_type,
-                        'discount_value': bundle.discount_value,
-                        'valid_from': bundle.valid_from|string if bundle.valid_from else '',
-                        'valid_until': bundle.valid_until|string if bundle.valid_until else '',
-                        'is_active': bundle.is_active,
-                        'service_ids': svc_ids
-                      }|tojson|forceescape }}"
+                      data-bundle-id="{{ bundle.id }}"
+                      data-name="{{ bundle.name|e }}"
+                      data-description="{{ (bundle.description or '')|e }}"
+                      data-eligibility="{{ (bundle.eligibility or '')|e }}"
+                      data-min-guests="{{ bundle.min_guests }}"
+                      data-max-guests="{{ bundle.max_guests }}"
+                      data-price="{{ bundle.price }}"
+                      data-discount-type="{{ bundle.discount_type|e }}"
+                      data-discount-value="{{ bundle.discount_value }}"
+                      data-valid-from="{{ bundle.valid_from|string if bundle.valid_from else '' }}"
+                      data-valid-until="{{ bundle.valid_until|string if bundle.valid_until else '' }}"
+                      data-is-active="{{ 'true' if bundle.is_active else 'false' }}"
+                      data-service-ids="{{ svc_ids|join(',') }}"
                       style="color:var(--primary,#1a4f32);">
                 <i class="fa-solid fa-pen"></i> Edit
               </button>
@@ -302,7 +162,12 @@
               <div style="text-align:center; padding:40px 16px; color:var(--text-muted);">
                 <i class="fa-solid fa-boxes-stacked" style="font-size:28px; opacity:.3; display:block; margin-bottom:10px;"></i>
                 <div style="font-weight:700; font-size:15px; margin-bottom:4px;">No bundles configured</div>
-                <div style="font-size:13px;">Use the form above to create your first booking bundle.</div>
+                <div style="font-size:13px; margin-bottom:12px;">Create a bundle to offer visitors a discounted package.</div>
+                {% if can_edit %}
+                <button type="button" class="btn btn-primary btn-sm js-empty-create">
+                  <i class="fa-solid fa-plus"></i> Create Bundle
+                </button>
+                {% endif %}
               </div>
             </td>
           </tr>
@@ -313,6 +178,74 @@
   </div>
 
 </div>
+
+{% if can_edit %}
+<div class="bundle-modal" id="bundle-modal" hidden aria-hidden="true">
+  <div class="bundle-modal-backdrop" data-modal-close></div>
+  <section class="bundle-modal-dialog" role="dialog" aria-modal="true"
+           aria-labelledby="bundle-modal-title" tabindex="-1">
+    <div class="bundle-modal-header">
+      <div>
+        <h2 id="bundle-modal-title"><i class="fa-solid fa-plus-circle" id="form-icon"></i> <span id="form-title">Create Bundle</span></h2>
+        <p>Combine services into a discounted package for your visitors.</p>
+      </div>
+      <button type="button" class="bundle-modal-close" aria-label="Close" data-modal-close>
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="bundle-modal-body">
+      <form method="post" id="bundle-form"
+            action="{{ url_for('animal_farm_admin.create_booking_bundle') }}"
+            data-create-action="{{ url_for('animal_farm_admin.create_booking_bundle') }}"
+            data-edit-template="/animal-farm-admin/booking-bundles/BUNDLE_ID/update">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="bundle_id" id="form-bundle-id" value="">
+        <div class="bundle-form-grid two">
+          <div>
+            <label class="zf-label" for="bb_name">Bundle Name <span class="required">*</span></label>
+            <input class="zf-control" id="bb_name" name="name" required placeholder="e.g. Family Safari Pack">
+            <small class="zf-error" data-error-for="name"></small>
+          </div>
+          <div>
+            <label class="zf-label">Services</label>
+            <div class="bb-service-chips">
+              {% for service in services %}
+              <label class="bb-chip">
+                <input type="checkbox" name="service_ids" value="{{ service.id }}" class="bb-svc-check">
+                {{ service.name }}
+              </label>
+              {% else %}
+              <span class="no-services">No services found.</span>
+              {% endfor %}
+            </div>
+            <small class="zf-hint">Leave blank to apply to all services.</small>
+          </div>
+        </div>
+        <div class="bundle-form-grid three">
+          <div><label class="zf-label" for="bb_min">Minimum Guests</label><input class="zf-control" id="bb_min" name="min_guests" type="number" min="1" value="1"><small class="zf-error" data-error-for="guests"></small></div>
+          <div><label class="zf-label" for="bb_max">Maximum Guests</label><input class="zf-control" id="bb_max" name="max_guests" type="number" min="1" value="50"></div>
+          <div><label class="zf-label" for="bb_price">Package Price (₱) <span class="required">*</span></label><input class="zf-control" id="bb_price" name="price" type="number" min="0" step="0.01" required placeholder="0.00"><small class="zf-error" data-error-for="price"></small></div>
+        </div>
+        <div class="bundle-form-grid three">
+          <div><label class="zf-label" for="bb_dtype">Discount Type</label><select class="zf-control" id="bb_dtype" name="discount_type"><option value="none">No discount</option><option value="fixed">Fixed amount (₱)</option><option value="percent">Percentage (%)</option></select></div>
+          <div><label class="zf-label" for="bb_dval">Discount Value</label><input class="zf-control" id="bb_dval" name="discount_value" type="number" min="0" step="0.01" value="0"><small class="zf-hint">Enter 0 if no discount is applied.</small></div>
+          <div><label class="zf-label" for="bb_eligibility">Eligibility</label><input class="zf-control" id="bb_eligibility" name="eligibility" placeholder="e.g. Senior citizens, PWD"><small class="zf-hint">Optional — leave blank for everyone.</small></div>
+        </div>
+        <div class="bundle-form-grid dates">
+          <div><label class="zf-label" for="bb_from">Valid From</label><input class="zf-control" id="bb_from" name="valid_from" type="date"><small class="zf-hint">Leave blank for no start restriction.</small></div>
+          <div><label class="zf-label" for="bb_until">Valid Until</label><input class="zf-control" id="bb_until" name="valid_until" type="date"><small class="zf-hint">Leave blank for no expiry.</small><small class="zf-error" data-error-for="dates"></small></div>
+          <div><label class="zf-label" for="bb_desc">Description</label><textarea class="zf-control" id="bb_desc" name="description" rows="2" placeholder="Brief summary for visitors (optional)"></textarea></div>
+        </div>
+        <label class="bundle-active"><input type="checkbox" name="is_active" id="bb_active" checked> Active <span>— bundle is visible and can be selected by visitors</span></label>
+      </form>
+    </div>
+    <div class="bundle-modal-footer">
+      <button type="button" class="btn btn-ghost" data-modal-close>Cancel</button>
+      <button class="btn btn-primary" type="submit" form="bundle-form" id="btn-submit-bundle"><i class="fa-solid fa-plus" id="submit-icon"></i> <span id="submit-label">Create Bundle</span></button>
+    </div>
+  </section>
+</div>
+{% endif %}
 
 <style>
 .zf-label {
@@ -331,81 +264,174 @@
   margin-top: 4px;
   line-height: 1.4;
 }
-.bb-chip input[type="checkbox"] { pointer-events:none; }
+.required { color:#dc2626; }
+.zf-error { display:block; min-height:0; color:#b91c1c; font-size:11px; margin-top:4px; }
+.zf-error:not(:empty) { min-height:15px; }
+.bb-service-chips {
+  display:flex; flex-wrap:wrap; gap:8px; min-height:40px; border:1.5px solid var(--border-light,#e2e8f0);
+  border-radius:8px; padding:8px 10px; background:#fff;
+}
+.bb-chip { display:inline-flex; align-items:center; gap:5px; background:#f1f5f9; border:1.5px solid #e2e8f0; border-radius:20px; padding:4px 11px; font-size:12px; font-weight:600; cursor:pointer; color:var(--text,#1e293b); user-select:none; }
+.bb-chip input { accent-color:var(--primary,#1a4f32); width:14px; height:14px; }
 .bb-chip:has(input:checked) {
   background: var(--primary, #1a4f32) !important;
   color: #fff !important;
   border-color: var(--primary, #1a4f32) !important;
 }
+.bundle-modal[hidden] { display:none; }
+.bundle-modal { position:fixed; inset:0; z-index:2000; display:flex; align-items:center; justify-content:center; padding:20px; }
+.bundle-modal-backdrop { position:absolute; inset:0; background:rgba(15,23,42,.62); }
+.bundle-modal-dialog { position:relative; z-index:1; display:flex; flex-direction:column; width:min(940px,100%); max-height:min(92vh,820px); background:#fff; border-radius:12px; box-shadow:0 24px 70px rgba(15,23,42,.3); outline:none; }
+.bundle-modal-header, .bundle-modal-footer { flex:none; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 22px; border-bottom:1px solid var(--border-light,#e2e8f0); }
+.bundle-modal-header h2 { margin:0; color:var(--primary,#1a4f32); font-size:18px; }
+.bundle-modal-header h2 i { margin-right:6px; }
+.bundle-modal-header p { margin:5px 0 0; color:var(--text-muted,#64748b); font-size:13px; }
+.bundle-modal-close { border:0; background:transparent; color:var(--text-muted,#64748b); font-size:20px; cursor:pointer; padding:4px 8px; }
+.bundle-modal-body { overflow-y:auto; padding:22px; }
+.bundle-modal-footer { justify-content:flex-end; border-top:1px solid var(--border-light,#e2e8f0); border-bottom:0; }
+.bundle-form-grid { display:grid; gap:16px; margin-bottom:16px; }
+.bundle-form-grid.two { grid-template-columns:1fr 1fr; }
+.bundle-form-grid.three { grid-template-columns:1fr 1fr 1fr; }
+.bundle-form-grid.dates { grid-template-columns:1fr 1fr 2fr; }
+.bundle-active { display:flex; align-items:center; gap:10px; padding-top:16px; border-top:1px solid var(--border-light,#e2e8f0); font-size:14px; font-weight:600; }
+.bundle-active input { width:16px; height:16px; accent-color:var(--primary,#1a4f32); }
+.bundle-active span { font-size:12px; font-weight:400; color:var(--text-muted,#64748b); }
+body.bundle-modal-open { overflow:hidden; }
 @media (max-width: 768px) {
-  .zf-label ~ .zf-control,
-  .zf-label ~ select { width: 100%; }
+  .bundle-modal { padding:10px; align-items:flex-start; }
+  .bundle-modal-dialog { max-height:calc(100vh - 20px); }
+  .bundle-form-grid.two, .bundle-form-grid.three, .bundle-form-grid.dates { grid-template-columns:1fr; gap:12px; margin-bottom:12px; }
+  .bundle-modal-header, .bundle-modal-body, .bundle-modal-footer { padding:14px; }
 }
 </style>
 
 <script>
-var BUNDLE_FORM = document.getElementById('bundle-form');
-var CREATE_ACTION = BUNDLE_FORM ? BUNDLE_FORM.dataset.createAction : '';
-var EDIT_TEMPLATE = BUNDLE_FORM ? BUNDLE_FORM.dataset.editTemplate : '';
+var modal = document.getElementById('bundle-modal');
+var form = document.getElementById('bundle-form');
+var opener = null;
+var submitting = false;
+var focusable = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])';
+var createAction = form ? form.dataset.createAction : '';
+var editTemplate = form ? form.dataset.editTemplate : '';
 
-function resetBundleForm() {
-  if (!BUNDLE_FORM) return;
-  BUNDLE_FORM.action = CREATE_ACTION;
-  BUNDLE_FORM.reset();
+if (modal && form) {
+function clearErrors() {
+  document.querySelectorAll('.zf-error').forEach(function(node) { node.textContent = ''; });
+}
+function resetForm() {
+  form.reset();
+  form.action = createAction;
   document.getElementById('form-bundle-id').value = '';
   document.getElementById('form-title').textContent = 'Create Bundle';
   document.getElementById('form-icon').className = 'fa-solid fa-plus-circle';
   document.getElementById('submit-icon').className = 'fa-solid fa-plus';
   document.getElementById('submit-label').textContent = 'Create Bundle';
-  document.getElementById('btn-cancel-edit').style.display = 'none';
-  // Uncheck all service chips
-  document.querySelectorAll('.bb-svc-check').forEach(function(chk) { chk.checked = false; });
-  // Scroll form into view
-  var card = document.getElementById('bundle-form-card');
-  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  clearErrors();
 }
-
-function openEditBundle(bundle) {
-  if (!BUNDLE_FORM) return;
-  // Set action to update URL
-  BUNDLE_FORM.action = EDIT_TEMPLATE.replace('BUNDLE_ID', encodeURIComponent(String(bundle.id)));
-  document.getElementById('form-bundle-id').value = bundle.id;
-
-  // Fill fields
-  document.getElementById('bb_name').value = bundle.name || '';
-  document.getElementById('bb_desc').value = bundle.description || '';
-  document.getElementById('bb_eligibility').value = bundle.eligibility || '';
-  document.getElementById('bb_min').value = bundle.min_guests || 1;
-  document.getElementById('bb_max').value = bundle.max_guests || 50;
-  document.getElementById('bb_price').value = bundle.price || 0;
-  document.getElementById('bb_dtype').value = bundle.discount_type || 'none';
-  document.getElementById('bb_dval').value = bundle.discount_value || 0;
-  document.getElementById('bb_from').value = bundle.valid_from || '';
-  document.getElementById('bb_until').value = bundle.valid_until || '';
-  document.getElementById('bb_active').checked = !!bundle.is_active;
-
-  // Set service checkboxes
-  document.querySelectorAll('.bb-svc-check').forEach(function(chk) {
-    chk.checked = Array.isArray(bundle.service_ids)
-      && bundle.service_ids.indexOf(parseInt(chk.value, 10)) !== -1;
-  });
-
-  // Update form header
-  document.getElementById('form-title').textContent = 'Update Bundle';
-  document.getElementById('form-icon').className = 'fa-solid fa-pen';
-  document.getElementById('submit-icon').className = 'fa-solid fa-floppy-disk';
-  document.getElementById('submit-label').textContent = 'Update Bundle';
-  document.getElementById('btn-cancel-edit').style.display = '';
-
-  // Scroll to form
-  var card = document.getElementById('bundle-form-card');
-  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+function openModal(button, bundle) {
+  opener = button;
+  modal.hidden = false;
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('bundle-modal-open');
+  if (bundle) {
+    form.action = editTemplate.replace('BUNDLE_ID', encodeURIComponent(String(bundle.id)));
+    document.getElementById('form-bundle-id').value = bundle.id;
+    document.getElementById('bb_name').value = bundle.name || '';
+    document.getElementById('bb_desc').value = bundle.description || '';
+    document.getElementById('bb_eligibility').value = bundle.eligibility || '';
+    document.getElementById('bb_min').value = bundle.min_guests || 1;
+    document.getElementById('bb_max').value = bundle.max_guests || 50;
+    document.getElementById('bb_price').value = bundle.price || 0;
+    document.getElementById('bb_dtype').value = bundle.discount_type || 'none';
+    document.getElementById('bb_dval').value = bundle.discount_value || 0;
+    document.getElementById('bb_from').value = bundle.valid_from || '';
+    document.getElementById('bb_until').value = bundle.valid_until || '';
+    document.getElementById('bb_active').checked = bundle.is_active;
+    document.getElementById('form-title').textContent = 'Edit Bundle';
+    document.getElementById('form-icon').className = 'fa-solid fa-pen';
+    document.getElementById('submit-icon').className = 'fa-solid fa-floppy-disk';
+    document.getElementById('submit-label').textContent = 'Update Bundle';
+    (bundle.service_ids || []).forEach(function(id) {
+      var checkbox = document.querySelector('.bb-svc-check[value="' + id + '"]');
+      if (checkbox) checkbox.checked = true;
+    });
+  }
+  modal.querySelector('.bundle-modal-dialog').focus();
+  var first = modal.querySelector('#bb_name');
+  if (first) first.focus();
 }
-
+function closeModal() {
+  if (submitting) return;
+  modal.hidden = true;
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('bundle-modal-open');
+  resetForm();
+  if (opener) opener.focus();
+  opener = null;
+}
+document.getElementById('btn-create-bundle').addEventListener('click', function() {
+  resetForm(); openModal(this);
+});
+document.querySelectorAll('.js-empty-create').forEach(function(button) {
+  button.addEventListener('click', function() { resetForm(); openModal(this); });
+});
 document.querySelectorAll('.js-edit-bundle').forEach(function(button) {
   button.addEventListener('click', function() {
-    openEditBundle(JSON.parse(button.dataset.bundle));
+    var data = button.dataset;
+    resetForm();
+    openModal(button, {
+      id: parseInt(data.bundleId, 10), name: data.name, description: data.description,
+      eligibility: data.eligibility, min_guests: parseInt(data.minGuests, 10),
+      max_guests: parseInt(data.maxGuests, 10), price: data.price,
+      discount_type: data.discountType, discount_value: data.discountValue,
+      valid_from: data.validFrom, valid_until: data.validUntil,
+      is_active: data.isActive === 'true',
+      service_ids: data.serviceIds ? data.serviceIds.split(',').map(Number) : []
+    });
   });
 });
+modal.querySelectorAll('[data-modal-close]').forEach(function(button) { button.addEventListener('click', closeModal); });
+document.addEventListener('keydown', function(event) {
+  if (modal.hidden) return;
+  if (event.key === 'Escape') { event.preventDefault(); closeModal(); return; }
+  if (event.key !== 'Tab') return;
+  var nodes = Array.from(modal.querySelectorAll(focusable));
+  if (!nodes.length) return;
+  if (event.shiftKey && document.activeElement === nodes[0]) { event.preventDefault(); nodes[nodes.length - 1].focus(); }
+  else if (!event.shiftKey && document.activeElement === nodes[nodes.length - 1]) { event.preventDefault(); nodes[0].focus(); }
+});
+form.addEventListener('submit', function(event) {
+  clearErrors();
+  var valid = true;
+  var name = document.getElementById('bb_name');
+  var price = document.getElementById('bb_price');
+  var min = document.getElementById('bb_min');
+  var max = document.getElementById('bb_max');
+  var from = document.getElementById('bb_from');
+  var until = document.getElementById('bb_until');
+  if (!name.value.trim()) {
+    document.querySelector('[data-error-for="name"]').textContent = 'Bundle name is required.';
+    valid = false;
+  }
+  if (!price.value.trim()) {
+    document.querySelector('[data-error-for="price"]').textContent = 'Bundle price is required.';
+    valid = false;
+  }
+  if (Number(min.value || 1) < 1 || Number(max.value || 50) < Number(min.value || 1)) {
+    document.querySelector('[data-error-for="guests"]').textContent = 'Guest limits are invalid.';
+    valid = false;
+  }
+  if (from.value && until.value && until.value < from.value) {
+    document.querySelector('[data-error-for="dates"]').textContent = 'Valid until cannot be before valid from.';
+    valid = false;
+  }
+  if (!valid) {
+    event.preventDefault();
+    return;
+  }
+  submitting = true;
+  document.getElementById('btn-submit-bundle').disabled = true;
+});
+}
 </script>
 {% endblock %}
