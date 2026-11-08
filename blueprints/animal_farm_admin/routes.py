@@ -853,33 +853,12 @@ def delete_park_rule(rule_id: int):
 def establishment_profile_legacy_redirect():
     return redirect(url_for('animal_farm_admin.establishment_profile'), code=301)
 
-@animal_farm_admin_bp.route('/services')
-def services_management():
-    zoo = _current_zoo()
-    if not zoo:
-        flash('No zoo assigned.', 'error')
-        return redirect(url_for('animal_farm_admin.dashboard'))
-    services = Service.query.filter_by(zoo_id=zoo.id).order_by(Service.id.desc()).all()
-    edit_id = request.args.get('edit_id', type=int)
-    edit_service = None
-    if edit_id:
-        edit_service = Service.query.filter_by(id=edit_id, zoo_id=zoo.id).first()
-    return render_template(
-        'animal_farm_admin/services.html',
-        zoo=zoo,
-        services=services,
-        edit_service=edit_service,
-        service_categories=SERVICE_CATEGORIES,
-        service_statuses=SERVICE_STATUSES,
-    )
-
-
 @animal_farm_admin_bp.post('/services/save')
 def save_service():
     zoo = _current_zoo()
     if not zoo:
         flash('No zoo assigned.', 'error')
-        return redirect(url_for('animal_farm_admin.services_management'))
+        return redirect(url_for('animal_farm_admin.dashboard'))
     if not can_edit_feature(zoo, 'services'):
         return paywall_edit_error('Services', required_tier=1)
 
@@ -894,21 +873,21 @@ def save_service():
 
     if not name:
         flash('Service name is required.', 'error')
-        return redirect(url_for('animal_farm_admin.services_management'))
+        return redirect(url_for('animal_farm_admin.dashboard'))
     try:
         price = float(price_raw)
     except Exception:
         flash('Price must be a number.', 'error')
-        return redirect(url_for('animal_farm_admin.services_management'))
+        return redirect(url_for('animal_farm_admin.dashboard'))
     if not service_status or service_status not in SERVICE_STATUSES:
         flash('Please select a valid service status.', 'error')
-        return redirect(url_for('animal_farm_admin.services_management'))
+        return redirect(url_for('animal_farm_admin.dashboard'))
     if max_guest_capacity is None or max_guest_capacity < 1:
         flash('Maximum guest capacity must be at least 1.', 'error')
-        return redirect(url_for('animal_farm_admin.services_management'))
+        return redirect(url_for('animal_farm_admin.dashboard'))
     if category and category not in SERVICE_CATEGORY_VALUES:
         flash('Please select a valid service category.', 'error')
-        return redirect(url_for('animal_farm_admin.services_management'))
+        return redirect(url_for('animal_farm_admin.dashboard'))
 
     service = None
     if service_id:
@@ -927,12 +906,12 @@ def save_service():
     if image_file and image_file.filename:
         uploaded_url = _save_uploaded_image(image_file, 'service_images')
         if not uploaded_url:
-            return redirect(url_for('animal_farm_admin.services_management'))
+            return redirect(url_for('animal_farm_admin.dashboard'))
         service.image_url = uploaded_url
 
     db.session.commit()
     flash('Service saved.', 'success')
-    return redirect(url_for('animal_farm_admin.services_management'))
+    return redirect(url_for('animal_farm_admin.dashboard'))
 
 
 @animal_farm_admin_bp.post('/services/<int:service_id>/delete')
@@ -940,17 +919,17 @@ def delete_service(service_id: int):
     zoo = _current_zoo()
     if not zoo:
         flash('No zoo assigned.', 'error')
-        return redirect(url_for('animal_farm_admin.services_management'))
+        return redirect(url_for('animal_farm_admin.dashboard'))
     if not can_edit_feature(zoo, 'services'):
         return paywall_edit_error('Services', required_tier=1)
     service = Service.query.filter_by(id=service_id, zoo_id=zoo.id).first()
     if not service:
         flash('Service not found.', 'error')
-        return redirect(url_for('animal_farm_admin.services_management'))
+        return redirect(url_for('animal_farm_admin.dashboard'))
     db.session.delete(service)
     db.session.commit()
     flash('Service deleted.', 'success')
-    return redirect(url_for('animal_farm_admin.services_management'))
+    return redirect(url_for('animal_farm_admin.dashboard'))
 
 
 @animal_farm_admin_bp.route('/animals')
@@ -1099,10 +1078,6 @@ def delete_animal(animal_id: int):
     db.session.commit()
     flash('Animal deleted.', 'success')
     return redirect(url_for('animal_farm_admin.animals_management'))
-
-@animal_farm_admin_bp.route('/services-management')
-def services_management_legacy_redirect():
-    return redirect(url_for('animal_farm_admin.services_management'), code=301)
 
 @animal_farm_admin_bp.route('/events')
 def events_management():

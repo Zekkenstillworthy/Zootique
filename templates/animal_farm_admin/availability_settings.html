@@ -141,7 +141,7 @@
 
     <!-- Submit Section -->
     <div style="display: flex; justify-content: flex-end; gap: 1rem; align-items: center;">
-      <a href="{{ url_for('animal_farm_admin.services_management') }}" style="color: #64748b; font-weight: 700; text-decoration: none; font-size: 0.9rem;">
+      <a href="{{ url_for('animal_farm_admin.dashboard') }}" style="color: #64748b; font-weight: 700; text-decoration: none; font-size: 0.9rem;">
         Back to Services
       </a>
       <button type="submit" {% if not can_edit %}disabled{% endif %}
