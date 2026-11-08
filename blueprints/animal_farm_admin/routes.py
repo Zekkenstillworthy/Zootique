@@ -2086,7 +2086,7 @@ def save_trivia_question():
         return paywall_edit_error('Trivia Management', required_tier=FEATURE_TIERS.get('trivia_management', 1))
 
     question_id = request.form.get('question_id', type=int)
-    category = (request.form.get('category') or 'General Wildlife').strip()
+    category = (request.form.get('category') or '').strip()
     animal_id = request.form.get('animal_id', type=int)
     difficulty = (request.form.get('difficulty') or 'medium').strip()
     points_reward = request.form.get('points_reward', type=int) or 20
@@ -2101,8 +2101,8 @@ def save_trivia_question():
         (request.form.get('option_3') or '').strip(),
     ]
 
-    if not question_text or not any(options):
-        flash('Please fill out the question prompt and all four options.', 'error')
+    if not category or not question_text or not all(options):
+        flash('Please fill out the category, question prompt, and all four options.', 'error')
         return redirect(url_for('animal_farm_admin.trivia_management'))
 
     if question_id:
@@ -2116,8 +2116,9 @@ def save_trivia_question():
 
     q.category = category
     q.animal_id = animal_id if animal_id else None
-    q.difficulty = difficulty
-    q.points_reward = points_reward
+    if not question_id:
+        q.difficulty = 'medium'
+        q.points_reward = 20
     q.question = question_text
     q.options = options
     q.correct_option_index = correct_idx
