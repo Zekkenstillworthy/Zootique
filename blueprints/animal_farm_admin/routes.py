@@ -965,7 +965,20 @@ def animals_management():
     animals = Animal.query.filter_by(zoo_id=zoo.id).order_by(Animal.id.desc()).all()
     zones = ZooZone.query.filter_by(zoo_id=zoo.id).order_by(ZooZone.name.asc()).all()
     fun_facts_animals = [a for a in animals if a.fun_facts and a.fun_facts.strip()]
-    return render_template('animal_farm_admin/animals.html', zoo=zoo, animals=animals, zones=zones, fun_facts_animals=fun_facts_animals)
+    edit_id = request.args.get('edit_id', type=int)
+    edit_animal = None
+    if edit_id:
+        edit_animal = Animal.query.filter_by(id=edit_id, zoo_id=zoo.id).first()
+        if not edit_animal:
+            abort(404)
+    return render_template(
+        'animal_farm_admin/animals.html',
+        zoo=zoo,
+        animals=animals,
+        zones=zones,
+        fun_facts_animals=fun_facts_animals,
+        edit_animal=edit_animal,
+    )
 
 
 @animal_farm_admin_bp.post('/animals/save')
@@ -973,7 +986,7 @@ def save_animal():
     zoo = _current_zoo()
     if not zoo:
         flash('No zoo assigned.', 'error')
-        return redirect(url_for('animal_farm_admin.animals_management'))
+        return redirect(url_for('animal_farm_admin.animals_management', tab='list'))
 
     animal_id = request.form.get('animal_id')
     if not animal_id and not limit_allows(
@@ -998,11 +1011,13 @@ def save_animal():
 
     if not name:
         flash('Animal name is required.', 'error')
-        return redirect(url_for('animal_farm_admin.animals_management'))
+        return redirect(url_for('animal_farm_admin.animals_management', tab='add'))
 
     animal = None
     if animal_id:
         animal = Animal.query.filter_by(id=int(animal_id), zoo_id=zoo.id).first()
+        if not animal:
+            abort(404)
     if not animal:
         animal = Animal(zoo_id=zoo.id)
         db.session.add(animal)
@@ -1019,12 +1034,12 @@ def save_animal():
     if image_file and image_file.filename:
         uploaded_url = _save_uploaded_image(image_file, 'animal_images')
         if not uploaded_url:
-            return redirect(url_for('animal_farm_admin.animals_management'))
+            return redirect(url_for('animal_farm_admin.animals_management', tab='add'))
         animal.image_url = uploaded_url
 
     db.session.commit()
     flash('Animal saved.', 'success')
-    return redirect(url_for('animal_farm_admin.animals_management'))
+    return redirect(url_for('animal_farm_admin.animals_management', tab='list'))
 
 
 @animal_farm_admin_bp.post('/animals/fun-facts/save')

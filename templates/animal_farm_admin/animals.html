@@ -333,6 +333,8 @@
               <th style="width:70px;">Image</th>
               <th>Name</th>
               <th>Species</th>
+              <th style="width:110px;">Age</th>
+              <th style="min-width:220px;">Description</th>
               <th>Habitat</th>
               <th>Status</th>
               <th style="width:160px;">Actions</th>
@@ -350,6 +352,10 @@
                 </td>
                 <td>{{ a.name }}</td>
                 <td>{{ a.species or '-' }}</td>
+                <td>{{ a.age or '-' }}</td>
+                <td title="{{ a.description or '' }}" style="max-width:260px; white-space:normal; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;">
+                  {{ a.description or '-' }}
+                </td>
                 <td>{{ a.habitat or '-' }}</td>
                 <td>
                   {% if a.status %}
@@ -364,7 +370,7 @@
                 </td>
                 <td>
                   <button class="btn btn-outline btn-sm" type="button"
-                      {% if not can_edit_feature('animals') %}disabled title="Active subscription required to edit" style="opacity:0.5; cursor:not-allowed;"{% else %}onclick='fillAnimalForm({{ a.id|tojson }}, {{ a.name|tojson }}, {{ (a.species or "")|tojson }}, {{ (a.habitat or "")|tojson }}, {{ (a.status or "")|tojson }}, {{ (a.description or "")|tojson }}, {{ (a.age or "")|tojson }}, {{ (a.fun_facts or "")|tojson }})'{% endif %}>
+                      {% if not can_edit_feature('animals') %}disabled title="Active subscription required to edit" style="opacity:0.5; cursor:not-allowed;"                      {% else %}onclick='fillAnimalForm({{ a.id|tojson }}, {{ a.name|tojson }}, {{ (a.species or "")|tojson }}, {{ (a.habitat or "")|tojson }}, {{ (a.status or "")|tojson }}, {{ (a.description or "")|tojson }}, {{ (a.age or "")|tojson }}, {{ (a.fun_facts or "")|tojson }}, {{ (a.image_url or "")|tojson }})'{% endif %}>
                     <i class="fa-solid fa-pen"></i> Edit
                   </button>
                   <form method="post" action="{{ url_for('animal_farm_admin.delete_animal', animal_id=a.id) }}" style="display:inline;" onsubmit="return confirm('Delete this animal?');">
@@ -374,7 +380,7 @@
                 </td>
               </tr>
             {% else %}
-              <tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:28px;">No animals yet.</td></tr>
+              <tr><td colspan="8" style="color:var(--text-muted);text-align:center;padding:28px;">No animals yet.</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -397,7 +403,7 @@
     if (labelEl) labelEl.textContent = editing ? 'Update Animal' : 'Save Animal';
   }
 
-  window.fillAnimalForm = function(id, name, species, habitat, status, description, age, fun_facts) {
+  window.fillAnimalForm = function(id, name, species, habitat, status, description, age, fun_facts, imageUrl) {
     var form = document.getElementById('animalForm');
     if (!form) {
       window.location.href = "{{ url_for('animal_farm_admin.animals_management') }}?tab=add&edit_id=" + id;
@@ -426,6 +432,13 @@
     setMode(true);
     clearAllErrors();
     resetUpload();
+    if (imageUrl && previewImg && preview && idleState) {
+      previewImg.src = imageUrl;
+      previewNm.textContent = 'Current image';
+      previewSz.textContent = 'Existing image';
+      idleState.classList.add('hidden');
+      preview.classList.add('visible');
+    }
     var card = document.getElementById('animalFormCard');
     if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -571,6 +584,22 @@
       showToast(d ? d.textContent.trim() : 'Saved successfully.');
     });
   });
+
+  {% if edit_animal %}
+  document.addEventListener('DOMContentLoaded', function() {
+    fillAnimalForm(
+      {{ edit_animal.id|tojson }},
+      {{ edit_animal.name|tojson }},
+      {{ (edit_animal.species or "")|tojson }},
+      {{ (edit_animal.habitat or "")|tojson }},
+      {{ (edit_animal.status or "")|tojson }},
+      {{ (edit_animal.description or "")|tojson }},
+      {{ (edit_animal.age or "")|tojson }},
+      {{ (edit_animal.fun_facts or "")|tojson }},
+      {{ (edit_animal.image_url or "")|tojson }}
+    );
+  });
+  {% endif %}
 })();
 </script>
 {% endblock %}
