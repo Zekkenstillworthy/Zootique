@@ -678,6 +678,15 @@ def my_bookings():
         if not service:
             flash("Selected service was not found.", "error")
             return redirect(url_for("visitor.my_bookings"))
+        if service.service_status != "Active":
+            flash("This service is not currently available for booking.", "error")
+            return redirect(url_for("visitor.my_bookings"))
+        if service.max_guest_capacity and guests > service.max_guest_capacity:
+            flash(
+                f"This service allows a maximum of {service.max_guest_capacity} guest(s) per booking.",
+                "error",
+            )
+            return redirect(url_for("visitor.my_bookings"))
         bundle = db.session.get(BookingBundle, bundle_id) if bundle_id else None
         promotion_code = (request.form.get("promotion_code") or request.form.get("promotion_code_select") or "").strip().upper()
         promotion = Promotion.query.filter_by(code=promotion_code).first() if promotion_code else None
@@ -685,6 +694,20 @@ def my_bookings():
             Service.id.in_(add_on_ids),
             Service.zoo_id == service.zoo_id,
         ).all() if add_on_ids else []
+        if any(add_on.service_status != "Active" for add_on in add_ons):
+            flash("Coming Soon services cannot be added to a booking.", "error")
+            return redirect(url_for("visitor.my_bookings"))
+        if bundle and (
+            bundle.zoo_id != service.zoo_id
+            or any(
+                bundled_service.service_status != "Active"
+                for bundled_service in Service.query.filter(
+                    Service.id.in_(bundle.get_service_id_list())
+                ).all()
+            )
+        ):
+            flash("This bundle is not currently available for booking.", "error")
+            return redirect(url_for("visitor.my_bookings"))
 
         if selected_zoo_id and int(getattr(service, "zoo_id", 0) or 0) != selected_zoo_id:
             flash("Selected service is not available for your chosen zoo.", "error")
@@ -799,11 +822,17 @@ def my_bookings():
         .all()
     )
     notification_bookings = booking_query.all()
-    services = _maybe_filter_by_selected_zoo(Service.query, Service).order_by(Service.name.asc()).all()
+    services = _maybe_filter_by_selected_zoo(
+        Service.query.filter(Service.service_status == "Active"), Service
+    ).order_by(Service.name.asc()).all()
     bundles = [
         b for b in _maybe_filter_by_selected_zoo(BookingBundle.query, BookingBundle)
         .filter_by(is_active=True).order_by(BookingBundle.name.asc()).all()
         if b.is_valid_today()
+        and all(
+            service.service_status == "Active"
+            for service in Service.query.filter(Service.id.in_(b.get_service_id_list())).all()
+        )
     ]
     promotions = _maybe_filter_by_selected_zoo(Promotion.query, Promotion).order_by(Promotion.name.asc()).all()
     events = _maybe_filter_by_selected_zoo(Event.query, Event).order_by(Event.name.asc()).all()
@@ -1337,7 +1366,9 @@ def services():
             next_url = next_url[:-1]
         return redirect(url_for("visitor.choose_zoo", next=next_url))
 
-    all_services = _maybe_filter_by_selected_zoo(Service.query, Service).order_by(Service.id.asc()).all()
+    all_services = _maybe_filter_by_selected_zoo(
+        Service.query.filter(Service.service_status.in_(("Active", "Coming Soon"))), Service
+    ).order_by(Service.id.asc()).all()
     # Load active, currently-valid bundles for the visitor services page
     from datetime import date as _date
     _today = _date.today()
@@ -1345,6 +1376,10 @@ def services():
     all_bundles = [
         b for b in _bundle_q.order_by(BookingBundle.name.asc()).all()
         if b.is_valid_today()
+        and all(
+            service.service_status == "Active"
+            for service in Service.query.filter(Service.id.in_(b.get_service_id_list())).all()
+        )
     ]
     return render_template("visitor/services.html", services=all_services, bundles=all_bundles)
 

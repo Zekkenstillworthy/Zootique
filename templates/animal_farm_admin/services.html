@@ -66,7 +66,7 @@
               <div class="zf-price-wrap" id="servicePriceWrap">
                 <span class="zf-price-prefix" aria-hidden="true">&#8369;</span>
                 <input type="number" id="service_price" name="price" class="zf-price-input"
-                       placeholder="0.00" step="0.01" min="0" required aria-required="true"
+                       placeholder="0" step="1" min="0" required aria-required="true"
                        aria-describedby="service_price_error"
                        oninput="this.value = this.value.replace(/[^0-9.]/g,'')">
               </div>
@@ -79,50 +79,30 @@
               <label class="zf-label" for="service_category">Category</label>
               <select id="service_category" name="category" class="zf-control">
                 <option value="">-- Select category --</option>
-                <option value="Tour">Tour</option>
-                <option value="Feeding">Feeding Experience</option>
-                <option value="Photography">Photography Session</option>
-                <option value="Education">Educational Program</option>
-                <option value="VIP">VIP Experience</option>
-                <option value="Workshop">Workshop</option>
-                <option value="Other">Other</option>
+                {% for value, label in service_categories %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
               </select>
             </div>
 
             <div class="zf-field">
               <label class="zf-label" for="service_status">Status</label>
-              <select id="service_status" name="service_status" class="zf-control">
-                <option value="">-- Select status --</option>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-                <option value="Seasonal">Seasonal</option>
-                <option value="Coming Soon">Coming Soon</option>
+              <select id="service_status" name="service_status" class="zf-control" required>
+                <option value="" disabled selected hidden>Select Status</option>
+                {% for status in service_statuses %}
+                <option value="{{ status }}">{{ status }}</option>
+                {% endfor %}
               </select>
-            </div>
-
-          </div>
-        </div>
-
-        <div class="zf-section">
-          <div class="zf-section-label">
-            <i class="fa-solid fa-clock"></i> Schedule &amp; Capacity
-          </div>
-          <div class="zf-grid-2">
-            <div class="zf-field">
-              <label class="zf-label" for="service_opening_time">Opening Time</label>
-              <input type="time" id="service_opening_time" name="opening_time" class="zf-control" value="08:00">
+              <span class="zf-error" id="service_status_error" role="alert">
+                <i class="fa-solid fa-triangle-exclamation"></i> Please select a status.
+              </span>
             </div>
             <div class="zf-field">
-              <label class="zf-label" for="service_closing_time">Closing Time</label>
-              <input type="time" id="service_closing_time" name="closing_time" class="zf-control" value="17:00">
-            </div>
-            <div class="zf-field">
-              <label class="zf-label" for="service_daily_capacity">Daily Capacity</label>
-              <input type="number" id="service_daily_capacity" name="daily_capacity" class="zf-control" placeholder="50" min="1" value="50">
-            </div>
-            <div class="zf-field">
-              <label class="zf-label" for="service_slot_capacity">Slot Capacity</label>
-              <input type="number" id="service_slot_capacity" name="slot_capacity" class="zf-control" placeholder="15" min="1" value="15">
+              <label class="zf-label" for="service_max_guest_capacity">Maximum Guest Capacity <span class="zf-req">*</span></label>
+              <input type="number" id="service_max_guest_capacity" name="max_guest_capacity" class="zf-control" min="1" value="50" required>
+              <span class="zf-error" id="service_capacity_error" role="alert">
+                <i class="fa-solid fa-triangle-exclamation"></i> Maximum guest capacity must be at least 1.
+              </span>
             </div>
           </div>
         </div>
@@ -199,6 +179,8 @@
               <th>Name</th>
               <th>Price</th>
               <th>Category</th>
+              <th>Status</th>
+              <th>Max Guests</th>
               <th>Description</th>
               <th style="width:160px;">Actions</th>
             </tr>
@@ -216,10 +198,20 @@
                 <td>{{ s.name }}</td>
                 <td style="font-weight:700; color:var(--primary);">&#8369;{{ '%.2f'|format(s.price or 0) }}</td>
                 <td>{{ (s.category or '-') }}</td>
+                <td>
+                  {% if s.service_status == 'Active' %}
+                  <span class="badge badge-confirmed">Active</span>
+                  {% elif s.service_status == 'Coming Soon' %}
+                  <span class="badge badge-warning">Coming Soon</span>
+                  {% else %}
+                  <span class="badge badge-neutral">Select Status</span>
+                  {% endif %}
+                </td>
+                <td>{{ s.max_guest_capacity or 50 }}</td>
                 <td>{{ (s.description or '-')|truncate(80) }}</td>
                 <td>
                   <button class="btn btn-outline btn-sm" type="button"
-                      {% if not can_edit_feature('services') %}disabled title="Active subscription required to edit" style="opacity:0.5; cursor:not-allowed;"{% else %}onclick='fillServiceForm({{ s.id|tojson }}, {{ s.name|tojson }}, {{ (s.price or 0)|tojson }}, {{ (s.description or "")|tojson }}, {{ (s.category or "")|tojson }}, {{ (s.service_status or "")|tojson }}, {{ (s.opening_time or "08:00")|tojson }}, {{ (s.closing_time or "17:00")|tojson }}, {{ (s.daily_capacity or 50)|tojson }}, {{ (s.slot_capacity or 15)|tojson }})'{% endif %}>
+                      {% if not can_edit_feature('services') %}disabled title="Active subscription required to edit" style="opacity:0.5; cursor:not-allowed;"                      {% else %}onclick='fillServiceForm({{ s.id|tojson }}, {{ s.name|tojson }}, {{ (s.price or 0)|tojson }}, {{ (s.description or "")|tojson }}, {{ (s.category or "")|tojson }}, {{ (s.service_status or "")|tojson }}, {{ (s.max_guest_capacity or 50)|tojson }})'{% endif %}>
                     <i class="fa-solid fa-pen"></i> Edit
                   </button>
                   <form method="post" action="{{ url_for('animal_farm_admin.delete_service', service_id=s.id) }}" style="display:inline;" onsubmit="return confirm('Delete this service?');">
@@ -229,7 +221,7 @@
                 </td>
               </tr>
             {% else %}
-              <tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:28px;">No services yet.</td></tr>
+              <tr><td colspan="8" style="color:var(--text-muted);text-align:center;padding:28px;">No services yet.</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -251,7 +243,7 @@
     if (labelEl) labelEl.textContent = editing ? 'Update Service'  : 'Save Service';
   }
 
-  window.fillServiceForm = function(id, name, price, description, category, svcStatus, openingTime, closingTime, dailyCap, slotCap) {
+  window.fillServiceForm = function(id, name, price, description, category, svcStatus, maxGuestCapacity) {
     var form = document.getElementById('serviceForm');
     if (!form) {
       window.location.href = "{{ url_for('animal_farm_admin.services_management') }}?tab=add&edit_id=" + id;
@@ -268,17 +260,8 @@
     var stSel = document.getElementById('service_status');
     if (stSel) stSel.value = svcStatus || '';
 
-    var opEl = document.getElementById('service_opening_time');
-    if (opEl) opEl.value = openingTime || '08:00';
-
-    var clEl = document.getElementById('service_closing_time');
-    if (clEl) clEl.value = closingTime || '17:00';
-
-    var dcEl = document.getElementById('service_daily_capacity');
-    if (dcEl) dcEl.value = dailyCap || 50;
-
-    var scEl = document.getElementById('service_slot_capacity');
-    if (scEl) scEl.value = slotCap || 15;
+    var capacityEl = document.getElementById('service_max_guest_capacity');
+    if (capacityEl) capacityEl.value = maxGuestCapacity || 50;
 
     setMode(true);
     clearAllErrors();
@@ -312,6 +295,13 @@
   }
   function validateName()  { var el = document.getElementById('service_name');  return el && el.value.trim() ? clearError('service_name','service_name_error') : showError('service_name','service_name_error'); }
   function validatePrice() { var el = document.getElementById('service_price'); return el && el.value !== '' && parseFloat(el.value) >= 0 ? clearError('service_price','service_price_error','servicePriceWrap') : showError('service_price','service_price_error','servicePriceWrap'); }
+  function validateStatus() { var el = document.getElementById('service_status'); return el && el.value ? clearError('service_status','service_status_error') : showError('service_status','service_status_error'); }
+  function validateCapacity() {
+    var el = document.getElementById('service_max_guest_capacity');
+    return el && el.value !== '' && parseInt(el.value, 10) >= 1
+      ? clearError('service_max_guest_capacity','service_capacity_error')
+      : showError('service_max_guest_capacity','service_capacity_error');
+  }
 
   var nameEl  = document.getElementById('service_name');
   var priceEl = document.getElementById('service_price');
@@ -321,7 +311,7 @@
   var form = document.getElementById('serviceForm');
   if (form) {
     form.addEventListener('submit', function(e) {
-      var valid = validateName() & validatePrice();
+      var valid = validateName() & validatePrice() & validateStatus() & validateCapacity();
       var fi = document.getElementById('service_image_file');
       if (fi && fi.files[0] && fi.files[0].size > 5*1024*1024) {
         document.getElementById('service_image_error').classList.add('visible');
@@ -404,10 +394,7 @@
       {{ (edit_service.description or "")|tojson }},
       {{ (edit_service.category or "")|tojson }},
       {{ (edit_service.service_status or "")|tojson }},
-      {{ (edit_service.opening_time or "08:00")|tojson }},
-      {{ (edit_service.closing_time or "17:00")|tojson }},
-      {{ (edit_service.daily_capacity or 50)|tojson }},
-      {{ (edit_service.slot_capacity or 15)|tojson }}
+      {{ (edit_service.max_guest_capacity or 50)|tojson }}
     );
   });
   {% endif %}

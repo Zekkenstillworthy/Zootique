@@ -1158,7 +1158,7 @@
             <select id="new_service_id" name="service_id" required class="vb-select-control{% if selected_service_id %} has-value{% endif %}">
               <option value="" {% if not selected_service_id %}selected{% endif %} disabled>Select an experience to check availability…</option>
               {% for service in services %}
-              <option value="{{ service.id }}" {% if selected_service_id == service.id %}selected{% endif %}>{{ service.name }} — ₱{{ "{:,.2f}".format(service.price or 0) }}</option>
+              <option value="{{ service.id }}" data-max-guest-capacity="{{ service.max_guest_capacity or 50 }}" {% if selected_service_id == service.id %}selected{% endif %}>{{ service.name }} — ₱{{ "{:,.2f}".format(service.price or 0) }}</option>
               {% endfor %}
             </select>
           </div>
@@ -1611,12 +1611,17 @@
   var guestsWarning = document.getElementById('guests-warning');
   var warningMaxSlots = document.getElementById('warning-max-slots');
 
+  function getServiceMaxGuests() {
+    var option = serviceSelect && serviceSelect.options[serviceSelect.selectedIndex];
+    return parseInt((option && option.getAttribute('data-max-guest-capacity')) || '50', 10);
+  }
+
   function updateFormState() {
     var hasService = !!(serviceSelect && serviceSelect.value);
     var hasDate = !!selectedDate;
     var hasTime = !!(selectedTime || (hiddenTime && hiddenTime.value));
     var guests = parseInt((guestsInput && guestsInput.value) || '1', 10);
-    var isGuestsValid = guests >= 1 && guests <= maxSlotCapacity;
+    var isGuestsValid = guests >= 1 && guests <= Math.min(maxSlotCapacity, getServiceMaxGuests());
 
     if (confirmBtn) {
       confirmBtn.disabled = !(hasService && hasDate && hasTime && isGuestsValid);
@@ -2059,6 +2064,13 @@
       }
       syncServiceDropdown();
       selectedServiceId = this.value;
+      var serviceMaxGuests = getServiceMaxGuests();
+      if (guestsInput) {
+        guestsInput.max = Math.min(maxSlotCapacity, serviceMaxGuests);
+        if (parseInt(guestsInput.value || '1', 10) > guestsInput.max) {
+          guestsInput.value = guestsInput.max;
+        }
+      }
       selectedTime = '';
       if (hiddenTime) hiddenTime.value = '';
       if (timeSection) timeSection.style.display = 'none';
@@ -2300,6 +2312,8 @@
     // Enforce guest limits
     var minG = parseInt(selOpt.getAttribute('data-min-guests') || '1', 10);
     var maxG = parseInt(selOpt.getAttribute('data-max-guests') || '50', 10);
+    var serviceMaxG = parseInt((document.querySelector('#new_service_id option:checked') || {}).getAttribute('data-max-guest-capacity') || '50', 10);
+    maxG = Math.min(maxG, serviceMaxG);
     if (guestInput) {
       var curGuests = parseInt(guestInput.value || '1', 10);
       if (curGuests < minG) guestInput.value = minG;

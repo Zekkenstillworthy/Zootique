@@ -50,6 +50,7 @@ from services.subscription_guard import FEATURE_TIERS
 from services.subscription_guard import feature_limit, limit_allows, feature_required_tier
 from services.subscription_catalog import sort_plans
 from services.subscription_catalog import plan_context
+from services.service_catalog import SERVICE_CATEGORIES, SERVICE_CATEGORY_VALUES, SERVICE_STATUSES
 from services.layout_config import (
     WIDGET_CATALOG,
     build_zoo_dashboard_widget_map,
@@ -479,7 +480,10 @@ def booking_bundles():
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.dashboard'))
     bundles = BookingBundle.query.filter_by(zoo_id=zoo.id).order_by(BookingBundle.created_at.desc()).all()
-    services = Service.query.filter_by(zoo_id=zoo.id).order_by(Service.name.asc()).all()
+    services = Service.query.filter(
+        Service.zoo_id == zoo.id,
+        Service.service_status != 'Coming Soon',
+    ).order_by(Service.name.asc()).all()
     return render_template(
         'animal_farm_admin/booking_bundles.html',
         zoo=zoo,
@@ -860,7 +864,14 @@ def services_management():
     edit_service = None
     if edit_id:
         edit_service = Service.query.filter_by(id=edit_id, zoo_id=zoo.id).first()
-    return render_template('animal_farm_admin/services.html', zoo=zoo, services=services, edit_service=edit_service)
+    return render_template(
+        'animal_farm_admin/services.html',
+        zoo=zoo,
+        services=services,
+        edit_service=edit_service,
+        service_categories=SERVICE_CATEGORIES,
+        service_statuses=SERVICE_STATUSES,
+    )
 
 
 @animal_farm_admin_bp.post('/services/save')
@@ -875,6 +886,9 @@ def save_service():
     service_id = request.form.get('service_id')
     name = (request.form.get('name') or '').strip()
     price_raw = (request.form.get('price') or '').strip()
+    category = (request.form.get('category') or '').strip() or None
+    service_status = (request.form.get('service_status') or '').strip()
+    max_guest_capacity = request.form.get('max_guest_capacity', type=int)
     description = (request.form.get('description') or '').strip() or None
     image_file = request.files.get('image_file')
 
@@ -886,6 +900,15 @@ def save_service():
     except Exception:
         flash('Price must be a number.', 'error')
         return redirect(url_for('animal_farm_admin.services_management'))
+    if not service_status or service_status not in SERVICE_STATUSES:
+        flash('Please select a valid service status.', 'error')
+        return redirect(url_for('animal_farm_admin.services_management'))
+    if max_guest_capacity is None or max_guest_capacity < 1:
+        flash('Maximum guest capacity must be at least 1.', 'error')
+        return redirect(url_for('animal_farm_admin.services_management'))
+    if category and category not in SERVICE_CATEGORY_VALUES:
+        flash('Please select a valid service category.', 'error')
+        return redirect(url_for('animal_farm_admin.services_management'))
 
     service = None
     if service_id:
@@ -896,12 +919,10 @@ def save_service():
 
     service.name = name
     service.price = price
+    service.category = category
+    service.service_status = service_status
+    service.max_guest_capacity = max_guest_capacity
     service.description = description
-    service.opening_time = (request.form.get('opening_time') or '08:00').strip()
-    service.closing_time = (request.form.get('closing_time') or '17:00').strip()
-    service.slot_duration_minutes = request.form.get('slot_duration_minutes', type=int) or 60
-    service.daily_capacity = request.form.get('daily_capacity', type=int) or 50
-    service.slot_capacity = request.form.get('slot_capacity', type=int) or 15
 
     if image_file and image_file.filename:
         uploaded_url = _save_uploaded_image(image_file, 'service_images')
@@ -1169,7 +1190,12 @@ def promotions_management():
     if promo_type:
         query = query.filter_by(promo_type=promo_type)
     promotions = query.order_by(Promotion.id.desc()).all()
-    promo_types = ['Family', 'Group Tour', 'Student', 'Senior', 'Seasonal']
+    existing_types = {
+        value for (value,) in db.session.query(Promotion.promo_type)
+        .filter(Promotion.zoo_id == zoo.id, Promotion.promo_type.isnot(None))
+        .distinct().all()
+    }
+    promo_types = list(SERVICE_CATEGORY_VALUES) + sorted(existing_types - set(SERVICE_CATEGORY_VALUES))
 
     return render_template(
         'animal_farm_admin/promotions.html',
