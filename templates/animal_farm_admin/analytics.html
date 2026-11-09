@@ -5,23 +5,76 @@
 
 {% block content %}
 <div style="display:grid; gap:20px;">
+    <div class="card-panel" style="margin:0; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <form method="get" action="{{ url_for('animal_farm_admin.analytics_reports') }}" style="display:flex; align-items:center; gap:10px;">
+            <label for="analytics-range" style="font-weight:700;">Date range</label>
+            <select id="analytics-range" name="range" class="zf-control" onchange="this.form.submit()">
+                {% for value, label in report_ranges.items() %}
+                <option value="{{ value }}" {% if selected_range == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <a class="btn btn-primary btn-sm" href="{{ url_for('animal_farm_admin.analytics_export', range=selected_range) }}">
+            <i class="fa-solid fa-download"></i> Export CSV
+        </a>
+    </div>
 
     <!-- Summary Stats -->
-    <div class="stats-grid" style="--stats-cols: 3;">
+    <div class="stats-grid" style="--stats-cols: 4;">
         <div class="stat-card">
             <div class="stat-icon icon-blue"><i class="fa-solid fa-calendar-check"></i></div>
             <span class="value">{{ total_bookings }}</span>
             <h3>Total Bookings</h3>
+            <small>Non-cancelled bookings</small>
         </div>
         <div class="stat-card">
             <div class="stat-icon icon-green"><i class="fa-solid fa-users"></i></div>
             <span class="value">{{ total_visitors }}</span>
             <h3>Total Visitors</h3>
+            <small>Guests from non-cancelled bookings</small>
         </div>
         <div class="stat-card">
             <div class="stat-icon icon-amber"><i class="fa-solid fa-peso-sign"></i></div>
             <span class="value">₱{{ '%.2f'|format(total_income or 0) }}</span>
             <h3>Total Revenue</h3>
+            <small>Paid, checked-in and finished bookings</small>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-red"><i class="fa-solid fa-ban"></i></div>
+            <span class="value">{{ cancelled_bookings }}</span>
+            <h3>Cancelled Bookings</h3>
+            <small>Cancelled bookings in range</small>
+        </div>
+    </div>
+
+    <div class="card-panel" style="margin:0;">
+        <div class="card-header"><h2><i class="fa-solid fa-chart-simple" style="margin-right:8px;"></i> Booking Status</h2></div>
+        <div class="card-body" style="display:flex; gap:10px; flex-wrap:wrap;">
+            {% for status in ['Unpaid', 'Paid', 'Checked in', 'Finished', 'Cancelled'] %}
+            <span class="badge {% if status == 'Cancelled' %}badge-cancelled{% elif status == 'Finished' %}badge-finished{% elif status == 'Checked in' %}badge-quarantined{% elif status == 'Paid' %}badge-paid{% else %}badge-pending{% endif %}">
+                {{ status }}: {{ status_counts[status] }}
+            </span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card-panel" style="margin:0;">
+        <div class="card-header"><h2><i class="fa-solid fa-chart-column" style="margin-right:8px;"></i> Bookings &amp; Revenue Trend</h2></div>
+        <div class="card-body">
+            {% if trend %}
+            {% set max_bookings = trend|map(attribute='bookings')|max %}
+            <div style="display:flex; align-items:flex-end; gap:8px; min-height:180px; overflow-x:auto;">
+                {% for point in trend %}
+                <div style="min-width:52px; text-align:center; font-size:11px;">
+                    <div title="Bookings: {{ point.bookings }} | Revenue: ₱{{ '%.2f'|format(point.revenue) }}" style="height:{{ ((point.bookings / max_bookings) * 130)|round|int if max_bookings else 0 }}px; min-height:{{ '2px' if point.bookings else '0' }}; background:#2563eb; border-radius:5px 5px 0 0;"></div>
+                    <div style="margin-top:6px; color:var(--text-muted);">{{ point.label }}</div>
+                    <div style="color:var(--text);">₱{{ '%.0f'|format(point.revenue) }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="zf-empty-state"><div class="zf-empty-title">No bookings in this range</div></div>
+            {% endif %}
         </div>
     </div>
 
@@ -40,20 +93,24 @@
                         <thead>
                             <tr>
                                 <th style="padding-left:16px;">Service Name</th>
-                                <th style="text-align:right; padding-right:16px;">Confirmed Bookings</th>
+                                <th style="text-align:right;">Bookings</th>
+                                <th style="text-align:right;">Guests</th>
+                                <th style="text-align:right; padding-right:16px;">Revenue</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for name, count in top_services %}
+                            {% for service in services %}
                                 <tr>
-                                    <td style="padding-left:16px; font-weight:700; color:var(--text);">{{ name }}</td>
+                                    <td style="padding-left:16px; font-weight:700; color:var(--text);">{{ service.name }}</td>
                                     <td style="text-align:right; padding-right:16px;">
-                                        <span class="badge badge-routine">{{ count }} Bookings</span>
+                                        <span class="badge badge-routine">{{ service.bookings }}</span>
                                     </td>
+                                    <td style="text-align:right;">{{ service.guests }}</td>
+                                    <td style="text-align:right; padding-right:16px;">₱{{ '%.2f'|format(service.revenue) }}</td>
                                 </tr>
                             {% else %}
                                 <tr>
-                                    <td colspan="2">
+                                    <td colspan="4">
                                         <div class="zf-empty-state">
                                             <i class="fa-solid fa-chart-pie zf-empty-icon"></i>
                                             <div class="zf-empty-title">No Service Analytics</div>
@@ -82,7 +139,7 @@
                 </div>
                 <div style="background:#f8fafc; border:1px solid var(--border-light); border-radius:8px; padding:14px;">
                     <div style="font-weight:700; margin-bottom:4px; font-size:13px; color:var(--text);">Data Synchronization</div>
-                    <div style="font-size:12px; color:var(--text-muted);">Visitor counts and total earnings are updated in real-time across all active cash and digital bookings.</div>
+                    <div style="font-size:12px; color:var(--text-muted);">Visitor counts and earnings reflect the selected schedule-date range and booking status rules.</div>
                 </div>
             </div>
         </div>

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import hmac
 import json
 import os
 import re
 from sqlalchemy import or_
 
-from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, current_app, flash, jsonify, make_response, redirect, render_template, request, session, url_for
 
 from services.storage import save_uploaded_image as _save_uploaded_image
 
@@ -51,6 +51,12 @@ from services.subscription_guard import feature_limit, limit_allows, feature_req
 from services.subscription_catalog import sort_plans
 from services.subscription_catalog import plan_context
 from services.service_catalog import SERVICE_CATEGORIES, SERVICE_CATEGORY_VALUES, SERVICE_STATUSES
+from services.booking_reporting import (
+    REPORT_RANGES,
+    REPORT_STATUSES,
+    report_bookings,
+    revenue_for_bookings,
+)
 from services.layout_config import (
     WIDGET_CATALOG,
     build_zoo_dashboard_widget_map,
@@ -1567,7 +1573,7 @@ def payment_revenue_management():
         .limit(15)
         .all()
     )
-    total_revenue = sum([float(b.amount or 0) for b in bookings])
+    total_revenue = revenue_for_bookings(report_bookings(zoo.id, "all_time"))
 
     return render_template(
         'animal_farm_admin/revenue.html',
@@ -1588,26 +1594,74 @@ def analytics_reports():
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.dashboard'))
-    bookings = Booking.query.filter_by(zoo_id=zoo.id).all()
-    total_bookings = len(bookings)
-    total_visitors = sum([int(b.guests or 0) for b in bookings])
-    total_income = sum([float(b.amount or 0) for b in bookings])
-
-    # Top services by bookings
-    service_counts: dict[str, int] = {}
-    for b in bookings:
-        key = b.service_name or (b.service.name if b.service else 'Unknown')
-        service_counts[key] = service_counts.get(key, 0) + 1
-    top_services = sorted(service_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+    range_key = request.args.get("range", "this_month")
+    if range_key not in REPORT_RANGES:
+        range_key = "this_month"
+    bookings = report_bookings(zoo.id, range_key)
+    non_cancelled = [b for b in bookings if b._report_status != "Cancelled"]
+    status_counts = {status: sum(b._report_status == status for b in bookings) for status in REPORT_STATUSES}
+    service_rows = {}
+    for booking in non_cancelled:
+        service_name = booking.service_name or (booking.service.name if booking.service else None)
+        service_name = service_name or ("Bundles" if booking.bundle_id else "Unknown")
+        row = service_rows.setdefault(service_name, {"name": service_name, "bookings": 0, "guests": 0, "revenue": 0.0})
+        row["bookings"] += 1
+        row["guests"] += int(booking.guests or 0)
+        if booking._report_status in {"Paid", "Checked in", "Finished"}:
+            row["revenue"] += float(booking.amount or 0)
+    services = sorted(service_rows.values(), key=lambda row: row["bookings"], reverse=True)[:10]
+    trend = {}
+    for booking in bookings:
+        label = booking._report_date.strftime("%Y-%m-%d")
+        if range_key == "all_time":
+            label = booking._report_date.strftime("%Y-%m")
+        row = trend.setdefault(label, {"label": label, "bookings": 0, "revenue": 0.0})
+        row["bookings"] += 1
+        if booking._report_status in {"Paid", "Checked in", "Finished"}:
+            row["revenue"] += float(booking.amount or 0)
+    trend = [trend[key] for key in sorted(trend)]
 
     return render_template(
         'animal_farm_admin/analytics.html',
         zoo=zoo,
-        total_bookings=total_bookings,
-        total_visitors=total_visitors,
-        total_income=total_income,
-        top_services=top_services,
+        selected_range=range_key,
+        report_ranges=REPORT_RANGES,
+        total_bookings=len(non_cancelled),
+        total_visitors=sum(int(b.guests or 0) for b in non_cancelled),
+        total_income=revenue_for_bookings(bookings),
+        cancelled_bookings=status_counts["Cancelled"],
+        status_counts=status_counts,
+        services=services,
+        trend=trend,
     )
+
+
+@animal_farm_admin_bp.get("/analytics/export")
+def analytics_export():
+    zoo = _current_zoo()
+    if not zoo:
+        flash("No zoo assigned.", "error")
+        return redirect(url_for("animal_farm_admin.dashboard"))
+    range_key = request.args.get("range", "this_month")
+    if range_key not in REPORT_RANGES:
+        range_key = "this_month"
+    bookings = report_bookings(zoo.id, range_key)
+    lines = ["booking date,visitor,service,guests,amount,status"]
+    for booking in sorted(bookings, key=lambda item: item._report_date):
+        service = booking.service_name or (booking.service.name if booking.service else None) or ("Bundles" if booking.bundle_id else "Unknown")
+        values = [
+            booking._report_date.isoformat(),
+            booking.visitor_name or "",
+            service,
+            int(booking.guests or 0),
+            f"{float(booking.amount or 0):.2f}",
+            booking._report_status,
+        ]
+        lines.append(",".join('"' + str(value).replace('"', '""') + '"' for value in values))
+    response = make_response("\n".join(lines) + "\n")
+    response.headers["Content-Type"] = "text/csv; charset=utf-8"
+    response.headers["Content-Disposition"] = f'attachment; filename="zootique-report-{date.today().isoformat()}.csv"'
+    return response
 
 
 @animal_farm_admin_bp.route('/graph-builder')

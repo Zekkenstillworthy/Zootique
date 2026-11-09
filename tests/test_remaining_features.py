@@ -2,6 +2,7 @@ import unittest
 
 from app import create_app
 from models import Booking, EstablishmentRegistration, Event, Service, SystemSetting, User, Zoo, db
+from services.booking_reporting import report_bookings
 from services.booking_service import BookingValidationError, process_booking_checkout
 from services.service_catalog import SERVICE_CATEGORY_VALUES
 from services.zoo_settings import get_availability_settings, get_payment_methods, save_zoo_setting
@@ -118,6 +119,78 @@ class RemainingFeatureTestCase(unittest.TestCase):
             for legacy in ("Tour", "Feeding", "Photography", "Education", "Workshop", "Other"):
                 self.assertNotIn(f'value="{legacy}"', service_body)
                 self.assertNotIn(f'value="{legacy}"', promotion_body)
+
+    def test_analytics_range_statuses_and_csv_are_scoped_to_zoo(self):
+        with self.app.app_context():
+            admin = User.query.filter(
+                User.role == "zoo_admin",
+                User.zoo_id.isnot(None),
+                User.status == "active",
+            ).first()
+            other_zoo = Zoo.query.filter(Zoo.id != admin.zoo_id).first() if admin else None
+            if not admin or not other_zoo:
+                self.skipTest("Need two zoo facilities with an active Zoo Admin.")
+
+            suffix = uuid4().hex[:8]
+            bookings = [
+                Booking(
+                    id=f"AN-{suffix}-{index}",
+                    zoo_id=admin.zoo_id,
+                    visitor_name=f"Analytics Visitor {index}",
+                    service_name="Analytics Service",
+                    date="2099-06-15",
+                    guests=2,
+                    amount=100,
+                    status=status,
+                    payment_status="paid" if status == "Paid" else "unpaid",
+                )
+                for index, status in enumerate(
+                    ("Pending", "Paid", "Finished", "Cancelled")
+                )
+            ]
+            other_booking = Booking(
+                id=f"AO-{suffix}",
+                zoo_id=other_zoo.id,
+                visitor_name="Other Zoo Visitor",
+                service_name="Other Service",
+                date="2099-06-15",
+                guests=9,
+                amount=999,
+                status="Paid",
+                payment_status="paid",
+            )
+            db.session.add_all(bookings + [other_booking])
+            db.session.commit()
+            try:
+                with self.client.session_transaction() as session:
+                    session["user_id"] = admin.id
+                    session["role"] = "zoo_admin"
+                    session["zoo_id"] = admin.zoo_id
+
+                response = self.client.get(
+                    "/animal-farm-admin/analytics",
+                    query_string={"range": "all_time"},
+                )
+                self.assertEqual(response.status_code, 200)
+                body = response.get_data(as_text=True)
+                self.assertIn("Cancelled Bookings", body)
+                self.assertNotIn("No bookings in this range", body)
+                self.assertNotIn("Other Zoo Visitor", body)
+
+                csv_response = self.client.get(
+                    "/animal-farm-admin/analytics/export",
+                    query_string={"range": "all_time"},
+                )
+                self.assertEqual(csv_response.status_code, 200)
+                csv_body = csv_response.get_data(as_text=True)
+                self.assertIn("booking date,visitor,service,guests,amount,status", csv_body)
+                self.assertIn("Analytics Visitor", csv_body)
+                self.assertNotIn("Other Zoo Visitor", csv_body)
+            finally:
+                db.session.delete(other_booking)
+                for booking in bookings:
+                    db.session.delete(booking)
+                db.session.commit()
 
     def test_landing_slider_links_to_each_zoo(self):
         response = self.client.get("/")
