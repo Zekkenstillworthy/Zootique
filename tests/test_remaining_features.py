@@ -3,6 +3,7 @@ import unittest
 from app import create_app
 from models import Booking, EstablishmentRegistration, Event, Service, SystemSetting, User, Zoo, db
 from services.booking_service import BookingValidationError, process_booking_checkout
+from services.service_catalog import SERVICE_CATEGORY_VALUES
 from services.zoo_settings import get_availability_settings, get_payment_methods, save_zoo_setting
 from uuid import uuid4
 
@@ -74,6 +75,49 @@ class RemainingFeatureTestCase(unittest.TestCase):
             self.assertEqual(updated.name, "Updated Event Name")
             self.assertEqual(updated.type, "Feeding")
             self.assertEqual(updated.location, "Updated Location")
+
+    def test_service_and_promotion_categories_are_limited_to_requested_values(self):
+        with self.app.app_context():
+            admin = User.query.filter(
+                User.role == "zoo_admin",
+                User.zoo_id.isnot(None),
+                User.status == "active",
+            ).first()
+            if not admin:
+                self.skipTest("No active Zoo Admin account found.")
+
+            with self.client.session_transaction() as session:
+                session["user_id"] = admin.id
+                session["role"] = "zoo_admin"
+                session["zoo_id"] = admin.zoo_id
+
+            expected = (
+                "Family Tour",
+                "Group Tour",
+                "Senior Citizen",
+                "Vip Experience",
+                "Valid For All",
+            )
+            self.assertEqual(SERVICE_CATEGORY_VALUES, expected)
+
+            service_response = self.client.get(
+                "/animal-farm-admin/services",
+                query_string={"tab": "add"},
+            )
+            promotion_response = self.client.get(
+                "/animal-farm-admin/promotions",
+                query_string={"tab": "add"},
+            )
+            self.assertEqual(service_response.status_code, 200)
+            self.assertEqual(promotion_response.status_code, 200)
+            service_body = service_response.get_data(as_text=True)
+            promotion_body = promotion_response.get_data(as_text=True)
+            for category in expected:
+                self.assertIn(f'value="{category}"', service_body)
+                self.assertIn(f'value="{category}"', promotion_body)
+            for legacy in ("Tour", "Feeding", "Photography", "Education", "Workshop", "Other"):
+                self.assertNotIn(f'value="{legacy}"', service_body)
+                self.assertNotIn(f'value="{legacy}"', promotion_body)
 
     def test_landing_slider_links_to_each_zoo(self):
         response = self.client.get("/")

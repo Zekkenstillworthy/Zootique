@@ -1,13 +1,11 @@
 """Shared service and promotion categories."""
 
 SERVICE_CATEGORIES = (
-    ("Tour", "Tour"),
-    ("Feeding", "Feeding Experience"),
-    ("Photography", "Photography Session"),
-    ("Education", "Educational Program"),
-    ("VIP", "VIP Experience"),
-    ("Workshop", "Workshop"),
-    ("Other", "Other"),
+    ("Family Tour", "Family Tour"),
+    ("Group Tour", "Group Tour"),
+    ("Senior Citizen", "Senior Citizen"),
+    ("Vip Experience", "Vip Experience"),
+    ("Valid For All", "Valid For All"),
 )
 
 SERVICE_CATEGORY_VALUES = tuple(value for value, _ in SERVICE_CATEGORIES)

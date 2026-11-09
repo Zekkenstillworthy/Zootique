@@ -1222,19 +1222,11 @@ def promotions_management():
     if promo_type:
         query = query.filter_by(promo_type=promo_type)
     promotions = query.order_by(Promotion.id.desc()).all()
-    existing_types = {
-        value for (value,) in db.session.query(Promotion.promo_type)
-        .filter(Promotion.zoo_id == zoo.id, Promotion.promo_type.isnot(None))
-        .distinct().all()
-    }
-    legacy_types = sorted(existing_types - set(SERVICE_CATEGORY_VALUES))
-    promo_categories = list(SERVICE_CATEGORIES) + [(value, value) for value in legacy_types]
-
     return render_template(
         'animal_farm_admin/promotions.html',
         zoo=zoo,
         promotions=promotions,
-        promo_categories=promo_categories,
+        promo_categories=SERVICE_CATEGORIES,
         selected_promo_type=promo_type,
     )
 
@@ -1259,6 +1251,9 @@ def save_promotion():
     if not name or not code:
         flash('Promotion name and code are required.', 'error')
         return redirect(url_for('animal_farm_admin.promotions_management'))
+    if promo_type and promo_type not in SERVICE_CATEGORY_VALUES:
+        flash('Please select a valid promotion category.', 'error')
+        return redirect(url_for('animal_farm_admin.promotions_management', tab='add'))
 
     promotion = None
     if promo_id:
