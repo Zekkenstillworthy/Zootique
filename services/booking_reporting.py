@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from models import Booking, BookingTicketScan
 
@@ -27,7 +28,7 @@ def schedule_date(value) -> date | None:
 
 
 def report_period(key: str, today: date | None = None) -> tuple[date | None, date | None]:
-    today = today or date.today()
+    today = today or datetime.now(ZoneInfo("Asia/Manila")).date()
     if key == "today":
         return today, today
     if key == "last_7_days":

@@ -2,7 +2,7 @@ import unittest
 
 from app import create_app
 from models import Booking, EstablishmentRegistration, Event, Service, SystemSetting, User, Zoo, db
-from services.booking_reporting import report_bookings
+from services.booking_reporting import report_bookings, report_period
 from services.booking_service import BookingValidationError, process_booking_checkout
 from services.service_catalog import SERVICE_CATEGORY_VALUES
 from services.zoo_settings import get_availability_settings, get_payment_methods, save_zoo_setting
@@ -161,6 +161,7 @@ class RemainingFeatureTestCase(unittest.TestCase):
             )
             db.session.add_all(bookings + [other_booking])
             db.session.commit()
+
             try:
                 with self.client.session_transaction() as session:
                     session["user_id"] = admin.id
@@ -191,6 +192,27 @@ class RemainingFeatureTestCase(unittest.TestCase):
                 for booking in bookings:
                     db.session.delete(booking)
                 db.session.commit()
+
+    def test_analytics_date_ranges_use_inclusive_schedule_dates(self):
+        from datetime import date
+
+        self.assertEqual(
+            report_period("today", date(2026, 11, 9)),
+            (date(2026, 11, 9), date(2026, 11, 9)),
+        )
+        self.assertEqual(
+            report_period("last_7_days", date(2026, 11, 9)),
+            (date(2026, 11, 3), date(2026, 11, 9)),
+        )
+        self.assertEqual(
+            report_period("this_month", date(2026, 11, 9)),
+            (date(2026, 11, 1), date(2026, 11, 9)),
+        )
+        self.assertEqual(
+            report_period("last_month", date(2026, 11, 9)),
+            (date(2026, 10, 1), date(2026, 10, 31)),
+        )
+        self.assertEqual(report_period("all_time", date(2026, 11, 9)), (None, None))
 
     def test_landing_slider_links_to_each_zoo(self):
         response = self.client.get("/")
