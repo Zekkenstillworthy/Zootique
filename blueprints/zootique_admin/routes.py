@@ -597,15 +597,15 @@ def registrations():
     query = EstablishmentRegistration.query
 
     if status == 'approved':
+        assigned_facility_ids = _assigned_facility_ids()
         query = query.filter(
             or_(
                 EstablishmentRegistration.status.in_(['approved', 'approved_legacy']),
                 EstablishmentRegistration.is_legacy_migration.is_(True),
             ),
-            # The dashboard's canonical establishment source is `zoos`.
-            # Keep historical approved submissions in the All view, but only
-            # show approvals that still resolve to an active facility here.
-            EstablishmentRegistration.zoo_id.isnot(None),
+            EstablishmentRegistration.zoo_id.in_(assigned_facility_ids)
+            if assigned_facility_ids
+            else db.text('FALSE'),
         )
 
     elif status != 'all':

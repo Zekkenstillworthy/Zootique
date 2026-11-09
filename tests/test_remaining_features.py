@@ -340,8 +340,20 @@ class RemainingFeatureTestCase(unittest.TestCase):
             response = self.client.get("/zootique-admin/registrations?status=approved")
             self.assertEqual(response.status_code, 200)
             body = response.get_data(as_text=True)
+            assigned_facility_ids = {
+                zoo_id
+                for (zoo_id,) in User.query.filter(
+                    User.role == "zoo_admin",
+                    User.zoo_id.isnot(None),
+                )
+                .with_entities(User.zoo_id)
+                .distinct()
+                .all()
+            }
             approved_linked = EstablishmentRegistration.query.filter(
-                EstablishmentRegistration.zoo_id.isnot(None),
+                EstablishmentRegistration.zoo_id.in_(assigned_facility_ids)
+                if assigned_facility_ids
+                else db.text("FALSE"),
                 EstablishmentRegistration.status.in_(("approved", "approved_legacy")),
             ).count()
             self.assertEqual(body.count('class="fw-600"'), approved_linked)
