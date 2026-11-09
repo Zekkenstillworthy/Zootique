@@ -219,7 +219,11 @@ class RemainingFeatureTestCase(unittest.TestCase):
                 status="approved",
                 zoo_id=zoo.id,
             )
-            db.session.add_all([administrator, registration])
+            carousel_setting = SystemSetting(
+                key=f"landing_carousel:{zoo.id}",
+                value="1",
+            )
+            db.session.add_all([administrator, registration, carousel_setting])
             db.session.commit()
             administrator_id, zoo_id, registration_id = administrator.id, zoo.id, registration.id
 
@@ -236,6 +240,62 @@ class RemainingFeatureTestCase(unittest.TestCase):
             self.assertIsNone(db.session.get(User, administrator_id))
             self.assertIsNone(db.session.get(Zoo, zoo_id))
             self.assertIsNone(db.session.get(EstablishmentRegistration, registration_id))
+            self.assertIsNone(
+                SystemSetting.query.filter_by(key=f"landing_carousel:{zoo_id}").first()
+            )
+
+    def test_super_admin_can_delete_establishment_registration(self):
+        with self.app.app_context():
+            from models import SystemSetting
+
+            super_admin = User.query.filter_by(role="zootique_admin", status="active").first()
+            if not super_admin:
+                self.skipTest("No active Super Admin account found.")
+
+            suffix = uuid4().hex[:8]
+            registration = EstablishmentRegistration(
+                establishment_name=f"Delete Registration {suffix}",
+                establishment_type="Zoo Park",
+                location="Test",
+                status="pending",
+            )
+            db.session.add(registration)
+            db.session.commit()
+            registration_id = registration.id
+
+            with self.client.session_transaction() as session:
+                session["user_id"] = super_admin.id
+                session["role"] = "zootique_admin"
+                session["_csrf_token"] = "test-csrf"
+
+            response = self.client.post(
+                f"/zootique-admin/registrations/{registration_id}/delete",
+                data={"csrf_token": "test-csrf"},
+            )
+            self.assertEqual(response.status_code, 302)
+            self.assertIsNone(db.session.get(EstablishmentRegistration, registration_id))
+
+            SystemSetting.query.filter_by(key=f"landing_carousel:{registration_id}").delete()
+            db.session.commit()
+
+    def test_approved_registration_view_matches_linked_facilities(self):
+        with self.app.app_context():
+            super_admin = User.query.filter_by(role="zootique_admin", status="active").first()
+            if not super_admin:
+                self.skipTest("No active Super Admin account found.")
+
+            with self.client.session_transaction() as session:
+                session["user_id"] = super_admin.id
+                session["role"] = "zootique_admin"
+
+            response = self.client.get("/zootique-admin/registrations?status=approved")
+            self.assertEqual(response.status_code, 200)
+            body = response.get_data(as_text=True)
+            approved_linked = EstablishmentRegistration.query.filter(
+                EstablishmentRegistration.zoo_id.isnot(None),
+                EstablishmentRegistration.status.in_(("approved", "approved_legacy")),
+            ).count()
+            self.assertEqual(body.count('class="fw-600"'), approved_linked)
 
     def test_zoo_staff_booking_full_authority(self):
         with self.app.app_context():

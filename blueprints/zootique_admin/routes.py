@@ -574,17 +574,15 @@ def registrations():
     query = EstablishmentRegistration.query
 
     if status == 'approved':
-
         query = query.filter(
-
             or_(
-
                 EstablishmentRegistration.status.in_(['approved', 'approved_legacy']),
-
                 EstablishmentRegistration.is_legacy_migration.is_(True),
-
-            )
-
+            ),
+            # The dashboard's canonical establishment source is `zoos`.
+            # Keep historical approved submissions in the All view, but only
+            # show approvals that still resolve to an active facility here.
+            EstablishmentRegistration.zoo_id.isnot(None),
         )
 
     elif status != 'all':
@@ -691,6 +689,39 @@ def registration_detail(registration_id: int):
         all_documents_verified=all_documents_verified,
 
     )
+
+@admin_bp.post('/registrations/<int:registration_id>/delete')
+def delete_registration(registration_id: int):
+    registration = db.session.get(EstablishmentRegistration, registration_id)
+    if not registration:
+        flash('Registration not found.', 'error')
+        return redirect(url_for('zootique_admin.registrations', status='all'))
+
+    carousel_key = (
+        f'landing_carousel:{registration.zoo_id}'
+        if registration.zoo_id is not None
+        else None
+    )
+    try:
+        RegistrationEmailAttempt.query.filter_by(registration_id=registration.id).delete(
+            synchronize_session=False
+        )
+        db.session.delete(registration)
+        if carousel_key:
+            SystemSetting.query.filter_by(key=carousel_key).delete(
+                synchronize_session=False
+            )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception(
+            'Failed to delete establishment registration %s', registration_id
+        )
+        flash('Registration could not be deleted. No data was changed.', 'error')
+        return redirect(url_for('zootique_admin.registrations', status='all'))
+
+    flash('Establishment registration deleted.', 'success')
+    return redirect(url_for('zootique_admin.registrations', status='all'))
 
 @admin_bp.post('/registrations/<int:registration_id>/documents')
 
@@ -2997,6 +3028,9 @@ def delete_user(user_id: int):
                     synchronize_session=False
                 )
 
+            db.session.query(SystemSetting).filter_by(
+                key=f'landing_carousel:{assigned_zoo_id}'
+            ).delete(synchronize_session=False)
             db.session.query(RegistrationEmailAttempt).filter(
                 RegistrationEmailAttempt.registration_id.in_(
                     db.session.query(EstablishmentRegistration.id).filter(

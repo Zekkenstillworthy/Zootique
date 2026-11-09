@@ -50,7 +50,17 @@
             <span style="color:var(--text-muted);">—</span>
             {% endif %}
           </td>
-          <td style="text-align:right;"><a class="btn btn-ghost" href="{{ url_for('zootique_admin.registration_detail', registration_id=registration.id) }}">Review</a></td>
+          <td style="text-align:right;">
+            <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
+              <a class="btn btn-ghost" href="{{ url_for('zootique_admin.registration_detail', registration_id=registration.id) }}">Review</a>
+              <form method="post" action="{{ url_for('zootique_admin.delete_registration', registration_id=registration.id) }}" style="display:inline;" onsubmit="return confirm('Delete this establishment registration? This action cannot be undone.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-ghost" type="submit" style="color:var(--danger); border-color:var(--danger);" title="Delete registration">
+                  <i class="fa-solid fa-trash"></i> Delete
+                </button>
+              </form>
+            </div>
+          </td>
         </tr>
         {% else %}
         <tr><td colspan="7" style="color:var(--text-muted);">No {{ selected_status }} registrations found.</td></tr>
