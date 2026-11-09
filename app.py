@@ -314,6 +314,14 @@ def create_app() -> Flask:
             wildlife_facts=wildlife_facts,
         )
 
+    @app.get("/favicon.ico")
+    def favicon():
+        return send_from_directory(
+            os.path.join(app.root_path, "static", "img"),
+            "Zootique_Logo.png",
+            mimetype="image/png",
+        )
+
     app.register_blueprint(visitor_bp, url_prefix="/visitor")
 
     from blueprints.auth.routes import auth_bp

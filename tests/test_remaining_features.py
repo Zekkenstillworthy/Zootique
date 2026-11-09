@@ -48,6 +48,16 @@ class RemainingFeatureTestCase(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertIn("Edit Event", response.get_data(as_text=True))
 
+            list_response = self.client.get(
+                "/animal-farm-admin/events",
+                query_string={"tab": "list"},
+            )
+            self.assertEqual(list_response.status_code, 200)
+            self.assertIn(
+                f"/animal-farm-admin/events?tab=add&amp;edit={event_id}",
+                list_response.get_data(as_text=True),
+            )
+
             response = self.client.post(
                 "/animal-farm-admin/events/save",
                 data={

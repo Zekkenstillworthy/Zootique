@@ -1142,6 +1142,7 @@ def events_management():
         zoo=zoo,
         events=events,
         edit_event=edit_event,
+        selected_tab='add' if edit_event else request.args.get('tab', 'all'),
     )
 
 
