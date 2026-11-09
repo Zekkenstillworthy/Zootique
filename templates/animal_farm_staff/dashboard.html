@@ -14,7 +14,7 @@
 </div>
 
 <!-- Stats Grid -->
-<div class="stats-grid" style="--stats-cols: 3; margin-bottom: 20px;">
+<div class="stats-grid" style="--stats-cols: 2; margin-bottom: 20px;">
     <div class="stat-card">
         <div class="stat-icon icon-amber">
             <i class="fa-solid fa-calendar-check"></i>
@@ -29,18 +29,11 @@
         <span class="value">{{ animals_count }}</span>
         <h3>Animals in Facility</h3>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon icon-blue">
-            <i class="fa-solid fa-circle-check"></i>
-        </div>
-        <span class="value">{{ tasks_done }}</span>
-        <h3>Completed Tasks</h3>
-    </div>
 </div>
 
 <!-- Main Panels -->
 <div class="two-col" style="--two-col-template: 1fr 1fr; margin-bottom: 0;">
-    <!-- Left Column: Scanner & Feeding Zones -->
+    <!-- Left Column: Ticket Scanner -->
     <div style="display: flex; flex-direction: column; gap: 20px;">
         <!-- Ticket Scanner Quick Action -->
         <div class="card-panel">
@@ -62,35 +55,6 @@
             </div>
         </div>
 
-        <!-- Feeding Schedule -->
-        <div class="card-panel">
-            <div class="card-header">
-                <h2><i class="fa-solid fa-utensils" style="margin-right:8px;"></i> Feeding Zones</h2>
-                <div class="card-header-actions">
-                    <a href="{{ url_for('animal_farm_staff.feeding_schedule') }}" class="btn btn-outline btn-sm">View All</a>
-                </div>
-            </div>
-            <div class="card-body" style="padding: 20px;">
-                <div class="service-icons">
-                    <a href="{{ url_for('animal_farm_staff.feeding_schedule') }}" class="mini-box" style="text-decoration: none; color: inherit;">
-                        <i class="fa-solid fa-horse"></i>
-                        <p style="font-size: 13px; font-weight: 700; margin-top: 6px;">Equines</p>
-                    </a>
-                    <a href="{{ url_for('animal_farm_staff.feeding_schedule') }}" class="mini-box" style="text-decoration: none; color: inherit;">
-                        <i class="fa-solid fa-hippo"></i>
-                        <p style="font-size: 13px; font-weight: 700; margin-top: 6px;">Mammals</p>
-                    </a>
-                    <a href="{{ url_for('animal_farm_staff.feeding_schedule') }}" class="mini-box" style="text-decoration: none; color: inherit;">
-                        <i class="fa-solid fa-crow"></i>
-                        <p style="font-size: 13px; font-weight: 700; margin-top: 6px;">Aviary</p>
-                    </a>
-                    <a href="{{ url_for('animal_farm_staff.feeding_schedule') }}" class="mini-box" style="text-decoration: none; color: inherit;">
-                        <i class="fa-solid fa-cow"></i>
-                        <p style="font-size: 13px; font-weight: 700; margin-top: 6px;">Grazing</p>
-                    </a>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Right Column: Incident Reporter & Quick Operations -->
