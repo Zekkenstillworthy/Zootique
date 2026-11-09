@@ -2799,6 +2799,11 @@ def user_management():
     )
 
     zoos = Zoo.query.order_by(Zoo.name.asc()).all()
+    assigned_zoo_ids = {
+        u.zoo_id
+        for u in users
+        if u.zoo_id is not None
+    }
 
     user_rows = []
 
@@ -2825,11 +2830,9 @@ def user_management():
         "zootique_admin/user_management.html",
 
         users=user_rows,
-
         zoos=zoos,
-
+        assigned_facility_count=len(assigned_zoo_ids),
         edit_user=edit_user,
-
     )
 
 @admin_bp.post('/user-management/users/save')
