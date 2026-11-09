@@ -2116,9 +2116,8 @@ def save_trivia_question():
 
     q.category = category
     q.animal_id = animal_id if animal_id else None
-    if not question_id:
-        q.difficulty = 'medium'
-        q.points_reward = 20
+    q.difficulty = difficulty
+    q.points_reward = points_reward
     q.question = question_text
     q.options = options
     q.correct_option_index = correct_idx

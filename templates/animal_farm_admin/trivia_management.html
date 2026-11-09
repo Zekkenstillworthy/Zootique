@@ -40,6 +40,21 @@
           <textarea class="zf-control" id="trivia_question_text" name="question" rows="3" required placeholder="e.g., Which Philippine bird has a wingspan over 2 meters?"></textarea>
         </div>
 
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="zf-field">
+            <label class="zf-label" for="trivia_difficulty">Difficulty</label>
+            <select class="zf-control" id="trivia_difficulty" name="difficulty">
+              <option value="easy">Easy</option>
+              <option value="medium" selected>Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </div>
+          <div class="zf-field">
+            <label class="zf-label" for="trivia_points">Wild Points Reward</label>
+            <input class="zf-control" type="number" id="trivia_points" name="points_reward" value="20" min="5" max="100" required>
+          </div>
+        </div>
+
         <!-- 4 Multiple Choice Options -->
         <div class="zf-field">
           <label class="zf-label">Multiple Choice Options (Select the correct answer below) <span class="zf-req">*</span></label>
@@ -143,6 +158,8 @@ function editTrivia(id, cat, animalId, diff, pts, question, options, correctIdx,
   document.getElementById('trivia_question_id').value = id;
   document.getElementById('trivia_category').value = cat || 'General Wildlife';
   document.getElementById('trivia_animal_id').value = animalId || '';
+  document.getElementById('trivia_difficulty').value = diff || 'medium';
+  document.getElementById('trivia_points').value = pts || 20;
   document.getElementById('trivia_question_text').value = question || '';
   document.getElementById('trivia_explanation').value = explanation || '';
 
