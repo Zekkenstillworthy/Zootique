@@ -233,6 +233,16 @@ def _current_user() -> User | None:
         return None
     return db.session.get(User, user_id_int)
 
+def _assigned_facility_ids() -> set[int]:
+    """Return facilities represented by Zoo Admin accounts."""
+    return {
+        zoo_id
+        for (zoo_id,) in db.session.query(User.zoo_id)
+        .filter(User.role == 'zoo_admin', User.zoo_id.isnot(None))
+        .distinct()
+        .all()
+    }
+
 @admin_bp.get("/")
 
 def dashboard():
@@ -243,12 +253,14 @@ def dashboard():
 
     month_end = _next_month_start(now)
 
-    total_zoos = db.session.query(db.func.count(Zoo.id)).scalar() or 0
+    assigned_facility_ids = _assigned_facility_ids()
+    total_zoos = len(assigned_facility_ids)
 
     zoos_new_this_month = (
 
         db.session.query(db.func.count(Zoo.id))
 
+        .filter(Zoo.id.in_(assigned_facility_ids) if assigned_facility_ids else db.text('FALSE'))
         .filter(Zoo.created_at >= month_start)
 
         .filter(Zoo.created_at < month_end)
@@ -262,6 +274,11 @@ def dashboard():
     # Count active/expired per zoo (deduplicated — one record per zoo based on best subscription)
     _all_zoo_subs = (
         db.session.query(ZooSubscription)
+        .filter(
+            ZooSubscription.zoo_id.in_(assigned_facility_ids)
+            if assigned_facility_ids
+            else db.text('FALSE')
+        )
         .order_by(ZooSubscription.zoo_id.asc(), ZooSubscription.end_date.desc())
         .all()
     )
@@ -297,6 +314,7 @@ def dashboard():
 
             db.session.query(db.func.count(Zoo.id))
 
+            .filter(Zoo.id.in_(assigned_facility_ids) if assigned_facility_ids else db.text('FALSE'))
             .filter(Zoo.created_at >= start)
 
             .filter(Zoo.created_at < end)
@@ -325,7 +343,12 @@ def dashboard():
 
     # Zoo Performance & Subscriptions
 
-    zoo_rows = db.session.query(Zoo.id, Zoo.name).order_by(Zoo.name.asc()).all()
+    zoo_rows = (
+        db.session.query(Zoo.id, Zoo.name)
+        .filter(Zoo.id.in_(assigned_facility_ids) if assigned_facility_ids else db.text('FALSE'))
+        .order_by(Zoo.name.asc())
+        .all()
+    )
 
     zoo_ids = [zid for zid, _ in zoo_rows]
 

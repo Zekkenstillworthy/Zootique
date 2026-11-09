@@ -319,6 +319,29 @@ class RemainingFeatureTestCase(unittest.TestCase):
                 body,
             )
 
+    def test_dashboard_total_registered_zoos_matches_assigned_facilities(self):
+        with self.app.app_context():
+            super_admin = User.query.filter_by(role="zootique_admin", status="active").first()
+            if not super_admin:
+                self.skipTest("No active Super Admin account found.")
+
+            with self.client.session_transaction() as session:
+                session["user_id"] = super_admin.id
+                session["role"] = "zootique_admin"
+
+            response = self.client.get("/zootique-admin/")
+            self.assertEqual(response.status_code, 200)
+            assigned_facility_count = User.query.filter(
+                User.role == "zoo_admin",
+                User.zoo_id.isnot(None),
+            ).with_entities(User.zoo_id).distinct().count()
+            self.assertIn(
+                f"TOTAL REGISTERED ZOOS</div>\n"
+                f"        <div class=\"sa-kpi-row\">\n"
+                f"            <div class=\"stat-value\">{assigned_facility_count}</div>",
+                response.get_data(as_text=True),
+            )
+
     def test_zoo_staff_booking_full_authority(self):
         with self.app.app_context():
             from uuid import uuid4
