@@ -248,16 +248,32 @@ class RemainingFeatureTestCase(unittest.TestCase):
                 establishment_name=zoo.name,
                 establishment_type=zoo.type,
                 location=zoo.location,
+                admin_email=administrator.email,
                 status="approved",
                 zoo_id=zoo.id,
+            )
+            historical_registration = EstablishmentRegistration(
+                establishment_name=f"{zoo.name} Historical",
+                establishment_type=zoo.type,
+                location=zoo.location,
+                admin_email=administrator.email,
+                status="approved",
             )
             carousel_setting = SystemSetting(
                 key=f"landing_carousel:{zoo.id}",
                 value="1",
             )
-            db.session.add_all([administrator, registration, carousel_setting])
+            db.session.add_all([
+                administrator,
+                registration,
+                historical_registration,
+                carousel_setting,
+            ])
             db.session.commit()
-            administrator_id, zoo_id, registration_id = administrator.id, zoo.id, registration.id
+            administrator_id = administrator.id
+            zoo_id = zoo.id
+            registration_id = registration.id
+            historical_registration_id = historical_registration.id
 
             with self.client.session_transaction() as session:
                 session["user_id"] = super_admin.id
@@ -272,6 +288,7 @@ class RemainingFeatureTestCase(unittest.TestCase):
             self.assertIsNone(db.session.get(User, administrator_id))
             self.assertIsNone(db.session.get(Zoo, zoo_id))
             self.assertIsNone(db.session.get(EstablishmentRegistration, registration_id))
+            self.assertIsNone(db.session.get(EstablishmentRegistration, historical_registration_id))
             self.assertIsNone(
                 SystemSetting.query.filter_by(key=f"landing_carousel:{zoo_id}").first()
             )

@@ -3044,6 +3044,21 @@ def delete_user(user_id: int):
         # dashboard, visitor directory, and approved queue cannot retain stale
         # references.
         if assigned_zoo_id is not None:
+            related_registration_query = EstablishmentRegistration.query.filter(
+                or_(
+                    EstablishmentRegistration.zoo_id == assigned_zoo_id,
+                    EstablishmentRegistration.admin_email == user.email,
+                )
+            )
+            related_registration_rows = related_registration_query.with_entities(
+                EstablishmentRegistration.id,
+                EstablishmentRegistration.zoo_id,
+            ).all()
+            related_registration_ids = [registration_id for registration_id, _ in related_registration_rows]
+            related_registration_zoo_ids = {
+                zoo_id for _, zoo_id in related_registration_rows if zoo_id is not None
+            }
+
             mapped_models = list(db.Model.registry.mappers)
             for mapper in mapped_models:
                 model = mapper.class_
@@ -3054,18 +3069,19 @@ def delete_user(user_id: int):
                     synchronize_session=False
                 )
 
-            db.session.query(SystemSetting).filter_by(
-                key=f'landing_carousel:{assigned_zoo_id}'
+            related_registration_zoo_ids.add(assigned_zoo_id)
+            db.session.query(SystemSetting).filter(
+                SystemSetting.key.in_(
+                    f'landing_carousel:{zoo_id}' for zoo_id in related_registration_zoo_ids
+                )
             ).delete(synchronize_session=False)
             db.session.query(RegistrationEmailAttempt).filter(
                 RegistrationEmailAttempt.registration_id.in_(
-                    db.session.query(EstablishmentRegistration.id).filter(
-                        EstablishmentRegistration.zoo_id == assigned_zoo_id
-                    )
+                    related_registration_ids or [0]
                 )
             ).delete(synchronize_session=False)
             db.session.query(EstablishmentRegistration).filter(
-                EstablishmentRegistration.zoo_id == assigned_zoo_id
+                EstablishmentRegistration.id.in_(related_registration_ids or [0])
             ).delete(synchronize_session=False)
 
             db.session.query(User).filter(User.zoo_id == assigned_zoo_id).delete(
