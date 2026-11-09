@@ -17,9 +17,41 @@ class RemainingFeatureTestCase(unittest.TestCase):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
         with self.app.app_context():
-            zoo = Zoo.query.order_by(Zoo.id.asc()).first()
+            assigned_zoo_id = (
+                User.query.filter(
+                    User.role == "zoo_admin",
+                    User.zoo_id.isnot(None),
+                )
+                .with_entities(User.zoo_id)
+                .order_by(User.zoo_id.asc())
+                .first()
+            )
+            zoo = db.session.get(Zoo, assigned_zoo_id[0]) if assigned_zoo_id else None
             if zoo:
                 self.assertIn(f"/visitor/zoos/{zoo.id}", response.get_data(as_text=True))
+
+    def test_landing_carousel_excludes_unassigned_facilities(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        with self.app.app_context():
+            assigned_facility_ids = {
+                zoo_id
+                for (zoo_id,) in User.query.filter(
+                    User.role == "zoo_admin",
+                    User.zoo_id.isnot(None),
+                )
+                .with_entities(User.zoo_id)
+                .distinct()
+                .all()
+            }
+            unassigned_zoos = Zoo.query.filter(
+                ~Zoo.id.in_(assigned_facility_ids)
+                if assigned_facility_ids
+                else db.text("TRUE")
+            ).all()
+            body = response.get_data(as_text=True)
+            for zoo in unassigned_zoos:
+                self.assertNotIn(f"/visitor/zoos/{zoo.id}", body)
 
     def test_public_zoo_text_hides_seed_markers(self):
         with self.app.app_context():

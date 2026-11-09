@@ -219,7 +219,23 @@ def create_app() -> Flask:
         try:
             from models import Zoo, Service, Feedback, Animal, User, SystemSetting
             from sqlalchemy import func as _func
-            db_zoos = Zoo.query.order_by(Zoo.id.asc()).all()
+            assigned_facility_ids = {
+                zoo_id
+                for (zoo_id,) in db.session.query(User.zoo_id)
+                .filter(User.role == "zoo_admin", User.zoo_id.isnot(None))
+                .distinct()
+                .all()
+            }
+            db_zoos = (
+                Zoo.query
+                .filter(
+                    Zoo.id.in_(assigned_facility_ids)
+                    if assigned_facility_ids
+                    else db.text("FALSE")
+                )
+                .order_by(Zoo.id.asc())
+                .all()
+            )
             for zoo in db_zoos:
                 carousel_setting = SystemSetting.query.filter_by(
                     key=f"landing_carousel:{zoo.id}"
