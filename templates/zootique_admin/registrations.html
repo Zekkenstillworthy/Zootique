@@ -25,6 +25,7 @@
           <th>LOCATION</th>
           <th>SUBMITTED</th>
           <th>STATUS</th>
+          <th>LANDING CAROUSEL</th>
           <th style="text-align:right;">ACTION</th>
         </tr>
       </thead>
@@ -36,10 +37,23 @@
           <td>{{ registration.location }}</td>
           <td>{{ registration.created_at.strftime('%b %d, %Y %I:%M %p') if registration.created_at else 'Not available' }}</td>
           <td><span class="badge {% if registration.status == 'approved' or registration.is_legacy_migration %}badge-active{% elif registration.status == 'rejected' %}badge-danger{% elif registration.status == 'pending' %}badge-pending{% else %}badge-neutral{% endif %}">{{ registration.status|capitalize }}</span></td>
+          <td>
+            {% if registration.zoo_id and (registration.status == 'approved' or registration.status == 'approved_legacy' or registration.is_legacy_migration) %}
+            <form method="post" action="{{ url_for('zootique_admin.toggle_registration_carousel', registration_id=registration.id) }}" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-ghost" type="submit" title="Toggle landing carousel visibility">
+                <i class="fa-solid fa-images"></i>
+                {% if carousel_enabled_by_zoo.get(registration.zoo_id, True) %}Shown{% else %}Hidden{% endif %}
+              </button>
+            </form>
+            {% else %}
+            <span style="color:var(--text-muted);">—</span>
+            {% endif %}
+          </td>
           <td style="text-align:right;"><a class="btn btn-ghost" href="{{ url_for('zootique_admin.registration_detail', registration_id=registration.id) }}">Review</a></td>
         </tr>
         {% else %}
-        <tr><td colspan="6" style="color:var(--text-muted);">No {{ selected_status }} registrations found.</td></tr>
+        <tr><td colspan="7" style="color:var(--text-muted);">No {{ selected_status }} registrations found.</td></tr>
         {% endfor %}
       </tbody>
     </table>

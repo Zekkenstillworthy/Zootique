@@ -1,9 +1,10 @@
 import unittest
 
 from app import create_app
-from models import Booking, Service, SystemSetting, User, Zoo, db
+from models import Booking, EstablishmentRegistration, Service, SystemSetting, User, Zoo, db
 from services.booking_service import BookingValidationError, process_booking_checkout
 from services.zoo_settings import get_availability_settings, get_payment_methods, save_zoo_setting
+from uuid import uuid4
 
 
 class RemainingFeatureTestCase(unittest.TestCase):
@@ -192,6 +193,49 @@ class RemainingFeatureTestCase(unittest.TestCase):
             self.assertIsNone(Booking.query.filter_by(id=booking_id).first())
             self.assertEqual(BookingPayment.query.filter_by(booking_id=booking_id).count(), 0)
             self.assertEqual(BookingTicket.query.filter_by(booking_id=booking_id).count(), 0)
+
+    def test_super_admin_delete_removes_assigned_facility_and_approved_registration(self):
+        with self.app.app_context():
+            super_admin = User.query.filter_by(role="zootique_admin", status="active").first()
+            if not super_admin:
+                self.skipTest("No active Super Admin account found.")
+
+            suffix = uuid4().hex[:8]
+            zoo = Zoo(name=f"Delete Cascade Zoo {suffix}", type="Zoo Park", location="Test")
+            db.session.add(zoo)
+            db.session.flush()
+            administrator = User(
+                email=f"delete-cascade-{suffix}@example.com",
+                full_name="Delete Cascade Admin",
+                role="zoo_admin",
+                zoo_id=zoo.id,
+                status="active",
+            )
+            administrator.set_password("Password123!")
+            registration = EstablishmentRegistration(
+                establishment_name=zoo.name,
+                establishment_type=zoo.type,
+                location=zoo.location,
+                status="approved",
+                zoo_id=zoo.id,
+            )
+            db.session.add_all([administrator, registration])
+            db.session.commit()
+            administrator_id, zoo_id, registration_id = administrator.id, zoo.id, registration.id
+
+            with self.client.session_transaction() as session:
+                session["user_id"] = super_admin.id
+                session["role"] = "zootique_admin"
+                session["_csrf_token"] = "test-csrf"
+
+            response = self.client.post(
+                f"/zootique-admin/user-management/users/{administrator_id}/delete",
+                data={"csrf_token": "test-csrf"},
+            )
+            self.assertEqual(response.status_code, 302)
+            self.assertIsNone(db.session.get(User, administrator_id))
+            self.assertIsNone(db.session.get(Zoo, zoo_id))
+            self.assertIsNone(db.session.get(EstablishmentRegistration, registration_id))
 
     def test_zoo_staff_booking_full_authority(self):
         with self.app.app_context():

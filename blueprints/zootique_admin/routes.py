@@ -53,7 +53,7 @@ from models import (
     LoyaltySetting,
 
     RegistrationEmailAttempt,
-
+    SystemSetting,
 )
 
 from services import (
@@ -592,21 +592,20 @@ def registrations():
         query = query.filter_by(status=status, is_legacy_migration=False)
 
     registrations = query.order_by(
-
         case((EstablishmentRegistration.status == 'pending', 0), else_=1),
-
         EstablishmentRegistration.created_at.desc(),
-
     ).all()
+    carousel_enabled_by_zoo = {
+        int(setting.key.split(':', 1)[1]): setting.value != '0'
+        for setting in SystemSetting.query.filter(SystemSetting.key.like('landing_carousel:%')).all()
+        if setting.key.split(':', 1)[1].isdigit()
+    }
 
     return render_template(
-
         'zootique_admin/registrations.html',
-
         registrations=registrations,
-
         selected_status=status,
-
+        carousel_enabled_by_zoo=carousel_enabled_by_zoo,
     )
 
 @admin_bp.get('/registrations/<int:registration_id>')
@@ -728,6 +727,33 @@ def review_registration_documents(registration_id: int):
     flash("Document review statuses saved.", "success")
 
     return redirect(url_for("zootique_admin.registration_detail", registration_id=registration.id))
+
+@admin_bp.post('/registrations/<int:registration_id>/toggle-carousel')
+def toggle_registration_carousel(registration_id: int):
+    registration = db.session.get(EstablishmentRegistration, registration_id)
+    if not registration or not registration.zoo_id:
+        flash('Only an approved establishment can be added to the landing carousel.', 'error')
+        return redirect(url_for('zootique_admin.registrations', status='approved'))
+
+    is_approved = registration.status in ('approved', 'approved_legacy') or registration.is_legacy_migration
+    if not is_approved:
+        flash('Only approved establishments can appear in the landing carousel.', 'error')
+        return redirect(url_for('zootique_admin.registrations', status='approved'))
+
+    key = f'landing_carousel:{registration.zoo_id}'
+    setting = SystemSetting.query.filter_by(key=key).first()
+    enabled = not setting or setting.value != '0'
+    if not setting:
+        setting = SystemSetting(key=key, value='0' if enabled else '1')
+        db.session.add(setting)
+    else:
+        setting.value = '0' if enabled else '1'
+    db.session.commit()
+    flash(
+        f'{registration.establishment_name} was {"removed from" if enabled else "added to"} the landing carousel.',
+        'success',
+    )
+    return redirect(url_for('zootique_admin.registrations', status='approved'))
 
 @admin_bp.get('/registrations/<int:registration_id>/documents/<document_key>')
 
@@ -2953,11 +2979,52 @@ def delete_user(user_id: int):
 
         return redirect(url_for('zootique_admin.user_management'))
 
-    db.session.delete(user)
+    assigned_zoo_id = user.zoo_id
 
-    db.session.commit()
+    try:
+        # A Zoo Admin owns the facility selected in the directory. Remove the
+        # facility's dependent records before removing the account so the
+        # dashboard, visitor directory, and approved queue cannot retain stale
+        # references.
+        if assigned_zoo_id is not None:
+            mapped_models = list(db.Model.registry.mappers)
+            for mapper in mapped_models:
+                model = mapper.class_
+                table = model.__table__
+                if model in (Zoo, User, EstablishmentRegistration) or 'zoo_id' not in table.c:
+                    continue
+                db.session.query(model).filter(table.c.zoo_id == assigned_zoo_id).delete(
+                    synchronize_session=False
+                )
 
-    flash('User deleted.', 'success')
+            db.session.query(RegistrationEmailAttempt).filter(
+                RegistrationEmailAttempt.registration_id.in_(
+                    db.session.query(EstablishmentRegistration.id).filter(
+                        EstablishmentRegistration.zoo_id == assigned_zoo_id
+                    )
+                )
+            ).delete(synchronize_session=False)
+            db.session.query(EstablishmentRegistration).filter(
+                EstablishmentRegistration.zoo_id == assigned_zoo_id
+            ).delete(synchronize_session=False)
+
+            db.session.query(User).filter(User.zoo_id == assigned_zoo_id).delete(
+                synchronize_session=False
+            )
+            db.session.query(Zoo).filter(Zoo.id == assigned_zoo_id).delete(
+                synchronize_session=False
+            )
+        else:
+            db.session.delete(user)
+
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Failed to delete Zoo Admin %s and related facility data", user_id)
+        flash('Administrator could not be deleted. No data was changed.', 'error')
+        return redirect(url_for('zootique_admin.user_management'))
+
+    flash('Administrator and all data belonging to the assigned facility were deleted.', 'success')
 
     return redirect(url_for('zootique_admin.user_management'))
 
@@ -3281,4 +3348,3 @@ def delete_establishment_type(type_id: int):
     flash(f'Establishment type "{et.name}" deleted successfully.', 'success')
 
     return redirect(url_for('zootique_admin.establishment_types'))
-

@@ -217,10 +217,15 @@ def create_app() -> Flask:
     def landing():
         hero_zoos = []
         try:
-            from models import Zoo, Service, Feedback, Animal, User
+            from models import Zoo, Service, Feedback, Animal, User, SystemSetting
             from sqlalchemy import func as _func
             db_zoos = Zoo.query.order_by(Zoo.id.asc()).all()
             for zoo in db_zoos:
+                carousel_setting = SystemSetting.query.filter_by(
+                    key=f"landing_carousel:{zoo.id}"
+                ).first()
+                if carousel_setting and carousel_setting.value == "0":
+                    continue
                 # Only include establishments that are not suspended
                 admin_users = User.query.filter(
                     User.zoo_id == zoo.id,
