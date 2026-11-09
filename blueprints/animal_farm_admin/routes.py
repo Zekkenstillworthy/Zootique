@@ -1130,7 +1130,19 @@ def events_management():
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.dashboard'))
     events = Event.query.filter_by(zoo_id=zoo.id).order_by(Event.id.desc()).all()
-    return render_template('animal_farm_admin/events.html', zoo=zoo, events=events)
+    edit_event = None
+    edit_event_id = request.args.get('edit', type=int)
+    if edit_event_id is not None:
+        edit_event = Event.query.filter_by(id=edit_event_id, zoo_id=zoo.id).first()
+        if not edit_event:
+            flash('Event not found.', 'error')
+            return redirect(url_for('animal_farm_admin.events_management', tab='list'))
+    return render_template(
+        'animal_farm_admin/events.html',
+        zoo=zoo,
+        events=events,
+        edit_event=edit_event,
+    )
 
 
 @animal_farm_admin_bp.post('/events/save')

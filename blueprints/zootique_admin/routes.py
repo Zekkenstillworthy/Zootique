@@ -73,6 +73,7 @@ from services import (
 from services.auth_guard import require_role_guard
 
 from services.subscription_catalog import infer_tier_level, plan_context, sort_plans, tier_label
+from services.facility_scope import assigned_facility_ids
 
 from services.registration_notifications import (
 
@@ -233,16 +234,6 @@ def _current_user() -> User | None:
         return None
     return db.session.get(User, user_id_int)
 
-def _assigned_facility_ids() -> set[int]:
-    """Return facilities represented by Zoo Admin accounts."""
-    return {
-        zoo_id
-        for (zoo_id,) in db.session.query(User.zoo_id)
-        .filter(User.role == 'zoo_admin', User.zoo_id.isnot(None))
-        .distinct()
-        .all()
-    }
-
 @admin_bp.get("/")
 
 def dashboard():
@@ -253,14 +244,14 @@ def dashboard():
 
     month_end = _next_month_start(now)
 
-    assigned_facility_ids = _assigned_facility_ids()
-    total_zoos = len(assigned_facility_ids)
+    assigned_ids = assigned_facility_ids()
+    total_zoos = len(assigned_ids)
 
     zoos_new_this_month = (
 
         db.session.query(db.func.count(Zoo.id))
 
-        .filter(Zoo.id.in_(assigned_facility_ids) if assigned_facility_ids else db.text('FALSE'))
+        .filter(Zoo.id.in_(assigned_ids) if assigned_ids else db.text('FALSE'))
         .filter(Zoo.created_at >= month_start)
 
         .filter(Zoo.created_at < month_end)
@@ -275,8 +266,8 @@ def dashboard():
     _all_zoo_subs = (
         db.session.query(ZooSubscription)
         .filter(
-            ZooSubscription.zoo_id.in_(assigned_facility_ids)
-            if assigned_facility_ids
+            ZooSubscription.zoo_id.in_(assigned_ids)
+            if assigned_ids
             else db.text('FALSE')
         )
         .order_by(ZooSubscription.zoo_id.asc(), ZooSubscription.end_date.desc())
@@ -314,7 +305,7 @@ def dashboard():
 
             db.session.query(db.func.count(Zoo.id))
 
-            .filter(Zoo.id.in_(assigned_facility_ids) if assigned_facility_ids else db.text('FALSE'))
+            .filter(Zoo.id.in_(assigned_ids) if assigned_ids else db.text('FALSE'))
             .filter(Zoo.created_at >= start)
 
             .filter(Zoo.created_at < end)
@@ -345,7 +336,7 @@ def dashboard():
 
     zoo_rows = (
         db.session.query(Zoo.id, Zoo.name)
-        .filter(Zoo.id.in_(assigned_facility_ids) if assigned_facility_ids else db.text('FALSE'))
+        .filter(Zoo.id.in_(assigned_ids) if assigned_ids else db.text('FALSE'))
         .order_by(Zoo.name.asc())
         .all()
     )
@@ -597,14 +588,14 @@ def registrations():
     query = EstablishmentRegistration.query
 
     if status == 'approved':
-        assigned_facility_ids = _assigned_facility_ids()
+        assigned_ids = assigned_facility_ids()
         query = query.filter(
             or_(
                 EstablishmentRegistration.status.in_(['approved', 'approved_legacy']),
                 EstablishmentRegistration.is_legacy_migration.is_(True),
             ),
-            EstablishmentRegistration.zoo_id.in_(assigned_facility_ids)
-            if assigned_facility_ids
+            EstablishmentRegistration.zoo_id.in_(assigned_ids)
+            if assigned_ids
             else db.text('FALSE'),
         )
 

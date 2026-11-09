@@ -1,7 +1,7 @@
 import unittest
 
 from app import create_app
-from models import Booking, EstablishmentRegistration, Service, SystemSetting, User, Zoo, db
+from models import Booking, EstablishmentRegistration, Event, Service, SystemSetting, User, Zoo, db
 from services.booking_service import BookingValidationError, process_booking_checkout
 from services.zoo_settings import get_availability_settings, get_payment_methods, save_zoo_setting
 from uuid import uuid4
@@ -12,6 +12,58 @@ class RemainingFeatureTestCase(unittest.TestCase):
         self.app = create_app()
         self.app.config["TESTING"] = True
         self.client = self.app.test_client()
+
+    def test_animal_farm_admin_can_edit_event(self):
+        with self.app.app_context():
+            admin = User.query.filter(
+                User.role == "zoo_admin",
+                User.zoo_id.isnot(None),
+                User.status == "active",
+            ).first()
+            if not admin:
+                self.skipTest("No active Zoo Admin account found.")
+
+            event = Event.query.filter_by(zoo_id=admin.zoo_id).first()
+            if not event:
+                event = Event(
+                    zoo_id=admin.zoo_id,
+                    name=f"Edit Event {uuid4().hex[:8]}",
+                    type="Tour",
+                    time="2026-11-11 10:00 AM",
+                    location="Original Location",
+                )
+                db.session.add(event)
+                db.session.commit()
+            event_id = event.id
+
+            with self.client.session_transaction() as session:
+                session["user_id"] = admin.id
+                session["role"] = "zoo_admin"
+                session["zoo_id"] = admin.zoo_id
+
+            response = self.client.get(
+                "/animal-farm-admin/events",
+                query_string={"tab": "add", "edit": event_id},
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("Edit Event", response.get_data(as_text=True))
+
+            response = self.client.post(
+                "/animal-farm-admin/events/save",
+                data={
+                    "event_id": event_id,
+                    "name": "Updated Event Name",
+                    "type": "Feeding",
+                    "time": "2026-11-12 02:00 PM - 03:00 PM",
+                    "location": "Updated Location",
+                },
+            )
+            self.assertEqual(response.status_code, 302)
+            db.session.expire_all()
+            updated = db.session.get(Event, event_id)
+            self.assertEqual(updated.name, "Updated Event Name")
+            self.assertEqual(updated.type, "Feeding")
+            self.assertEqual(updated.location, "Updated Location")
 
     def test_landing_slider_links_to_each_zoo(self):
         response = self.client.get("/")
