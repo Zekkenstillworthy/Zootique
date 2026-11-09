@@ -55,9 +55,36 @@
             </div>
         </div>
 
+        <!-- Quick Operations -->
+        <div class="card-panel">
+            <div class="card-header">
+                <h2><i class="fa-solid fa-compass" style="margin-right:8px;"></i> Quick Operations</h2>
+            </div>
+            <div class="card-body" style="padding: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px;">
+                    <a href="{{ url_for('animal_farm_staff.my_bookings') }}" class="mini-box" style="text-decoration: none; color: inherit; padding: 14px 10px; border: 1px solid var(--border-light); border-radius: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fa-solid fa-calendar-check" style="font-size: 20px; color: var(--primary);"></i>
+                        <span style="font-size: 13px; font-weight: 700;">Bookings</span>
+                    </a>
+                    <a href="{{ url_for('animal_farm_staff.map_zones') }}" class="mini-box" style="text-decoration: none; color: inherit; padding: 14px 10px; border: 1px solid var(--border-light); border-radius: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fa-solid fa-map-location-dot" style="font-size: 20px; color: #3b82f6;"></i>
+                        <span style="font-size: 13px; font-weight: 700;">Map &amp; Zones</span>
+                    </a>
+                    <a href="{{ url_for('animal_farm_staff.events_management') }}" class="mini-box" style="text-decoration: none; color: inherit; padding: 14px 10px; border: 1px solid var(--border-light); border-radius: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fa-solid fa-calendar-days" style="font-size: 20px; color: #8b5cf6;"></i>
+                        <span style="font-size: 13px; font-weight: 700;">Events</span>
+                    </a>
+                    <a href="{{ url_for('animal_farm_staff.visitor_feedback') }}" class="mini-box" style="text-decoration: none; color: inherit; padding: 14px 10px; border: 1px solid var(--border-light); border-radius: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fa-solid fa-comments" style="font-size: 20px; color: #f59e0b;"></i>
+                        <span style="font-size: 13px; font-weight: 700;">Feedback</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Right Column: Incident Reporter & Quick Operations -->
+    <!-- Right Column: Incident Reporter -->
     <div style="display: flex; flex-direction: column; gap: 20px;">
         <!-- Incident Reporter Quick Action -->
         <div class="card-panel">
@@ -84,33 +111,6 @@
                         <i class="fa-solid fa-paper-plane"></i> Submit Report
                     </button>
                 </form>
-            </div>
-        </div>
-
-        <!-- Quick Operations -->
-        <div class="card-panel">
-            <div class="card-header">
-                <h2><i class="fa-solid fa-compass" style="margin-right:8px;"></i> Quick Operations</h2>
-            </div>
-            <div class="card-body" style="padding: 20px;">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px;">
-                    <a href="{{ url_for('animal_farm_staff.my_bookings') }}" class="mini-box" style="text-decoration: none; color: inherit; padding: 14px 10px; border: 1px solid var(--border-light); border-radius: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
-                        <i class="fa-solid fa-calendar-check" style="font-size: 20px; color: var(--primary);"></i>
-                        <span style="font-size: 13px; font-weight: 700;">Bookings</span>
-                    </a>
-                    <a href="{{ url_for('animal_farm_staff.map_zones') }}" class="mini-box" style="text-decoration: none; color: inherit; padding: 14px 10px; border: 1px solid var(--border-light); border-radius: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
-                        <i class="fa-solid fa-map-location-dot" style="font-size: 20px; color: #3b82f6;"></i>
-                        <span style="font-size: 13px; font-weight: 700;">Map &amp; Zones</span>
-                    </a>
-                    <a href="{{ url_for('animal_farm_staff.events_management') }}" class="mini-box" style="text-decoration: none; color: inherit; padding: 14px 10px; border: 1px solid var(--border-light); border-radius: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
-                        <i class="fa-solid fa-calendar-days" style="font-size: 20px; color: #8b5cf6;"></i>
-                        <span style="font-size: 13px; font-weight: 700;">Events</span>
-                    </a>
-                    <a href="{{ url_for('animal_farm_staff.visitor_feedback') }}" class="mini-box" style="text-decoration: none; color: inherit; padding: 14px 10px; border: 1px solid var(--border-light); border-radius: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
-                        <i class="fa-solid fa-comments" style="font-size: 20px; color: #f59e0b;"></i>
-                        <span style="font-size: 13px; font-weight: 700;">Feedback</span>
-                    </a>
-                </div>
             </div>
         </div>
     </div>
