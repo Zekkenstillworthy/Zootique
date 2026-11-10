@@ -2,7 +2,8 @@ from datetime import date
 from types import SimpleNamespace
 import unittest
 
-from services.pricing import PricingError, calculate_booking_price
+from services.loyalty import points_discount
+from services.pricing import PricingError, calculate_booking_price, guest_limits
 
 
 class PricingServiceTestCase(unittest.TestCase):
@@ -30,6 +31,21 @@ class PricingServiceTestCase(unittest.TestCase):
 
         with self.assertRaises(PricingError):
             calculate_booking_price(service=service, bundle=bundle, guests=1)
+
+    def test_guest_limits_use_the_stricter_service_and_bundle_range(self):
+        service = SimpleNamespace(max_guest_capacity=5)
+        bundle = SimpleNamespace(min_guests=4, max_guests=10)
+
+        self.assertEqual(guest_limits(service=service), (1, 5))
+        self.assertEqual(guest_limits(service=service, bundle=bundle), (4, 5))
+
+    def test_booking_points_discount_is_fixed_in_steps_of_100(self):
+        self.assertEqual(points_discount(0), 0.0)
+        self.assertEqual(points_discount(300), 30.0)
+        with self.assertRaises(ValueError):
+            points_discount(250)
+        with self.assertRaises(ValueError):
+            points_discount(-100)
 
     def test_bundle_must_belong_to_selected_service(self):
         service = SimpleNamespace(id=1, zoo_id=7, name="Park Entry", price=100)
@@ -75,8 +91,8 @@ class PricingServiceTestCase(unittest.TestCase):
 
         self.assertEqual(result.subtotal, 125.0)
         self.assertEqual(result.discount, 12.5)
-        self.assertEqual(result.loyalty_discount, 1.0)
-        self.assertEqual(result.total, 111.5)
+        self.assertEqual(result.loyalty_discount, 10.0)
+        self.assertEqual(result.total, 102.5)
 
 
 if __name__ == "__main__":

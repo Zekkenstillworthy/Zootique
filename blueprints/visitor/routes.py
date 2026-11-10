@@ -34,7 +34,7 @@ from services.storage import save_uploaded_image as _save_uploaded_image
 from services.visitor_notifications import ensure_visitor_notifications
 from services.pricing import PricingError, calculate_booking_price, guest_limits
 from services.tickets import issue_ticket, sign_ticket, qr_data_uri
-from services.loyalty import get_settings, record_transaction
+from services.loyalty import get_settings, points_discount, record_transaction
 from services.cancellation import cancel_visitor_booking
 from services.zoo_settings import get_payment_methods, get_availability_settings
 
@@ -669,7 +669,15 @@ def my_bookings():
             value for value in request.form.getlist("add_on_ids", type=int)
             if value
         }
-        loyalty_points = max(request.form.get("loyalty_points", type=int) or 0, 0)
+        loyalty_points_raw = request.form.get("loyalty_points")
+        try:
+            loyalty_points = int(loyalty_points_raw or 0)
+        except (TypeError, ValueError):
+            flash("Redeemed points must be a whole number.", "error")
+            return redirect(url_for("visitor.my_bookings"))
+        if loyalty_points < 0 or loyalty_points % 100:
+            flash("Redeemed points must be in steps of 100.", "error")
+            return redirect(url_for("visitor.my_bookings"))
 
         if not service_id:
             flash("Please select a service to book.", "error")
@@ -682,6 +690,21 @@ def my_bookings():
             flash("This service is not currently available for booking.", "error")
             return redirect(url_for("visitor.my_bookings"))
         bundle = db.session.get(BookingBundle, bundle_id) if bundle_id else None
+        if bundle_id and not bundle:
+            flash("Selected booking bundle was not found.", "error")
+            return redirect(url_for("visitor.my_bookings"))
+        if bundle and not bundle.is_active:
+            flash("This booking bundle is not currently available.", "error")
+            return redirect(url_for("visitor.my_bookings"))
+        if bundle and bundle.zoo_id != service.zoo_id:
+            flash("This booking bundle is not available for the selected experience.", "error")
+            return redirect(url_for("visitor.my_bookings"))
+        if bundle and not bundle.applies_to_service(service.id):
+            flash("This booking bundle does not include the selected experience.", "error")
+            return redirect(url_for("visitor.my_bookings"))
+        if bundle and not bundle.is_valid_today():
+            flash("This booking bundle is outside its valid booking dates.", "error")
+            return redirect(url_for("visitor.my_bookings"))
         min_guests, max_guests = guest_limits(service=service, bundle=bundle)
         if guests < min_guests or guests > max_guests:
             flash(
@@ -732,6 +755,17 @@ def my_bookings():
         if guests < 1:
             guests = 1
         try:
+            account = None
+            if loyalty_points:
+                account = (
+                    LoyaltyAccount.query.filter_by(user_id=user.id)
+                    .with_for_update()
+                    .first()
+                )
+                if not account or loyalty_points > account.balance:
+                    flash("You do not have enough Wild Points for this booking.", "error")
+                    return redirect(url_for("visitor.my_bookings"))
+                points_discount(loyalty_points)
             validate_booking_details(date_value=booking_date, time_value=time, guests=guests)
             reserve_booking_capacity(
                 service=service,
@@ -777,8 +811,22 @@ def my_bookings():
         booking.pricing_breakdown["promotion_code"] = promotion.code if promotion else None
         booking.pricing_breakdown["add_on_ids"] = sorted(add_on_ids)
         booking.pricing_breakdown["loyalty_points"] = loyalty_points
+        booking.pricing_breakdown["points_discount"] = price.loyalty_discount
         db.session.add(booking)
-        db.session.commit()
+        if loyalty_points:
+            record_transaction(
+                user=user,
+                points=-loyalty_points,
+                transaction_type="redeem",
+                description=f"Points redeemed for booking {booking.id}",
+                booking_id=booking.id,
+            )
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            flash("Unable to save the booking. Your Wild Points were not changed.", "error")
+            return redirect(url_for("visitor.my_bookings"))
 
         try:
             from services.zoo_notifications import notify_zoo_team
@@ -833,6 +881,30 @@ def my_bookings():
         .limit(bookings_page_size)
         .all()
     )
+    booking_ids = [booking.id for booking in bookings]
+    booking_point_transactions = (
+        LoyaltyTransaction.query.filter(
+            LoyaltyTransaction.account_id == (loyalty_account.id if (loyalty_account := LoyaltyAccount.query.filter_by(user_id=user.id).first()) else -1),
+            LoyaltyTransaction.booking_id.in_(booking_ids),
+        ).all()
+        if booking_ids else []
+    )
+    point_transactions_by_booking: dict[str, list[LoyaltyTransaction]] = {}
+    for transaction in booking_point_transactions:
+        point_transactions_by_booking.setdefault(transaction.booking_id, []).append(transaction)
+    for booking in bookings:
+        transactions = point_transactions_by_booking.get(booking.id, [])
+        booking._points_earned = sum(
+            int(transaction.points) for transaction in transactions
+            if transaction.transaction_type == "earn" and transaction.points > 0
+        )
+        booking._points_redeemed = sum(
+            abs(int(transaction.points)) for transaction in transactions
+            if transaction.transaction_type == "redeem" and transaction.points < 0
+        )
+        booking._points_discount = float(
+            (booking.pricing_breakdown or {}).get("points_discount") or 0
+        )
     notification_bookings = booking_query.all()
     services = _maybe_filter_by_selected_zoo(
         Service.query.filter(Service.service_status == "Active"), Service
@@ -860,6 +932,30 @@ def my_bookings():
 
     points = _get_visitor_total_points(user)
     loyalty_account = LoyaltyAccount.query.filter_by(user_id=user.id).first()
+    booking_loyalty_transactions = (
+        LoyaltyTransaction.query.filter(
+            LoyaltyTransaction.account_id == (loyalty_account.id if loyalty_account else -1),
+            LoyaltyTransaction.booking_id.isnot(None),
+        ).all()
+        if loyalty_account else []
+    )
+    booking_points_earned = sum(
+        int(transaction.points) for transaction in booking_loyalty_transactions
+        if transaction.transaction_type == "earn" and transaction.points > 0
+    )
+    booking_points_redeemed = sum(
+        abs(int(transaction.points)) for transaction in booking_loyalty_transactions
+        if transaction.transaction_type == "redeem" and transaction.points < 0
+    )
+    all_booking_breakdowns = (
+        Booking.query.filter_by(user_id=user.id)
+        .with_entities(Booking.pricing_breakdown)
+        .all()
+    )
+    booking_points_discount = sum(
+        float((breakdown or {}).get("points_discount") or 0)
+        for (breakdown,) in all_booking_breakdowns
+    )
     loyalty_transactions = (
         LoyaltyTransaction.query.filter_by(account_id=loyalty_account.id)
         .order_by(LoyaltyTransaction.created_at.desc())
@@ -947,6 +1043,9 @@ def my_bookings():
         events=events,
         add_on_services=add_on_services,
         loyalty_balance=int(loyalty_account.balance if loyalty_account else 0),
+        booking_points_earned=booking_points_earned,
+        booking_points_redeemed=booking_points_redeemed,
+        booking_points_discount=booking_points_discount,
         supported_methods=get_payment_methods(selected_zoo_id) if selected_zoo_id else ["card", "gcash", "maya", "cash_on_arrival"],
         availability_opening_time=(availability_service.opening_time if availability_service else "09:00 AM"),
         availability_closing_time=(availability_service.closing_time if availability_service else "05:00 PM"),
@@ -967,10 +1066,26 @@ def booking_quote():
     service_id = request.args.get("service_id", type=int)
     guests = request.args.get("guests", type=int) or 1
     service = db.session.get(Service, service_id) if service_id else None
-    if not service or (_selected_zoo_id() and service.zoo_id != _selected_zoo_id()):
+    if (
+        not service
+        or service.service_status != "Active"
+        or (_selected_zoo_id() and service.zoo_id != _selected_zoo_id())
+    ):
         return jsonify({"success": False, "error": "Selected service was not found."}), 404
     bundle_id = request.args.get("bundle_id", type=int)
     bundle = db.session.get(BookingBundle, bundle_id) if bundle_id else None
+    if bundle_id and not bundle:
+        return jsonify({"success": False, "error": "Selected booking bundle was not found."}), 404
+    if bundle and (
+        not bundle.is_active
+        or bundle.zoo_id != service.zoo_id
+        or not bundle.applies_to_service(service.id)
+        or not bundle.is_valid_today()
+    ):
+        return jsonify({
+            "success": False,
+            "error": "The selected bundle is not available for this experience.",
+        }), 422
     add_on_ids = [value for value in request.args.getlist("add_on_ids", type=int) if value]
     add_ons = Service.query.filter(Service.id.in_(add_on_ids), Service.zoo_id == service.zoo_id).all() if add_on_ids else []
     promotion_code = (request.args.get("promotion_code") or "").strip().upper()
@@ -2029,28 +2144,6 @@ def checkout():
         booking = booking_query.first()
         if not booking:
             abort(404)
-
-        loyalty_points = int((booking.pricing_breakdown or {}).get("loyalty_points") or 0)
-        if loyalty_points:
-            account = (
-                LoyaltyAccount.query.filter_by(user_id=user.id)
-                .with_for_update()
-                .first()
-            )
-            settings = get_settings()
-            if not account or loyalty_points > account.balance:
-                flash("Your loyalty-point balance changed. Please create the booking again.", "error")
-                return redirect(url_for("visitor.checkout", booking_id=booking_id))
-            if loyalty_points < settings.minimum_redemption_points:
-                flash("The loyalty redemption minimum has changed. Please create the booking again.", "error")
-                return redirect(url_for("visitor.checkout", booking_id=booking_id))
-            record_transaction(
-                user=user,
-                points=-loyalty_points,
-                transaction_type="redeem",
-                description=f"Points redeemed for booking {booking.id}",
-                booking_id=booking.id,
-            )
 
         try:
             payment = process_booking_checkout(

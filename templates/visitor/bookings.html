@@ -953,6 +953,17 @@
     box-shadow: 0 3px 12px rgba(200,90,50,0.25);
     transform: translateY(-1px);
   }
+  .vb-guest-chip:disabled,
+  .vb-bundle-item.is-capacity-unavailable {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .vb-bundle-item.is-capacity-unavailable:hover {
+    transform: none;
+    border-color: var(--vb-border);
+    background: #fff;
+    box-shadow: none;
+  }
 
   /* ── Payment Method Cards ── */
   .vb-pay-card {
@@ -1039,7 +1050,7 @@
       <div class="vb-stat-info">
         <div class="vb-stat-val">₱ {{ "{:,.2f}".format(total_spent or 0) }}</div>
         <div class="vb-stat-label">Total Invested</div>
-        <div class="vb-stat-sub">In wildlife preservation</div>
+        <div class="vb-stat-sub">Paid amount after points discounts</div>
       </div>
     </div>
 
@@ -1050,7 +1061,7 @@
       <div class="vb-stat-info">
         <div class="vb-stat-val">{{ points or 0 }}</div>
         <div class="vb-stat-label">Wild Points</div>
-        <div class="vb-stat-sub">Eco-rewards balance</div>
+        <div class="vb-stat-sub">Earned {{ booking_points_earned or 0 }} · Redeemed {{ booking_points_redeemed or 0 }}{% if booking_points_discount %} · ₱{{ "{:,.2f}".format(booking_points_discount) }} off{% endif %}</div>
       </div>
     </div>
   </div>
@@ -1303,6 +1314,9 @@
               <span style="color:var(--vb-terracotta);">*</span>
             </div>
             <div class="vb-panel-sub">How many are visiting?</div>
+            <div id="guest-range-helper" style="font-size:0.74rem;color:var(--vb-text-muted);margin-top:0.25rem;" aria-live="polite">
+              Allowed: 1 to 50 guests
+            </div>
             <!-- Guest chips (synced to hidden input) -->
             <div id="guest-chips" style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.4rem;">
               {% for n in [1,2,3,4,5] %}
@@ -1320,6 +1334,7 @@
             <div id="guests-warning" style="display:none;color:#dc2626;font-size:0.78rem;font-weight:700;margin-top:0.35rem;align-items:center;gap:0.35rem;">
               <i class="fa-solid fa-triangle-exclamation"></i> Only <span id="warning-max-slots"></span> slots available.
             </div>
+            <div id="capacity-notice" style="display:none;color:var(--vb-forest);font-size:0.76rem;font-weight:700;margin-top:0.35rem;" role="status" aria-live="polite"></div>
             <!-- Hidden input (synced by existing JS) -->
             <input type="number" id="new_guests" name="guests" min="1" max="50" value="1" required class="vb-input-control" style="display:none;">
           </div>
@@ -1377,6 +1392,7 @@
                  data-price="{{ bundle.price or 0 }}"
                  data-min-guests="{{ bundle.min_guests or 1 }}"
                  data-max-guests="{{ bundle.max_guests or 50 }}"
+                 data-service-ids="{{ svc_ids|tojson }}"
                  data-eligibility="{{ bundle.eligibility or '' }}"
                  data-name="{{ bundle.name }}"
                  role="button"
@@ -1439,22 +1455,104 @@
           }
         }
 
-        function vbSelectExpById(svcId) {
+        function vbBundleIncludesService(bundleCard, svcId) {
+          if (!bundleCard) return false;
+          var ids = [];
+          try { ids = JSON.parse(bundleCard.getAttribute('data-service-ids') || '[]'); } catch (e) {}
+          return ids.length === 0 || ids.indexOf(parseInt(svcId, 10)) !== -1;
+        }
+
+        function vbShowCapacityNotice(message) {
+          var notice = document.getElementById('capacity-notice');
+          if (!notice) return;
+          notice.textContent = message || '';
+          notice.style.display = message ? 'block' : 'none';
+          if (message) {
+            window.clearTimeout(window._vbCapacityNoticeTimer);
+            window._vbCapacityNoticeTimer = window.setTimeout(function() {
+              notice.style.display = 'none';
+            }, 4500);
+          }
+        }
+
+        function vbFilterExperiencesForBundle(bundleId) {
+          var bundleCard = bundleId
+            ? document.querySelector('.vb-bundle-item[data-bundle-id="' + bundleId + '"]')
+            : null;
+          var validIds = [];
+          document.querySelectorAll('.vb-exp-item:not(.vb-bundle-item)').forEach(function(item) {
+            var serviceId = item.getAttribute('data-service-id');
+            var valid = !bundleCard || vbBundleIncludesService(bundleCard, serviceId);
+            item.style.display = valid ? 'flex' : 'none';
+            if (valid) validIds.push(String(serviceId));
+          });
+          return validIds;
+        }
+
+        function vbFilterBundlesForService(svcId) {
+          var guests = parseInt((document.getElementById('new_guests') || {}).value || '1', 10);
+          document.querySelectorAll('.vb-bundle-item').forEach(function(item) {
+            var serviceMatch = !svcId || vbBundleIncludesService(item, svcId);
+            var min = parseInt(item.getAttribute('data-min-guests') || '1', 10);
+            var max = parseInt(item.getAttribute('data-max-guests') || '50', 10);
+            var guestMatch = guests >= min && guests <= max;
+            var unavailable = !serviceMatch || !guestMatch;
+            item.style.display = serviceMatch ? 'flex' : 'none';
+            item.classList.toggle('is-capacity-unavailable', serviceMatch && !guestMatch);
+            var reason = serviceMatch && !guestMatch
+              ? 'Needs ' + min + '-' + max + ' guests'
+              : '';
+            item.setAttribute('aria-disabled', unavailable ? 'true' : 'false');
+            item.title = reason || '';
+            var reasonEl = item.querySelector('.vb-bundle-capacity-reason');
+            if (reason) {
+              if (!reasonEl) {
+                reasonEl = document.createElement('span');
+                reasonEl.className = 'vb-bundle-capacity-reason';
+                reasonEl.style.cssText = 'font-size:0.72rem;font-weight:700;color:#9a3412;margin-left:0.4rem;';
+                var nameEl = item.querySelector('.vb-exp-name');
+                if (nameEl && nameEl.parentNode) nameEl.parentNode.appendChild(reasonEl);
+              }
+              reasonEl.textContent = reason;
+            } else if (reasonEl) {
+              reasonEl.remove();
+            }
+            var radio = item.querySelector('.vb-bundle-radio-native');
+            if (radio) radio.disabled = unavailable;
+          });
+        }
+
+        function vbSelectExpById(svcId, preserveBundle) {
           if (!svcId) return;
           svcId = String(svcId);
 
-          // Clear bundle selection since user is booking single service
           var bInput = document.getElementById('new_bundle_id');
-          if (bInput) bInput.value = '';
-          document.querySelectorAll('.vb-bundle-item').forEach(function(item) {
-            item.classList.remove('is-selected');
-            var r = item.querySelector('.vb-bundle-radio-native');
-            if (r) r.checked = false;
-          });
-          var bBadge = document.getElementById('bundle-panel-selected');
-          if (bBadge) bBadge.style.display = 'none';
-          var bSub = document.getElementById('bundle-panel-sub');
-          if (bSub) bSub.textContent = 'Select a package';
+          var selectedBundle = bInput && bInput.value
+            ? document.querySelector('.vb-bundle-item[data-bundle-id="' + bInput.value + '"]')
+            : null;
+          if (selectedBundle && !vbBundleIncludesService(selectedBundle, svcId)) {
+            if (preserveBundle) {
+              var validIds = vbFilterExperiencesForBundle(bInput.value);
+              if (validIds.length) {
+                vbShowCapacityNotice('That experience is not included in this bundle. The first included experience was selected.');
+                svcId = validIds[0];
+              }
+            } else {
+              bInput.value = '';
+              selectedBundle = null;
+            }
+          }
+          if (!selectedBundle) {
+            document.querySelectorAll('.vb-bundle-item').forEach(function(item) {
+              item.classList.remove('is-selected');
+              var r = item.querySelector('.vb-bundle-radio-native');
+              if (r) r.checked = false;
+            });
+            var bBadge = document.getElementById('bundle-panel-selected');
+            if (bBadge) bBadge.style.display = 'none';
+            var bSub = document.getElementById('bundle-panel-sub');
+            if (bSub) bSub.textContent = 'Select a package';
+          }
 
           // 1. Highlight matching card in Available Experiences list
           document.querySelectorAll('.vb-exp-item:not(.vb-bundle-item)').forEach(function(item) {
@@ -1508,17 +1606,19 @@
             if (window._vbBooking.updateFormState) window._vbBooking.updateFormState();
           }
           if (window.updateGuestChipAvailability) window.updateGuestChipAvailability();
+          vbFilterBundlesForService(svcId);
         }
 
         function vbSelectBundle(bundleId, serviceId, minGuests, maxGuests, bundleName) {
           if (!bundleId) return;
-
-          // Clear experience radio checks
-          document.querySelectorAll('.vb-exp-item:not(.vb-bundle-item)').forEach(function(item) {
-            item.classList.remove('is-selected');
-            var r = item.querySelector('.vb-exp-radio-native');
-            if (r) r.checked = false;
-          });
+          var bundleCard = document.querySelector('.vb-bundle-item[data-bundle-id="' + bundleId + '"]');
+          var currentGuests = parseInt((document.getElementById('new_guests') || {}).value || '1', 10);
+          if (bundleCard && (currentGuests < minGuests || currentGuests > maxGuests)) {
+            // A bundle outside the current guest count is visible for explanation,
+            // but cannot be selected until the visitor chooses a matching count.
+            vbShowCapacityNotice('This bundle needs ' + minGuests + '-' + maxGuests + ' guests.');
+            return;
+          }
 
           // 1. Highlight bundle card
           document.querySelectorAll('.vb-bundle-item').forEach(function(item) {
@@ -1534,8 +1634,11 @@
           if (bInput) bInput.value = bundleId;
 
           var sel = document.getElementById('new_service_id');
-          if (sel && serviceId) {
-            sel.value = serviceId;
+          var validIds = vbFilterExperiencesForBundle(bundleId);
+          var currentServiceId = sel && sel.value ? String(sel.value) : '';
+          if (validIds.indexOf(currentServiceId) === -1) currentServiceId = validIds[0] || String(serviceId || '');
+          if (sel && currentServiceId) {
+            sel.value = currentServiceId;
             sel.classList.add('has-value');
           }
 
@@ -1547,24 +1650,19 @@
           if (panelName && bundleName) panelName.textContent = bundleName;
           if (panelSub && bundleName) panelSub.textContent = bundleName;
 
-          // 4. Enforce guest limits for this bundle
+          // 4. Start at the bundle minimum as required by the bundle.
           var guestsInput = document.getElementById('new_guests');
           if (guestsInput) {
-            var cur = parseInt(guestsInput.value || '1', 10);
-            if (cur < minGuests) guestsInput.value = minGuests;
-            if (cur > maxGuests) guestsInput.value = maxGuests;
-            guestsInput.min = minGuests;
-            guestsInput.max = maxGuests;
-            // Highlight matching guest chip
-            var matchingChip = document.querySelector('#guest-chips .vb-guest-chip[data-guests="' + guestsInput.value + '"]');
-            if (matchingChip) {
-              document.querySelectorAll('#guest-chips .vb-guest-chip').forEach(function(c) { c.classList.remove('is-selected'); });
-              matchingChip.classList.add('is-selected');
+            var previousGuests = parseInt(guestsInput.value || '1', 10);
+            guestsInput.value = minGuests;
+            if (previousGuests !== minGuests) {
+              vbShowCapacityNotice('Guest count adjusted to the bundle minimum of ' + minGuests + '.');
             }
           }
 
           // 5. Trigger availability & price calculations
           if (sel) {
+            vbSelectExpById(currentServiceId, true);
             sel.dispatchEvent(new Event('change', { bubbles: true }));
           }
           if (window._vbBooking) {
@@ -1577,6 +1675,7 @@
             if (window._vbBooking.updateFormState) window._vbBooking.updateFormState();
           }
           if (window.updateGuestChipAvailability) window.updateGuestChipAvailability();
+          vbFilterBundlesForService(currentServiceId);
         }
 
         // Keyboard accessibility
@@ -1652,8 +1751,10 @@
               <i class="fa-solid fa-star" style="color:var(--vb-terracotta);"></i>
               <span>Redeem points</span>
             </label>
-            <input id="new_loyalty_points" name="loyalty_points" type="number" min="0" max="{{ loyalty_balance or 0 }}" value="0" class="vb-input-control">
+            <input id="new_loyalty_points" name="loyalty_points" type="number" min="0" step="100" max="{{ loyalty_balance - (loyalty_balance % 100) if loyalty_balance else 0 }}" value="0" class="vb-input-control">
             <small style="color:var(--vb-text-muted);">Balance: {{ loyalty_balance or 0 }} points</small>
+            <small id="points-helper" style="color:var(--vb-text-muted);">100 points = ₱10 off</small>
+            <a href="#" id="use-max-points" style="font-size:0.76rem;color:var(--vb-forest);font-weight:700;text-decoration:underline;">Use max</a>
           </div>
         </div>
         <!-- Step 2: Centerpiece Availability Calendar -->
@@ -1973,6 +2074,12 @@
         <!-- Meta info -->
         <div style="display: flex; gap: 1.25rem; flex-wrap: wrap; margin-top: 0.75rem; color: var(--vb-text-muted); font-size: 0.88rem;">
           <span><i class="fa-solid fa-user-group" style="color: var(--vb-forest); margin-right: 4px;"></i>{{ b.guests or 1 }} guests</span>
+          {% if b._points_earned or b._points_redeemed or b._points_discount %}
+          <span><i class="fa-solid fa-star" style="color: var(--vb-forest); margin-right: 4px;"></i>
+            Earned {{ b._points_earned or 0 }} · Redeemed {{ b._points_redeemed or 0 }}
+            {% if b._points_discount %}· Discount ₱{{ "{:,.2f}".format(b._points_discount) }}{% endif %}
+          </span>
+          {% endif %}
           {% if b.zoo and b.zoo.name %}
           <span><i class="fa-solid fa-location-dot" style="color: var(--vb-forest); margin-right: 4px;"></i>{{ b.zoo.name }}</span>
           {% endif %}
@@ -2045,6 +2152,10 @@
   var selectionSummary = document.getElementById('booking-selection-summary');
   var guestsWarning = document.getElementById('guests-warning');
   var warningMaxSlots = document.getElementById('warning-max-slots');
+  var guestRangeHelper = document.getElementById('guest-range-helper');
+  var pointsHelper = document.getElementById('points-helper');
+  var useMaxPoints = document.getElementById('use-max-points');
+  var visitorPointsBalance = {{ loyalty_balance or 0 }};
 
   function getServiceMaxGuests() {
     var option = serviceSelect && serviceSelect.options[serviceSelect.selectedIndex];
@@ -2068,10 +2179,30 @@
     return { min: min, max: Math.max(min, max) };
   }
 
+  function normalizeGuestCount(showNotice) {
+    if (!guestsInput) return getGuestBounds();
+    var bounds = getGuestBounds();
+    var current = parseInt(guestsInput.value || '1', 10);
+    var normalized = Math.max(bounds.min, Math.min(bounds.max, current));
+    if (normalized !== current) {
+      guestsInput.value = normalized;
+      if (showNotice && typeof vbShowCapacityNotice === 'function') {
+        vbShowCapacityNotice('Guest count adjusted to the allowed range of ' + bounds.min + '-' + bounds.max + '.');
+      }
+    }
+    guestsInput.min = bounds.min;
+    guestsInput.max = bounds.max;
+    if (guestRangeHelper) {
+      guestRangeHelper.textContent = 'Allowed: ' + bounds.min + ' to ' + bounds.max + ' guests';
+    }
+    return bounds;
+  }
+
   function updateFormState() {
     var hasService = !!(serviceSelect && serviceSelect.value);
     var hasDate = !!selectedDate;
     var hasTime = !!(selectedTime || (hiddenTime && hiddenTime.value));
+    normalizeGuestCount(false);
     var guests = parseInt((guestsInput && guestsInput.value) || '1', 10);
     var guestBounds = getGuestBounds();
     var isGuestsValid = guests >= guestBounds.min && guests <= guestBounds.max;
@@ -2137,10 +2268,30 @@
       .then(function(data) {
         if (!data.success) throw new Error(data.error || 'Unable to calculate quote.');
         var quote = data.quote;
+        var pointsDiscount = Number(quote.loyalty_discount || 0);
+        var beforePointsTotal = Math.max(0, Number(quote.total || 0) + pointsDiscount);
+        var allowedPoints = Math.min(
+          Math.floor(visitorPointsBalance / 100) * 100,
+          Math.floor(beforePointsTotal / 10) * 100
+        );
+        if (loyaltyInput) {
+          loyaltyInput.max = allowedPoints;
+          if (Number(loyaltyInput.value || 0) > allowedPoints) {
+            loyaltyInput.value = allowedPoints;
+          }
+        }
+        if (pointsHelper) {
+          pointsHelper.textContent = pointsDiscount > 0
+            ? Number(loyaltyInput && loyaltyInput.value || 0).toLocaleString() + ' points = ₱' + pointsDiscount.toFixed(2) + ' off'
+            : '100 points = ₱10 off';
+        }
         priceSummaryEl.style.display = 'flex';
         var lineSummary = quote.lines.map(function(line) {
-          return line.quantity + ' × ' + line.name + ' (₱' + Number(line.total).toLocaleString('en-PH', {minimumFractionDigits: 2}) + ')';
-        }).join(' · ');
+          return '<div>' + line.quantity + ' × ' + line.name + ' (₱' + Number(line.total).toLocaleString('en-PH', {minimumFractionDigits:2}) + ')</div>';
+        }).join('');
+        if (pointsDiscount > 0) {
+          lineSummary += '<div style="color:#16a34a;font-weight:800;">Points discount -₱' + pointsDiscount.toLocaleString('en-PH', {minimumFractionDigits:2}) + '</div>';
+        }
 
         var discountBadge = '';
         if (quote.discount && Number(quote.discount) > 0) {
@@ -2154,11 +2305,45 @@
         } else {
           totalEl.textContent = Number(quote.total).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         }
+
       })
       .catch(function() {
         priceSummaryEl.style.display = 'none';
       });
     return;
+  }
+
+  function normalizePointsInput(showNotice) {
+    if (!loyaltyInput) return;
+    var value = parseInt(loyaltyInput.value || '0', 10);
+    if (!Number.isFinite(value) || value < 0) value = 0;
+    var rounded = Math.floor(value / 100) * 100;
+    var maximum = parseInt(loyaltyInput.max || '0', 10);
+    if (maximum >= 0 && rounded > maximum) rounded = Math.floor(maximum / 100) * 100;
+    if (rounded !== value && showNotice && typeof vbShowCapacityNotice === 'function') {
+      vbShowCapacityNotice('Points were rounded down to the nearest 100.');
+    }
+    loyaltyInput.value = rounded;
+  }
+
+  if (loyaltyInput) {
+    loyaltyInput.addEventListener('input', function() {
+      normalizePointsInput(true);
+      updateFormState();
+    });
+    loyaltyInput.addEventListener('change', function() {
+      normalizePointsInput(true);
+      updateFormState();
+    });
+  }
+  if (useMaxPoints) {
+    useMaxPoints.addEventListener('click', function(event) {
+      event.preventDefault();
+      if (loyaltyInput) {
+        loyaltyInput.value = loyaltyInput.max || '0';
+        updateFormState();
+      }
+    });
   }
 
   function fetchAvailability(year, month, serviceId) {
@@ -2526,6 +2711,7 @@
         }
       }
       if (window.updateGuestChipAvailability) window.updateGuestChipAvailability();
+      vbFilterBundlesForService(selectedServiceId);
       selectedTime = '';
       if (hiddenTime) hiddenTime.value = '';
       if (timeSection) timeSection.style.display = 'none';
@@ -2579,16 +2765,38 @@
         if (current > limit) guestsInput.value = limit;
       }
       chips.forEach(function(chip) {
-        var value = chip.dataset.guests === 'custom' ? 6 : parseInt(chip.dataset.guests, 10);
+        var isCustom = chip.dataset.guests === 'custom';
+        var value = isCustom ? 6 : parseInt(chip.dataset.guests, 10);
         var unavailable = value < bounds.min || value > limit;
-        chip.hidden = unavailable;
+        if (isCustom && limit <= 6) {
+          chip.dataset.guests = '6';
+          chip.textContent = '6';
+          chip.title = unavailable ? 'Maximum ' + limit + ' guests for this experience' : '';
+          unavailable = 6 < bounds.min || 6 > limit;
+        } else if (isCustom) {
+          chip.dataset.guests = 'custom';
+          chip.textContent = '6+';
+          chip.title = unavailable ? 'Bundle allows ' + bounds.min + '-' + limit + ' guests' : '';
+        } else {
+          chip.title = unavailable
+            ? (bounds.min > value ? 'Minimum ' + bounds.min + ' guests' : 'Maximum ' + limit + ' guests')
+            : '';
+        }
+        chip.hidden = false;
         chip.disabled = unavailable;
         if (unavailable && chip.classList.contains('is-selected')) {
           chip.classList.remove('is-selected');
           if (customStepper) customStepper.style.display = 'none';
         }
       });
+      if (guestRangeHelper) {
+        guestRangeHelper.textContent = 'Allowed: ' + bounds.min + ' to ' + bounds.max + ' guests';
+      }
       if (plus) plus.disabled = customGuests >= limit;
+      if (minus) minus.disabled = customGuests <= Math.max(6, bounds.min);
+      if (typeof vbFilterBundlesForService === 'function') {
+        vbFilterBundlesForService(serviceSelect && serviceSelect.value);
+      }
     }
     function setCustomGuests(value) {
       var bounds = guestBounds();
@@ -2605,6 +2813,9 @@
       if (guestsInput) { guestsInput.value = guests; }
       if (customStepper) { customStepper.style.display = 'none'; }
       validateGuests();
+      if (typeof vbFilterBundlesForService === 'function') {
+        vbFilterBundlesForService(serviceSelect && serviceSelect.value);
+      }
     }
     chips.forEach(function(chip) {
       chip.addEventListener('click', function() {

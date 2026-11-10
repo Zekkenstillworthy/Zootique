@@ -5,7 +5,7 @@ from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
 from models import BookingBundle, LoyaltyAccount, LoyaltySetting, Promotion, Service, User, db
-from services.loyalty import get_settings
+from services.loyalty import get_settings, points_discount
 
 
 class PricingError(ValueError):
@@ -17,10 +17,13 @@ def guest_limits(*, service: Service, bundle: BookingBundle | None = None) -> tu
     service_max = max(int(service.max_guest_capacity or 50), 1)
     if not bundle:
         return 1, service_max
-    return max(int(bundle.min_guests or 1), 1), min(
+    minimum = max(int(bundle.min_guests or 1), 1)
+    maximum = min(
         service_max,
         max(int(bundle.max_guests or service_max), 1),
     )
+    # Invalid legacy data should never produce an inverted selectable range.
+    return minimum, max(minimum, maximum)
 
 
 @dataclass(frozen=True)
@@ -149,14 +152,14 @@ def calculate_booking_price(
         if not user:
             raise PricingError("A visitor account is required to redeem points.")
         account = LoyaltyAccount.query.filter_by(user_id=user.id).first()
-        setting = get_settings()
         if not account or loyalty_points > account.balance:
             raise PricingError("Insufficient loyalty points.")
-        if loyalty_points < setting.minimum_redemption_points:
-            raise PricingError("The selected points amount is below the redemption minimum.")
-        loyalty_discount = Decimal(str(loyalty_points)) * Decimal(str(setting.currency_per_point))
-        max_discount = subtotal * Decimal(str(setting.maximum_redemption_percent)) / Decimal("100")
-        loyalty_discount = min(loyalty_discount, max_discount)
+        try:
+            loyalty_discount = Decimal(str(points_discount(loyalty_points)))
+        except ValueError as exc:
+            raise PricingError(str(exc)) from exc
+        if loyalty_discount > subtotal:
+            raise PricingError("Redeemed points cannot exceed the booking total.")
 
     total = subtotal - loyalty_discount
     if total < 0:

@@ -28,6 +28,7 @@ from models import (
 )
 from services.auth_guard import require_role_guard
 from services.tickets import verify_ticket
+from services.loyalty import sync_booking_points_for_status, reverse_booking_points
 
 zoo_staff_bp = Blueprint('animal_farm_staff', __name__)
 
@@ -290,6 +291,7 @@ def update_booking(booking_id: str):
     booking.guests = guests
     if status:
         booking.status = status
+        sync_booking_points_for_status(booking=booking)
 
     if service:
         booking.service_id = service.id
@@ -333,6 +335,7 @@ def update_assigned_booking_status(booking_id: str):
         return redirect(url_for('animal_farm_staff.my_bookings'))
 
     booking.status = new_status
+    sync_booking_points_for_status(booking=booking)
     db.session.commit()
     flash('Booking status updated.', 'success')
     return redirect(url_for('animal_farm_staff.my_bookings'))
@@ -355,6 +358,7 @@ def delete_booking(booking_id: str):
         return redirect(url_for('animal_farm_staff.my_bookings'))
 
     try:
+        reverse_booking_points(booking=booking)
         # Delete ticket scans
         ticket_ids = [t.id for t in BookingTicket.query.filter_by(booking_id=booking.id).all()]
         if ticket_ids:

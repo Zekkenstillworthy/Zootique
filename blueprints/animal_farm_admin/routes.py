@@ -71,6 +71,7 @@ from services.layout_config import (
     save_layout_config,
 )
 from services.auth_guard import require_role_guard
+from services.loyalty import sync_booking_points_for_status, reverse_booking_points
 from services.graph_builder import (
     GRAPH_CHART_TYPES,
     GRAPH_DATA_SOURCES,
@@ -655,6 +656,7 @@ def update_booking_status(booking_id: str):
         return redirect(url_for('animal_farm_admin.booking_management'))
 
     booking.status = new_status
+    sync_booking_points_for_status(booking=booking)
     db.session.commit()
     flash('Booking status updated.', 'success')
     return redirect(url_for('animal_farm_admin.booking_management'))
@@ -721,6 +723,7 @@ def delete_booking(booking_id: str):
         return redirect(url_for('animal_farm_admin.booking_management'))
 
     try:
+        reverse_booking_points(booking=booking)
         # Delete any associated ticket scans first
         ticket_ids = [t.id for t in BookingTicket.query.filter_by(booking_id=booking.id).all()]
         if ticket_ids:

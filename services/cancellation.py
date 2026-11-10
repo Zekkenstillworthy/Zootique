@@ -3,8 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from models import Booking, BookingPayment, LoyaltyTransaction, Notification, User, db
-from services.loyalty import record_transaction
+from models import Booking, BookingPayment, Notification, User, db
+from services.loyalty import reverse_booking_points
 
 
 def cancel_visitor_booking(*, booking: Booking, user: User) -> bool:
@@ -29,25 +29,7 @@ def cancel_visitor_booking(*, booking: Booking, user: User) -> bool:
         "refund pending" if eligible_for_refund else (booking.payment_status or "unpaid")
     )
 
-    previous = LoyaltyTransaction.query.filter_by(booking_id=booking.id).all()
-    if not any(tx.transaction_type == "reverse" for tx in previous):
-        for transaction in previous:
-            if transaction.transaction_type == "redeem" and eligible_for_refund:
-                record_transaction(
-                    user=user,
-                    points=abs(int(transaction.points)),
-                    transaction_type="reverse",
-                    description=f"Redeemed points returned for cancelled booking {booking.id}",
-                    booking_id=booking.id,
-                )
-            elif transaction.transaction_type == "earn" and transaction.points > 0:
-                record_transaction(
-                    user=user,
-                    points=-int(transaction.points),
-                    transaction_type="reverse",
-                    description=f"Earned points reversed for cancelled booking {booking.id}",
-                    booking_id=booking.id,
-                )
+    reverse_booking_points(booking=booking, user=user)
 
     dedupe_key = f"booking-cancelled:{booking.id}"
     if not Notification.query.filter_by(dedupe_key=dedupe_key).first():
