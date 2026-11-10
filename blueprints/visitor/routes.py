@@ -693,7 +693,12 @@ def my_bookings():
             Promotion.query.filter_by(code=promotion_code, zoo_id=service.zoo_id).first()
             if promotion_code else None
         )
-        if promotion and promotion.promo_type and promotion.promo_type != service.category:
+        if (
+            promotion
+            and promotion.promo_type
+            and promotion.promo_type != "Valid For All"
+            and promotion.promo_type != service.category
+        ):
             flash("This promotion is only valid for services in the same category.", "error")
             return redirect(url_for("visitor.my_bookings"))
         add_ons = Service.query.filter(
@@ -886,7 +891,7 @@ def my_bookings():
         (promotion for promotion in promotions if promotion.code == selected_promo_code),
         None,
     )
-    if selected_promotion and selected_promotion.promo_type:
+    if selected_promotion and selected_promotion.promo_type and selected_promotion.promo_type != "Valid For All":
         services = [
             service for service in services
             if service.category == selected_promotion.promo_type
@@ -972,7 +977,12 @@ def booking_quote():
         Promotion.query.filter_by(code=promotion_code, zoo_id=service.zoo_id).first()
         if promotion_code else None
     )
-    if promotion and promotion.promo_type and promotion.promo_type != service.category:
+    if (
+        promotion
+        and promotion.promo_type
+        and promotion.promo_type != "Valid For All"
+        and promotion.promo_type != service.category
+    ):
         return jsonify({
             "success": False,
             "error": "This promotion is only valid for services in the same category.",

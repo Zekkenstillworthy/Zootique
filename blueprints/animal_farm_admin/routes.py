@@ -1224,22 +1224,33 @@ def events_management_legacy_redirect():
 
 @animal_farm_admin_bp.route('/promotions')
 def promotions_management():
+    tab = request.args.get('tab')
+    if tab is None:
+        return redirect(url_for('animal_farm_admin.promotions_management', tab='add'))
+    if tab not in {'add', 'list'}:
+        abort(404)
+
     zoo = _current_zoo()
     if not zoo:
         flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_admin.dashboard'))
 
-    promo_type = request.args.get('promo_type')
     query = Promotion.query.filter_by(zoo_id=zoo.id, country='Philippines')
-    if promo_type:
-        query = query.filter_by(promo_type=promo_type)
     promotions = query.order_by(Promotion.id.desc()).all()
+    edit_id = request.args.get('edit_id', type=int)
+    edit_promotion = None
+    if edit_id:
+        edit_promotion = Promotion.query.filter_by(
+            id=edit_id,
+            zoo_id=zoo.id,
+            country='Philippines',
+        ).first()
     return render_template(
         'animal_farm_admin/promotions.html',
         zoo=zoo,
         promotions=promotions,
         promo_categories=PROMOTION_CATEGORIES,
-        selected_promo_type=promo_type,
+        edit_promotion=edit_promotion,
     )
 
 
@@ -1248,7 +1259,7 @@ def save_promotion():
     zoo = _current_zoo()
     if not zoo:
         flash('No zoo assigned.', 'error')
-        return redirect(url_for('animal_farm_admin.promotions_management'))
+        return redirect(url_for('animal_farm_admin.promotions_management', tab='add'))
     if not can_edit_feature(zoo, 'promotions'):
         return paywall_edit_error('Promotions', required_tier=1)
 
@@ -1262,7 +1273,7 @@ def save_promotion():
 
     if not name or not code:
         flash('Promotion name and code are required.', 'error')
-        return redirect(url_for('animal_farm_admin.promotions_management'))
+        return redirect(url_for('animal_farm_admin.promotions_management', tab='add'))
     if promo_type and promo_type not in PROMOTION_CATEGORY_VALUES:
         flash('Please select a valid promotion category.', 'error')
         return redirect(url_for('animal_farm_admin.promotions_management', tab='add'))
@@ -1299,7 +1310,7 @@ def save_promotion():
     if image_file and image_file.filename:
         uploaded_url = _save_uploaded_image(image_file, 'promotion_images')
         if not uploaded_url:
-            return redirect(url_for('animal_farm_admin.promotions_management'))
+            return redirect(url_for('animal_farm_admin.promotions_management', tab='add'))
         promotion.image_url = uploaded_url
 
     try:
@@ -1307,10 +1318,10 @@ def save_promotion():
     except Exception:
         db.session.rollback()
         flash('Promotion code must be unique.', 'error')
-        return redirect(url_for('animal_farm_admin.promotions_management'))
+        return redirect(url_for('animal_farm_admin.promotions_management', tab='list'))
 
     flash('Promotion saved.', 'success')
-    return redirect(url_for('animal_farm_admin.promotions_management'))
+    return redirect(url_for('animal_farm_admin.promotions_management', tab='list'))
 
 
 @animal_farm_admin_bp.post('/promotions/<int:promo_id>/delete')
@@ -1318,17 +1329,17 @@ def delete_promotion(promo_id: int):
     zoo = _current_zoo()
     if not zoo:
         flash('No zoo assigned.', 'error')
-        return redirect(url_for('animal_farm_admin.promotions_management'))
+        return redirect(url_for('animal_farm_admin.promotions_management', tab='list'))
     if not can_edit_feature(zoo, 'promotions'):
         return paywall_edit_error('Promotions', required_tier=1)
     promo = Promotion.query.filter_by(id=promo_id, zoo_id=zoo.id).first()
     if not promo:
         flash('Promotion not found.', 'error')
-        return redirect(url_for('animal_farm_admin.promotions_management'))
+        return redirect(url_for('animal_farm_admin.promotions_management', tab='list'))
     db.session.delete(promo)
     db.session.commit()
     flash('Promotion deleted.', 'success')
-    return redirect(url_for('animal_farm_admin.promotions_management'))
+    return redirect(url_for('animal_farm_admin.promotions_management', tab='list'))
 
 @animal_farm_admin_bp.route('/promotions-management')
 def promotions_management_legacy_redirect():

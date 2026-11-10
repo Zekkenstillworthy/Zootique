@@ -102,6 +102,7 @@ class RemainingFeatureTestCase(unittest.TestCase):
             expected_promotions = (
                 "Family Tour",
                 "Group Tour",
+                "Tour",
                 "Senior Citizen",
                 "Vip Experience",
                 "Valid For All",
