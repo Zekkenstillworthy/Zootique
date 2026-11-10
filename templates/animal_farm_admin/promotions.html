@@ -136,6 +136,7 @@
                         <tr>
                             <th style="width:72px; padding-left:16px;">Banner</th>
                             <th>Name</th>
+                            <th>Category</th>
                             <th>Code</th>
                             <th>Discount</th>
                             <th>Valid Until</th>
@@ -156,8 +157,12 @@
                                 </td>
                                 <td>
                                     <div style="font-weight:600; color:var(--text);">{{ p.name }}</div>
+                                </td>
+                                <td>
                                     {% if p.promo_type %}
-                                        <span class="badge badge-neutral" style="font-size:10px; margin-top:2px;">{{ p.promo_type }}</span>
+                                        <span class="badge badge-neutral">{{ p.promo_type }}</span>
+                                    {% else %}
+                                        <span style="color:var(--text-muted);">-</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -194,7 +199,7 @@
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="6">
+                                <td colspan="7">
                                     <div class="zf-empty-state">
                                         <i class="fa-solid fa-ticket zf-empty-icon"></i>
                                         <div class="zf-empty-title">No Promotions Found</div>
