@@ -50,7 +50,13 @@ from services.subscription_guard import FEATURE_TIERS
 from services.subscription_guard import feature_limit, limit_allows, feature_required_tier
 from services.subscription_catalog import sort_plans
 from services.subscription_catalog import plan_context
-from services.service_catalog import SERVICE_CATEGORIES, SERVICE_CATEGORY_VALUES, SERVICE_STATUSES
+from services.service_catalog import (
+    PROMOTION_CATEGORIES,
+    PROMOTION_CATEGORY_VALUES,
+    SERVICE_CATEGORIES,
+    SERVICE_CATEGORY_VALUES,
+    SERVICE_STATUSES,
+)
 from services.booking_reporting import (
     REPORT_RANGES,
     REPORT_STATUSES,
@@ -1232,7 +1238,7 @@ def promotions_management():
         'animal_farm_admin/promotions.html',
         zoo=zoo,
         promotions=promotions,
-        promo_categories=SERVICE_CATEGORIES,
+        promo_categories=PROMOTION_CATEGORIES,
         selected_promo_type=promo_type,
     )
 
@@ -1257,7 +1263,7 @@ def save_promotion():
     if not name or not code:
         flash('Promotion name and code are required.', 'error')
         return redirect(url_for('animal_farm_admin.promotions_management'))
-    if promo_type and promo_type not in SERVICE_CATEGORY_VALUES:
+    if promo_type and promo_type not in PROMOTION_CATEGORY_VALUES:
         flash('Please select a valid promotion category.', 'error')
         return redirect(url_for('animal_farm_admin.promotions_management', tab='add'))
 
