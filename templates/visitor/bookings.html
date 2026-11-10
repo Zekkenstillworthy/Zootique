@@ -1111,9 +1111,9 @@
         <input type="hidden" id="new_time" name="time" value="{{ selected_event_time or '08:00' }}">
         <input type="hidden" id="new_bundle_id" name="bundle_id" value="">
 
-        {# ── 3-Panel Layout: Bundle | Experience | Guests ── #}
+        {# ── 3-Panel Tab Switching Layout: Bundle | Experience | Guests ── #}
         <style>
-          /* ── Panel Row ── */
+          /* ── Panel Row & Tabs ── */
           .vb-panel-row {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -1128,7 +1128,8 @@
             border: 1.5px solid var(--vb-border);
             border-radius: 14px;
             padding: 1.1rem 1.25rem;
-            transition: border-color 0.18s, box-shadow 0.18s;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
           }
           .vb-panel:hover { border-color: var(--vb-forest-sage); }
           .vb-panel.is-active {
@@ -1136,89 +1137,114 @@
             background: var(--vb-forest-light);
             box-shadow: 0 4px 14px rgba(20,56,35,0.08);
           }
+
+          /* Tab-specific clickable styling */
+          .vb-tab-panel {
+            cursor: pointer;
+            user-select: none;
+          }
+          .vb-tab-panel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(20,56,35,0.08);
+          }
+          .vb-tab-panel.is-active {
+            border-color: var(--vb-forest) !important;
+            border-width: 2px !important;
+            background: var(--vb-forest-light) !important;
+          }
+          .vb-tab-panel.is-active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 20%;
+            right: 20%;
+            height: 3px;
+            background: var(--vb-forest);
+            border-radius: 3px 3px 0 0;
+          }
+
           .vb-panel-title {
-            font-size: 0.84rem;
+            font-size: 0.86rem;
             font-weight: 800;
             color: var(--vb-forest);
-            margin-bottom: 0.15rem;
+            margin-bottom: 0.2rem;
             display: flex;
             align-items: center;
-            gap: 0.4rem;
+            gap: 0.45rem;
           }
-          .vb-panel-sub { font-size: 0.8rem; color: var(--vb-text-muted); margin-bottom: 0.65rem; }
+          .vb-panel-sub { font-size: 0.8rem; color: var(--vb-text-muted); margin-top: 0.2rem; }
           .vb-selected-pill {
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
-            background: var(--vb-forest-light);
-            border: 1px solid #A8D5B5;
+            background: #ffffff;
+            border: 1.5px solid var(--vb-forest);
             color: var(--vb-forest);
-            font-size: 0.72rem;
+            font-size: 0.74rem;
             font-weight: 800;
-            padding: 0.2rem 0.65rem;
+            padding: 0.25rem 0.75rem;
             border-radius: 999px;
-            margin-bottom: 0.4rem;
+            box-shadow: 0 2px 6px rgba(20,56,35,0.06);
           }
 
-          /* ── Experience List ── */
-          .vb-exp-section-header { margin-bottom: 0.65rem; }
+          /* ── Experience & Bundle List Items ── */
+          .vb-exp-section-header { margin-bottom: 0.75rem; }
           .vb-exp-section-title {
             font-family: var(--vb-font-display);
-            font-size: 1.08rem;
+            font-size: 1.15rem;
             font-weight: 800;
             color: var(--vb-forest);
           }
-          .vb-exp-section-sub { font-size: 0.82rem; color: var(--vb-text-muted); margin-top: 1px; }
+          .vb-exp-section-sub { font-size: 0.84rem; color: var(--vb-text-muted); margin-top: 2px; }
 
-          .vb-exp-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
+          .vb-exp-list { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.5rem; }
           .vb-exp-item {
             display: flex;
             align-items: center;
-            gap: 0.85rem;
-            padding: 0.9rem 1.1rem;
+            gap: 0.95rem;
+            padding: 1rem 1.25rem;
             background: #ffffff;
             border: 1.5px solid var(--vb-border);
-            border-radius: 12px;
+            border-radius: 14px;
             cursor: pointer;
-            transition: all 0.18s ease;
+            transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
             user-select: none;
+            position: relative;
           }
           .vb-exp-item:hover {
-            border-color: var(--vb-forest-sage);
-            background: var(--vb-forest-light);
+            border-color: var(--vb-forest);
+            background: #FCFAF7;
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(20,56,35,0.07);
+            box-shadow: 0 4px 14px rgba(20,56,35,0.07);
           }
           .vb-exp-item.is-selected {
-            border-color: var(--vb-forest);
-            background: var(--vb-forest-light);
-            box-shadow: 0 4px 14px rgba(20,56,35,0.1);
+            border-color: var(--vb-forest) !important;
+            border-width: 2px !important;
+            background: var(--vb-forest-light) !important;
+            box-shadow: 0 4px 16px rgba(20,56,35,0.1) !important;
           }
-          .vb-exp-radio {
-            width: 20px; height: 20px; border-radius: 50%;
-            border: 2px solid var(--vb-border);
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0; font-size: 0.65rem;
-            transition: all 0.15s;
-            color: transparent;
-          }
-          .vb-exp-item.is-selected .vb-exp-radio {
-            background: var(--vb-forest);
-            border-color: var(--vb-forest);
-            color: #ffffff;
-          }
-          .vb-exp-name { font-size: 0.95rem; font-weight: 700; color: var(--vb-forest); }
-          .vb-exp-desc { font-size: 0.78rem; color: var(--vb-text-muted); margin-top: 1px; }
+          .vb-exp-name { font-size: 0.98rem; font-weight: 700; color: var(--vb-forest); }
+          .vb-exp-desc { font-size: 0.8rem; color: var(--vb-text-muted); margin-top: 2px; line-height: 1.4; }
           .vb-exp-price {
-            font-size: 0.95rem;
+            font-family: var(--vb-font-display);
+            font-size: 1.05rem;
             font-weight: 800;
             color: var(--vb-terracotta);
             flex-shrink: 0;
             margin-left: auto;
           }
+
+          /* Fade animation when switching tabs */
+          .vb-tab-content {
+            animation: vbTabFadeIn 0.22s ease-in-out;
+          }
+          @keyframes vbTabFadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
         </style>
 
-        <!-- Hidden real service select (drives existing JS/form POST) -->
+        <!-- Hidden real inputs for form POST & JS synchronization -->
         <select id="new_service_id" name="service_id" required style="display:none;"
                 class="{% if selected_service_id %}has-value{% endif %}">
           <option value="" {% if not selected_service_id %}selected{% endif %} disabled></option>
@@ -1231,65 +1257,43 @@
           </option>
           {% endfor %}
         </select>
+        <input type="hidden" id="new_bundle_id" name="bundle_id" value="">
 
-        <!-- ── THREE-PANEL ROW ── -->
-        <div class="vb-panel-row">
+        <!-- ── THREE-PANEL ROW (Tabs for Bundle & Experience) ── -->
+        <div class="vb-panel-row" role="tablist">
 
-          <!-- Panel 1: Booking Bundle -->
-          <div class="vb-panel{% if not bundles %} is-active{% endif %}" id="panel-bundle">
+          <!-- Panel 1: Booking Bundle (Tab) -->
+          <div class="vb-panel vb-tab-panel" id="panel-bundle"
+               onclick="vbSwitchTab('bundle')"
+               role="tab" tabindex="0" aria-selected="false" aria-controls="content-bundle">
             <div class="vb-panel-title">
               <i class="fa-solid fa-gift" style="color:var(--vb-terracotta);"></i> Booking Bundle
               <span style="font-size:0.72rem;font-weight:600;color:var(--vb-text-muted);">(Optional)</span>
             </div>
-            <div class="vb-panel-sub">Select a package</div>
-            {% if bundles %}
-            <select id="bundle_select_ui" class="vb-select-control" style="font-size:0.88rem;"
-                    onchange="document.getElementById('new_bundle_id').value=this.value; vbHandleBundleChange(this);">
-              <option value="">No bundle — book a single service</option>
-              {% for bundle in bundles %}
-              {% set svc_ids = bundle.get_service_id_list() %}
-              <option value="{{ bundle.id }}"
-                      data-service-ids="{{ svc_ids|tojson }}"
-                      data-min-guests="{{ bundle.min_guests }}"
-                      data-max-guests="{{ bundle.max_guests }}"
-                      data-price="{{ bundle.price }}"
-                      data-eligibility="{{ bundle.eligibility or '' }}"
-                      data-name="{{ bundle.name }}">
-                {{ bundle.name }} — ₱{{ "{:,.2f}".format(bundle.price) }}
-                ({{ bundle.min_guests }}–{{ bundle.max_guests }} guests)
-              </option>
-              {% endfor %}
-            </select>
-            <div id="bundle-eligibility-note" style="display:none;margin-top:0.5rem;padding:0.5rem 0.75rem;background:#fef3c7;border:1px solid #fde68a;border-radius:9px;font-size:0.78rem;color:#92400e;font-weight:700;">
-              <i class="fa-solid fa-circle-info" style="margin-right:4px;"></i>
-              <span id="bundle-eligibility-text"></span>
+            <div id="bundle-panel-selected" style="display:none;margin-top:0.35rem;">
+              <div class="vb-selected-pill">
+                <i class="fa-solid fa-circle-check" style="font-size:0.65rem;color:#16A34A;"></i>
+                <span id="bundle-panel-name">Selected</span>
+              </div>
             </div>
-            {% else %}
-            <div style="font-size:0.82rem;color:var(--vb-text-muted);font-style:italic;">No bundles available.</div>
-            {% endif %}
+            <div class="vb-panel-sub" id="bundle-panel-sub">Select a package</div>
           </div>
 
-          <!-- Panel 2: Select Experience -->
-          <div class="vb-panel is-active" id="panel-experience" style="cursor:pointer;">
+          <!-- Panel 2: Select Experience (Tab) -->
+          <div class="vb-panel vb-tab-panel is-active" id="panel-experience"
+               onclick="vbSwitchTab('experience')"
+               role="tab" tabindex="0" aria-selected="true" aria-controls="content-experience">
             <div class="vb-panel-title">
               <i class="fa-solid fa-binoculars" style="color:var(--vb-terracotta);"></i> Select Experience
               <span style="color:var(--vb-terracotta);">*</span>
             </div>
-            <div id="exp-panel-selected" style="display:{% if selected_service_id %}block{% else %}none{% endif %};margin-bottom:0.35rem;">
+            <div id="exp-panel-selected" style="display:{% if selected_service_id %}block{% else %}none{% endif %};margin-top:0.35rem;">
               <div class="vb-selected-pill">
-                <i class="fa-solid fa-circle-check" style="font-size:0.65rem;"></i>
+                <i class="fa-solid fa-circle-check" style="font-size:0.65rem;color:#16A34A;"></i>
                 <span id="exp-panel-name">{% if selected_service_id %}{% for s in services if s.id == selected_service_id %}{{ s.name }}{% endfor %}{% else %}Selected{% endif %}</span>
               </div>
             </div>
-            <select id="panel_service_select" class="vb-select-control" style="font-size:0.88rem;"
-                    onchange="vbSelectExpById(this.value)">
-              <option value="" {% if not selected_service_id %}selected{% endif %} disabled>Choose an experience below or here…</option>
-              {% for service in services %}
-              <option value="{{ service.id }}" {% if selected_service_id == service.id %}selected{% endif %}>
-                {{ service.name }} — ₱{{ "{:,.2f}".format(service.price or 0) }}
-              </option>
-              {% endfor %}
-            </select>
+            <div class="vb-panel-sub" id="exp-panel-sub">{% if selected_service_id %}{% for s in services if s.id == selected_service_id %}{{ s.name }}{% endfor %}{% else %}Individual services{% endif %}</div>
           </div>
 
           <!-- Panel 3: Number of Guests -->
@@ -1300,7 +1304,7 @@
             </div>
             <div class="vb-panel-sub">How many are visiting?</div>
             <!-- Guest chips (synced to hidden input) -->
-            <div id="guest-chips" style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+            <div id="guest-chips" style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.4rem;">
               {% for n in [1,2,3,4,5] %}
               <button type="button" class="vb-guest-chip{% if n == 1 %} is-selected{% endif %}" data-guests="{{ n }}">{{ n }}</button>
               {% endfor %}
@@ -1322,47 +1326,138 @@
 
         </div><!-- end .vb-panel-row -->
 
-        <!-- ── Available Experiences List ── -->
-        <div class="vb-exp-section-header">
-          <div class="vb-exp-section-title">Available Experiences</div>
-          <div class="vb-exp-section-sub">Choose your preferred experience.</div>
-        </div>
-        <div class="vb-exp-list" id="vb-exp-list">
-          {% for service in services %}
-          <div class="vb-exp-item{% if selected_service_id == service.id %} is-selected{% endif %}"
-               data-service-id="{{ service.id }}"
-               data-price="{{ service.price or 0 }}"
-               data-max-capacity="{{ service.max_guest_capacity or 50 }}"
-               data-category="{{ service.category or '' }}"
-               role="button"
-               tabindex="0"
-               onclick="vbSelectExpById('{{ service.id }}')">
-            <input type="radio" name="ui_service_radio" value="{{ service.id }}"
-                   class="vb-exp-radio-native"
-                   {% if selected_service_id == service.id %}checked{% endif %}
-                   style="accent-color: var(--vb-forest); width: 18px; height: 18px; cursor: pointer; flex-shrink: 0;"
-                   onclick="event.stopPropagation(); vbSelectExpById('{{ service.id }}')">
-            <div style="flex:1;min-width:0;">
-              <div class="vb-exp-name">{{ service.name }}</div>
-              {% if service.description %}
-              <div class="vb-exp-desc">{{ service.description|truncate(80) }}</div>
-              {% endif %}
-            </div>
-            <div class="vb-exp-price">₱{{ "{:,.2f}".format(service.price or 0) }}</div>
+        <!-- ── TAB CONTENT: Available Experiences ── -->
+        <div id="content-experience" class="vb-tab-content" role="tabpanel" aria-labelledby="panel-experience">
+          <div class="vb-exp-section-header">
+            <div class="vb-exp-section-title">Available Experiences</div>
+            <div class="vb-exp-section-sub">Choose your preferred experience.</div>
           </div>
-          {% else %}
-          <div style="font-size:0.88rem;color:var(--vb-text-muted);padding:1rem;text-align:center;">No experiences available.</div>
-          {% endfor %}
+          <div class="vb-exp-list" id="vb-exp-list">
+            {% for service in services %}
+            <div class="vb-exp-item{% if selected_service_id == service.id %} is-selected{% endif %}"
+                 data-service-id="{{ service.id }}"
+                 data-price="{{ service.price or 0 }}"
+                 data-max-capacity="{{ service.max_guest_capacity or 50 }}"
+                 data-category="{{ service.category or '' }}"
+                 role="button"
+                 tabindex="0"
+                 onclick="vbSelectExpById('{{ service.id }}')">
+              <input type="radio" name="ui_service_radio" value="{{ service.id }}"
+                     class="vb-exp-radio-native"
+                     {% if selected_service_id == service.id %}checked{% endif %}
+                     style="accent-color: var(--vb-forest); width: 18px; height: 18px; cursor: pointer; flex-shrink: 0;"
+                     onclick="event.stopPropagation(); vbSelectExpById('{{ service.id }}')">
+              <div style="flex:1;min-width:0;">
+                <div class="vb-exp-name">{{ service.name }}</div>
+                {% if service.description %}
+                <div class="vb-exp-desc">{{ service.description|truncate(80) }}</div>
+                {% endif %}
+              </div>
+              <div class="vb-exp-price">₱{{ "{:,.2f}".format(service.price or 0) }}</div>
+            </div>
+            {% else %}
+            <div style="font-size:0.88rem;color:var(--vb-text-muted);padding:1rem;text-align:center;">No experiences available.</div>
+            {% endfor %}
+          </div>
         </div>
 
-        <!-- JS: wire up exp list clicks to existing serviceSelect machinery -->
+        <!-- ── TAB CONTENT: Available Bundles ── -->
+        <div id="content-bundle" class="vb-tab-content" style="display:none;" role="tabpanel" aria-labelledby="panel-bundle">
+          <div class="vb-exp-section-header">
+            <div class="vb-exp-section-title">Available Bundles</div>
+            <div class="vb-exp-section-sub">Choose a packaged adventure with bundled savings.</div>
+          </div>
+          <div class="vb-exp-list" id="vb-bundle-list">
+            {% for bundle in bundles %}
+            {% set svc_ids = bundle.get_service_id_list() %}
+            {% set first_svc_id = (svc_ids[0] if svc_ids else bundle.service_id) or '' %}
+            <div class="vb-bundle-item vb-exp-item"
+                 data-bundle-id="{{ bundle.id }}"
+                 data-service-id="{{ first_svc_id }}"
+                 data-price="{{ bundle.price or 0 }}"
+                 data-min-guests="{{ bundle.min_guests or 1 }}"
+                 data-max-guests="{{ bundle.max_guests or 50 }}"
+                 data-eligibility="{{ bundle.eligibility or '' }}"
+                 data-name="{{ bundle.name }}"
+                 role="button"
+                 tabindex="0"
+                 onclick="vbSelectBundle('{{ bundle.id }}', '{{ first_svc_id }}', {{ bundle.min_guests or 1 }}, {{ bundle.max_guests or 50 }}, '{{ bundle.name|escape }}')">
+              <input type="radio" name="ui_bundle_radio" value="{{ bundle.id }}"
+                     class="vb-bundle-radio-native vb-exp-radio-native"
+                     style="accent-color: var(--vb-forest); width: 18px; height: 18px; cursor: pointer; flex-shrink: 0;"
+                     onclick="event.stopPropagation(); vbSelectBundle('{{ bundle.id }}', '{{ first_svc_id }}', {{ bundle.min_guests or 1 }}, {{ bundle.max_guests or 50 }}, '{{ bundle.name|escape }}')">
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span class="vb-exp-name">{{ bundle.name }}</span>
+                  <span style="font-size:0.74rem;font-weight:700;color:var(--vb-forest);background:var(--vb-forest-light);border:1px solid #C4E2D0;padding:2px 8px;border-radius:20px;">
+                    <i class="fa-solid fa-users" style="margin-right:3px;"></i>{{ bundle.min_guests }}–{{ bundle.max_guests }} guests
+                  </span>
+                  {% if bundle.eligibility %}
+                  <span style="font-size:0.72rem;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;padding:2px 7px;border-radius:20px;">
+                    <i class="fa-solid fa-circle-info" style="margin-right:3px;"></i>{{ bundle.eligibility }}
+                  </span>
+                  {% endif %}
+                </div>
+                {% if bundle.description %}
+                <div class="vb-exp-desc">{{ bundle.description|truncate(90) }}</div>
+                {% endif %}
+              </div>
+              <div class="vb-exp-price">₱{{ "{:,.2f}".format(bundle.price or 0) }}</div>
+            </div>
+            {% else %}
+            <div style="font-size:0.88rem;color:var(--vb-text-muted);padding:1.5rem;text-align:center;background:#FCFAF7;border:1.5px dashed var(--vb-border);border-radius:12px;">
+              <i class="fa-solid fa-gift" style="font-size:1.5rem;color:var(--vb-terracotta);margin-bottom:0.5rem;display:block;"></i>
+              No package bundles currently active for this park.<br>
+              <button type="button" onclick="vbSwitchTab('experience')" style="background:none;border:none;color:var(--vb-forest);font-weight:700;text-decoration:underline;cursor:pointer;margin-top:0.4rem;">Browse Available Experiences</button>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- JS: Tab switching & selection logic -->
         <script>
+        function vbSwitchTab(tabName) {
+          var panelBundle = document.getElementById('panel-bundle');
+          var panelExp = document.getElementById('panel-experience');
+          var contentBundle = document.getElementById('content-bundle');
+          var contentExp = document.getElementById('content-experience');
+
+          if (tabName === 'bundle') {
+            panelBundle.classList.add('is-active');
+            panelBundle.setAttribute('aria-selected', 'true');
+            panelExp.classList.remove('is-active');
+            panelExp.setAttribute('aria-selected', 'false');
+            if (contentBundle) contentBundle.style.display = 'block';
+            if (contentExp) contentExp.style.display = 'none';
+          } else {
+            panelExp.classList.add('is-active');
+            panelExp.setAttribute('aria-selected', 'true');
+            panelBundle.classList.remove('is-active');
+            panelBundle.setAttribute('aria-selected', 'false');
+            if (contentExp) contentExp.style.display = 'block';
+            if (contentBundle) contentBundle.style.display = 'none';
+          }
+        }
+
         function vbSelectExpById(svcId) {
           if (!svcId) return;
           svcId = String(svcId);
 
+          // Clear bundle selection since user is booking single service
+          var bInput = document.getElementById('new_bundle_id');
+          if (bInput) bInput.value = '';
+          document.querySelectorAll('.vb-bundle-item').forEach(function(item) {
+            item.classList.remove('is-selected');
+            var r = item.querySelector('.vb-bundle-radio-native');
+            if (r) r.checked = false;
+          });
+          var bBadge = document.getElementById('bundle-panel-selected');
+          if (bBadge) bBadge.style.display = 'none';
+          var bSub = document.getElementById('bundle-panel-sub');
+          if (bSub) bSub.textContent = 'Select a package';
+
           // 1. Highlight matching card in Available Experiences list
-          document.querySelectorAll('.vb-exp-item').forEach(function(item) {
+          document.querySelectorAll('.vb-exp-item:not(.vb-bundle-item)').forEach(function(item) {
             var match = String(item.getAttribute('data-service-id')) === svcId;
             if (match) {
               item.classList.add('is-selected');
@@ -1373,44 +1468,38 @@
             if (radio) radio.checked = match;
           });
 
-          // 2. Sync dropdown in Panel 2
-          var panelSelect = document.getElementById('panel_service_select');
-          if (panelSelect && panelSelect.value !== svcId) {
-            panelSelect.value = svcId;
-          }
-
-          // 3. Sync hidden main form select
+          // 2. Sync hidden main form select
           var sel = document.getElementById('new_service_id');
           if (sel) {
             sel.value = svcId;
             sel.classList.add('has-value');
           }
 
-          // 4. Update Panel 2 pill badge
-          var selectedItem = document.querySelector('.vb-exp-item[data-service-id="' + svcId + '"]');
+          // 3. Update Panel 2 pill badge
+          var selectedItem = document.querySelector('.vb-exp-item:not(.vb-bundle-item)[data-service-id="' + svcId + '"]');
           var svcName = '';
           if (selectedItem) {
             var nameEl = selectedItem.querySelector('.vb-exp-name');
             if (nameEl) svcName = nameEl.textContent.trim();
-          } else if (panelSelect && panelSelect.selectedIndex >= 0) {
-            svcName = panelSelect.options[panelSelect.selectedIndex].text.split('—')[0].trim();
           }
           var panelSelected = document.getElementById('exp-panel-selected');
           var panelName = document.getElementById('exp-panel-name');
+          var expSub = document.getElementById('exp-panel-sub');
           if (panelSelected) panelSelected.style.display = 'block';
           if (panelName && svcName) panelName.textContent = svcName;
+          if (expSub && svcName) expSub.textContent = svcName;
 
           var panelExp = document.getElementById('panel-experience');
           var panelGuests = document.getElementById('panel-guests');
           if (panelExp) panelExp.classList.add('is-active');
           if (panelGuests) panelGuests.classList.add('is-active');
 
-          // 5. Fire change on hidden select so all listeners execute
+          // 4. Fire change on hidden select so all listeners execute
           if (sel) {
             sel.dispatchEvent(new Event('change', { bubbles: true }));
           }
 
-          // 6. Direct execution fallback for availability & quotes
+          // 5. Direct execution fallback for availability & quotes
           if (window._vbBooking) {
             if (window._vbBooking.syncServiceDropdown) window._vbBooking.syncServiceDropdown();
             var yr = new Date().getFullYear();
@@ -1420,46 +1509,84 @@
           }
         }
 
-        // Backward compatibility for inline onclick if any
-        function vbSelectExp(el) {
-          if (!el) return;
-          var svcId = el.getAttribute('data-service-id') || (el.dataset && el.dataset.serviceId);
-          vbSelectExpById(svcId);
-        }
+        function vbSelectBundle(bundleId, serviceId, minGuests, maxGuests, bundleName) {
+          if (!bundleId) return;
 
-        function vbHandleBundleChange(sel) {
-          var panelBundle = document.getElementById('panel-bundle');
-          if (sel.value) {
-            panelBundle.classList.add('is-active');
-            document.getElementById('new_bundle_id').value = sel.value;
-          } else {
-            panelBundle.classList.remove('is-active');
-            document.getElementById('new_bundle_id').value = '';
+          // Clear experience radio checks
+          document.querySelectorAll('.vb-exp-item:not(.vb-bundle-item)').forEach(function(item) {
+            item.classList.remove('is-selected');
+            var r = item.querySelector('.vb-exp-radio-native');
+            if (r) r.checked = false;
+          });
+
+          // 1. Highlight bundle card
+          document.querySelectorAll('.vb-bundle-item').forEach(function(item) {
+            var match = String(item.getAttribute('data-bundle-id')) === String(bundleId);
+            if (match) item.classList.add('is-selected');
+            else item.classList.remove('is-selected');
+            var r = item.querySelector('.vb-bundle-radio-native');
+            if (r) r.checked = match;
+          });
+
+          // 2. Set hidden inputs
+          var bInput = document.getElementById('new_bundle_id');
+          if (bInput) bInput.value = bundleId;
+
+          var sel = document.getElementById('new_service_id');
+          if (sel && serviceId) {
+            sel.value = serviceId;
+            sel.classList.add('has-value');
+          }
+
+          // 3. Update Panel 1 pill badge
+          var panelBadge = document.getElementById('bundle-panel-selected');
+          var panelName = document.getElementById('bundle-panel-name');
+          var panelSub = document.getElementById('bundle-panel-sub');
+          if (panelBadge) panelBadge.style.display = 'block';
+          if (panelName && bundleName) panelName.textContent = bundleName;
+          if (panelSub && bundleName) panelSub.textContent = bundleName;
+
+          // 4. Enforce guest limits for this bundle
+          var guestsInput = document.getElementById('new_guests');
+          if (guestsInput) {
+            var cur = parseInt(guestsInput.value || '1', 10);
+            if (cur < minGuests) guestsInput.value = minGuests;
+            if (cur > maxGuests) guestsInput.value = maxGuests;
+            guestsInput.min = minGuests;
+            guestsInput.max = maxGuests;
+            // Highlight matching guest chip
+            var matchingChip = document.querySelector('#guest-chips .vb-guest-chip[data-guests="' + guestsInput.value + '"]');
+            if (matchingChip) {
+              document.querySelectorAll('#guest-chips .vb-guest-chip').forEach(function(c) { c.classList.remove('is-selected'); });
+              matchingChip.classList.add('is-selected');
+            }
+          }
+
+          // 5. Trigger availability & price calculations
+          if (sel) {
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          if (window._vbBooking) {
+            if (window._vbBooking.syncServiceDropdown) window._vbBooking.syncServiceDropdown();
+            var yr = new Date().getFullYear();
+            var mo = new Date().getMonth() + 1;
+            if (serviceId && window._vbBooking.fetchAvailability) {
+              window._vbBooking.fetchAvailability(yr, mo, serviceId);
+            }
+            if (window._vbBooking.updateFormState) window._vbBooking.updateFormState();
           }
         }
 
-        // Keyboard accessibility (Enter/Space on .vb-exp-item)
+        // Keyboard accessibility
         document.addEventListener('DOMContentLoaded', function() {
           document.querySelectorAll('.vb-exp-item').forEach(function(item) {
             item.addEventListener('keydown', function(e) {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                var svcId = item.getAttribute('data-service-id');
-                vbSelectExpById(svcId);
+                item.click();
               }
             });
           });
-
-          // Focus select when clicking panel-experience
-          var panelExp = document.getElementById('panel-experience');
-          if (panelExp) {
-            panelExp.addEventListener('click', function(e) {
-              if (e.target.id !== 'panel_service_select') {
-                var ps = document.getElementById('panel_service_select');
-                if (ps) ps.focus();
-              }
-            });
-          }
 
           // Pre-selection check on page load
           var sel = document.getElementById('new_service_id');
@@ -1468,7 +1595,6 @@
           }
         });
         </script>
-
         <!-- Promo, Add-ons, Points row (unchanged) -->
         <div class="vb-top-fields" style="margin-top:0.5rem;">
           <div class="vb-field-group" style="flex:1.2;min-width:280px;">
