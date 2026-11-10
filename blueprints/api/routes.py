@@ -467,7 +467,7 @@ def visitor_create_booking():
             time=time_value,
             guests=guests,
             status="Pending",
-            amount=float(service.price or 0) * guests,
+            amount=float(service.price or 0),
             payment_status="unpaid",
         )
         db.session.add(booking)
@@ -520,7 +520,7 @@ def visitor_reschedule_booking(booking_id: str):
             booking.guests = guests
         service = db.session.get(Service, booking.service_id) if booking.service_id else None
         if service:
-            booking.amount = float(service.price or 0) * (booking.guests or 1)
+            booking.amount = float(service.price or 0)
         booking.status = "Pending"
         db.session.commit()
         return jsonify({"booking": _serialize_booking(booking)})

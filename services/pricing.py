@@ -12,6 +12,17 @@ class PricingError(ValueError):
     pass
 
 
+def guest_limits(*, service: Service, bundle: BookingBundle | None = None) -> tuple[int, int]:
+    """Return the selectable guest range for the chosen experience or bundle."""
+    service_max = max(int(service.max_guest_capacity or 50), 1)
+    if not bundle:
+        return 1, service_max
+    return max(int(bundle.min_guests or 1), 1), min(
+        service_max,
+        max(int(bundle.max_guests or service_max), 1),
+    )
+
+
 @dataclass(frozen=True)
 class PriceLine:
     name: str
@@ -94,9 +105,9 @@ def calculate_booking_price(
 
     lines: list[PriceLine] = []
     base_unit = Decimal(str(bundle.price if bundle else service.price))
-    base_amount = base_unit * guests
+    base_amount = base_unit
     bundle_discount = _discount(base_amount, bundle.discount_type, bundle.discount_value) if bundle else Decimal("0")
-    lines.append(PriceLine(bundle.name if bundle else service.name, guests, _money(base_unit), _money(bundle_discount), _money(base_amount - bundle_discount)))
+    lines.append(PriceLine(bundle.name if bundle else service.name, 1, _money(base_unit), _money(bundle_discount), _money(base_amount - bundle_discount)))
 
     subtotal = base_amount - bundle_discount
     discount = bundle_discount
@@ -109,9 +120,9 @@ def calculate_booking_price(
             or float(add_on.price) < 0
         ):
             raise PricingError("An add-on service is invalid.")
-        amount = Decimal(str(add_on.price)) * guests
+        amount = Decimal(str(add_on.price))
         subtotal += amount
-        lines.append(PriceLine(add_on.name, guests, _money(Decimal(str(add_on.price))), 0.0, _money(amount)))
+        lines.append(PriceLine(add_on.name, 1, _money(Decimal(str(add_on.price))), 0.0, _money(amount)))
 
     if promotion:
         if promotion.zoo_id not in {None, service.zoo_id}:

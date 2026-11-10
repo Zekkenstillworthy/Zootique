@@ -1507,6 +1507,7 @@
             if (window._vbBooking.fetchAvailability) window._vbBooking.fetchAvailability(yr, mo, svcId);
             if (window._vbBooking.updateFormState) window._vbBooking.updateFormState();
           }
+          if (window.updateGuestChipAvailability) window.updateGuestChipAvailability();
         }
 
         function vbSelectBundle(bundleId, serviceId, minGuests, maxGuests, bundleName) {
@@ -1575,6 +1576,7 @@
             }
             if (window._vbBooking.updateFormState) window._vbBooking.updateFormState();
           }
+          if (window.updateGuestChipAvailability) window.updateGuestChipAvailability();
         }
 
         // Keyboard accessibility
@@ -2049,12 +2051,30 @@
     return parseInt((option && option.getAttribute('data-max-guest-capacity')) || '50', 10);
   }
 
+  function getGuestBounds() {
+    var min = 1;
+    var max = Math.min(maxSlotCapacity, getServiceMaxGuests());
+    var bundleId = bundleSelect && bundleSelect.value;
+    if (bundleId) {
+      var bundleCard = document.querySelector('.vb-bundle-item[data-bundle-id="' + bundleId + '"]');
+      if (bundleCard) {
+        min = parseInt(bundleCard.getAttribute('data-min-guests') || '1', 10);
+        max = Math.min(
+          max,
+          parseInt(bundleCard.getAttribute('data-max-guests') || String(max), 10)
+        );
+      }
+    }
+    return { min: min, max: Math.max(min, max) };
+  }
+
   function updateFormState() {
     var hasService = !!(serviceSelect && serviceSelect.value);
     var hasDate = !!selectedDate;
     var hasTime = !!(selectedTime || (hiddenTime && hiddenTime.value));
     var guests = parseInt((guestsInput && guestsInput.value) || '1', 10);
-    var isGuestsValid = guests >= 1 && guests <= Math.min(maxSlotCapacity, getServiceMaxGuests());
+    var guestBounds = getGuestBounds();
+    var isGuestsValid = guests >= guestBounds.min && guests <= guestBounds.max;
 
     if (confirmBtn) {
       confirmBtn.disabled = !(hasService && hasDate && hasTime && isGuestsValid);
@@ -2474,7 +2494,7 @@
           if (isPrimary) option.selected = false;
         });
       }
-      if (bundleSelect) {
+      if (bundleSelect && bundleSelect.tagName === 'SELECT') {
         Array.prototype.forEach.call(bundleSelect.options, function(option) {
           var serviceId = option.getAttribute('data-service-id');
           option.hidden = !!serviceId && serviceId !== serviceSelect.value;
@@ -2545,14 +2565,22 @@
     var customStepper = document.getElementById('custom-guests-stepper');
     var customValue = document.getElementById('custom-guests-value');
     var customGuests = 6;
-    function guestLimit() {
-      return Math.min(maxSlotCapacity, getServiceMaxGuests());
+    function guestBounds() {
+      return getGuestBounds();
     }
     function updateChipAvailability() {
-      var limit = guestLimit();
+      var bounds = guestBounds();
+      var limit = bounds.max;
+      if (guestsInput) {
+        var current = parseInt(guestsInput.value || '1', 10);
+        guestsInput.min = bounds.min;
+        guestsInput.max = limit;
+        if (current < bounds.min) guestsInput.value = bounds.min;
+        if (current > limit) guestsInput.value = limit;
+      }
       chips.forEach(function(chip) {
         var value = chip.dataset.guests === 'custom' ? 6 : parseInt(chip.dataset.guests, 10);
-        var unavailable = value > limit;
+        var unavailable = value < bounds.min || value > limit;
         chip.hidden = unavailable;
         chip.disabled = unavailable;
         if (unavailable && chip.classList.contains('is-selected')) {
@@ -2563,7 +2591,8 @@
       if (plus) plus.disabled = customGuests >= limit;
     }
     function setCustomGuests(value) {
-      customGuests = Math.max(6, Math.min(guestLimit(), value));
+      var bounds = guestBounds();
+      customGuests = Math.max(Math.max(6, bounds.min), Math.min(bounds.max, value));
       if (guestsInput) guestsInput.value = customGuests;
       if (customValue) customValue.textContent = customGuests;
       validateGuests();
@@ -2571,6 +2600,8 @@
     function setChip(chipEl, guests) {
       chips.forEach(function(c) { c.classList.remove('is-selected'); });
       chipEl.classList.add('is-selected');
+      var bounds = guestBounds();
+      guests = Math.max(bounds.min, Math.min(bounds.max, guests));
       if (guestsInput) { guestsInput.value = guests; }
       if (customStepper) { customStepper.style.display = 'none'; }
       validateGuests();

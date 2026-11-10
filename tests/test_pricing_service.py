@@ -17,8 +17,8 @@ class PricingServiceTestCase(unittest.TestCase):
 
         result = calculate_booking_price(service=service, bundle=bundle, guests=4, add_ons=[add_on], visit_date=date.today())
 
-        self.assertEqual(result.subtotal, 420.0)
-        self.assertEqual(result.total, 420.0)
+        self.assertEqual(result.subtotal, 105.0)
+        self.assertEqual(result.total, 105.0)
         self.assertEqual(len(result.lines), 2)
 
     def test_bundle_guest_limits_are_enforced(self):
@@ -73,10 +73,10 @@ class PricingServiceTestCase(unittest.TestCase):
                 user=user,
             )
 
-        self.assertEqual(result.subtotal, 250.0)
-        self.assertEqual(result.discount, 25.0)
+        self.assertEqual(result.subtotal, 125.0)
+        self.assertEqual(result.discount, 12.5)
         self.assertEqual(result.loyalty_discount, 1.0)
-        self.assertEqual(result.total, 224.0)
+        self.assertEqual(result.total, 111.5)
 
 
 if __name__ == "__main__":

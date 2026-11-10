@@ -32,7 +32,7 @@ from services import (
 )
 from services.storage import save_uploaded_image as _save_uploaded_image
 from services.visitor_notifications import ensure_visitor_notifications
-from services.pricing import PricingError, calculate_booking_price
+from services.pricing import PricingError, calculate_booking_price, guest_limits
 from services.tickets import issue_ticket, sign_ticket, qr_data_uri
 from services.loyalty import get_settings, record_transaction
 from services.cancellation import cancel_visitor_booking
@@ -681,13 +681,14 @@ def my_bookings():
         if service.service_status != "Active":
             flash("This service is not currently available for booking.", "error")
             return redirect(url_for("visitor.my_bookings"))
-        if service.max_guest_capacity and guests > service.max_guest_capacity:
+        bundle = db.session.get(BookingBundle, bundle_id) if bundle_id else None
+        min_guests, max_guests = guest_limits(service=service, bundle=bundle)
+        if guests < min_guests or guests > max_guests:
             flash(
-                f"This service allows a maximum of {service.max_guest_capacity} guest(s) per booking.",
+                f"Select between {min_guests} and {max_guests} guest(s) for this selection.",
                 "error",
             )
             return redirect(url_for("visitor.my_bookings"))
-        bundle = db.session.get(BookingBundle, bundle_id) if bundle_id else None
         promotion_code = (request.form.get("promotion_code") or request.form.get("promotion_code_select") or "").strip().upper()
         promotion = (
             Promotion.query.filter_by(code=promotion_code, zoo_id=service.zoo_id).first()
@@ -1342,12 +1343,18 @@ def reschedule_booking(booking_id: str):
         flash(str(exc), "error")
         return redirect(url_for("visitor.my_bookings"))
 
+    service = db.session.get(Service, booking.service_id) if booking.service_id else None
+    if service:
+        bundle = db.session.get(BookingBundle, booking.bundle_id) if booking.bundle_id else None
+        min_guests, max_guests = guest_limits(service=service, bundle=bundle)
+        if guests < min_guests or guests > max_guests:
+            flash(f"Select between {min_guests} and {max_guests} guest(s) for this selection.", "error")
+            return redirect(url_for("visitor.my_bookings"))
     booking.date = date
     booking.time = time
     booking.guests = guests
-    service = db.session.get(Service, booking.service_id) if booking.service_id else None
     if service:
-        booking.amount = float(service.price or 0) * guests
+        booking.amount = float(service.price or 0)
     # Reschedule implies reconfirmation
     booking.status = "Pending"
     db.session.commit()
