@@ -1497,11 +1497,13 @@
             var max = parseInt(item.getAttribute('data-max-guests') || '50', 10);
             var guestMatch = guests >= min && guests <= max;
             var unavailable = !serviceMatch || !guestMatch;
-            item.style.display = serviceMatch ? 'flex' : 'none';
-            item.classList.toggle('is-capacity-unavailable', serviceMatch && !guestMatch);
-            var reason = serviceMatch && !guestMatch
-              ? 'Needs ' + min + '-' + max + ' guests'
-              : '';
+            // Keep every configured bundle visible so visitors can see that
+            // bundles exist; explain why an incompatible one cannot be chosen.
+            item.style.display = 'flex';
+            item.classList.toggle('is-capacity-unavailable', unavailable);
+            var reason = !serviceMatch
+              ? 'Not available for this experience'
+              : (!guestMatch ? 'Needs ' + min + '-' + max + ' guests' : '');
             item.setAttribute('aria-disabled', unavailable ? 'true' : 'false');
             item.title = reason || '';
             var reasonEl = item.querySelector('.vb-bundle-capacity-reason');
@@ -1613,6 +1615,11 @@
           if (!bundleId) return;
           var bundleCard = document.querySelector('.vb-bundle-item[data-bundle-id="' + bundleId + '"]');
           var currentGuests = parseInt((document.getElementById('new_guests') || {}).value || '1', 10);
+          var currentServiceId = (document.getElementById('new_service_id') || {}).value || '';
+          if (bundleCard && currentServiceId && !vbBundleIncludesService(bundleCard, currentServiceId)) {
+            vbShowCapacityNotice('This bundle is not available for the selected experience.');
+            return;
+          }
           if (bundleCard && (currentGuests < minGuests || currentGuests > maxGuests)) {
             // A bundle outside the current guest count is visible for explanation,
             // but cannot be selected until the visitor chooses a matching count.
