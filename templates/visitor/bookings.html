@@ -1111,16 +1111,140 @@
         <input type="hidden" id="new_time" name="time" value="{{ selected_event_time or '08:00' }}">
         <input type="hidden" id="new_bundle_id" name="bundle_id" value="">
 
-        {# ── Bundle selector row (shown below service/guests) ── #}
-        {% if bundles %}
-        <div class="vb-top-fields" style="margin-top:0.75rem;">
-          <div class="vb-field-group" style="flex:2; min-width:260px;">
-            <label class="vb-field-label" for="bundle_select_ui">
-              <i class="fa-solid fa-gift" style="color:var(--vb-terracotta);"></i>
-              <span>Booking Bundle <span style="font-size:0.75rem; font-weight:600; color:var(--vb-text-muted);">(Optional)</span></span>
-            </label>
-            <select id="bundle_select_ui" class="vb-select-control"
-                    style="font-size:0.9rem;">
+        {# ── 3-Panel Layout: Bundle | Experience | Guests ── #}
+        <style>
+          /* ── Panel Row ── */
+          .vb-panel-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+          }
+          @media (max-width: 900px) { .vb-panel-row { grid-template-columns: 1fr 1fr; } }
+          @media (max-width: 600px) { .vb-panel-row { grid-template-columns: 1fr; } }
+
+          .vb-panel {
+            background: #ffffff;
+            border: 1.5px solid var(--vb-border);
+            border-radius: 14px;
+            padding: 1.1rem 1.25rem;
+            transition: border-color 0.18s, box-shadow 0.18s;
+          }
+          .vb-panel:hover { border-color: var(--vb-forest-sage); }
+          .vb-panel.is-active {
+            border-color: var(--vb-forest);
+            background: var(--vb-forest-light);
+            box-shadow: 0 4px 14px rgba(20,56,35,0.08);
+          }
+          .vb-panel-title {
+            font-size: 0.84rem;
+            font-weight: 800;
+            color: var(--vb-forest);
+            margin-bottom: 0.15rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+          }
+          .vb-panel-sub { font-size: 0.8rem; color: var(--vb-text-muted); margin-bottom: 0.65rem; }
+          .vb-selected-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: var(--vb-forest-light);
+            border: 1px solid #A8D5B5;
+            color: var(--vb-forest);
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 0.2rem 0.65rem;
+            border-radius: 999px;
+            margin-bottom: 0.4rem;
+          }
+
+          /* ── Experience List ── */
+          .vb-exp-section-header { margin-bottom: 0.65rem; }
+          .vb-exp-section-title {
+            font-family: var(--vb-font-display);
+            font-size: 1.08rem;
+            font-weight: 800;
+            color: var(--vb-forest);
+          }
+          .vb-exp-section-sub { font-size: 0.82rem; color: var(--vb-text-muted); margin-top: 1px; }
+
+          .vb-exp-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
+          .vb-exp-item {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 0.9rem 1.1rem;
+            background: #ffffff;
+            border: 1.5px solid var(--vb-border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            user-select: none;
+          }
+          .vb-exp-item:hover {
+            border-color: var(--vb-forest-sage);
+            background: var(--vb-forest-light);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(20,56,35,0.07);
+          }
+          .vb-exp-item.is-selected {
+            border-color: var(--vb-forest);
+            background: var(--vb-forest-light);
+            box-shadow: 0 4px 14px rgba(20,56,35,0.1);
+          }
+          .vb-exp-radio {
+            width: 20px; height: 20px; border-radius: 50%;
+            border: 2px solid var(--vb-border);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; font-size: 0.65rem;
+            transition: all 0.15s;
+            color: transparent;
+          }
+          .vb-exp-item.is-selected .vb-exp-radio {
+            background: var(--vb-forest);
+            border-color: var(--vb-forest);
+            color: #ffffff;
+          }
+          .vb-exp-name { font-size: 0.95rem; font-weight: 700; color: var(--vb-forest); }
+          .vb-exp-desc { font-size: 0.78rem; color: var(--vb-text-muted); margin-top: 1px; }
+          .vb-exp-price {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--vb-terracotta);
+            flex-shrink: 0;
+            margin-left: auto;
+          }
+        </style>
+
+        <!-- Hidden real service select (drives existing JS/form POST) -->
+        <select id="new_service_id" name="service_id" required style="display:none;"
+                class="{% if selected_service_id %}has-value{% endif %}">
+          <option value="" {% if not selected_service_id %}selected{% endif %} disabled></option>
+          {% for service in services %}
+          <option value="{{ service.id }}"
+                  data-category="{{ service.category or '' }}"
+                  data-max-guest-capacity="{{ service.max_guest_capacity or 50 }}"
+                  {% if selected_service_id == service.id %}selected{% endif %}>
+            {{ service.name }}
+          </option>
+          {% endfor %}
+        </select>
+
+        <!-- ── THREE-PANEL ROW ── -->
+        <div class="vb-panel-row">
+
+          <!-- Panel 1: Booking Bundle -->
+          <div class="vb-panel{% if not bundles %} is-active{% endif %}" id="panel-bundle">
+            <div class="vb-panel-title">
+              <i class="fa-solid fa-gift" style="color:var(--vb-terracotta);"></i> Booking Bundle
+              <span style="font-size:0.72rem;font-weight:600;color:var(--vb-text-muted);">(Optional)</span>
+            </div>
+            <div class="vb-panel-sub">Select a package</div>
+            {% if bundles %}
+            <select id="bundle_select_ui" class="vb-select-control" style="font-size:0.88rem;"
+                    onchange="document.getElementById('new_bundle_id').value=this.value; vbHandleBundleChange(this);">
               <option value="">No bundle — book a single service</option>
               {% for bundle in bundles %}
               {% set svc_ids = bundle.get_service_id_list() %}
@@ -1136,117 +1260,198 @@
               </option>
               {% endfor %}
             </select>
-          </div>
-          <div id="bundle-eligibility-note"
-               style="display:none; align-self:flex-end; padding:0.55rem 0.9rem;
-                      background:#fef3c7; border:1px solid #fde68a; border-radius:10px;
-                      font-size:0.82rem; color:#92400e; font-weight:700;
-                      flex:1; min-width:200px;">
-            <i class="fa-solid fa-circle-info" style="margin-right:5px;"></i>
-            <span id="bundle-eligibility-text"></span>
-          </div>
-        </div>
-        {% endif %}
-
-        <!-- Step 1: Experience & Guests -->
-        <div class="vb-top-fields">
-          <div class="vb-field-group" style="flex: 1.8; min-width: 260px;">
-            <label class="vb-field-label" for="new_service_id">
-              <i class="fa-solid fa-binoculars" style="color: var(--vb-terracotta);"></i>
-              <span>Select Experience <span class="vb-field-req">*</span></span>
-            </label>
-            <select id="new_service_id" name="service_id" required class="vb-select-control{% if selected_service_id %} has-value{% endif %}">
-              <option value="" {% if not selected_service_id %}selected{% endif %} disabled>Select an experience to check availability…</option>
-              {% for service in services %}
-              <option value="{{ service.id }}" data-category="{{ service.category or '' }}" data-max-guest-capacity="{{ service.max_guest_capacity or 50 }}" {% if selected_service_id == service.id %}selected{% endif %}>{{ service.name }} — ₱{{ "{:,.2f}".format(service.price or 0) }}</option>
-              {% endfor %}
-            </select>
+            <div id="bundle-eligibility-note" style="display:none;margin-top:0.5rem;padding:0.5rem 0.75rem;background:#fef3c7;border:1px solid #fde68a;border-radius:9px;font-size:0.78rem;color:#92400e;font-weight:700;">
+              <i class="fa-solid fa-circle-info" style="margin-right:4px;"></i>
+              <span id="bundle-eligibility-text"></span>
+            </div>
+            {% else %}
+            <div style="font-size:0.82rem;color:var(--vb-text-muted);font-style:italic;">No bundles available.</div>
+            {% endif %}
           </div>
 
-          <div class="vb-field-group" style="flex: 1; min-width: 180px;">
-            <label class="vb-field-label">
-              <i class="fa-solid fa-user-group" style="color: var(--vb-terracotta);"></i>
-              <span>Guests <span class="vb-field-req">*</span></span>
-            </label>
-            <!-- Quick-select guest chips -->
-            <div id="guest-chips" style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+          <!-- Panel 2: Select Experience -->
+          <div class="vb-panel is-active" id="panel-experience">
+            <div class="vb-panel-title">
+              <i class="fa-solid fa-binoculars" style="color:var(--vb-terracotta);"></i> Select Experience
+              <span style="color:var(--vb-terracotta);">*</span>
+            </div>
+            <div id="exp-panel-selected" style="display:none;">
+              <div class="vb-selected-pill">
+                <i class="fa-solid fa-circle-check" style="font-size:0.65rem;"></i>
+                <span id="exp-panel-name">Selected</span>
+              </div>
+            </div>
+            <div class="vb-panel-sub" id="exp-panel-sub">Individual services</div>
+          </div>
+
+          <!-- Panel 3: Number of Guests -->
+          <div class="vb-panel" id="panel-guests">
+            <div class="vb-panel-title">
+              <i class="fa-solid fa-user-group" style="color:var(--vb-terracotta);"></i> Number of Guests
+              <span style="color:var(--vb-terracotta);">*</span>
+            </div>
+            <div class="vb-panel-sub">How many are visiting?</div>
+            <!-- Guest chips (synced to hidden input) -->
+            <div id="guest-chips" style="display:flex;gap:0.4rem;flex-wrap:wrap;">
               {% for n in [1,2,3,4,5] %}
               <button type="button" class="vb-guest-chip{% if n == 1 %} is-selected{% endif %}" data-guests="{{ n }}">{{ n }}</button>
               {% endfor %}
               <button type="button" class="vb-guest-chip" data-guests="custom" id="guest-chip-custom">6+</button>
             </div>
-            <!-- Hidden real input (synced by JS) -->
-            <input type="number" id="new_guests" name="guests" min="1" max="50" value="1" required class="vb-input-control" style="display:none;">
-            <div id="custom-guests-stepper" style="display:none;align-items:center;gap:0.5rem;">
+            <!-- Custom stepper (shown for 6+) -->
+            <div id="custom-guests-stepper" style="display:none;align-items:center;gap:0.5rem;margin-top:0.5rem;">
               <button type="button" id="guest-stepper-minus" class="vb-guest-chip" aria-label="Decrease guests">−</button>
               <output id="custom-guests-value" aria-live="polite" style="min-width:2.5rem;text-align:center;font-weight:800;color:var(--vb-forest);">6</output>
               <button type="button" id="guest-stepper-plus" class="vb-guest-chip" aria-label="Increase guests">+</button>
             </div>
-            <div id="guests-warning" style="display: none; color: #dc2626; font-size: 0.78rem; font-weight: 700; margin-top: 0.35rem; align-items: center; gap: 0.35rem;">
+            <!-- Capacity warning -->
+            <div id="guests-warning" style="display:none;color:#dc2626;font-size:0.78rem;font-weight:700;margin-top:0.35rem;align-items:center;gap:0.35rem;">
               <i class="fa-solid fa-triangle-exclamation"></i> Only <span id="warning-max-slots"></span> slots available.
             </div>
+            <!-- Hidden input (synced by existing JS) -->
+            <input type="number" id="new_guests" name="guests" min="1" max="50" value="1" required class="vb-input-control" style="display:none;">
           </div>
 
-          <div class="vb-top-fields" style="margin-top:1rem;">
-            <div class="vb-field-group" style="flex:1.2;min-width:280px;">
-              <label class="vb-field-label" for="promo_code_input">
-                <i class="fa-solid fa-ticket" style="color:var(--vb-terracotta);"></i>
-                <span>Deals &amp; Promotion Code</span>
-              </label>
-              <div style="display:flex;gap:0.4rem;align-items:center;">
-                <input type="text" id="promo_code_input" value="{{ selected_promo_code or '' }}" placeholder="Paste or type promo code (e.g. SAFARI20)..."
-                       class="vb-input-control" style="text-transform:uppercase;font-weight:700;letter-spacing:0.04em;" autocomplete="off">
-                <button type="button" id="btn-paste-promo" class="vb-btn-promo-action" title="Paste promo code from clipboard" style="background:#f1f5f9;color:var(--vb-forest);border:1.5px solid var(--vb-border);border-radius:10px;padding:0.55rem 0.85rem;font-weight:700;font-size:0.82rem;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">
-                  <i class="fa-regular fa-paste"></i> Paste
-                </button>
-                <button type="button" id="btn-apply-promo" class="vb-btn-promo-action" style="background:var(--vb-forest);color:#ffffff;border:none;border-radius:10px;padding:0.55rem 0.95rem;font-weight:800;font-size:0.82rem;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">
-                  <i class="fa-solid fa-check"></i> Apply
-                </button>
-              </div>
-              <div style="display:flex;align-items:center;gap:0.4rem;margin-top:0.35rem;">
-                <select id="new_promotion" name="promotion_code_select" class="vb-select-control" style="font-size:0.82rem;padding:0.35rem 0.6rem;height:auto;flex:1;">
-                  <option value="" {% if not selected_promo_code %}selected{% endif %}>Or browse active deals…</option>
-                  {% for promotion in promotions or [] %}
-                  <option value="{{ promotion.code }}" data-category="{{ promotion.promo_type or '' }}" {% if selected_promo_code == promotion.code %}selected{% endif %} data-discount-type="{{ promotion.discount_type or 'percent' }}" data-discount-value="{{ promotion.discount_value or 0 }}">{{ promotion.code }} — {{ promotion.name }}{% if promotion.discount_value %} ({{ promotion.discount_value }}{% if promotion.discount_type == 'percent' %}%{% else %} PHP{% endif %} off){% endif %}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <!-- Hidden input holding final promo code for form POST submission -->
-              <input type="hidden" id="final_promotion_code" name="promotion_code" value="{{ selected_promo_code or '' }}">
-              <div id="promo-status-msg" style="display:none;margin-top:0.4rem;font-size:0.82rem;font-weight:700;border-radius:8px;padding:0.4rem 0.65rem;align-items:center;justify-content:space-between;">
-                <span id="promo-status-text"></span>
-                <button type="button" id="btn-remove-promo" style="background:none;border:none;color:inherit;cursor:pointer;padding:0 4px;font-size:0.85rem;" title="Remove promotion">&times;</button>
-              </div>
+        </div><!-- end .vb-panel-row -->
+
+        <!-- ── Available Experiences List ── -->
+        <div class="vb-exp-section-header">
+          <div class="vb-exp-section-title">Available Experiences</div>
+          <div class="vb-exp-section-sub">Choose your preferred experience.</div>
+        </div>
+        <div class="vb-exp-list" id="vb-exp-list">
+          {% for service in services %}
+          <div class="vb-exp-item{% if selected_service_id == service.id %} is-selected{% endif %}"
+               data-service-id="{{ service.id }}"
+               data-price="{{ service.price or 0 }}"
+               data-max-capacity="{{ service.max_guest_capacity or 50 }}"
+               data-category="{{ service.category or '' }}"
+               onclick="vbSelectExp(this)">
+            <div class="vb-exp-radio">&#10003;</div>
+            <div style="flex:1;min-width:0;">
+              <div class="vb-exp-name">{{ service.name }}</div>
+              {% if service.description %}
+              <div class="vb-exp-desc">{{ service.description|truncate(70) }}</div>
+              {% endif %}
             </div>
-            <div class="vb-field-group" style="flex:1.4;min-width:280px;">
-              <label class="vb-field-label">
-                <i class="fa-solid fa-plus" style="color:var(--vb-terracotta);"></i>
-                <span>Add-ons <span style="font-size:0.75rem;font-weight:600;color:var(--vb-text-muted);">(Select multiple)</span></span>
-              </label>
-              <div id="vb-addons-box" style="background:#ffffff;border:1.5px solid var(--vb-border);border-radius:12px;padding:0.45rem;max-height:135px;overflow-y:auto;display:flex;flex-direction:column;gap:0.35rem;">
-                {% for add_on in add_on_services or [] %}
-                <label class="vb-addon-item" data-service-id="{{ add_on.id }}" style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;padding:0.45rem 0.65rem;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;cursor:pointer;font-size:0.83rem;user-select:none;transition:all 0.15s ease;">
-                  <span style="display:flex;align-items:center;gap:0.55rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                    <input type="checkbox" name="add_on_ids" value="{{ add_on.id }}" data-price="{{ add_on.price or 0 }}" class="vb-addon-check" style="accent-color:var(--vb-forest);width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-                    <span style="font-weight:600;color:var(--vb-forest);overflow:hidden;text-overflow:ellipsis;">{{ add_on.name }}</span>
-                  </span>
-                  <span style="font-weight:700;color:var(--vb-terracotta);font-size:0.78rem;white-space:nowrap;flex-shrink:0;">+₱{{ "{:,.2f}".format(add_on.price or 0) }}</span>
-                </label>
-                {% else %}
-                <div style="font-size:0.8rem;color:var(--vb-text-muted);padding:0.5rem;text-align:center;">No add-ons available.</div>
+            <div class="vb-exp-price">₱{{ "{:,.2f}".format(service.price or 0) }}</div>
+          </div>
+          {% else %}
+          <div style="font-size:0.88rem;color:var(--vb-text-muted);padding:1rem;text-align:center;">No experiences available.</div>
+          {% endfor %}
+        </div>
+
+        <!-- Promo, Add-ons, Points row (unchanged) -->
+        <div class="vb-top-fields" style="margin-top:0.5rem;">
+          <div class="vb-field-group" style="flex:1.2;min-width:280px;">
+            <label class="vb-field-label" for="promo_code_input">
+              <i class="fa-solid fa-ticket" style="color:var(--vb-terracotta);"></i>
+              <span>Deals &amp; Promotion Code</span>
+            </label>
+            <div style="display:flex;gap:0.4rem;align-items:center;">
+              <input type="text" id="promo_code_input" value="{{ selected_promo_code or '' }}" placeholder="Paste or type promo code (e.g. SAFARI20)..."
+                     class="vb-input-control" style="text-transform:uppercase;font-weight:700;letter-spacing:0.04em;" autocomplete="off">
+              <button type="button" id="btn-paste-promo" class="vb-btn-promo-action" title="Paste promo code from clipboard" style="background:#f1f5f9;color:var(--vb-forest);border:1.5px solid var(--vb-border);border-radius:10px;padding:0.55rem 0.85rem;font-weight:700;font-size:0.82rem;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">
+                <i class="fa-regular fa-paste"></i> Paste
+              </button>
+              <button type="button" id="btn-apply-promo" class="vb-btn-promo-action" style="background:var(--vb-forest);color:#ffffff;border:none;border-radius:10px;padding:0.55rem 0.95rem;font-weight:800;font-size:0.82rem;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">
+                <i class="fa-solid fa-check"></i> Apply
+              </button>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.4rem;margin-top:0.35rem;">
+              <select id="new_promotion" name="promotion_code_select" class="vb-select-control" style="font-size:0.82rem;padding:0.35rem 0.6rem;height:auto;flex:1;">
+                <option value="" {% if not selected_promo_code %}selected{% endif %}>Or browse active deals…</option>
+                {% for promotion in promotions or [] %}
+                <option value="{{ promotion.code }}" data-category="{{ promotion.promo_type or '' }}" {% if selected_promo_code == promotion.code %}selected{% endif %} data-discount-type="{{ promotion.discount_type or 'percent' }}" data-discount-value="{{ promotion.discount_value or 0 }}">{{ promotion.code }} — {{ promotion.name }}{% if promotion.discount_value %} ({{ promotion.discount_value }}{% if promotion.discount_type == 'percent' %}%{% else %} PHP{% endif %} off){% endif %}</option>
                 {% endfor %}
-              </div>
+              </select>
             </div>
-            <div class="vb-field-group" style="flex:1;min-width:180px;">
-              <label class="vb-field-label" for="new_loyalty_points">
-                <i class="fa-solid fa-star" style="color:var(--vb-terracotta);"></i>
-                <span>Redeem points</span>
-              </label>
-              <input id="new_loyalty_points" name="loyalty_points" type="number" min="0" max="{{ loyalty_balance or 0 }}" value="0" class="vb-input-control">
-              <small style="color:var(--vb-text-muted);">Balance: {{ loyalty_balance or 0 }} points</small>
+            <input type="hidden" id="final_promotion_code" name="promotion_code" value="{{ selected_promo_code or '' }}">
+            <div id="promo-status-msg" style="display:none;margin-top:0.4rem;font-size:0.82rem;font-weight:700;border-radius:8px;padding:0.4rem 0.65rem;align-items:center;justify-content:space-between;">
+              <span id="promo-status-text"></span>
+              <button type="button" id="btn-remove-promo" style="background:none;border:none;color:inherit;cursor:pointer;padding:0 4px;font-size:0.85rem;" title="Remove promotion">&times;</button>
             </div>
           </div>
+          <div class="vb-field-group" style="flex:1.4;min-width:280px;">
+            <label class="vb-field-label">
+              <i class="fa-solid fa-plus" style="color:var(--vb-terracotta);"></i>
+              <span>Add-ons <span style="font-size:0.75rem;font-weight:600;color:var(--vb-text-muted);">(Select multiple)</span></span>
+            </label>
+            <div id="vb-addons-box" style="background:#ffffff;border:1.5px solid var(--vb-border);border-radius:12px;padding:0.45rem;max-height:135px;overflow-y:auto;display:flex;flex-direction:column;gap:0.35rem;">
+              {% for add_on in add_on_services or [] %}
+              <label class="vb-addon-item" data-service-id="{{ add_on.id }}" style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;padding:0.45rem 0.65rem;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;cursor:pointer;font-size:0.83rem;user-select:none;transition:all 0.15s ease;">
+                <span style="display:flex;align-items:center;gap:0.55rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                  <input type="checkbox" name="add_on_ids" value="{{ add_on.id }}" data-price="{{ add_on.price or 0 }}" class="vb-addon-check" style="accent-color:var(--vb-forest);width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+                  <span style="font-weight:600;color:var(--vb-forest);overflow:hidden;text-overflow:ellipsis;">{{ add_on.name }}</span>
+                </span>
+                <span style="font-weight:700;color:var(--vb-terracotta);font-size:0.78rem;white-space:nowrap;flex-shrink:0;">+₱{{ "{:,.2f}".format(add_on.price or 0) }}</span>
+              </label>
+              {% else %}
+              <div style="font-size:0.8rem;color:var(--vb-text-muted);padding:0.5rem;text-align:center;">No add-ons available.</div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="vb-field-group" style="flex:1;min-width:180px;">
+            <label class="vb-field-label" for="new_loyalty_points">
+              <i class="fa-solid fa-star" style="color:var(--vb-terracotta);"></i>
+              <span>Redeem points</span>
+            </label>
+            <input id="new_loyalty_points" name="loyalty_points" type="number" min="0" max="{{ loyalty_balance or 0 }}" value="0" class="vb-input-control">
+            <small style="color:var(--vb-text-muted);">Balance: {{ loyalty_balance or 0 }} points</small>
+          </div>
         </div>
+
+        <!-- JS: wire up exp list clicks to existing serviceSelect machinery -->
+        <script>
+        function vbSelectExp(el) {
+          // Update visual state
+          document.querySelectorAll('.vb-exp-item').forEach(function(i) { i.classList.remove('is-selected'); });
+          el.classList.add('is-selected');
+
+          var svcId = el.dataset.serviceId;
+          var svcName = el.querySelector('.vb-exp-name').textContent.trim();
+
+          // Sync to hidden select (triggers existing onchange/calendar JS)
+          var sel = document.getElementById('new_service_id');
+          sel.value = svcId;
+          sel.classList.add('has-value');
+          sel.dispatchEvent(new Event('change'));
+
+          // Update experience panel badge
+          document.getElementById('exp-panel-selected').style.display = 'block';
+          document.getElementById('exp-panel-name').textContent = svcName;
+          document.getElementById('exp-panel-sub').textContent = svcName;
+          document.getElementById('panel-experience').classList.add('is-active');
+          document.getElementById('panel-guests').classList.add('is-active');
+        }
+
+        function vbHandleBundleChange(sel) {
+          // Delegate to existing bundle change handler if present
+          var panelBundle = document.getElementById('panel-bundle');
+          if (sel.value) {
+            panelBundle.classList.add('is-active');
+            document.getElementById('new_bundle_id').value = sel.value;
+          } else {
+            panelBundle.classList.remove('is-active');
+            document.getElementById('new_bundle_id').value = '';
+          }
+          // Fire existing bundle change logic
+          if (typeof handleBundleChange === 'function') handleBundleChange(sel);
+        }
+
+        // On page load, if service already pre-selected (from URL param), mark it
+        (function() {
+          var preselected = document.querySelector('.vb-exp-item.is-selected');
+          if (preselected) {
+            var svcName = preselected.querySelector('.vb-exp-name').textContent.trim();
+            document.getElementById('exp-panel-selected').style.display = 'block';
+            document.getElementById('exp-panel-name').textContent = svcName;
+            document.getElementById('exp-panel-sub').textContent = svcName;
+            document.getElementById('panel-experience').classList.add('is-active');
+            document.getElementById('panel-guests').classList.add('is-active');
+          }
+        })();
+        </script>
 
         <!-- Step 2: Centerpiece Availability Calendar -->
         <div class="vb-cal-container">
@@ -1430,16 +1635,43 @@
   {% endif %}
 
   <!-- ALL BOOKINGS LIST -->
+  <style>
+    .vb-filter-tabs{display:flex;gap:.35rem;background:#F3F4F6;border-radius:10px;padding:4px;}
+    .vb-filter-tab{border:none;border-radius:7px;padding:.35rem .9rem;font-size:.78rem;font-weight:600;cursor:pointer;background:transparent;color:var(--vb-text-muted);transition:all .18s;font-family:var(--vb-font-body);}
+    .vb-filter-tab.is-active{background:var(--vb-forest);color:#fff;box-shadow:0 2px 8px rgba(20,56,35,.22);}
+    .vb-booking-row-item{border-left:4px solid transparent!important;}
+    .vb-booking-row-item.status-confirmed{border-left-color:#22C55E!important;}
+    .vb-booking-row-item.status-pending{border-left-color:var(--vb-amber)!important;}
+    .vb-booking-row-item.status-cancelled{border-left-color:var(--vb-terracotta)!important;opacity:.75;}
+    .vb-booking-row-item.status-finished,.vb-booking-row-item.status-completed{border-left-color:#A78BFA!important;}
+  </style>
+  <script>
+  function vbFilterBookings(status,btn){
+    document.querySelectorAll(".vb-filter-tab").forEach(function(b){b.classList.remove("is-active");});
+    btn.classList.add("is-active");
+    document.querySelectorAll(".vb-booking-row-item[data-status]").forEach(function(card){
+      card.style.display=(status==="all"||card.dataset.status===status)?"":"none";
+    });
+  }
+  </script>
+
   <div class="vb-section-title-row">
     <h3 class="vb-section-title">All Reservations</h3>
+    <div class="vb-filter-tabs">
+      <button class="vb-filter-tab is-active" onclick="vbFilterBookings('all',this)" type="button">All</button>
+      <button class="vb-filter-tab" onclick="vbFilterBookings('confirmed',this)" type="button">Confirmed</button>
+      <button class="vb-filter-tab" onclick="vbFilterBookings('pending',this)" type="button">Pending</button>
+      <button class="vb-filter-tab" onclick="vbFilterBookings('cancelled',this)" type="button">Cancelled</button>
+      <button class="vb-filter-tab" onclick="vbFilterBookings('finished',this)" type="button">Finished</button>
+    </div>
   </div>
 
   {% if bookings %}
-  <div style="display: flex; flex-direction: column; gap: 1rem;">
+  <div style="display: flex; flex-direction: column; gap: 1rem;" id="vb-bookings-list">
     {% for b in bookings %}
     {% set st = (b.status or 'Pending')|lower %}
     {% set booking_img = (b.image_url or (b.service.image_url if b.service else None)) %}
-    <div class="vb-booking-row-item">
+    <div class="vb-booking-row-item status-{{ st }}" data-status="{{ st }}">
       <!-- Thumbnail -->
       {% if booking_img %}
       <div style="width: 58px; height: 58px; border-radius: 12px; overflow: hidden; border: 1px solid var(--vb-border); flex: none;">
