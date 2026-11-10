@@ -1403,30 +1403,41 @@
 
         <!-- JS: wire up exp list clicks to existing serviceSelect machinery -->
         <script>
+        // vbSelectExp: called when user clicks an experience row.
+        // We update the hidden <select> value then use a deferred call so the
+        // main IIFE (loaded at bottom of page) has already attached its listener.
         function vbSelectExp(el) {
-          // Update visual state
+          // 1. Visual highlight
           document.querySelectorAll('.vb-exp-item').forEach(function(i) { i.classList.remove('is-selected'); });
           el.classList.add('is-selected');
 
-          var svcId = el.dataset.serviceId;
+          var svcId   = el.dataset.serviceId;
           var svcName = el.querySelector('.vb-exp-name').textContent.trim();
+          var maxCap  = el.dataset.maxCapacity || '50';
 
-          // Sync to hidden select (triggers existing onchange/calendar JS)
+          // 2. Sync hidden <select>
           var sel = document.getElementById('new_service_id');
+          if (!sel) return;
           sel.value = svcId;
           sel.classList.add('has-value');
-          sel.dispatchEvent(new Event('change'));
 
-          // Update experience panel badge
-          document.getElementById('exp-panel-selected').style.display = 'block';
-          document.getElementById('exp-panel-name').textContent = svcName;
-          document.getElementById('exp-panel-sub').textContent = svcName;
+          // 3. Update panel badge
+          var panelSelected = document.getElementById('exp-panel-selected');
+          var panelName     = document.getElementById('exp-panel-name');
+          var panelSub      = document.getElementById('exp-panel-sub');
+          if (panelSelected) panelSelected.style.display = 'block';
+          if (panelName)     panelName.textContent = svcName;
+          if (panelSub)      panelSub.textContent  = svcName;
           document.getElementById('panel-experience').classList.add('is-active');
           document.getElementById('panel-guests').classList.add('is-active');
+
+          // 4. Fire native change event — deferred so bottom-of-page IIFE listener is ready
+          setTimeout(function() {
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+          }, 0);
         }
 
         function vbHandleBundleChange(sel) {
-          // Delegate to existing bundle change handler if present
           var panelBundle = document.getElementById('panel-bundle');
           if (sel.value) {
             panelBundle.classList.add('is-active');
@@ -1435,22 +1446,23 @@
             panelBundle.classList.remove('is-active');
             document.getElementById('new_bundle_id').value = '';
           }
-          // Fire existing bundle change logic
-          if (typeof handleBundleChange === 'function') handleBundleChange(sel);
         }
 
-        // On page load, if service already pre-selected (from URL param), mark it
-        (function() {
+        // On page load: if a service was pre-selected via URL param, update panel badge.
+        document.addEventListener('DOMContentLoaded', function() {
           var preselected = document.querySelector('.vb-exp-item.is-selected');
           if (preselected) {
             var svcName = preselected.querySelector('.vb-exp-name').textContent.trim();
-            document.getElementById('exp-panel-selected').style.display = 'block';
-            document.getElementById('exp-panel-name').textContent = svcName;
-            document.getElementById('exp-panel-sub').textContent = svcName;
+            var panelSelected = document.getElementById('exp-panel-selected');
+            var panelName     = document.getElementById('exp-panel-name');
+            var panelSub      = document.getElementById('exp-panel-sub');
+            if (panelSelected) panelSelected.style.display = 'block';
+            if (panelName)     panelName.textContent = svcName;
+            if (panelSub)      panelSub.textContent  = svcName;
             document.getElementById('panel-experience').classList.add('is-active');
             document.getElementById('panel-guests').classList.add('is-active');
           }
-        })();
+        });
         </script>
 
         <!-- Step 2: Centerpiece Availability Calendar -->
