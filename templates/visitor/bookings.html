@@ -1270,22 +1270,30 @@
           </div>
 
           <!-- Panel 2: Select Experience -->
-          <div class="vb-panel is-active" id="panel-experience">
+          <div class="vb-panel is-active" id="panel-experience" style="cursor:pointer;">
             <div class="vb-panel-title">
               <i class="fa-solid fa-binoculars" style="color:var(--vb-terracotta);"></i> Select Experience
               <span style="color:var(--vb-terracotta);">*</span>
             </div>
-            <div id="exp-panel-selected" style="display:none;">
+            <div id="exp-panel-selected" style="display:{% if selected_service_id %}block{% else %}none{% endif %};margin-bottom:0.35rem;">
               <div class="vb-selected-pill">
                 <i class="fa-solid fa-circle-check" style="font-size:0.65rem;"></i>
-                <span id="exp-panel-name">Selected</span>
+                <span id="exp-panel-name">{% if selected_service_id %}{% for s in services if s.id == selected_service_id %}{{ s.name }}{% endfor %}{% else %}Selected{% endif %}</span>
               </div>
             </div>
-            <div class="vb-panel-sub" id="exp-panel-sub">Individual services</div>
+            <select id="panel_service_select" class="vb-select-control" style="font-size:0.88rem;"
+                    onchange="vbSelectExpById(this.value)">
+              <option value="" {% if not selected_service_id %}selected{% endif %} disabled>Choose an experience below or here…</option>
+              {% for service in services %}
+              <option value="{{ service.id }}" {% if selected_service_id == service.id %}selected{% endif %}>
+                {{ service.name }} — ₱{{ "{:,.2f}".format(service.price or 0) }}
+              </option>
+              {% endfor %}
+            </select>
           </div>
 
           <!-- Panel 3: Number of Guests -->
-          <div class="vb-panel" id="panel-guests">
+          <div class="vb-panel is-active" id="panel-guests">
             <div class="vb-panel-title">
               <i class="fa-solid fa-user-group" style="color:var(--vb-terracotta);"></i> Number of Guests
               <span style="color:var(--vb-terracotta);">*</span>
@@ -1326,12 +1334,18 @@
                data-price="{{ service.price or 0 }}"
                data-max-capacity="{{ service.max_guest_capacity or 50 }}"
                data-category="{{ service.category or '' }}"
-               onclick="vbSelectExp(this)">
-            <div class="vb-exp-radio">&#10003;</div>
+               role="button"
+               tabindex="0"
+               onclick="vbSelectExpById('{{ service.id }}')">
+            <input type="radio" name="ui_service_radio" value="{{ service.id }}"
+                   class="vb-exp-radio-native"
+                   {% if selected_service_id == service.id %}checked{% endif %}
+                   style="accent-color: var(--vb-forest); width: 18px; height: 18px; cursor: pointer; flex-shrink: 0;"
+                   onclick="event.stopPropagation(); vbSelectExpById('{{ service.id }}')">
             <div style="flex:1;min-width:0;">
               <div class="vb-exp-name">{{ service.name }}</div>
               {% if service.description %}
-              <div class="vb-exp-desc">{{ service.description|truncate(70) }}</div>
+              <div class="vb-exp-desc">{{ service.description|truncate(80) }}</div>
               {% endif %}
             </div>
             <div class="vb-exp-price">₱{{ "{:,.2f}".format(service.price or 0) }}</div>
@@ -1340,6 +1354,120 @@
           <div style="font-size:0.88rem;color:var(--vb-text-muted);padding:1rem;text-align:center;">No experiences available.</div>
           {% endfor %}
         </div>
+
+        <!-- JS: wire up exp list clicks to existing serviceSelect machinery -->
+        <script>
+        function vbSelectExpById(svcId) {
+          if (!svcId) return;
+          svcId = String(svcId);
+
+          // 1. Highlight matching card in Available Experiences list
+          document.querySelectorAll('.vb-exp-item').forEach(function(item) {
+            var match = String(item.getAttribute('data-service-id')) === svcId;
+            if (match) {
+              item.classList.add('is-selected');
+            } else {
+              item.classList.remove('is-selected');
+            }
+            var radio = item.querySelector('.vb-exp-radio-native');
+            if (radio) radio.checked = match;
+          });
+
+          // 2. Sync dropdown in Panel 2
+          var panelSelect = document.getElementById('panel_service_select');
+          if (panelSelect && panelSelect.value !== svcId) {
+            panelSelect.value = svcId;
+          }
+
+          // 3. Sync hidden main form select
+          var sel = document.getElementById('new_service_id');
+          if (sel) {
+            sel.value = svcId;
+            sel.classList.add('has-value');
+          }
+
+          // 4. Update Panel 2 pill badge
+          var selectedItem = document.querySelector('.vb-exp-item[data-service-id="' + svcId + '"]');
+          var svcName = '';
+          if (selectedItem) {
+            var nameEl = selectedItem.querySelector('.vb-exp-name');
+            if (nameEl) svcName = nameEl.textContent.trim();
+          } else if (panelSelect && panelSelect.selectedIndex >= 0) {
+            svcName = panelSelect.options[panelSelect.selectedIndex].text.split('—')[0].trim();
+          }
+          var panelSelected = document.getElementById('exp-panel-selected');
+          var panelName = document.getElementById('exp-panel-name');
+          if (panelSelected) panelSelected.style.display = 'block';
+          if (panelName && svcName) panelName.textContent = svcName;
+
+          var panelExp = document.getElementById('panel-experience');
+          var panelGuests = document.getElementById('panel-guests');
+          if (panelExp) panelExp.classList.add('is-active');
+          if (panelGuests) panelGuests.classList.add('is-active');
+
+          // 5. Fire change on hidden select so all listeners execute
+          if (sel) {
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+
+          // 6. Direct execution fallback for availability & quotes
+          if (window._vbBooking) {
+            if (window._vbBooking.syncServiceDropdown) window._vbBooking.syncServiceDropdown();
+            var yr = new Date().getFullYear();
+            var mo = new Date().getMonth() + 1;
+            if (window._vbBooking.fetchAvailability) window._vbBooking.fetchAvailability(yr, mo, svcId);
+            if (window._vbBooking.updateFormState) window._vbBooking.updateFormState();
+          }
+        }
+
+        // Backward compatibility for inline onclick if any
+        function vbSelectExp(el) {
+          if (!el) return;
+          var svcId = el.getAttribute('data-service-id') || (el.dataset && el.dataset.serviceId);
+          vbSelectExpById(svcId);
+        }
+
+        function vbHandleBundleChange(sel) {
+          var panelBundle = document.getElementById('panel-bundle');
+          if (sel.value) {
+            panelBundle.classList.add('is-active');
+            document.getElementById('new_bundle_id').value = sel.value;
+          } else {
+            panelBundle.classList.remove('is-active');
+            document.getElementById('new_bundle_id').value = '';
+          }
+        }
+
+        // Keyboard accessibility (Enter/Space on .vb-exp-item)
+        document.addEventListener('DOMContentLoaded', function() {
+          document.querySelectorAll('.vb-exp-item').forEach(function(item) {
+            item.addEventListener('keydown', function(e) {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                var svcId = item.getAttribute('data-service-id');
+                vbSelectExpById(svcId);
+              }
+            });
+          });
+
+          // Focus select when clicking panel-experience
+          var panelExp = document.getElementById('panel-experience');
+          if (panelExp) {
+            panelExp.addEventListener('click', function(e) {
+              if (e.target.id !== 'panel_service_select') {
+                var ps = document.getElementById('panel_service_select');
+                if (ps) ps.focus();
+              }
+            });
+          }
+
+          // Pre-selection check on page load
+          var sel = document.getElementById('new_service_id');
+          if (sel && sel.value) {
+            vbSelectExpById(sel.value);
+          }
+        });
+        </script>
 
         <!-- Promo, Add-ons, Points row (unchanged) -->
         <div class="vb-top-fields" style="margin-top:0.5rem;">
@@ -1400,71 +1528,6 @@
             <small style="color:var(--vb-text-muted);">Balance: {{ loyalty_balance or 0 }} points</small>
           </div>
         </div>
-
-        <!-- JS: wire up exp list clicks to existing serviceSelect machinery -->
-        <script>
-        // vbSelectExp: called when user clicks an experience row.
-        // We update the hidden <select> value then use a deferred call so the
-        // main IIFE (loaded at bottom of page) has already attached its listener.
-        function vbSelectExp(el) {
-          // 1. Visual highlight
-          document.querySelectorAll('.vb-exp-item').forEach(function(i) { i.classList.remove('is-selected'); });
-          el.classList.add('is-selected');
-
-          var svcId   = el.dataset.serviceId;
-          var svcName = el.querySelector('.vb-exp-name').textContent.trim();
-          var maxCap  = el.dataset.maxCapacity || '50';
-
-          // 2. Sync hidden <select>
-          var sel = document.getElementById('new_service_id');
-          if (!sel) return;
-          sel.value = svcId;
-          sel.classList.add('has-value');
-
-          // 3. Update panel badge
-          var panelSelected = document.getElementById('exp-panel-selected');
-          var panelName     = document.getElementById('exp-panel-name');
-          var panelSub      = document.getElementById('exp-panel-sub');
-          if (panelSelected) panelSelected.style.display = 'block';
-          if (panelName)     panelName.textContent = svcName;
-          if (panelSub)      panelSub.textContent  = svcName;
-          document.getElementById('panel-experience').classList.add('is-active');
-          document.getElementById('panel-guests').classList.add('is-active');
-
-          // 4. Fire native change event — deferred so bottom-of-page IIFE listener is ready
-          setTimeout(function() {
-            sel.dispatchEvent(new Event('change', { bubbles: true }));
-          }, 0);
-        }
-
-        function vbHandleBundleChange(sel) {
-          var panelBundle = document.getElementById('panel-bundle');
-          if (sel.value) {
-            panelBundle.classList.add('is-active');
-            document.getElementById('new_bundle_id').value = sel.value;
-          } else {
-            panelBundle.classList.remove('is-active');
-            document.getElementById('new_bundle_id').value = '';
-          }
-        }
-
-        // On page load: if a service was pre-selected via URL param, update panel badge.
-        document.addEventListener('DOMContentLoaded', function() {
-          var preselected = document.querySelector('.vb-exp-item.is-selected');
-          if (preselected) {
-            var svcName = preselected.querySelector('.vb-exp-name').textContent.trim();
-            var panelSelected = document.getElementById('exp-panel-selected');
-            var panelName     = document.getElementById('exp-panel-name');
-            var panelSub      = document.getElementById('exp-panel-sub');
-            if (panelSelected) panelSelected.style.display = 'block';
-            if (panelName)     panelName.textContent = svcName;
-            if (panelSub)      panelSub.textContent  = svcName;
-            document.getElementById('panel-experience').classList.add('is-active');
-            document.getElementById('panel-guests').classList.add('is-active');
-          }
-        });
-        </script>
-
         <!-- Step 2: Centerpiece Availability Calendar -->
         <div class="vb-cal-container">
           <div class="vb-cal-topbar">
@@ -2764,6 +2827,12 @@
       }
     }
   });
+  // Expose key functions globally for vbSelectExp
+  window._vbBooking = {
+    fetchAvailability: fetchAvailability,
+    updateFormState:   updateFormState,
+    syncServiceDropdown: syncServiceDropdown
+  };
 })();
 </script>
 {% endblock %}
