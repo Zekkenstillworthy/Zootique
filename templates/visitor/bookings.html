@@ -2268,7 +2268,8 @@
       .then(function(data) {
         if (!data.success) throw new Error(data.error || 'Unable to calculate quote.');
         var quote = data.quote;
-        var pointsDiscount = Number(quote.loyalty_discount || 0);
+        var enteredPoints = Math.max(0, parseInt((loyaltyInput && loyaltyInput.value) || '0', 10) || 0);
+        var pointsDiscount = Math.floor(enteredPoints / 100) * 10;
         var beforePointsTotal = Math.max(0, Number(quote.total || 0) + pointsDiscount);
         var allowedPoints = Math.min(
           Math.floor(visitorPointsBalance / 100) * 100,
@@ -2282,7 +2283,7 @@
         }
         if (pointsHelper) {
           pointsHelper.textContent = pointsDiscount > 0
-            ? Number(loyaltyInput && loyaltyInput.value || 0).toLocaleString() + ' points = ₱' + pointsDiscount.toFixed(2) + ' off'
+            ? enteredPoints.toLocaleString() + ' points = ₱' + pointsDiscount.toFixed(2) + ' off'
             : '100 points = ₱10 off';
         }
         priceSummaryEl.style.display = 'flex';

@@ -42,6 +42,7 @@ class PricingServiceTestCase(unittest.TestCase):
     def test_booking_points_discount_is_fixed_in_steps_of_100(self):
         self.assertEqual(points_discount(0), 0.0)
         self.assertEqual(points_discount(300), 30.0)
+        self.assertEqual(points_discount(1300), 130.0)
         with self.assertRaises(ValueError):
             points_discount(250)
         with self.assertRaises(ValueError):
