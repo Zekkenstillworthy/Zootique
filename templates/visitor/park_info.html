@@ -82,16 +82,37 @@
     </div>
 </div>
 
+<style>
+.park-info-subnav a {
+    color: #64748b;
+    font-weight: 600;
+    text-decoration: none;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+.park-info-subnav a:hover {
+    color: #1a4f32;
+}
+.park-info-subnav a.is-active {
+    color: #1a4f32 !important;
+    font-weight: bold !important;
+    border-bottom-color: #1a4f32 !important;
+}
+section {
+    scroll-margin-top: 85px;
+}
+</style>
+
 <!-- SUB NAVIGATION -->
 <div style="background: white; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 50;">
-    <div class="container park-info-subnav" style="display: flex; gap: 2rem; padding: 1rem 0;">
-        <a href="#getting-here"
-            style="color: #1a4f32; font-weight: bold; text-decoration: none; border-bottom: 2px solid #1a4f32; padding-bottom: 0.5rem;">Getting
-            Here</a>
-        <a href="#park-zones" style="color: #64748b; font-weight: 600; text-decoration: none;">Zones &amp; Habitats</a>
-        <a href="#park-rules" style="color: #64748b; font-weight: 600; text-decoration: none;">Park Rules</a>
-        <a href="#accessibility" style="color: #64748b; font-weight: 600; text-decoration: none;">Accessibility</a>
-        <a href="#contact" style="color: #64748b; font-weight: 600; text-decoration: none;">Contact Us</a>
+    <div class="container park-info-subnav" style="display: flex; gap: 2rem; padding: 1rem 0; overflow-x: auto; white-space: nowrap;">
+        <a href="#getting-here" class="is-active">Getting Here</a>
+        <a href="#park-zones">Zones &amp; Habitats</a>
+        <a href="#park-rules">Park Rules</a>
+        <a href="#accessibility">Accessibility</a>
+        <a href="#contact">Contact Us</a>
     </div>
 </div>
 
@@ -203,6 +224,158 @@
                     {% endfor %}
                 </div>
             </section>
+
+            <!-- ACCESSIBILITY -->
+            <section id="accessibility" style="margin-bottom: 4rem;">
+                <h2 style="font-size: 1.8rem; color: #1a4f32; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-wheelchair" style="color: #fca000;"></i> Accessibility &amp; Guest Accommodations
+                </h2>
+                <p style="color: #475569; font-size: 0.95rem; margin-bottom: 1.75rem;">
+                    We are dedicated to providing a comfortable, enjoyable wildlife experience for all guests and families.
+                </p>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; display: flex; gap: 1rem;">
+                        <div style="width: 42px; height: 42px; border-radius: 10px; background: #e8f5ec; color: #1a4f32; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                            <i class="fa-solid fa-person-walking"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 800; font-size: 0.95rem; color: #1a4f32; margin-bottom: 0.25rem;">Paved Visitor Paths</div>
+                            <div style="color: #64748b; font-size: 0.85rem; line-height: 1.45;">Main paths connecting all habitat zones and viewpoints are paved and step-free for wheelchairs and strollers.</div>
+                        </div>
+                    </div>
+
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; display: flex; gap: 1rem;">
+                        <div style="width: 42px; height: 42px; border-radius: 10px; background: #e8f5ec; color: #1a4f32; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                            <i class="fa-solid fa-restroom"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 800; font-size: 0.95rem; color: #1a4f32; margin-bottom: 0.25rem;">Accessible Restrooms</div>
+                            <div style="color: #64748b; font-size: 0.85rem; line-height: 1.45;">Spacious accessible restrooms and baby care changing stations are situated at the park entrance and central hub.</div>
+                        </div>
+                    </div>
+
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; display: flex; gap: 1rem;">
+                        <div style="width: 42px; height: 42px; border-radius: 10px; background: #e8f5ec; color: #1a4f32; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                            <i class="fa-solid fa-dog"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 800; font-size: 0.95rem; color: #1a4f32; margin-bottom: 0.25rem;">Service Animals</div>
+                            <div style="color: #64748b; font-size: 0.85rem; line-height: 1.45;">Trained service animals on leash or harness are welcome in guest visitor areas with designated relief zones available.</div>
+                        </div>
+                    </div>
+
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; display: flex; gap: 1rem;">
+                        <div style="width: 42px; height: 42px; border-radius: 10px; background: #e8f5ec; color: #1a4f32; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                            <i class="fa-solid fa-chair"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 800; font-size: 0.95rem; color: #1a4f32; margin-bottom: 0.25rem;">Rest Areas &amp; Seating</div>
+                            <div style="color: #64748b; font-size: 0.85rem; line-height: 1.45;">Shaded seating benches and hydration fountains are placed throughout every habitat trail for guest relaxation.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CONTACT US -->
+            <section id="contact" style="margin-bottom: 4rem;">
+                <h2 style="font-size: 1.8rem; color: #1a4f32; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-headset" style="color: #fca000;"></i> Contact Us &amp; Guest Relations
+                </h2>
+                <p style="color: #475569; font-size: 0.95rem; margin-bottom: 1.75rem;">
+                    Have questions about tickets, guided encounters, school field trips, or group bookings? Reach out to the {{ zoo.name if zoo else 'park' }} team directly.
+                </p>
+
+                <!-- Quick Contact Cards -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
+                    <a href="tel:{{ contact_phone }}" style="text-decoration:none; color:inherit; background:white; border:1px solid #e2e8f0; border-radius:12px; padding:1.25rem; display:flex; align-items:center; gap:1rem; transition:transform 0.15s, border-color 0.15s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='#1a4f32';" onmouseout="this.style.transform='none'; this.style.borderColor='#e2e8f0';">
+                        <div style="width:44px; height:44px; border-radius:10px; background:#e8f5ec; color:#1a4f32; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0;">
+                            <i class="fa-solid fa-phone"></i>
+                        </div>
+                        <div style="min-width:0;">
+                            <div style="font-size:0.78rem; text-transform:uppercase; font-weight:800; color:#64748b; letter-spacing:0.04em;">Call Direct</div>
+                            <div style="font-size:0.92rem; font-weight:800; color:#1a4f32; margin-top:2px; word-break:break-all;">{{ contact_phone }}</div>
+                        </div>
+                    </a>
+
+                    <a href="mailto:{{ contact_email }}" style="text-decoration:none; color:inherit; background:white; border:1px solid #e2e8f0; border-radius:12px; padding:1.25rem; display:flex; align-items:center; gap:1rem; transition:transform 0.15s, border-color 0.15s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='#1a4f32';" onmouseout="this.style.transform='none'; this.style.borderColor='#e2e8f0';">
+                        <div style="width:44px; height:44px; border-radius:10px; background:#fef3c7; color:#b45309; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0;">
+                            <i class="fa-solid fa-envelope"></i>
+                        </div>
+                        <div style="min-width:0;">
+                            <div style="font-size:0.78rem; text-transform:uppercase; font-weight:800; color:#64748b; letter-spacing:0.04em;">Email Support</div>
+                            <div style="font-size:0.92rem; font-weight:800; color:#1a4f32; margin-top:2px; word-break:break-all;">{{ contact_email }}</div>
+                        </div>
+                    </a>
+
+                    <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:1.25rem; display:flex; align-items:center; gap:1rem;">
+                        <div style="width:44px; height:44px; border-radius:10px; background:#e0f2fe; color:#0369a1; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0;">
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+                        <div>
+                            <div style="font-size:0.78rem; text-transform:uppercase; font-weight:800; color:#64748b; letter-spacing:0.04em;">Visiting Hours</div>
+                            <div style="font-size:0.92rem; font-weight:800; color:#1a4f32; margin-top:2px;">08:00 AM – 05:00 PM</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Message / Inquiry Form -->
+                <div style="background: white; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 2rem; box-shadow: 0 4px 18px rgba(0,0,0,0.03);">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; flex-wrap:wrap; gap:0.5rem;">
+                        <div>
+                            <h3 style="margin:0; font-size:1.2rem; color:#1a4f32; font-weight:800;">Send an Inquiry to {{ zoo.name if zoo else 'the Park' }}</h3>
+                            <p style="margin:4px 0 0; color:#64748b; font-size:0.86rem;">Fill out this form and our guest services team will contact you back via email.</p>
+                        </div>
+                        <span style="font-size:0.78rem; font-weight:700; color:#1a4f32; background:#e8f5ec; padding:4px 12px; border-radius:20px;">
+                            <i class="fa-solid fa-shield-halved" style="margin-right:4px;"></i> Official Park Inquiry
+                        </span>
+                    </div>
+
+                    <div id="contactSuccessAlert" style="display:none; background:#dcfce7; border:1.5px solid #86efac; color:#166534; padding:1rem 1.25rem; border-radius:10px; margin-bottom:1.5rem; font-size:0.92rem; align-items:center; gap:0.75rem;">
+                        <i class="fa-solid fa-circle-check" style="font-size:1.3rem;"></i>
+                        <span id="contactSuccessMsg">Thank you! Your message has been sent to our guest relations team. We will get back to you shortly.</span>
+                    </div>
+
+                    <form id="parkContactForm" method="post" action="{{ url_for('visitor.park_info_contact') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="zoo_id" value="{{ zoo.id if zoo else '' }}">
+
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-bottom:1.25rem;">
+                            <div>
+                                <label style="display:block; font-size:0.82rem; font-weight:700; color:#1e293b; margin-bottom:0.35rem;">Your Name <span style="color:#dc2626;">*</span></label>
+                                <input type="text" name="name" required value="{{ session.get('full_name') or '' }}" placeholder="e.g. Maria Santos" style="width:100%; border:1.5px solid #cbd5e1; border-radius:10px; padding:0.65rem 0.9rem; font-family:inherit; font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                            <div>
+                                <label style="display:block; font-size:0.82rem; font-weight:700; color:#1e293b; margin-bottom:0.35rem;">Email Address <span style="color:#dc2626;">*</span></label>
+                                <input type="email" name="email" required value="{{ session.get('email') or '' }}" placeholder="e.g. maria@example.com" style="width:100%; border:1.5px solid #cbd5e1; border-radius:10px; padding:0.65rem 0.9rem; font-family:inherit; font-size:0.9rem; box-sizing:border-box;">
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom:1.25rem;">
+                            <label style="display:block; font-size:0.82rem; font-weight:700; color:#1e293b; margin-bottom:0.35rem;">Subject / Reason for Inquiry</label>
+                            <select name="subject" style="width:100%; border:1.5px solid #cbd5e1; border-radius:10px; padding:0.65rem 0.9rem; font-family:inherit; font-size:0.9rem; box-sizing:border-box; background:white;">
+                                <option value="General Inquiry">General Visitor Inquiry</option>
+                                <option value="Ticketing &amp; Reservations">Ticketing &amp; Reservation Assistance</option>
+                                <option value="School &amp; Group Tours">Educational Field Trips &amp; Group Tours</option>
+                                <option value="Accessibility Assistance">Accessibility Accommodations</option>
+                                <option value="Animal Welfare &amp; Conservation">Animal Welfare &amp; Habitats Question</option>
+                                <option value="Lost &amp; Found / Feedback">Visitor Feedback or Lost &amp; Found</option>
+                            </select>
+                        </div>
+
+                        <div style="margin-bottom:1.5rem;">
+                            <label style="display:block; font-size:0.82rem; font-weight:700; color:#1e293b; margin-bottom:0.35rem;">Your Message <span style="color:#dc2626;">*</span></label>
+                            <textarea name="message" rows="4" required placeholder="How can our park staff assist you today?" style="width:100%; border:1.5px solid #cbd5e1; border-radius:10px; padding:0.75rem 0.9rem; font-family:inherit; font-size:0.9rem; box-sizing:border-box; resize:vertical;"></textarea>
+                        </div>
+
+                        <div style="display:flex; justify-content:flex-end;">
+                            <button type="submit" id="btnSubmitContact" style="background:#1a4f32; color:white; border:none; padding:0.75rem 1.75rem; border-radius:10px; font-weight:800; font-size:0.92rem; cursor:pointer; display:inline-flex; align-items:center; gap:0.5rem; transition:background 0.2s;" onmouseover="this.style.background='#143e27'" onmouseout="this.style.background='#1a4f32'">
+                                <i class="fa-solid fa-paper-plane"></i> Send Inquiry
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
         </div>
 
         <!-- SIDEBAR INFO -->
@@ -241,6 +414,31 @@
                         facility.label }}</li>
                     {% endfor %}
                 </ul>
+            </div>
+
+            <!-- NEED ASSISTANCE CARD -->
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem;">
+                <h4 style="margin: 0 0 0.75rem 0; font-size: 1.05rem; color: #1a4f32; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-headset" style="color: #fca000;"></i> Guest Assistance
+                </h4>
+                <p style="font-size: 0.83rem; color: #475569; margin-bottom: 1rem; line-height: 1.45;">
+                    Need help planning your day, booking group encounters, or requesting special accommodations?
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                    {% if contact_phone %}
+                    <a href="tel:{{ contact_phone }}" style="display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.8rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; color: #1e293b; font-size: 0.82rem; font-weight: 600;">
+                        <i class="fa-solid fa-phone" style="color: #1a4f32;"></i> {{ contact_phone }}
+                    </a>
+                    {% endif %}
+                    {% if contact_email %}
+                    <a href="mailto:{{ contact_email }}" style="display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.8rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; color: #1e293b; font-size: 0.82rem; font-weight: 600; word-break: break-all;">
+                        <i class="fa-solid fa-envelope" style="color: #1a4f32;"></i> {{ contact_email }}
+                    </a>
+                    {% endif %}
+                    <a href="#contact" style="text-align: center; margin-top: 0.4rem; background: #1a4f32; color: white; padding: 0.6rem 1rem; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: background 0.15s;" onmouseover="this.style.background='#143e27'" onmouseout="this.style.background='#1a4f32'">
+                        <i class="fa-solid fa-paper-plane" style="font-size: 0.8rem;"></i> Send Inquiry
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -307,6 +505,129 @@ function closeZoneModal() {
 window.addEventListener('click', function(e) {
   const modal = document.getElementById('zoneAnimalsModal');
   if (e.target === modal) closeZoneModal();
+});
+
+// Smooth scroll, Scrollspy & Contact Form AJAX
+document.addEventListener('DOMContentLoaded', function () {
+    const subnavLinks = document.querySelectorAll('.park-info-subnav a');
+    const sections = Array.from(subnavLinks).map(a => {
+        const id = a.getAttribute('href').replace('#', '');
+        return document.getElementById(id);
+    }).filter(Boolean);
+
+    function setActiveLink(id) {
+        subnavLinks.forEach(link => {
+            if (link.getAttribute('href') === '#' + id) {
+                link.classList.add('is-active');
+            } else {
+                link.classList.remove('is-active');
+            }
+        });
+    }
+
+    subnavLinks.forEach(link => {
+        link.addEventListener('click', function (e) {
+            const targetId = this.getAttribute('href');
+            if (targetId && targetId.startsWith('#')) {
+                const targetEl = document.querySelector(targetId);
+                if (targetEl) {
+                    e.preventDefault();
+                    targetEl.scrollIntoView({ behavior: 'smooth' });
+                    history.replaceState(null, null, targetId);
+                    setActiveLink(targetId.replace('#', ''));
+                }
+            }
+        });
+    });
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        if (!anchor.closest('.park-info-subnav')) {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href && href.length > 1) {
+                    const el = document.querySelector(href);
+                    if (el) {
+                        e.preventDefault();
+                        el.scrollIntoView({ behavior: 'smooth' });
+                        history.replaceState(null, null, href);
+                        setActiveLink(href.replace('#', ''));
+                    }
+                }
+            });
+        }
+    });
+
+    if ('IntersectionObserver' in window && sections.length > 0) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    setActiveLink(entry.target.id);
+                }
+            });
+        }, {
+            rootMargin: '-20% 0px -60% 0px',
+            threshold: 0
+        });
+
+        sections.forEach(sec => observer.observe(sec));
+    }
+
+    if (window.location.hash) {
+        const initialEl = document.querySelector(window.location.hash);
+        if (initialEl) {
+            setTimeout(() => {
+                initialEl.scrollIntoView({ behavior: 'smooth' });
+                setActiveLink(window.location.hash.replace('#', ''));
+            }, 100);
+        }
+    }
+
+    const contactForm = document.getElementById('parkContactForm');
+    if (contactForm) {
+        contactForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmitContact');
+            const originalBtnHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+            }
+
+            const formData = new FormData(contactForm);
+            fetch(contactForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const alertBox = document.getElementById('contactSuccessAlert');
+                    const msgSpan = document.getElementById('contactSuccessMsg');
+                    if (msgSpan && data.message) msgSpan.textContent = data.message;
+                    if (alertBox) {
+                        alertBox.style.display = 'flex';
+                        alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                    contactForm.reset();
+                } else {
+                    alert(data.error || 'Failed to send message. Please try again.');
+                }
+            })
+            .catch(err => {
+                console.error('Contact form submission error:', err);
+                alert('A network error occurred. Please try again or reach out via our phone hotline.');
+            })
+            .finally(() => {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtnHtml;
+                }
+            });
+        });
+    }
 });
 </script>
 {% endblock %}

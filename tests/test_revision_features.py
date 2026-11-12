@@ -182,6 +182,51 @@ class RevisionFeatureTestCase(unittest.TestCase):
                     db.session.delete(u)
                 db.session.commit()
 
+    def test_park_info_contact_and_accessibility(self):
+        with self.app.app_context():
+            zoo = Zoo.query.order_by(Zoo.id.asc()).first()
+            zoo_id = zoo.id if zoo else None
+
+        csrf = "test-visitor-csrf-token"
+        with self.client.session_transaction() as sess:
+            sess["_csrf_token"] = csrf
+            if zoo_id:
+                sess["selected_zoo_id"] = zoo_id
+
+        # 1. Park info page renders Contact and Accessibility sections
+        res = self.client.get(f"/visitor/park-info?zoo_id={zoo_id}" if zoo_id else "/visitor/park-info")
+        self.assertEqual(res.status_code, 200)
+        html = res.get_data(as_text=True)
+        self.assertIn('id="contact"', html)
+        self.assertIn('id="accessibility"', html)
+        self.assertIn('Contact Us &amp; Guest Relations', html)
+        self.assertIn('parkContactForm', html)
+
+        # 2. Contact form validation requires all fields
+        bad_res = self.client.post(
+            "/visitor/park-info/contact",
+            data={"csrf_token": csrf},
+            headers={"X-Requested-With": "XMLHttpRequest"},
+        )
+        self.assertEqual(bad_res.status_code, 400)
+        self.assertFalse(bad_res.get_json()["success"])
+
+        # 3. Contact form accepts valid inquiry
+        good_res = self.client.post(
+            "/visitor/park-info/contact",
+            data={
+                "csrf_token": csrf,
+                "zoo_id": zoo_id or 1,
+                "name": "Jane Tester",
+                "email": "jane@example.com",
+                "subject": "Ticketing & Reservations",
+                "message": "Hello, I want to book a group visit for 20 students.",
+            },
+            headers={"X-Requested-With": "XMLHttpRequest"},
+        )
+        self.assertEqual(good_res.status_code, 200)
+        self.assertTrue(good_res.get_json()["success"])
+
 
 if __name__ == "__main__":
     unittest.main()

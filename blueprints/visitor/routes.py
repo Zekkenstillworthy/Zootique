@@ -2131,6 +2131,35 @@ def park_info():
     animals = Animal.query.filter_by(zoo_id=zoo.id).order_by(Animal.id.asc()).all()
     park_rules = ParkRule.query.filter_by(zoo_id=zoo.id).order_by(ParkRule.display_order.asc(), ParkRule.id.asc()).all()
     zones = ZooZone.query.filter_by(zoo_id=zoo.id).order_by(ZooZone.id.asc()).all()
+
+    registration = (
+        EstablishmentRegistration.query.filter_by(zoo_id=zoo.id, status="approved")
+        .order_by(EstablishmentRegistration.id.desc())
+        .first()
+    )
+    if not registration:
+        registration = (
+            EstablishmentRegistration.query.filter_by(zoo_id=zoo.id)
+            .order_by(EstablishmentRegistration.id.desc())
+            .first()
+        )
+
+    contact_name = (
+        (registration.establishment_contact_name if registration else None)
+        or (registration.admin_full_name if registration else None)
+        or f"{zoo.name} Visitor Relations"
+    )
+    contact_phone = (
+        (registration.establishment_contact_phone if registration else None)
+        or (registration.admin_phone if registration else None)
+        or "+63 (02) 8876-5432"
+    )
+    contact_email = (
+        (registration.establishment_contact_email if registration else None)
+        or (registration.admin_email if registration else None)
+        or f"info@{zoo.name.lower().replace(' ', '')}.com"
+    )
+
     return render_template(
         "visitor/park_info.html",
         zoo=zoo,
@@ -2142,12 +2171,52 @@ def park_info():
         featured_services=[service.name for service in services[:5]],
         park_rules=park_rules,
         zones=zones,
+        contact_name=contact_name,
+        contact_phone=contact_phone,
+        contact_email=contact_email,
         facilities=[
             {"icon": "fa-ticket", "label": "Visitor ticketing"},
             {"icon": "fa-map", "label": "Park visitor map"},
             {"icon": "fa-wheelchair", "label": "Accessible visitor routes"},
         ],
     )
+
+
+@visitor_bp.post("/park-info/contact")
+def park_info_contact():
+    zoo_id = request.form.get("zoo_id", type=int) or _selected_zoo_id()
+    name = (request.form.get("name") or "").strip()
+    email = (request.form.get("email") or "").strip()
+    subject = (request.form.get("subject") or "General Inquiry").strip()
+    message = (request.form.get("message") or "").strip()
+
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json
+
+    if not name or not email or not message:
+        err_msg = "Please provide your name, email, and message."
+        if is_ajax:
+            return jsonify({"success": False, "error": err_msg}), 400
+        flash(err_msg, "error")
+        return redirect(url_for("visitor.park_info", zoo_id=zoo_id) + "#contact")
+
+    if zoo_id:
+        try:
+            from services.zoo_notifications import notify_zoo_team
+            notify_zoo_team(
+                zoo_id=zoo_id,
+                notification_type="visitor_inquiry",
+                message=f"Contact message from {name} ({email}) - {subject}: {message[:120]}...",
+                dedupe_prefix=f"contact-inquiry:{email}",
+            )
+        except Exception:
+            pass
+
+    success_msg = "Thank you! Your message has been sent to our visitor support team. We will respond to your email shortly."
+    if is_ajax:
+        return jsonify({"success": True, "message": success_msg})
+
+    flash(success_msg, "success")
+    return redirect(url_for("visitor.park_info", zoo_id=zoo_id) + "#contact")
 
 
 @visitor_bp.get("/api/zones/<int:zone_id>/animals")
