@@ -1368,7 +1368,10 @@
                 <div class="vb-exp-desc">{{ service.description|truncate(80) }}</div>
                 {% endif %}
               </div>
-              <div class="vb-exp-price">₱{{ "{:,.2f}".format(service.price or 0) }}</div>
+              <div class="vb-exp-price" style="text-align:right;">
+                ₱{{ "{:,.2f}".format(service.price or 0) }}
+                <span style="font-size:0.75rem;font-weight:600;color:var(--vb-text-muted);display:block;margin-top:2px;">/ guest</span>
+              </div>
             </div>
             {% else %}
             <div style="font-size:0.88rem;color:var(--vb-text-muted);padding:1rem;text-align:center;">No experiences available.</div>
@@ -1418,7 +1421,10 @@
                 <div class="vb-exp-desc">{{ bundle.description|truncate(90) }}</div>
                 {% endif %}
               </div>
-              <div class="vb-exp-price">₱{{ "{:,.2f}".format(bundle.price or 0) }}</div>
+              <div class="vb-exp-price" style="text-align:right;">
+                ₱{{ "{:,.2f}".format(bundle.price or 0) }}
+                <span style="font-size:0.75rem;font-weight:600;color:var(--vb-text-muted);display:block;margin-top:2px;">/ package</span>
+              </div>
             </div>
             {% else %}
             <div style="font-size:0.88rem;color:var(--vb-text-muted);padding:1.5rem;text-align:center;background:#FCFAF7;border:1.5px dashed var(--vb-border);border-radius:12px;">

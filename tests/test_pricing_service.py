@@ -90,10 +90,38 @@ class PricingServiceTestCase(unittest.TestCase):
                 user=user,
             )
 
-        self.assertEqual(result.subtotal, 125.0)
-        self.assertEqual(result.discount, 12.5)
+        # service price 100 * 2 guests = 200, add_on 25 -> subtotal before promo: 225.0
+        # 10% promo on 225 = 22.5 discount -> subtotal after promo: 202.5
+        # loyalty 100 points = 10.0 discount -> total: 192.5
+        self.assertEqual(result.subtotal, 225.0)
+        self.assertEqual(result.discount, 22.5)
         self.assertEqual(result.loyalty_discount, 10.0)
-        self.assertEqual(result.total, 102.5)
+        self.assertEqual(result.total, 192.5)
+
+    def test_experience_price_is_multiplied_per_guest(self):
+        service = SimpleNamespace(id=1, zoo_id=7, name="Farm Learning Tour", price=350)
+        result = calculate_booking_price(service=service, guests=3)
+        self.assertEqual(result.total, 1050.0)
+        self.assertEqual(result.subtotal, 1050.0)
+        self.assertEqual(len(result.lines), 1)
+        self.assertEqual(result.lines[0].quantity, 3)
+        self.assertEqual(result.lines[0].unit_price, 350.0)
+        self.assertEqual(result.lines[0].total, 1050.0)
+
+    def test_bundle_price_is_flat_package_not_per_guest(self):
+        service = SimpleNamespace(id=1, zoo_id=7, name="Farm Learning Tour", price=350)
+        bundle = SimpleNamespace(
+            id=2, zoo_id=7, service_id=1, name="Family Bundle", price=1200,
+            discount_type="none", discount_value=0, min_guests=2, max_guests=5,
+            valid_from=None, valid_until=None, is_active=True,
+        )
+        result = calculate_booking_price(service=service, bundle=bundle, guests=4)
+        self.assertEqual(result.total, 1200.0)
+        self.assertEqual(result.subtotal, 1200.0)
+        self.assertEqual(len(result.lines), 1)
+        self.assertEqual(result.lines[0].quantity, 1)
+        self.assertEqual(result.lines[0].unit_price, 1200.0)
+        self.assertEqual(result.lines[0].total, 1200.0)
 
 
 if __name__ == "__main__":

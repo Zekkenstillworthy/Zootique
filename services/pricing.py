@@ -107,10 +107,32 @@ def calculate_booking_price(
             raise PricingError("The selected bundle has expired.")
 
     lines: list[PriceLine] = []
-    base_unit = Decimal(str(bundle.price if bundle else service.price))
-    base_amount = base_unit
-    bundle_discount = _discount(base_amount, bundle.discount_type, bundle.discount_value) if bundle else Decimal("0")
-    lines.append(PriceLine(bundle.name if bundle else service.name, 1, _money(base_unit), _money(bundle_discount), _money(base_amount - bundle_discount)))
+    if bundle:
+        base_unit = Decimal(str(bundle.price))
+        base_amount = base_unit
+        bundle_discount = _discount(base_amount, bundle.discount_type, bundle.discount_value)
+        lines.append(
+            PriceLine(
+                bundle.name,
+                1,
+                _money(base_unit),
+                _money(bundle_discount),
+                _money(base_amount - bundle_discount),
+            )
+        )
+    else:
+        base_unit = Decimal(str(service.price))
+        base_amount = base_unit * Decimal(str(guests))
+        bundle_discount = Decimal("0")
+        lines.append(
+            PriceLine(
+                service.name,
+                guests,
+                _money(base_unit),
+                0.0,
+                _money(base_amount),
+            )
+        )
 
     subtotal = base_amount - bundle_discount
     discount = bundle_discount
