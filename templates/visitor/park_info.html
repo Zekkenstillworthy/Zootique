@@ -493,7 +493,7 @@ function openZoneAnimals(zoneId, zoneName, zoneDesc) {
   document.getElementById('modalAnimalsGrid').innerHTML = '';
   modal.style.display = 'flex';
 
-  fetch('/api/zones/' + zoneId + '/animals')
+  fetch('/visitor/api/zones/' + zoneId + '/animals')
     .then(r => r.json())
     .then(data => {
       document.getElementById('modalLoading').style.display = 'none';
