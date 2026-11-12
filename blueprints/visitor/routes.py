@@ -2225,7 +2225,20 @@ def zone_animals(zone_id: int):
     if not zone:
         return jsonify({"success": False, "error": "Zone not found"}), 404
 
+    # First try direct zone_id FK match
     animals = Animal.query.filter_by(zone_id=zone.id).order_by(Animal.name.asc()).all()
+
+    # Fallback: match by habitat name substring (animals may not have zone_id set)
+    if not animals and zone.name:
+        zone_name_lower = zone.name.lower()
+        all_zoo_animals = Animal.query.filter_by(zoo_id=zone.zoo_id).order_by(Animal.name.asc()).all()
+        animals = [
+            a for a in all_zoo_animals
+            if (a.habitat or "").lower() and (
+                zone_name_lower in (a.habitat or "").lower()
+                or (a.habitat or "").lower() in zone_name_lower
+            )
+        ]
 
     return jsonify({
         "success": True,
