@@ -160,6 +160,16 @@ class RevisionFeatureTestCase(unittest.TestCase):
             self.assertEqual(conf_res.status_code, 200)
             self.assertIn("Payment &amp; Booking Confirmed!", conf_res.get_data(as_text=True))
             self.assertIn(booking_id, conf_res.get_data(as_text=True))
+            # Test separate My Bookings page
+            my_bookings_res = self.client.get("/visitor/my-bookings")
+            self.assertEqual(my_bookings_res.status_code, 200)
+            self.assertIn("My Bookings", my_bookings_res.get_data(as_text=True))
+            self.assertIn("All Reservations", my_bookings_res.get_data(as_text=True))
+
+            # Test booking form page
+            bookings_res = self.client.get("/visitor/bookings")
+            self.assertEqual(bookings_res.status_code, 200)
+            self.assertIn("Choose Your Wildlife Adventure", bookings_res.get_data(as_text=True))
         finally:
             with self.app.app_context():
                 BookingTicket.query.filter_by(booking_id=booking_id).delete()

@@ -1027,17 +1027,11 @@ def my_bookings():
 
     return render_template(
         "visitor/bookings.html",
-        bookings=bookings,
         services=services,
-        next_booking=next_booking,
         total_bookings=total_bookings,
         total_spent=total_spent,
         points=points,
         status_counts=status_counts,
-        bookings_page=bookings_page,
-        total_pages=total_pages,
-        visitor_notifications=visitor_notifications,
-        visitor_unread_count=visitor_unread_count,
         bundles=bundles,
         promotions=promotions,
         events=events,
@@ -1050,12 +1044,113 @@ def my_bookings():
         availability_opening_time=(availability_service.opening_time if availability_service else "09:00 AM"),
         availability_closing_time=(availability_service.closing_time if availability_service else "05:00 PM"),
         availability_closure_days=availability_closure_days,
-        next_ticket_qr=next_ticket_qr,
         selected_service_id=selected_service_id,
         selected_promo_code=selected_promo_code,
         selected_event_name=selected_event_name,
         selected_event_time=selected_event_time,
         selected_date=selected_date,
+    )
+
+
+@visitor_bp.get("/my-bookings")
+@visitor_login_required
+def my_reservations():
+    user = _current_user()
+    if not user:
+        return _require_visitor_login()
+
+    selected_zoo_id = _selected_zoo_id()
+    bookings_page = max(request.args.get("page", 1, type=int) or 1, 1)
+    bookings_page_size = 20
+    booking_query = Booking.query.filter(_booking_owner_filter(user))
+    if selected_zoo_id:
+        booking_query = booking_query.filter(Booking.zoo_id == selected_zoo_id)
+
+    total_bookings = booking_query.count()
+    total_spent = booking_query.with_entities(
+        func.coalesce(func.sum(Booking.amount), 0)
+    ).scalar() or 0
+    status_rows = booking_query.with_entities(
+        Booking.status, func.count(Booking.id)
+    ).group_by(Booking.status).all()
+    status_counts: dict[str, int] = {"Confirmed": 0, "Pending": 0, "Cancelled": 0, "Other": 0}
+    for status, count in status_rows:
+        key = (status or "Other").title()
+        if key not in status_counts:
+            key = "Other"
+        status_counts[key] += int(count)
+
+    total_pages = max(1, math.ceil(total_bookings / bookings_page_size))
+    bookings_page = min(bookings_page, total_pages)
+    bookings = (
+        booking_query.options(joinedload(Booking.zoo), joinedload(Booking.service))
+        .order_by(Booking.created_at.desc())
+        .offset((bookings_page - 1) * bookings_page_size)
+        .limit(bookings_page_size)
+        .all()
+    )
+
+    loyalty_account = LoyaltyAccount.query.filter_by(user_id=user.id).first()
+    booking_ids = [booking.id for booking in bookings]
+    booking_point_transactions = (
+        LoyaltyTransaction.query.filter(
+            LoyaltyTransaction.account_id == (loyalty_account.id if loyalty_account else -1),
+            LoyaltyTransaction.booking_id.in_(booking_ids),
+        ).all()
+        if booking_ids and loyalty_account else []
+    )
+    point_transactions_by_booking: dict[str, list[LoyaltyTransaction]] = {}
+    for transaction in booking_point_transactions:
+        point_transactions_by_booking.setdefault(transaction.booking_id, []).append(transaction)
+    for booking in bookings:
+        transactions = point_transactions_by_booking.get(booking.id, [])
+        booking._points_earned = sum(
+            int(transaction.points) for transaction in transactions
+            if transaction.transaction_type == "earn" and transaction.points > 0
+        )
+        booking._points_redeemed = sum(
+            abs(int(transaction.points)) for transaction in transactions
+            if transaction.transaction_type == "redeem" and transaction.points < 0
+        )
+        booking._points_discount = float(
+            (booking.pricing_breakdown or {}).get("points_discount") or 0
+        )
+
+    next_booking = (
+        booking_query.filter(db.func.lower(Booking.status) == "confirmed")
+        .filter(Booking.date >= date.today().isoformat())
+        .options(joinedload(Booking.zoo), joinedload(Booking.service))
+        .order_by(Booking.date.asc(), Booking.time.asc(), Booking.created_at.desc())
+        .first()
+    )
+    next_ticket = (
+        BookingTicket.query.filter_by(booking_id=next_booking.id).first()
+        if next_booking else None
+    )
+    next_ticket_qr = (
+        qr_data_uri(next_ticket.token_payload)
+        if next_ticket and next_ticket.token_payload else None
+    )
+
+    points = _get_visitor_total_points(user)
+    notification_bookings = booking_query.all()
+    ensure_visitor_notifications(user.id, notification_bookings)
+    visitor_notifications = Notification.query.filter_by(user_id=user.id).order_by(Notification.created_at.desc()).limit(10).all()
+    visitor_unread_count = Notification.query.filter_by(user_id=user.id, read_at=None).count()
+
+    return render_template(
+        "visitor/my_bookings.html",
+        bookings=bookings,
+        next_booking=next_booking,
+        next_ticket_qr=next_ticket_qr,
+        total_bookings=total_bookings,
+        total_spent=total_spent,
+        points=points,
+        status_counts=status_counts,
+        bookings_page=bookings_page,
+        total_pages=total_pages,
+        visitor_notifications=visitor_notifications,
+        visitor_unread_count=visitor_unread_count,
     )
 
 
@@ -1409,7 +1504,7 @@ def cancel_booking(booking_id: str):
 
     if (booking.status or "").lower() == "cancelled":
         flash("That booking is already cancelled.", "error")
-        return redirect(url_for("visitor.my_bookings"))
+        return redirect(url_for("visitor.my_reservations"))
 
     eligible_for_refund = cancel_visitor_booking(booking=booking, user=user)
     db.session.commit()
@@ -1418,7 +1513,7 @@ def cancel_booking(booking_id: str):
         else "Booking cancelled. No refund applies inside the cancellation window.",
         "success",
     )
-    return redirect(url_for("visitor.my_bookings"))
+    return redirect(url_for("visitor.my_reservations"))
 
 
 @visitor_bp.post("/bookings/<booking_id>/reschedule")
@@ -1438,7 +1533,7 @@ def reschedule_booking(booking_id: str):
 
     if (booking.status or "").lower() == "cancelled":
         flash("Cancelled bookings can’t be rescheduled.", "error")
-        return redirect(url_for("visitor.my_bookings"))
+        return redirect(url_for("visitor.my_reservations"))
 
     date = (request.form.get("date") or "").strip()
     time = (request.form.get("time") or "").strip()
@@ -1446,17 +1541,17 @@ def reschedule_booking(booking_id: str):
 
     if not date:
         flash("Please choose a date.", "error")
-        return redirect(url_for("visitor.my_bookings"))
+        return redirect(url_for("visitor.my_reservations"))
     if not time:
         flash("Please choose a time.", "error")
-        return redirect(url_for("visitor.my_bookings"))
+        return redirect(url_for("visitor.my_reservations"))
     if guests < 1:
         guests = 1
     try:
         validate_booking_details(date_value=date, time_value=time, guests=guests)
     except BookingValidationError as exc:
         flash(str(exc), "error")
-        return redirect(url_for("visitor.my_bookings"))
+        return redirect(url_for("visitor.my_reservations"))
 
     service = db.session.get(Service, booking.service_id) if booking.service_id else None
     if service:
@@ -1464,7 +1559,7 @@ def reschedule_booking(booking_id: str):
         min_guests, max_guests = guest_limits(service=service, bundle=bundle)
         if guests < min_guests or guests > max_guests:
             flash(f"Select between {min_guests} and {max_guests} guest(s) for this selection.", "error")
-            return redirect(url_for("visitor.my_bookings"))
+            return redirect(url_for("visitor.my_reservations"))
     booking.date = date
     booking.time = time
     booking.guests = guests
@@ -1474,7 +1569,7 @@ def reschedule_booking(booking_id: str):
     booking.status = "Pending"
     db.session.commit()
     flash("Booking updated.", "success")
-    return redirect(url_for("visitor.my_bookings"))
+    return redirect(url_for("visitor.my_reservations"))
 
 @visitor_bp.get("/events")
 def events():

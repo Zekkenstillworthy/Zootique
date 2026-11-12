@@ -1445,6 +1445,8 @@
                                     class="visitor-nav-link {% if request.endpoint == 'visitor.home' %}active{% endif %}">Dashboard</a>
                                 <a href="{{ url_for('visitor.my_bookings') }}"
                                     class="visitor-nav-link {% if request.endpoint == 'visitor.my_bookings' %}active{% endif %}">Bookings</a>
+                                <a href="{{ url_for('visitor.my_reservations') }}"
+                                    class="visitor-nav-link {% if request.endpoint == 'visitor.my_reservations' %}active{% endif %}">My Bookings</a>
                                 <a href="{{ url_for('visitor.services') }}"
                                     class="visitor-nav-link {% if request.endpoint == 'visitor.services' %}active{% endif %}">Services</a>
                                 <a href="{{ url_for('visitor.animals') }}"
@@ -1550,7 +1552,7 @@
                                     <a href="{{ url_for('visitor.profile') }}" class="vn-user-dropdown-item" role="menuitem">
                                       <i class="fa-regular fa-user" style="width:14px;"></i> My Profile
                                     </a>
-                                    <a href="{{ url_for('visitor.my_bookings') }}" class="vn-user-dropdown-item" role="menuitem">
+                                    <a href="{{ url_for('visitor.my_reservations') }}" class="vn-user-dropdown-item" role="menuitem">
                                       <i class="fa-regular fa-calendar-check" style="width:14px;"></i> My Bookings
                                     </a>
                                     <a href="{{ url_for('auth.logout') }}" class="vn-user-dropdown-item vn-logout" role="menuitem">
