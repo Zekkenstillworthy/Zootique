@@ -86,33 +86,52 @@
 .park-info-subnav a {
     color: #64748b;
     font-weight: 600;
+    font-size: 0.95rem;
     text-decoration: none;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid transparent;
+    padding-bottom: 0.75rem;
+    border-bottom: 3px solid transparent;
     transition: all 0.2s;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
 }
 .park-info-subnav a:hover {
     color: #1a4f32;
 }
 .park-info-subnav a.is-active {
     color: #1a4f32 !important;
-    font-weight: bold !important;
+    font-weight: 800 !important;
     border-bottom-color: #1a4f32 !important;
 }
-section {
-    scroll-margin-top: 85px;
+
+.park-info-tab-pane {
+    display: none;
+}
+.park-info-tab-pane.is-active {
+    display: block;
+    animation: parkTabFadeIn 0.22s ease-in-out;
+}
+@keyframes parkTabFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 </style>
 
-<!-- SUB NAVIGATION -->
-<div style="background: white; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 50;">
-    <div class="container park-info-subnav" style="display: flex; gap: 2rem; padding: 1rem 0; overflow-x: auto; white-space: nowrap;">
-        <a href="#getting-here" class="is-active">Getting Here</a>
-        <a href="#park-zones">Zones &amp; Habitats</a>
-        <a href="#park-rules">Park Rules</a>
-        <a href="#accessibility">Accessibility</a>
-        <a href="#contact">Contact Us</a>
+<!-- SUB NAVIGATION / TABS -->
+<div class="park-info-subnav-container" style="background: white; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+    <div class="container park-info-subnav" style="display: flex; gap: 2rem; padding: 0.75rem 0 0; overflow-x: auto; white-space: nowrap;">
+        <a href="#getting-here" class="is-active"><i class="fa-solid fa-location-dot" style="font-size: 0.88rem;"></i> Getting Here</a>
+        <a href="#park-zones"><i class="fa-solid fa-map-marked-alt" style="font-size: 0.88rem;"></i> Zones &amp; Habitats</a>
+        <a href="#park-rules"><i class="fa-solid fa-clipboard-list" style="font-size: 0.88rem;"></i> Park Rules</a>
+        <a href="#accessibility"><i class="fa-solid fa-wheelchair" style="font-size: 0.88rem;"></i> Accessibility</a>
+        <a href="#contact"><i class="fa-solid fa-headset" style="font-size: 0.88rem;"></i> Contact Us</a>
     </div>
 </div>
 
@@ -123,7 +142,7 @@ section {
         <!-- MAIN CONTENT -->
         <div>
             <!-- GETTING HERE -->
-            <section id="getting-here" style="margin-bottom: 4rem;">
+            <section id="getting-here" class="park-info-tab-pane is-active" style="margin-bottom: 2rem;">
                 <h2
                     style="font-size: 1.8rem; color: #1a4f32; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
                     <i class="fa-solid fa-location-dot" style="color: #fca000;"></i> Getting Here</h2>
@@ -160,7 +179,7 @@ section {
             </section>
 
             <!-- PARK ZONES & HABITATS -->
-            <section id="park-zones" style="margin-bottom: 4rem;">
+            <section id="park-zones" class="park-info-tab-pane" style="margin-bottom: 2rem;">
                 <h2 style="font-size: 1.8rem; color: #1a4f32; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
                     <i class="fa-solid fa-map-marked-alt" style="color: #fca000;"></i> Park Zones &amp; Resident Animals
                 </h2>
@@ -200,7 +219,7 @@ section {
             </section>
 
             <!-- PARK RULES -->
-            <section id="park-rules" style="margin-bottom: 4rem;">
+            <section id="park-rules" class="park-info-tab-pane" style="margin-bottom: 2rem;">
                 <h2
                     style="font-size: 1.8rem; color: #1a4f32; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
                     <i class="fa-solid fa-clipboard-list" style="color: #fca000;"></i> Park Rules & etiquette</h2>
@@ -226,7 +245,7 @@ section {
             </section>
 
             <!-- ACCESSIBILITY -->
-            <section id="accessibility" style="margin-bottom: 4rem;">
+            <section id="accessibility" class="park-info-tab-pane" style="margin-bottom: 2rem;">
                 <h2 style="font-size: 1.8rem; color: #1a4f32; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
                     <i class="fa-solid fa-wheelchair" style="color: #fca000;"></i> Accessibility &amp; Guest Accommodations
                 </h2>
@@ -278,7 +297,7 @@ section {
             </section>
 
             <!-- CONTACT US -->
-            <section id="contact" style="margin-bottom: 4rem;">
+            <section id="contact" class="park-info-tab-pane" style="margin-bottom: 2rem; padding-bottom: 1rem;">
                 <h2 style="font-size: 1.8rem; color: #1a4f32; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
                     <i class="fa-solid fa-headset" style="color: #fca000;"></i> Contact Us &amp; Guest Relations
                 </h2>
@@ -507,81 +526,73 @@ window.addEventListener('click', function(e) {
   if (e.target === modal) closeZoneModal();
 });
 
-// Smooth scroll, Scrollspy & Contact Form AJAX
+// Park Info — Tab Switching
 document.addEventListener('DOMContentLoaded', function () {
-    const subnavLinks = document.querySelectorAll('.park-info-subnav a');
-    const sections = Array.from(subnavLinks).map(a => {
-        const id = a.getAttribute('href').replace('#', '');
-        return document.getElementById(id);
-    }).filter(Boolean);
+    const tabLinks = document.querySelectorAll('.park-info-subnav a');
+    const tabPanes = document.querySelectorAll('.park-info-tab-pane');
 
-    function setActiveLink(id) {
-        subnavLinks.forEach(link => {
-            if (link.getAttribute('href') === '#' + id) {
+    const TAB_MAP = {
+        '#getting-here': 'getting-here',
+        '#park-zones':   'park-zones',
+        '#park-rules':   'park-rules',
+        '#accessibility':'accessibility',
+        '#contact':      'contact',
+    };
+
+    function switchTab(targetHash) {
+        const targetId = TAB_MAP[targetHash];
+        if (!targetId) return;
+
+        // Update panes
+        tabPanes.forEach(pane => {
+            if (pane.id === targetId) {
+                pane.classList.add('is-active');
+            } else {
+                pane.classList.remove('is-active');
+            }
+        });
+
+        // Update tab links
+        tabLinks.forEach(link => {
+            if (link.getAttribute('href') === targetHash) {
                 link.classList.add('is-active');
             } else {
                 link.classList.remove('is-active');
             }
         });
+
+        // Update URL hash without page jump
+        history.replaceState(null, null, targetHash);
+
+        // Scroll to top of content area
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    subnavLinks.forEach(link => {
+    // Attach click handlers
+    tabLinks.forEach(link => {
         link.addEventListener('click', function (e) {
-            const targetId = this.getAttribute('href');
-            if (targetId && targetId.startsWith('#')) {
-                const targetEl = document.querySelector(targetId);
-                if (targetEl) {
-                    e.preventDefault();
-                    targetEl.scrollIntoView({ behavior: 'smooth' });
-                    history.replaceState(null, null, targetId);
-                    setActiveLink(targetId.replace('#', ''));
-                }
-            }
+            e.preventDefault();
+            switchTab(this.getAttribute('href'));
         });
     });
 
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        if (!anchor.closest('.park-info-subnav')) {
-            anchor.addEventListener('click', function (e) {
-                const href = this.getAttribute('href');
-                if (href && href.length > 1) {
-                    const el = document.querySelector(href);
-                    if (el) {
-                        e.preventDefault();
-                        el.scrollIntoView({ behavior: 'smooth' });
-                        history.replaceState(null, null, href);
-                        setActiveLink(href.replace('#', ''));
-                    }
-                }
+    // Handle "Send Inquiry" sidebar button pointing to #contact
+    document.querySelectorAll('a[href="#contact"]').forEach(el => {
+        if (!el.closest('.park-info-subnav')) {
+            el.addEventListener('click', function (e) {
+                e.preventDefault();
+                switchTab('#contact');
             });
         }
     });
 
-    if ('IntersectionObserver' in window && sections.length > 0) {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    setActiveLink(entry.target.id);
-                }
-            });
-        }, {
-            rootMargin: '-20% 0px -60% 0px',
-            threshold: 0
-        });
-
-        sections.forEach(sec => observer.observe(sec));
+    // On page load — activate tab from URL hash
+    const initHash = window.location.hash;
+    if (initHash && TAB_MAP[initHash]) {
+        switchTab(initHash);
     }
 
-    if (window.location.hash) {
-        const initialEl = document.querySelector(window.location.hash);
-        if (initialEl) {
-            setTimeout(() => {
-                initialEl.scrollIntoView({ behavior: 'smooth' });
-                setActiveLink(window.location.hash.replace('#', ''));
-            }, 100);
-        }
-    }
-
+    // Contact Form AJAX submission
     const contactForm = document.getElementById('parkContactForm');
     if (contactForm) {
         contactForm.addEventListener('submit', function (e) {
@@ -597,9 +608,7 @@ document.addEventListener('DOMContentLoaded', function () {
             fetch(contactForm.action, {
                 method: 'POST',
                 body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
             .then(res => res.json())
             .then(data => {
@@ -616,8 +625,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     alert(data.error || 'Failed to send message. Please try again.');
                 }
             })
-            .catch(err => {
-                console.error('Contact form submission error:', err);
+            .catch(() => {
                 alert('A network error occurred. Please try again or reach out via our phone hotline.');
             })
             .finally(() => {
