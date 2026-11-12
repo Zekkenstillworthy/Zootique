@@ -1438,13 +1438,79 @@
 
         <!-- JS: Tab switching & selection logic -->
         <script>
+        function vbResetSelections(targetTab) {
+          // 1. Reset hidden inputs
+          var sel = document.getElementById('new_service_id');
+          if (sel) {
+            sel.value = '';
+            sel.classList.remove('has-value');
+          }
+          var bInput = document.getElementById('new_bundle_id');
+          if (bInput) {
+            bInput.value = '';
+          }
+
+          // 2. Reset Experience UI
+          document.querySelectorAll('.vb-exp-item:not(.vb-bundle-item)').forEach(function(item) {
+            item.classList.remove('is-selected');
+            var r = item.querySelector('.vb-exp-radio-native');
+            if (r) r.checked = false;
+            item.style.display = 'flex';
+          });
+          var expBadge = document.getElementById('exp-panel-selected');
+          if (expBadge) expBadge.style.display = 'none';
+          var expName = document.getElementById('exp-panel-name');
+          if (expName) expName.textContent = 'Selected';
+          var expSub = document.getElementById('exp-panel-sub');
+          if (expSub) expSub.textContent = 'Individual services';
+
+          // 3. Reset Bundle UI
+          document.querySelectorAll('.vb-bundle-item').forEach(function(item) {
+            item.classList.remove('is-selected');
+            var r = item.querySelector('.vb-bundle-radio-native');
+            if (r) r.checked = false;
+          });
+          var bBadge = document.getElementById('bundle-panel-selected');
+          if (bBadge) bBadge.style.display = 'none';
+          var bName = document.getElementById('bundle-panel-name');
+          if (bName) bName.textContent = 'Selected';
+          var bSub = document.getElementById('bundle-panel-sub');
+          if (bSub) bSub.textContent = 'Select a package';
+
+          // 4. Reset capacity notices
+          vbShowCapacityNotice('');
+
+          // 5. Re-evaluate bundle filtering with no experience lock
+          vbFilterBundlesForService('');
+
+          // 6. Reset price summary
+          var priceSummaryEl = document.getElementById('vb-price-summary');
+          if (priceSummaryEl) priceSummaryEl.style.display = 'none';
+
+          // 7. Dispatch change to sync form controller
+          if (sel) {
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          if (window._vbBooking) {
+            if (window._vbBooking.syncServiceDropdown) window._vbBooking.syncServiceDropdown();
+            if (window._vbBooking.updateFormState) window._vbBooking.updateFormState();
+          }
+          if (window.updateGuestChipAvailability) {
+            window.updateGuestChipAvailability();
+          }
+        }
+
         function vbSwitchTab(tabName) {
           var panelBundle = document.getElementById('panel-bundle');
           var panelExp = document.getElementById('panel-experience');
           var contentBundle = document.getElementById('content-bundle');
           var contentExp = document.getElementById('content-experience');
 
+          var isAlreadyBundle = panelBundle && panelBundle.classList.contains('is-active');
+          var isAlreadyExp = panelExp && panelExp.classList.contains('is-active');
+
           if (tabName === 'bundle') {
+            if (isAlreadyBundle) return;
             panelBundle.classList.add('is-active');
             panelBundle.setAttribute('aria-selected', 'true');
             panelExp.classList.remove('is-active');
@@ -1452,6 +1518,7 @@
             if (contentBundle) contentBundle.style.display = 'block';
             if (contentExp) contentExp.style.display = 'none';
           } else {
+            if (isAlreadyExp) return;
             panelExp.classList.add('is-active');
             panelExp.setAttribute('aria-selected', 'true');
             panelBundle.classList.remove('is-active');
@@ -1459,6 +1526,9 @@
             if (contentExp) contentExp.style.display = 'block';
             if (contentBundle) contentBundle.style.display = 'none';
           }
+
+          // Reset selections when tab switches
+          vbResetSelections(tabName);
         }
 
         function vbBundleIncludesService(bundleCard, svcId) {
@@ -1496,6 +1566,11 @@
         }
 
         function vbFilterBundlesForService(svcId) {
+          var panelBundle = document.getElementById('panel-bundle');
+          var isBundleTab = panelBundle && panelBundle.classList.contains('is-active');
+          if (isBundleTab) {
+            svcId = '';
+          }
           var guests = parseInt((document.getElementById('new_guests') || {}).value || '1', 10);
           document.querySelectorAll('.vb-bundle-item').forEach(function(item) {
             var serviceMatch = !svcId || vbBundleIncludesService(item, svcId);
@@ -1550,7 +1625,7 @@
               selectedBundle = null;
             }
           }
-          if (!selectedBundle) {
+          if (!selectedBundle && !preserveBundle) {
             document.querySelectorAll('.vb-bundle-item').forEach(function(item) {
               item.classList.remove('is-selected');
               var r = item.querySelector('.vb-bundle-radio-native');
@@ -1562,17 +1637,19 @@
             if (bSub) bSub.textContent = 'Select a package';
           }
 
-          // 1. Highlight matching card in Available Experiences list
-          document.querySelectorAll('.vb-exp-item:not(.vb-bundle-item)').forEach(function(item) {
-            var match = String(item.getAttribute('data-service-id')) === svcId;
-            if (match) {
-              item.classList.add('is-selected');
-            } else {
-              item.classList.remove('is-selected');
-            }
-            var radio = item.querySelector('.vb-exp-radio-native');
-            if (radio) radio.checked = match;
-          });
+          // 1. Highlight matching card in Available Experiences list (only when on experience tab)
+          if (!preserveBundle) {
+            document.querySelectorAll('.vb-exp-item:not(.vb-bundle-item)').forEach(function(item) {
+              var match = String(item.getAttribute('data-service-id')) === svcId;
+              if (match) {
+                item.classList.add('is-selected');
+              } else {
+                item.classList.remove('is-selected');
+              }
+              var radio = item.querySelector('.vb-exp-radio-native');
+              if (radio) radio.checked = match;
+            });
+          }
 
           // 2. Sync hidden main form select
           var sel = document.getElementById('new_service_id');
@@ -1581,7 +1658,7 @@
             sel.classList.add('has-value');
           }
 
-          // 3. Update Panel 2 pill badge
+          // 3. Update Panel 2 pill badge (only if picking experience directly, not booking bundle)
           var selectedItem = document.querySelector('.vb-exp-item:not(.vb-bundle-item)[data-service-id="' + svcId + '"]');
           var svcName = '';
           if (selectedItem) {
@@ -1591,14 +1668,21 @@
           var panelSelected = document.getElementById('exp-panel-selected');
           var panelName = document.getElementById('exp-panel-name');
           var expSub = document.getElementById('exp-panel-sub');
-          if (panelSelected) panelSelected.style.display = 'block';
-          if (panelName && svcName) panelName.textContent = svcName;
-          if (expSub && svcName) expSub.textContent = svcName;
 
-          var panelExp = document.getElementById('panel-experience');
-          var panelGuests = document.getElementById('panel-guests');
-          if (panelExp) panelExp.classList.add('is-active');
-          if (panelGuests) panelGuests.classList.add('is-active');
+          if (!preserveBundle) {
+            if (panelSelected) panelSelected.style.display = 'block';
+            if (panelName && svcName) panelName.textContent = svcName;
+            if (expSub && svcName) expSub.textContent = svcName;
+
+            var panelExp = document.getElementById('panel-experience');
+            var panelGuests = document.getElementById('panel-guests');
+            if (panelExp) panelExp.classList.add('is-active');
+            if (panelGuests) panelGuests.classList.add('is-active');
+          } else {
+            // If selecting a bundle, keep experience panel clean/reset
+            if (panelSelected) panelSelected.style.display = 'none';
+            if (expSub) expSub.textContent = svcName ? 'Included: ' + svcName : 'Individual services';
+          }
 
           // 4. Fire change on hidden select so all listeners execute
           if (sel) {
@@ -1614,21 +1698,16 @@
             if (window._vbBooking.updateFormState) window._vbBooking.updateFormState();
           }
           if (window.updateGuestChipAvailability) window.updateGuestChipAvailability();
-          vbFilterBundlesForService(svcId);
+          if (!preserveBundle) {
+            vbFilterBundlesForService(svcId);
+          }
         }
 
         function vbSelectBundle(bundleId, serviceId, minGuests, maxGuests, bundleName) {
           if (!bundleId) return;
           var bundleCard = document.querySelector('.vb-bundle-item[data-bundle-id="' + bundleId + '"]');
           var currentGuests = parseInt((document.getElementById('new_guests') || {}).value || '1', 10);
-          var currentServiceId = (document.getElementById('new_service_id') || {}).value || '';
-          if (bundleCard && currentServiceId && !vbBundleIncludesService(bundleCard, currentServiceId)) {
-            vbShowCapacityNotice('This bundle is not available for the selected experience.');
-            return;
-          }
           if (bundleCard && (currentGuests < minGuests || currentGuests > maxGuests)) {
-            // A bundle outside the current guest count is visible for explanation,
-            // but cannot be selected until the visitor chooses a matching count.
             vbShowCapacityNotice('This bundle needs ' + minGuests + '-' + maxGuests + ' guests.');
             return;
           }
@@ -1648,8 +1727,7 @@
 
           var sel = document.getElementById('new_service_id');
           var validIds = vbFilterExperiencesForBundle(bundleId);
-          var currentServiceId = sel && sel.value ? String(sel.value) : '';
-          if (validIds.indexOf(currentServiceId) === -1) currentServiceId = validIds[0] || String(serviceId || '');
+          var currentServiceId = validIds[0] || String(serviceId || '');
           if (sel && currentServiceId) {
             sel.value = currentServiceId;
             sel.classList.add('has-value');
@@ -1663,17 +1741,7 @@
           if (panelName && bundleName) panelName.textContent = bundleName;
           if (panelSub && bundleName) panelSub.textContent = bundleName;
 
-          // 4. Start at the bundle minimum as required by the bundle.
-          var guestsInput = document.getElementById('new_guests');
-          if (guestsInput) {
-            var previousGuests = parseInt(guestsInput.value || '1', 10);
-            guestsInput.value = minGuests;
-            if (previousGuests !== minGuests) {
-              vbShowCapacityNotice('Guest count adjusted to the bundle minimum of ' + minGuests + '.');
-            }
-          }
-
-          // 5. Trigger availability & price calculations
+          // 4. Trigger availability & price calculations
           if (sel) {
             vbSelectExpById(currentServiceId, true);
             sel.dispatchEvent(new Event('change', { bubbles: true }));
@@ -1688,7 +1756,6 @@
             if (window._vbBooking.updateFormState) window._vbBooking.updateFormState();
           }
           if (window.updateGuestChipAvailability) window.updateGuestChipAvailability();
-          vbFilterBundlesForService(currentServiceId);
         }
 
         // Keyboard accessibility
