@@ -1037,6 +1037,15 @@ def save_animal():
         animal = Animal(zoo_id=zoo.id)
         db.session.add(animal)
 
+    if not zone_id and habitat:
+        matched_zone = ZooZone.query.filter_by(zoo_id=zoo.id, name=habitat).first()
+        if matched_zone:
+            zone_id = matched_zone.id
+    elif zone_id and not habitat:
+        matched_zone = db.session.get(ZooZone, zone_id)
+        if matched_zone:
+            habitat = matched_zone.name
+
     animal.name = name
     animal.species = species
     animal.habitat = habitat

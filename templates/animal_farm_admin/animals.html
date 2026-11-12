@@ -218,9 +218,14 @@
             </div>
 
             <div class="zf-field">
-              <label class="zf-label" for="animal_habitat">Habitat</label>
-              <input type="text" id="animal_habitat" name="habitat" class="zf-control"
-                     placeholder="e.g., Forest, Farm Pasture" autocomplete="off">
+              <label class="zf-label" for="animal_habitat">Zone / Habitat</label>
+              <select id="animal_habitat" name="habitat" class="zf-control">
+                <option value="">-- No zone assigned --</option>
+                {% for zone in zones %}
+                <option value="{{ zone.name }}">{{ zone.name }}</option>
+                {% endfor %}
+              </select>
+              <span class="zf-hint">Assign this animal to a park zone so it shows in the zone popup</span>
             </div>
 
             <div class="zf-field">
