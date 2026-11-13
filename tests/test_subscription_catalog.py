@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import patch
 
 from services.subscription_catalog import (
+    get_landing_pricing_tiers,
     infer_tier_level,
     plan_context,
     sort_plans,
@@ -51,6 +52,28 @@ class SubscriptionCatalogTestCase(unittest.TestCase):
         with patch("services.subscription_guard.feature_limit", return_value=3):
             self.assertTrue(limit_allows(zoo, "staff_accounts", 2))
             self.assertFalse(limit_allows(zoo, "staff_accounts", 3))
+
+    def test_landing_pricing_tiers_returns_dynamic_tiers(self):
+        sample_plans = [
+            SimpleNamespace(id=1, name="Standard", tier_level=1, price=299, duration="monthly", features="Feature 1\nFeature 2", limits='{"staff_accounts":3}', is_active=True),
+            SimpleNamespace(id=2, name="Pro", tier_level=2, price=499, duration="monthly", features="Feature P1", limits='{"staff_accounts":-1}', is_active=True),
+            SimpleNamespace(id=3, name="Pro Annual Plan", tier_level=2, price=4999, duration="yearly", features="Feature P1", limits='{"staff_accounts":-1}', is_active=True),
+        ]
+        tiers = get_landing_pricing_tiers(sample_plans)
+
+        self.assertGreaterEqual(len(tiers), 3)
+        tier_names = [t["tier_name"] for t in tiers]
+        self.assertIn("Free", tier_names)
+        self.assertIn("Standard", tier_names)
+        self.assertIn("Pro", tier_names)
+
+        standard_tier = next(t for t in tiers if t["tier_name"] == "Standard")
+        self.assertEqual(standard_tier["monthly_price_formatted"], "299")
+        self.assertTrue(standard_tier["is_popular"])
+
+        pro_tier = next(t for t in tiers if t["tier_name"] == "Pro")
+        self.assertEqual(pro_tier["monthly_price_formatted"], "499")
+        self.assertEqual(pro_tier["yearly_price_formatted"], "4,999")
 
 
 if __name__ == "__main__":

@@ -1453,7 +1453,7 @@
         }
         .lp-pricing-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 2rem;
             align-items: stretch;
             max-width: 1140px;
@@ -2587,78 +2587,103 @@
             </div>
 
             <div class="lp-pricing-grid">
-                <!-- Free Plan -->
-                <div class="lp-pricing-card">
-                    <div>
-                        <h3 class="lp-plan-name">Free Tier</h3>
-                        <p class="lp-plan-desc">Explore the platform and list your establishment with core visibility.</p>
-                        <div class="lp-plan-price">
-                            <span class="lp-price-curr">₱</span>
-                            <span class="lp-price-val plan-price-free">0</span>
-                            <span class="lp-price-period">/ month</span>
-                        </div>
-                        <ul class="lp-plan-features">
-                            <li><i class="fa-solid fa-circle-check"></i> Basic establishment profile &amp; listing</li>
-                            <li><i class="fa-solid fa-circle-check"></i> Public park info and visitor map link</li>
-                            <li><i class="fa-solid fa-circle-check"></i> Community reviews and feedback view</li>
-                            <li><i class="fa-solid fa-circle-check"></i> Standard email platform support</li>
-                        </ul>
-                    </div>
-                    <a href="{{ url_for('auth.register_admin_step1') }}" class="lp-plan-btn lp-plan-btn-outline">
-                        Get Started Free &rarr;
-                    </a>
-                </div>
-
-                <!-- Standard Plan (Popular) -->
-                <div class="lp-pricing-card popular">
+                {% for tier in pricing_tiers %}
+                <div class="lp-pricing-card {% if tier.is_popular %}popular{% endif %}">
+                    {% if tier.is_popular %}
                     <span class="lp-popular-badge">Most Popular</span>
+                    {% endif %}
                     <div>
-                        <h3 class="lp-plan-name">Standard Tier</h3>
-                        <p class="lp-plan-desc">Core zoo operations, ticket bookings, staff accounts, and revenue tracking.</p>
-                        <div class="lp-plan-price">
-                            <span class="lp-price-curr">₱</span>
-                            <span class="lp-price-val" id="price-standard" data-monthly="4,999" data-yearly="3,999">4,999</span>
-                            <span class="lp-price-period">/ month</span>
+                        <div style="font-size:0.75rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#1a4f32; margin-bottom:0.25rem;">
+                            {{ tier.tier_label }}
                         </div>
-                        <ul class="lp-plan-features">
-                            <li><i class="fa-solid fa-circle-check"></i> <strong>Up to 3</strong> staff user accounts</li>
-                            <li><i class="fa-solid fa-circle-check"></i> <strong>5 Zones</strong> &amp; up to 100 animals managed</li>
-                            <li><i class="fa-solid fa-circle-check"></i> <strong>Up to 500</strong> online bookings / month</li>
-                            <li><i class="fa-solid fa-circle-check"></i> 5 promotional discount bundles</li>
-                            <li><i class="fa-solid fa-circle-check"></i> Real-time revenue &amp; payment settings</li>
-                            <li><i class="fa-solid fa-circle-check"></i> Dynamic pricing &amp; trivia quiz builder</li>
-                            <li><i class="fa-solid fa-circle-check"></i> Priority partner email &amp; ticket support</li>
-                        </ul>
-                    </div>
-                    <a href="{{ url_for('auth.register_admin_step1') }}" class="lp-plan-btn lp-plan-btn-solid">
-                        Start with Standard &rarr;
-                    </a>
-                </div>
+                        <h3 class="lp-plan-name">{{ tier.name }}</h3>
+                        <p class="lp-plan-desc">{{ tier.description }}</p>
 
-                <!-- Pro Plan -->
-                <div class="lp-pricing-card">
-                    <div>
-                        <h3 class="lp-plan-name">Pro Tier</h3>
-                        <p class="lp-plan-desc">Advanced operations, multi-zone map layouts, and unlimited scaling.</p>
                         <div class="lp-plan-price">
                             <span class="lp-price-curr">₱</span>
-                            <span class="lp-price-val" id="price-pro" data-monthly="9,999" data-yearly="7,999">9,999</span>
+                            <span class="lp-price-val plan-price-display"
+                                  data-monthly="{{ tier.monthly_price_formatted }}"
+                                  data-yearly="{{ tier.yearly_monthly_formatted }}">
+                                {{ tier.monthly_price_formatted }}
+                            </span>
                             <span class="lp-price-period">/ month</span>
                         </div>
+                        <div style="font-size:0.78rem; color:#64748b; margin-top:-1.1rem; margin-bottom:1.15rem; min-height:1.2rem;">
+                            <span class="plan-note-display"
+                                  data-monthly="{{ '' if tier.tier_level == 0 else 'Billed monthly' }}"
+                                  data-yearly="{{ '' if tier.tier_level == 0 else ('₱' ~ tier.yearly_price_formatted ~ ' billed annually · Save ' ~ tier.yearly_savings_pct ~ '%') }}">
+                                {{ '' if tier.tier_level == 0 else 'Billed monthly' }}
+                            </span>
+                        </div>
+
                         <ul class="lp-plan-features">
-                            <li><i class="fa-solid fa-circle-check"></i> <strong>Unlimited</strong> staff user accounts</li>
-                            <li><i class="fa-solid fa-circle-check"></i> <strong>Unlimited</strong> zones &amp; animals</li>
-                            <li><i class="fa-solid fa-circle-check"></i> <strong>Unlimited</strong> visitor bookings &amp; promos</li>
-                            <li><i class="fa-solid fa-circle-check"></i> Interactive park map &amp; layout builder</li>
-                            <li><i class="fa-solid fa-circle-check"></i> Advanced revenue analytics &amp; graph builder</li>
-                            <li><i class="fa-solid fa-circle-check"></i> Multi-channel notifications (SMS/Email)</li>
-                            <li><i class="fa-solid fa-circle-check"></i> Dedicated Superadmin support with 24/7 SLA</li>
+                            {# Limits highlights #}
+                            {% if tier.limits %}
+                                {% if tier.tier_level > 0 %}
+                                    <li>
+                                        <i class="fa-solid fa-circle-check"></i>
+                                        <span>
+                                            {% if tier.limits.staff_accounts < 0 %}
+                                                <strong>Unlimited</strong> staff user accounts
+                                            {% elif tier.limits.staff_accounts > 0 %}
+                                                <strong>Up to {{ tier.limits.staff_accounts }}</strong> staff user accounts
+                                            {% else %}
+                                                1 administrator account
+                                            {% endif %}
+                                        </span>
+                                    </li>
+                                    <li>
+                                        <i class="fa-solid fa-circle-check"></i>
+                                        <span>
+                                            {% if tier.limits.zones < 0 and tier.limits.animals < 0 %}
+                                                <strong>Unlimited</strong> zones &amp; animals
+                                            {% elif tier.limits.zones > 0 or tier.limits.animals > 0 %}
+                                                <strong>{{ tier.limits.zones if tier.limits.zones > 0 else 'Unlimited' }} Zones</strong> &amp; up to {{ tier.limits.animals if tier.limits.animals > 0 else 'unlimited' }} animals managed
+                                            {% endif %}
+                                        </span>
+                                    </li>
+                                    <li>
+                                        <i class="fa-solid fa-circle-check"></i>
+                                        <span>
+                                            {% if tier.limits.bookings_per_month < 0 %}
+                                                <strong>Unlimited</strong> visitor bookings &amp; promos
+                                            {% elif tier.limits.bookings_per_month > 0 %}
+                                                <strong>Up to {{ tier.limits.bookings_per_month }}</strong> online bookings / month
+                                            {% endif %}
+                                        </span>
+                                    </li>
+                                    {% if tier.limits.promo_bundles is defined and tier.limits.promo_bundles != 0 %}
+                                    <li>
+                                        <i class="fa-solid fa-circle-check"></i>
+                                        <span>
+                                            {% if tier.limits.promo_bundles < 0 %}
+                                                <strong>Unlimited</strong> promotional discount bundles
+                                            {% else %}
+                                                <strong>{{ tier.limits.promo_bundles }}</strong> promotional discount bundles
+                                            {% endif %}
+                                        </span>
+                                    </li>
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+
+                            {# Dynamic features from Super Admin #}
+                            {% for feat in tier.features %}
+                            <li><i class="fa-solid fa-circle-check"></i> <span>{{ feat }}</span></li>
+                            {% endfor %}
                         </ul>
                     </div>
-                    <a href="{{ url_for('auth.register_admin_step1') }}" class="lp-plan-btn lp-plan-btn-outline">
-                        Go Pro &rarr;
+
+                    <a href="{{ url_for('auth.register_admin_step1', plan_id=tier.id) if tier.id else url_for('auth.register_admin_step1') }}"
+                       class="lp-plan-btn {% if tier.is_popular %}lp-plan-btn-solid{% else %}lp-plan-btn-outline{% endif %}">
+                        {{ tier.cta_label }} &rarr;
                     </a>
                 </div>
+                {% else %}
+                <div style="grid-column: 1 / -1; text-align: center; color: #64748b; padding: 2rem;">
+                    No subscription tiers currently configured. Check back soon!
+                </div>
+                {% endfor %}
             </div>
         </div>
     </section>
@@ -2949,20 +2974,18 @@
     function toggleBillingCycle(cycle) {
         var monthlyBtn = document.getElementById('btn-billing-monthly');
         var yearlyBtn  = document.getElementById('btn-billing-yearly');
-        var stdPrice   = document.getElementById('price-standard');
-        var proPrice   = document.getElementById('price-pro');
+        var isYearly = (cycle === 'yearly');
 
-        if (cycle === 'yearly') {
-            if (monthlyBtn) monthlyBtn.classList.remove('active');
-            if (yearlyBtn) yearlyBtn.classList.add('active');
-            if (stdPrice) stdPrice.textContent = stdPrice.getAttribute('data-yearly') || '3,999';
-            if (proPrice) proPrice.textContent = proPrice.getAttribute('data-yearly') || '7,999';
-        } else {
-            if (yearlyBtn) yearlyBtn.classList.remove('active');
-            if (monthlyBtn) monthlyBtn.classList.add('active');
-            if (stdPrice) stdPrice.textContent = stdPrice.getAttribute('data-monthly') || '4,999';
-            if (proPrice) proPrice.textContent = proPrice.getAttribute('data-monthly') || '9,999';
-        }
+        if (monthlyBtn) monthlyBtn.classList.toggle('active', !isYearly);
+        if (yearlyBtn) yearlyBtn.classList.toggle('active', isYearly);
+
+        document.querySelectorAll('.plan-price-display').forEach(function(el) {
+            el.textContent = isYearly ? (el.getAttribute('data-yearly') || el.textContent) : (el.getAttribute('data-monthly') || el.textContent);
+        });
+
+        document.querySelectorAll('.plan-note-display').forEach(function(el) {
+            el.textContent = isYearly ? (el.getAttribute('data-yearly') || '') : (el.getAttribute('data-monthly') || '');
+        });
     }
 
     /* ──────────────────────────────────────────

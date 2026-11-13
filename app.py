@@ -283,11 +283,15 @@ def create_app() -> Flask:
                     "bookings": int(total_bookings),
                 }
             subscription_plans = []
+            pricing_tiers = []
             try:
                 from models import SubscriptionPlan
+                from services.subscription_catalog import get_landing_pricing_tiers
                 subscription_plans = SubscriptionPlan.query.filter_by(is_active=True).order_by(SubscriptionPlan.tier_level.asc(), SubscriptionPlan.price.asc()).all()
+                pricing_tiers = get_landing_pricing_tiers()
             except Exception:
                 subscription_plans = []
+                pricing_tiers = []
 
             from models import Event, Promotion
             upcoming_events = Event.query.order_by(Event.id.desc()).limit(6).all()
@@ -299,6 +303,7 @@ def create_app() -> Flask:
             hero_zoos = []
             platform_stats = None
             subscription_plans = []
+            pricing_tiers = []
             upcoming_events = []
             active_promotions = []
             wildlife_facts = []
@@ -308,6 +313,7 @@ def create_app() -> Flask:
             hero_zoos=hero_zoos,
             stats=platform_stats,
             subscription_plans=subscription_plans,
+            pricing_tiers=pricing_tiers,
             tier_catalog=TIER_METADATA,
             upcoming_events=upcoming_events,
             active_promotions=active_promotions,
