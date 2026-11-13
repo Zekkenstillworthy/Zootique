@@ -817,6 +817,7 @@
                 <!-- Animal Farm Admin Navigation -->
                 {# -- resolve subscription tier for lock icons -- #}
                 {% set _sub_tier = g_sub_tier if g_sub_tier is defined else -1 %}
+                {% if session.get('role') != 'zoo_staff' %}
                 <a href="{{ url_for('animal_farm_admin.subscriptions') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_admin.subscriptions' %}active{% endif %}">
                     <i class="fa-solid fa-id-card"></i> Subscription
@@ -824,6 +825,7 @@
                     <span style="margin-left:auto; font-size:10px; background:#f59e0b; color:#fff; padding:1px 6px; border-radius:99px; font-weight:700;">No Plan</span>
                     {% endif %}
                 </a>
+                {% endif %}
                 <a href="{{ url_for('animal_farm_admin.dashboard') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_admin.dashboard' %}active{% endif %}">
                     <i class="fa-solid fa-table-cells-large"></i> Dashboard
@@ -1062,11 +1064,13 @@
                 </a>
 
                 <!-- Staff Management -->
+                {% if session.get('role') != 'zoo_staff' %}
                 <a href="{{ url_for('animal_farm_admin.staff_management') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_admin.staff_management' %}active{% endif %}">
                     <i class="fa-solid fa-user-check"></i> Staff Management
                     {% if _sub_tier < feature_required_tier('staff_management') %}<i class="fa-solid fa-lock" title="Requires Standard Tier" style="font-size:10px; margin-left:4px; opacity:0.6;"></i>{% endif %}
                 </a>
+                {% endif %}
 
                 <!-- Settings Dropdown -->
                 <div class="nav-dropdown">
@@ -1086,17 +1090,23 @@
                             class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.settings' and request.args.get('section') == 'security' %}active{% endif %}">
                             <i class="fa-solid fa-shield-halved"></i> Account Security
                         </a>
+                        {% if session.get('role') != 'zoo_staff' %}
                         <a href="{{ url_for('animal_farm_admin.establishment_profile') }}"
                             class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.establishment_profile' %}active{% endif %}">
                             <i class="fa-solid fa-building"></i> Establishment Profile
                         </a>
+                        {% endif %}
                     </div>
                 </div>
                 {% elif request.blueprint == 'animal_farm_staff' %}
                 <!-- Animal Farm Staff Navigation -->
                 <a href="{{ url_for('animal_farm_staff.dashboard') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_staff.dashboard' %}active{% endif %}">
-                    <i class="fa-solid fa-table-cells-large"></i> Dashboard Home
+                    <i class="fa-solid fa-table-cells-large"></i> Staff Dashboard
+                </a>
+                <a href="{{ url_for('animal_farm_admin.dashboard') }}"
+                    class="nav-item {% if request.endpoint == 'animal_farm_admin.dashboard' %}active{% endif %}">
+                    <i class="fa-solid fa-chart-line"></i> Zoo Dashboard
                 </a>
                 <a href="{{ url_for('animal_farm_staff.notifications') }}"
                     class="nav-item {% if request.endpoint == 'animal_farm_staff.notifications' %}active{% endif %}">
@@ -1105,40 +1115,128 @@
                     <span class="badge" style="background:#ef4444; color:#fff; font-size:10px; font-weight:800; border-radius:10px; padding:2px 7px; margin-left:auto;">{{ zoo_unread_count }}</span>
                     {% endif %}
                 </a>
-                <a href="{{ url_for('animal_farm_staff.my_bookings') }}"
-                    class="nav-item {% if request.endpoint == 'animal_farm_staff.my_bookings' %}active{% endif %}">
-                    <i class="fa-solid fa-calendar-check"></i> Bookings
-                </a>
-                <a href="{{ url_for('animal_farm_staff.ticket_scanner') }}"
-                    class="nav-item {% if request.endpoint == 'animal_farm_staff.ticket_scanner' %}active{% endif %}">
-                    <i class="fa-solid fa-qrcode"></i> Ticket Scanner
-                </a>
-                <!-- Events Management Dropdown -->
+
+                <!-- Bookings Dropdown -->
+                {% set _afs_bookings_active = request.endpoint in ('animal_farm_admin.booking_management', 'animal_farm_admin.booking_bundles', 'animal_farm_staff.my_bookings', 'animal_farm_staff.ticket_scanner') %}
                 <div class="nav-dropdown">
                     <button
-                        class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_staff.events_management' %}active{% endif %}"
-                        onclick="toggleDropdown(event, 'afs-events-dropdown')">
-                        <span class="trigger-label"><i class="fa-solid fa-calendar-days"></i> Events Management</span>
+                        class="nav-dropdown-trigger {% if _afs_bookings_active %}active{% endif %}"
+                        onclick="toggleDropdown(event, 'afs-bookings-dropdown')">
+                        <span class="trigger-label"><i class="fa-solid fa-calendar-check"></i> Bookings</span>
                         <i class="fa-solid fa-chevron-down chevron"></i>
                     </button>
-                    <div class="nav-dropdown-menu {% if request.endpoint == 'animal_farm_staff.events_management' %}open{% endif %}"
-                        id="afs-events-dropdown">
-                        <a href="{{ url_for('animal_farm_staff.events_management') }}?tab=add" data-se-tab="add"
-                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_staff.events_management' and request.args.get('tab', 'add') == 'add' %}active{% endif %}">
-                            <i class="fa-solid fa-plus-circle"></i> Add Event
+                    <div class="nav-dropdown-menu {% if _afs_bookings_active %}open{% endif %}" id="afs-bookings-dropdown">
+                        <a href="{{ url_for('animal_farm_admin.booking_management') }}"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.booking_management' %}active{% endif %}">
+                            <i class="fa-solid fa-calendar-check"></i> Booking Management
                         </a>
-                        <a href="{{ url_for('animal_farm_staff.events_management') }}?tab=list" data-se-tab="list"
-                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_staff.events_management' and request.args.get('tab') == 'list' %}active{% endif %}">
-                            <i class="fa-solid fa-calendar-check"></i> Scheduled Events
+                        <a href="{{ url_for('animal_farm_admin.booking_bundles') }}"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.booking_bundles' %}active{% endif %}">
+                            <i class="fa-solid fa-boxes-stacked"></i> Booking Bundles
+                        </a>
+                        <a href="{{ url_for('animal_farm_staff.my_bookings') }}"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_staff.my_bookings' %}active{% endif %}">
+                            <i class="fa-solid fa-user-check"></i> My Assigned Bookings
+                        </a>
+                        <a href="{{ url_for('animal_farm_staff.ticket_scanner') }}"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_staff.ticket_scanner' %}active{% endif %}">
+                            <i class="fa-solid fa-qrcode"></i> Ticket Scanner
                         </a>
                     </div>
                 </div>
-                <a href="{{ url_for('animal_farm_staff.map_zones') }}"
-                    class="nav-item {% if request.endpoint == 'animal_farm_staff.map_zones' %}active{% endif %}">
-                    <i class="fa-solid fa-map-location-dot"></i> Map & Zones
-                </a>
+
+                <!-- Animals Dropdown -->
+                <div class="nav-dropdown">
+                    <button
+                        class="nav-dropdown-trigger {% if request.endpoint == 'animal_farm_admin.animals_management' %}active{% endif %}"
+                        onclick="toggleDropdown(event, 'afs-animals-dropdown')">
+                        <span class="trigger-label"><i class="fa-solid fa-paw"></i> Animals</span>
+                        <i class="fa-solid fa-chevron-down chevron"></i>
+                    </button>
+                    <div class="nav-dropdown-menu" id="afs-animals-dropdown">
+                        <a href="{{ url_for('animal_farm_admin.animals_management') }}?tab=add"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.animals_management' and request.args.get('tab', 'add') == 'add' %}active{% endif %}">
+                            <i class="fa-solid fa-plus-circle"></i> Add/Edit Animal
+                        </a>
+                        <a href="{{ url_for('animal_farm_admin.animals_management') }}?tab=list"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.animals_management' and request.args.get('tab') == 'list' %}active{% endif %}">
+                            <i class="fa-solid fa-list"></i> Animal List
+                        </a>
+                        <a href="{{ url_for('animal_farm_admin.animals_management') }}?tab=funfacts"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.animals_management' and request.args.get('tab') == 'funfacts' %}active{% endif %}">
+                            <i class="fa-solid fa-lightbulb"></i> Wildlife Fun Facts
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Map & Zones Dropdown -->
+                <div class="nav-dropdown">
+                    <button
+                        class="nav-dropdown-trigger {% if request.endpoint in ('animal_farm_admin.visitor_map_zone_management', 'animal_farm_staff.map_zones') %}active{% endif %}"
+                        onclick="toggleDropdown(event, 'afs-map-dropdown')">
+                        <span class="trigger-label"><i class="fa-solid fa-map-location-dot"></i> Map &amp; Zones</span>
+                        <i class="fa-solid fa-chevron-down chevron"></i>
+                    </button>
+                    <div class="nav-dropdown-menu {% if request.endpoint in ('animal_farm_admin.visitor_map_zone_management', 'animal_farm_staff.map_zones') %}open{% endif %}"
+                        id="afs-map-dropdown">
+                        <a href="{{ url_for('animal_farm_admin.visitor_map_zone_management') }}?tab=add"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.visitor_map_zone_management' and request.args.get('tab', 'add') == 'add' %}active{% endif %}">
+                            <i class="fa-solid fa-plus-circle"></i> Add / Edit Zone
+                        </a>
+                        <a href="{{ url_for('animal_farm_admin.visitor_map_zone_management') }}?tab=landing-map"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.visitor_map_zone_management' and request.args.get('tab') == 'landing-map' %}active{% endif %}">
+                            <i class="fa-solid fa-map"></i> Landing Page Map
+                        </a>
+                        <a href="{{ url_for('animal_farm_admin.visitor_map_zone_management') }}?tab=pin-editor"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.visitor_map_zone_management' and request.args.get('tab') == 'pin-editor' %}active{% endif %}">
+                            <i class="fa-solid fa-location-dot"></i> Pin Editor
+                        </a>
+                        <a href="{{ url_for('animal_farm_admin.visitor_map_zone_management') }}?tab=zones"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.visitor_map_zone_management' and request.args.get('tab') == 'zones' %}active{% endif %}">
+                            <i class="fa-solid fa-layer-group"></i> Zones Layout
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Park Management Dropdown -->
+                {% set _afs_park_mgmt_active = request.endpoint in ('animal_farm_admin.services_management', 'animal_farm_admin.events_management', 'animal_farm_admin.promotions_management', 'animal_farm_admin.park_rules_management', 'animal_farm_admin.availability_settings', 'animal_farm_admin.payment_methods', 'animal_farm_staff.events_management') %}
+                <div class="nav-dropdown">
+                    <button
+                        class="nav-dropdown-trigger {% if _afs_park_mgmt_active %}active{% endif %}"
+                        onclick="toggleDropdown(event, 'afs-park-mgmt-dropdown')">
+                        <span class="trigger-label"><i class="fa-solid fa-tree"></i> Park Management</span>
+                        <i class="fa-solid fa-chevron-down chevron"></i>
+                    </button>
+                    <div class="nav-dropdown-menu {% if _afs_park_mgmt_active %}open{% endif %}" id="afs-park-mgmt-dropdown">
+                        <a href="{{ url_for('animal_farm_admin.services_management') }}"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.services_management' %}active{% endif %}">
+                            <i class="fa-solid fa-list-check"></i> Services
+                        </a>
+                        <a href="{{ url_for('animal_farm_admin.events_management') }}"
+                            class="nav-dropdown-item {% if request.endpoint in ('animal_farm_admin.events_management', 'animal_farm_staff.events_management') %}active{% endif %}">
+                            <i class="fa-solid fa-calendar-days"></i> Events
+                        </a>
+                        <a href="{{ url_for('animal_farm_admin.promotions_management') }}"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.promotions_management' %}active{% endif %}">
+                            <i class="fa-solid fa-tags"></i> Promotions
+                        </a>
+                        <a href="{{ url_for('animal_farm_admin.park_rules_management') }}"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.park_rules_management' %}active{% endif %}">
+                            <i class="fa-solid fa-clipboard-list"></i> Park Rules
+                        </a>
+                        <a href="{{ url_for('animal_farm_admin.availability_settings') }}"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.availability_settings' %}active{% endif %}">
+                            <i class="fa-solid fa-clock"></i> Availability
+                        </a>
+                        <a href="{{ url_for('animal_farm_admin.payment_methods') }}"
+                            class="nav-dropdown-item {% if request.endpoint == 'animal_farm_admin.payment_methods' %}active{% endif %}">
+                            <i class="fa-solid fa-credit-card"></i> Payment Methods
+                        </a>
+                    </div>
+                </div>
+
                 <a href="{{ url_for('animal_farm_staff.visitor_feedback') }}"
-                    class="nav-item {% if request.endpoint == 'animal_farm_staff.visitor_feedback' %}active{% endif %}">
+                    class="nav-item {% if request.endpoint in ('animal_farm_staff.visitor_feedback', 'animal_farm_admin.visitor_feedback_management') %}active{% endif %}">
                     <i class="fa-solid fa-comments"></i> Visitor Feedback
                 </a>
                 <a href="{{ url_for('animal_farm_staff.report_incident') }}"
@@ -1146,7 +1244,7 @@
                     <i class="fa-solid fa-clipboard-list"></i> Daily Operations Log
                 </a>
                 <a href="{{ url_for('animal_farm_staff.profile') }}"
-                    class="nav-item {% if request.endpoint == 'animal_farm_staff.profile' %}active{% endif %}">
+                    class="nav-item {% if request.endpoint in ('animal_farm_staff.profile', 'animal_farm_admin.settings') %}active{% endif %}">
                     <i class="fa-solid fa-user-gear"></i> Staff Profile & Account
                 </a>
                 {% else %}
@@ -1214,12 +1312,13 @@
 
             <!-- Top Header Bar -->
             <header class="top-header">
-                {% set _app_label = 'Zootique Admin' if request.blueprint == 'zootique_admin' else ('Zoo Admin'
-                if request.blueprint == 'animal_farm_admin' else ('Zoo Staff' if request.blueprint ==
-                'animal_farm_staff' else 'Admin')) %}
-                {% set _home_url = url_for('zootique_admin.dashboard') if request.blueprint == 'zootique_admin' else
-                (url_for('animal_farm_admin.dashboard') if request.blueprint == 'animal_farm_admin' else
-                (url_for('animal_farm_staff.dashboard') if request.blueprint == 'animal_farm_staff' else '#')) %}
+                {% set _app_label = 'Zootique Admin' if request.blueprint == 'zootique_admin' else (
+                    'Zoo Staff' if session.get('role') == 'zoo_staff' or request.blueprint == 'animal_farm_staff' else 'Zoo Admin'
+                ) %}
+                {% set _home_url = url_for('zootique_admin.dashboard') if request.blueprint == 'zootique_admin' else (
+                    (url_for('animal_farm_admin.dashboard') if session.get('role') == 'zoo_admin' else url_for('animal_farm_staff.dashboard'))
+                    if request.blueprint in ('animal_farm_admin', 'animal_farm_staff') else '#'
+                ) %}
 
                 {% if request.blueprint == 'zootique_admin' %}
                 <div class="header-title" style="margin-bottom:0; display:flex; align-items:center;">

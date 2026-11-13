@@ -94,7 +94,7 @@ animal_farm_admin_bp = Blueprint('animal_farm_admin', __name__)
 
 @animal_farm_admin_bp.before_request
 def require_zoo_admin():
-    result = require_role_guard(expected_role='zoo_admin', login_module='zoo_admin')
+    result = require_role_guard(expected_role=('zoo_admin', 'zoo_staff'), login_module='zoo_admin')
     if result is not None:
         return result
 
@@ -202,6 +202,9 @@ def dashboard():
 
 @animal_farm_admin_bp.route('/subscriptions')
 def subscriptions():
+    if session.get('role') != 'zoo_admin':
+        flash('Access restricted to Zoo Administrators.', 'error')
+        return redirect(url_for('animal_farm_admin.dashboard'))
     zoo = _current_zoo()
     if not zoo:
         flash('No zoo assigned.', 'error')
@@ -318,6 +321,9 @@ def availability_settings():
 @animal_farm_admin_bp.post('/subscriptions/subscribe')
 def self_subscribe():
     """Zoo Admin self-subscribes to a plan. Creates a pending subscription."""
+    if session.get('role') != 'zoo_admin':
+        flash('Access restricted to Zoo Administrators.', 'error')
+        return redirect(url_for('animal_farm_admin.dashboard'))
     zoo = _current_zoo()
     if not zoo:
         flash('No zoo assigned.', 'error')
@@ -750,6 +756,9 @@ def delete_booking(booking_id: str):
 
 @animal_farm_admin_bp.route('/profile')
 def establishment_profile():
+    if session.get('role') != 'zoo_admin':
+        flash('Access restricted to Zoo Administrators.', 'error')
+        return redirect(url_for('animal_farm_admin.dashboard'))
     zoo = _current_zoo()
     if not zoo:
         flash('No zoo assigned.', 'error')
@@ -759,6 +768,9 @@ def establishment_profile():
 
 @animal_farm_admin_bp.post('/profile/save')
 def save_establishment_profile():
+    if session.get('role') != 'zoo_admin':
+        flash('Access restricted to Zoo Administrators.', 'error')
+        return redirect(url_for('animal_farm_admin.dashboard'))
     zoo = _current_zoo()
     if not zoo:
         flash('No zoo assigned.', 'error')
@@ -870,9 +882,9 @@ def establishment_profile_legacy_redirect():
 
 @animal_farm_admin_bp.route('/services')
 def services_management():
-    tab = request.args.get('tab')
+    tab = request.args.get('tab') or 'list'
     if tab not in {'add', 'list'}:
-        abort(404)
+        tab = 'list'
     zoo = _current_zoo()
     if not zoo:
         flash('No zoo assigned.', 'error')
@@ -1236,11 +1248,9 @@ def events_management_legacy_redirect():
 
 @animal_farm_admin_bp.route('/promotions')
 def promotions_management():
-    tab = request.args.get('tab')
-    if tab is None:
-        return redirect(url_for('animal_farm_admin.promotions_management', tab='add'))
+    tab = request.args.get('tab') or 'list'
     if tab not in {'add', 'list'}:
-        abort(404)
+        tab = 'list'
 
     zoo = _current_zoo()
     if not zoo:
@@ -1762,6 +1772,9 @@ def delete_graph(graph_id: int):
 
 @animal_farm_admin_bp.route('/staff-management')
 def staff_management():
+    if session.get('role') != 'zoo_admin':
+        flash('Access restricted to Zoo Administrators.', 'error')
+        return redirect(url_for('animal_farm_admin.dashboard'))
     zoo = _current_zoo()
     if not zoo:
         flash('No zoo assigned.', 'error')
@@ -1773,6 +1786,9 @@ def staff_management():
 
 @animal_farm_admin_bp.post('/staff-management/staff/save')
 def save_staff_user():
+    if session.get('role') != 'zoo_admin':
+        flash('Access restricted to Zoo Administrators.', 'error')
+        return redirect(url_for('animal_farm_admin.dashboard'))
     zoo = _current_zoo()
     if not zoo:
         flash('No zoo assigned.', 'error')
@@ -1862,6 +1878,9 @@ def save_staff_user():
 
 @animal_farm_admin_bp.post('/staff-management/staff/<int:user_id>/delete')
 def delete_staff_user(user_id: int):
+    if session.get('role') != 'zoo_admin':
+        flash('Access restricted to Zoo Administrators.', 'error')
+        return redirect(url_for('animal_farm_admin.dashboard'))
     zoo = _current_zoo()
     if not zoo:
         flash('No zoo assigned.', 'error')
