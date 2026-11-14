@@ -1901,7 +1901,16 @@ def profile():
     if show_tab not in allowed_tabs:
         show_tab = "profile"
 
-    bookings = Booking.query.filter(_booking_owner_filter(user)).order_by(Booking.created_at.desc()).all()
+    bookings = (
+        Booking.query
+        .options(joinedload(Booking.zoo), joinedload(Booking.service))
+        .filter(_booking_owner_filter(user))
+        .order_by(Booking.created_at.desc())
+        .all()
+    )
+    # Separate active from cancelled so the template can filter by default
+    active_bookings_list = [b for b in bookings if (b.status or "").strip().lower() != "cancelled"]
+    cancelled_bookings_list = [b for b in bookings if (b.status or "").strip().lower() == "cancelled"]
     review_aliases = list(_feedback_owner_aliases(user))
     reviews = (
         Feedback.query
@@ -2164,6 +2173,8 @@ def profile():
         total_spent=float(total_spent),
         points=points,
         bookings=bookings,
+        active_bookings_list=active_bookings_list,
+        cancelled_bookings_list=cancelled_bookings_list,
         total_bookings=total_bookings,
         active_bookings=active_bookings,
         status_counts=status_counts,
