@@ -1239,10 +1239,6 @@
                     class="nav-item {% if request.endpoint in ('animal_farm_staff.visitor_feedback', 'animal_farm_admin.visitor_feedback_management') %}active{% endif %}">
                     <i class="fa-solid fa-comments"></i> Visitor Feedback
                 </a>
-                <a href="{{ url_for('animal_farm_staff.report_incident') }}"
-                    class="nav-item {% if request.endpoint in ['animal_farm_staff.report_incident', 'animal_farm_staff.daily_operations_log'] %}active{% endif %}">
-                    <i class="fa-solid fa-clipboard-list"></i> Daily Operations Log
-                </a>
                 <a href="{{ url_for('animal_farm_staff.profile') }}"
                     class="nav-item {% if request.endpoint in ('animal_farm_staff.profile', 'animal_farm_admin.settings') %}active{% endif %}">
                     <i class="fa-solid fa-user-gear"></i> Staff Profile & Account

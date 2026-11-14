@@ -83,6 +83,25 @@ def dashboard():
         if zoo:
             animals_count = Animal.query.filter_by(zoo_id=zoo.id).count()
             bookings_count = Booking.query.filter_by(zoo_id=zoo.id).count()
+
+    popular_services = []
+    if zoo:
+        from models import Booking
+        all_bookings = Booking.query.filter_by(zoo_id=zoo.id).all()
+        service_stats = {}
+        for b in all_bookings:
+            service_name = b.service_name or (b.service.name if b.service else None) or ("Bundle Package" if getattr(b, "bundle_id", None) else "General Admission")
+            stats = service_stats.setdefault(service_name, {
+                "name": service_name,
+                "bookings": 0,
+                "guests": 0,
+                "revenue": 0.0
+            })
+            stats["bookings"] += 1
+            stats["guests"] += int(b.guests or 0)
+            stats["revenue"] += float(b.amount or 0.0)
+        popular_services = sorted(service_stats.values(), key=lambda s: s["bookings"], reverse=True)[:5]
+
     return render_template(
         'animal_farm_staff/dashboard.html',
         user=user,
@@ -92,6 +111,7 @@ def dashboard():
         recent_tasks=recent_tasks,
         animals_count=animals_count,
         bookings_count=bookings_count,
+        popular_services=popular_services,
         today=datetime.utcnow().date(),
     )
 

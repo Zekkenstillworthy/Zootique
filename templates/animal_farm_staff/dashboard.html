@@ -84,33 +84,46 @@
 
     </div>
 
-    <!-- Right Column: Incident Reporter -->
+    <!-- Right Column: Most Popular Services -->
     <div style="display: flex; flex-direction: column; gap: 20px;">
-        <!-- Incident Reporter Quick Action -->
-        <div class="card-panel">
+        <!-- Most Popular Services Card -->
+        <div class="card-panel" style="margin: 0;">
             <div class="card-header">
-                <h2><i class="fa-solid fa-triangle-exclamation" style="margin-right:8px;"></i> Report Incident</h2>
+                <h2><i class="fa-solid fa-ranking-star" style="margin-right:8px; color: #f59e0b;"></i> Most Popular Services</h2>
                 <div class="card-header-actions">
-                    <a href="{{ url_for('animal_farm_staff.report_incident') }}" class="btn btn-outline btn-sm">All Reports</a>
+                    <span class="badge badge-role">Demand</span>
                 </div>
             </div>
-            <div class="card-body" style="padding: 20px;">
-                <form method="post" action="{{ url_for('animal_farm_staff.report_incident') }}" style="display: flex; flex-direction: column; gap: 12px;">
-                    <div class="zf-field" style="margin-bottom: 0;">
-                        <input type="text" name="title" class="zf-control" placeholder="Short description of incident" required>
-                    </div>
-                    <div class="zf-field" style="margin-bottom: 0;">
-                        <select name="severity" class="zf-control">
-                            <option value="General">General</option>
-                            <option value="Warning">Warning</option>
-                            <option value="Urgent">Urgent</option>
-                            <option value="Emergency">Emergency</option>
-                        </select>
-                    </div>
-                    <button class="btn btn-danger" type="submit" style="width: 100%; justify-content: center;">
-                        <i class="fa-solid fa-paper-plane"></i> Submit Report
-                    </button>
-                </form>
+            <div class="card-body" style="padding: 0;">
+                <div class="zf-table-wrap">
+                    <table class="table-striped">
+                        <thead>
+                            <tr>
+                                <th style="padding-left:16px;">Service Name</th>
+                                <th style="text-align:right;">Bookings</th>
+                                <th style="text-align:right; padding-right:16px;">Guests</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in popular_services %}
+                                <tr>
+                                    <td style="padding-left:16px; font-weight:700; color:var(--text); font-size:13px;">{{ s.name }}</td>
+                                    <td style="text-align:right;">
+                                        <span class="badge badge-active">{{ s.bookings }}</span>
+                                    </td>
+                                    <td style="text-align:right; padding-right:16px; font-size:13px; font-weight:600; color:var(--text-muted);">{{ s.guests }}</td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="3" style="padding:24px 16px; text-align:center; color:var(--text-muted); font-size:13px;">
+                                        <i class="fa-solid fa-box-open" style="font-size:20px; display:block; margin-bottom:6px; opacity:0.5;"></i>
+                                        No booking demand data available yet.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
