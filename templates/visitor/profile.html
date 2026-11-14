@@ -47,7 +47,7 @@
                 <div style="font-size: 0.95rem; opacity: 0.9; margin-bottom: 1rem;">{{ user.email }}</div>
 
                 <div style="background: #0f291e; color: #4ade80; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: bold; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.4rem;">
-                    <i class="fa-solid fa-circle-check"></i> Verified Account
+                    <i class="fa-solid fa-circle-check"></i> {% if (user.status or 'active') == 'active' %}Verified Account{% else %}Account {{ user.status|title }}{% endif %}
                 </div>
 
                 <div style="display: flex; gap: 2rem; font-size: 0.85rem; color: #cbd5e1; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap;">
@@ -57,40 +57,81 @@
                 </div>
 
                 <div style="display: flex; gap: 2rem; font-size: 0.85rem; font-weight: 600; flex-wrap: wrap; justify-content:center;">
-                    <span style="color: #ef4444;"><i class="fa-solid fa-calendar-check"></i> {{ bookings_count or 0 }} Visits</span>
-                    <span style="color: #fca000;"><i class="fa-solid fa-star"></i> {{ reviews_count or 0 }} Reviews</span>
+                    <span style="color: #ef4444;" title="{{ total_bookings }} total reservations ({{ active_bookings }} active)"><i class="fa-solid fa-calendar-check"></i> {{ completed_visits or 0 }} {% if completed_visits == 1 %}Visit{% else %}Visits{% endif %}</span>
+                    <span style="color: #fca000;"><i class="fa-solid fa-star"></i> {{ reviews_count or 0 }} {% if reviews_count == 1 %}Review{% else %}Reviews{% endif %}</span>
                     <span style="color: #4ade80;"><i class="fa-solid fa-sack-dollar"></i> ₱{{ "{:,.2f}".format(total_spent or 0) }} Spent</span>
-                    <span style="color: #fef08a;">👑 {{ points or 0 }} Points</span>
+                    <span style="color: #fef08a;">👑 {{ "{:,}".format(points or 0) }} Points</span>
                 </div>
             </div>
 
             <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:1.25rem;">
-                <h3 style="margin:0 0 .4rem; color:#1a4f32;">Loyalty balance</h3>
-                <p style="margin:0 0 1rem; color:#64748b;">Persistent balance: <strong>{{ loyalty_account.balance if loyalty_account else 0 }}</strong> points</p>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+                    <div>
+                        <h3 style="margin:0 0 .25rem; color:#1a4f32; font-size:1.15rem; font-weight:800;">Wild Points & Rewards</h3>
+                        <p style="margin:0; color:#64748b; font-size:0.88rem;">Current Available Balance: <strong style="color:#d97706; font-size:1.1rem;">👑 {{ "{:,}".format(loyalty_account.balance if loyalty_account else 0) }}</strong> points</p>
+                    </div>
+                    <a href="{{ url_for('visitor.profile', tab='visits') }}" style="font-size:0.85rem; font-weight:700; color:#1a4f32; text-decoration:none; display:inline-flex; align-items:center; gap:0.35rem;">
+                        <i class="fa-solid fa-trophy" style="color:#d97706;"></i> View Badges & History &rarr;
+                    </a>
+                </div>
                 {% if loyalty_transactions %}
                 <div style="display:grid; gap:.5rem;">
                     {% for transaction in loyalty_transactions %}
-                    <div style="display:flex; justify-content:space-between; gap:1rem; border-top:1px solid #f1f5f9; padding-top:.5rem;">
-                        <span>{{ transaction.description }}</span>
-                        <strong style="color:{{ '#15803d' if transaction.points > 0 else '#b91c1c' }}">{{ '+' if transaction.points > 0 else '' }}{{ transaction.points }}</strong>
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; border-top:1px solid #f1f5f9; padding-top:.6rem;">
+                        <div style="display:flex; align-items:flex-start; gap:0.6rem;">
+                            <div style="margin-top:2px;">
+                                {% if transaction.points > 0 %}
+                                <i class="fa-solid fa-circle-arrow-up" style="color:#15803d; font-size:0.95rem;"></i>
+                                {% else %}
+                                <i class="fa-solid fa-circle-arrow-down" style="color:#b91c1c; font-size:0.95rem;"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div style="font-weight:600; color:#1e293b; font-size:0.88rem;">{{ transaction.description }}</div>
+                                {% if transaction.created_at %}
+                                <div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">{{ transaction.created_at.strftime('%b %d, %Y · %I:%M %p') }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <strong style="color:{{ '#15803d' if transaction.points > 0 else '#b91c1c' }}; font-size:0.95rem; white-space:nowrap;">{{ '+' if transaction.points > 0 else '' }}{{ "{:,}".format(transaction.points) }} pts</strong>
                     </div>
                     {% endfor %}
                 </div>
-                {% else %}<span style="color:#64748b;">No loyalty transactions yet.</span>{% endif %}
+                {% else %}<span style="color:#64748b; font-size:0.88rem;">No loyalty transactions recorded yet.</span>{% endif %}
             </div>
 
+            {% if profile_completion_percent < 100 %}
             <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
                 <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 0.9rem; color: #1e293b; margin-bottom: 0.8rem;">
-                    <span>Complete Your Profile</span> <span>75% Complete</span>
+                    <span>Complete Your Profile</span> <span>{{ profile_completion_percent }}% Complete</span>
                 </div>
                 <div style="height: 6px; background: #e2e8f0; border-radius: 3px; margin-bottom: 1rem; overflow: hidden;">
-                    <div style="width: 75%; height: 100%; background: #1a4f32;"></div>
+                    <div style="width: {{ profile_completion_percent }}%; height: 100%; background: #1a4f32; border-radius: 3px; transition: width 0.3s ease;"></div>
                 </div>
-                <div style="display: flex; gap: 2rem; font-size: 0.8rem; color: #64748b; flex-wrap: wrap;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-phone" style="color:#ef4444;"></i> Add phone number to complete <a href="#" style="color:#0ea5e9; font-weight:bold; text-decoration:none;">Add Now</a></div>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-cake-candles" style="color:#ef4444;"></i> Add date of birth for birthday deals <a href="#" style="color:#0ea5e9; font-weight:bold; text-decoration:none;">Add Now</a></div>
+                <div style="display: flex; gap: 1.5rem; font-size: 0.82rem; color: #64748b; flex-wrap: wrap;">
+                    {% for item in missing_profile_fields %}
+                    <div style="display: flex; align-items: center; gap: 0.45rem;">
+                        <i class="fa-solid {{ item.icon }}" style="color:#ef4444;"></i>
+                        <span>{{ item.label }}</span>
+                        <a href="{{ url_for('visitor.profile', tab='profile', edit=1) }}" style="color:#0284c7; font-weight:700; text-decoration:none;">Add Now</a>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
+            {% else %}
+            <div style="background: #f0fdf4; border-radius: 12px; border: 1px solid #bbf7d0; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #16a34a; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 800; color: #166534; font-size: 0.95rem;">Profile 100% Complete</div>
+                        <div style="font-size: 0.82rem; color: #15803d;">All personal profile details are up to date!</div>
+                    </div>
+                </div>
+                <a href="{{ url_for('visitor.profile', tab='profile', edit=1) }}" style="font-size: 0.85rem; font-weight: 700; color: #166534; text-decoration: none;">Update Profile &rarr;</a>
+            </div>
+            {% endif %}
 
             <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap;">
@@ -164,9 +205,9 @@
 
                 <div style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap;">
                     <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px; font-weight:700;">Total: {{ total_bookings or 0 }}</div>
-                    <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px;">Active: {{ (status_counts.get('Confirmed',0) + status_counts.get('Pending',0)) if status_counts else 0 }}</div>
+                    <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px;">Active: {{ active_bookings or 0 }}</div>
                     <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px;">Spent: ₱{{ "{:,.2f}".format(total_spent or 0) }}</div>
-                    <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px;">Points: {{ points or 0 }}</div>
+                    <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px;">Points: {{ "{:,}".format(points or 0) }}</div>
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:1rem; margin-top:0.75rem;">
@@ -252,11 +293,11 @@
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:1rem; margin-bottom:1.75rem;">
                     <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:1.1rem; border-radius:12px;">
                         <div style="color:#64748b; font-size:0.8rem; font-weight:700; text-transform:uppercase;">Visits Completed</div>
-                        <div style="font-size:1.6rem; font-weight:900; color:#1a4f32; margin-top:0.25rem;">{{ bookings_count or 0 }}</div>
+                        <div style="font-size:1.6rem; font-weight:900; color:#1a4f32; margin-top:0.25rem;">{{ completed_visits or 0 }}</div>
                     </div>
                     <div style="background:#fffbeb; border:1.5px solid #fde68a; padding:1.1rem; border-radius:12px;">
                         <div style="color:#b45309; font-size:0.8rem; font-weight:700; text-transform:uppercase;">Wild Points</div>
-                        <div style="font-size:1.6rem; font-weight:900; color:#d97706; margin-top:0.25rem;">👑 {{ points or 0 }}</div>
+                        <div style="font-size:1.6rem; font-weight:900; color:#d97706; margin-top:0.25rem;">👑 {{ "{:,}".format(points or 0) }}</div>
                     </div>
                     <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:1.1rem; border-radius:12px;">
                         <div style="color:#64748b; font-size:0.8rem; font-weight:700; text-transform:uppercase;">Reviews Shared</div>
@@ -312,12 +353,17 @@
                 <div style="color:#64748b; margin-bottom:1rem;">Recent booking payment history for this account.</div>
                 <div style="display:grid; gap:1rem;">
                     {% for payment in payment_history %}
-                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem; display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem; display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; align-items:center;">
                         <div>
-                            <div style="font-weight:800; color:#1e293b;">{{ payment.method|title }} · {{ payment.reference }}</div>
+                            <div style="font-weight:800; color:#1e293b;">{{ payment.method|replace('_', ' ')|title }} · {{ payment.reference }}</div>
                             <div style="color:#64748b; font-size:0.9rem;">{{ payment.booking.service_name or 'Booking' }} · {{ payment.created_at.strftime('%b %d, %Y') if payment.created_at else '—' }}</div>
                         </div>
-                        <div style="font-weight:800; color:#1a4f32;">₱{{ "{:,.2f}".format(payment.amount or 0) }}</div>
+                        <div style="text-align:right;">
+                            <div style="font-weight:800; color:#1a4f32;">₱{{ "{:,.2f}".format(payment.amount or 0) }}</div>
+                            <div style="font-size:0.75rem; font-weight:700; color:{{ '#15803d' if (payment.status or '').lower() == 'paid' else '#dc2626' if (payment.status or '').lower() == 'cancelled' else '#64748b' }}; margin-top:2px;">
+                                {{ (payment.status or 'paid')|title }}
+                            </div>
+                        </div>
                     </div>
                     {% else %}
                     <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;">No payment records found yet.</div>

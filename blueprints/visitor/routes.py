@@ -11,7 +11,7 @@ import secrets
 from urllib.parse import urlparse, unquote
 
 from flask import Blueprint, current_app, render_template, abort, request, redirect, url_for, flash, session, jsonify
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, and_
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
@@ -865,7 +865,11 @@ def my_bookings():
         booking_query = booking_query.filter(Booking.zoo_id == selected_zoo_id)
 
     total_bookings = booking_query.count()
-    total_spent = booking_query.with_entities(
+    paid_spent_query = booking_query.filter(
+        func.lower(Booking.payment_status) == "paid",
+        func.lower(Booking.status) != "cancelled",
+    )
+    total_spent = paid_spent_query.with_entities(
         func.coalesce(func.sum(Booking.amount), 0)
     ).scalar() or 0
     status_rows = booking_query.with_entities(
@@ -1073,7 +1077,11 @@ def my_reservations():
         booking_query = booking_query.filter(Booking.zoo_id == selected_zoo_id)
 
     total_bookings = booking_query.count()
-    total_spent = booking_query.with_entities(
+    paid_spent_query = booking_query.filter(
+        func.lower(Booking.payment_status) == "paid",
+        func.lower(Booking.status) != "cancelled",
+    )
+    total_spent = paid_spent_query.with_entities(
         func.coalesce(func.sum(Booking.amount), 0)
     ).scalar() or 0
     status_rows = booking_query.with_entities(
@@ -2054,8 +2062,53 @@ def profile():
             "visit_reminders": True,
         }
 
-    total_spent = db.session.query(func.sum(Booking.amount)).filter(_booking_owner_filter(user)).scalar() or 0
-    active_bookings = sum(1 for b in bookings if (b.status or "").lower() in {"confirmed", "pending"})
+    paid_spent_filter = and_(
+        _booking_owner_filter(user),
+        func.lower(Booking.payment_status) == "paid",
+        func.lower(Booking.status) != "cancelled",
+    )
+    total_spent = db.session.query(
+        func.coalesce(func.sum(Booking.amount), 0)
+    ).filter(paid_spent_filter).scalar() or 0
+
+    active_bookings = sum(1 for b in bookings if (b.status or "").strip().lower() in {"confirmed", "pending"})
+    completed_visits = sum(
+        1 for b in bookings
+        if (b.status or "").strip().lower() in {"finished", "checked in", "checked_in", "completed"}
+    )
+    total_bookings = len(bookings)
+
+    status_counts = {"Confirmed": 0, "Pending": 0, "Cancelled": 0, "Finished": 0}
+    for b in bookings:
+        st = (b.status or "Pending").strip().title()
+        status_counts[st] = status_counts.get(st, 0) + 1
+
+    # Dynamic profile completeness calculation
+    missing_profile_fields = []
+    completed_steps = 0
+    total_steps = 4
+    if user.full_name:
+        completed_steps += 1
+    else:
+        missing_profile_fields.append({"label": "Add full name", "icon": "fa-user", "field": "full_name"})
+
+    if user.email:
+        completed_steps += 1
+    else:
+        missing_profile_fields.append({"label": "Add email address", "icon": "fa-envelope", "field": "email"})
+
+    if user.phone:
+        completed_steps += 1
+    else:
+        missing_profile_fields.append({"label": "Add mobile number for booking SMS alerts", "icon": "fa-phone", "field": "phone"})
+
+    if getattr(user, "profile_image", None):
+        completed_steps += 1
+    else:
+        missing_profile_fields.append({"label": "Upload a profile photo", "icon": "fa-camera", "field": "profile_image"})
+
+    profile_completion_percent = int((completed_steps / total_steps) * 100)
+
     profile_image_url = url_for("uploaded_file", filename=user.profile_image) if getattr(user, "profile_image", None) else None
     linked_accounts = {
         "email": user.email,
@@ -2092,7 +2145,7 @@ def profile():
         .limit(20).all()
         if loyalty_account else []
     )
-    bookings_count = Booking.query.filter(_booking_owner_filter(user)).count()
+    bookings_count = total_bookings
     review_aliases = list(_feedback_owner_aliases(user))
     reviews_count = (
         Feedback.query
@@ -2106,12 +2159,16 @@ def profile():
         "visitor/profile.html",
         user=user,
         bookings_count=bookings_count,
+        completed_visits=completed_visits,
         reviews_count=reviews_count,
         total_spent=float(total_spent),
         points=points,
         bookings=bookings,
-        total_bookings=bookings_count,
+        total_bookings=total_bookings,
         active_bookings=active_bookings,
+        status_counts=status_counts,
+        profile_completion_percent=profile_completion_percent,
+        missing_profile_fields=missing_profile_fields,
         recent_reviews=reviews[:5],
         payment_history=payment_history,
         notification_prefs=notification_prefs,
