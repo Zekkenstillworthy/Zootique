@@ -2581,7 +2581,7 @@
                 <div class="lp-pricing-toggle">
                     <button type="button" class="lp-toggle-btn active" id="btn-billing-monthly" onclick="toggleBillingCycle('monthly')">Monthly Billing</button>
                     <button type="button" class="lp-toggle-btn" id="btn-billing-yearly" onclick="toggleBillingCycle('yearly')">
-                        Annual Billing <span style="background:#dcfce7; color:#15803d; font-size:0.7rem; padding:0.15rem 0.45rem; border-radius:999px; margin-left:0.25rem;">Save 20%</span>
+                        Yearly Billing <span style="background:#dcfce7; color:#15803d; font-size:0.7rem; padding:0.15rem 0.45rem; border-radius:999px; margin-left:0.25rem;">Save 20%</span>
                     </button>
                 </div>
             </div>
@@ -2611,7 +2611,7 @@
                         <div style="font-size:0.78rem; color:#64748b; margin-top:-1.1rem; margin-bottom:1.15rem; min-height:1.2rem;">
                             <span class="plan-note-display"
                                   data-monthly="{{ '' if tier.tier_level == 0 else 'Billed monthly' }}"
-                                  data-yearly="{{ '' if tier.tier_level == 0 else ('₱' ~ tier.yearly_price_formatted ~ ' billed annually · Save ' ~ tier.yearly_savings_pct ~ '%') }}">
+                                  data-yearly="{{ '' if tier.tier_level == 0 else ('₱' ~ tier.yearly_price_formatted ~ ' billed yearly · Save ' ~ tier.yearly_savings_pct ~ '%') }}">
                                 {{ '' if tier.tier_level == 0 else 'Billed monthly' }}
                             </span>
                         </div>

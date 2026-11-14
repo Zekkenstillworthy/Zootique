@@ -142,35 +142,7 @@ def get_landing_pricing_tiers(plans: list[Any] | None = None) -> list[dict[str, 
         active_plans = [p for p in plans if getattr(p, "is_active", True)]
 
     sorted_plans = sort_plans(active_plans)
-    has_free_in_db = any(int(getattr(p, "tier_level", 1) or 1) == 0 for p in sorted_plans)
-
     landing_tiers: list[dict[str, Any]] = []
-
-    if not has_free_in_db:
-        free_meta = TIER_METADATA[0]
-        landing_tiers.append({
-            "id": None,
-            "tier_level": 0,
-            "tier_name": "Free",
-            "tier_label": "Free Tier",
-            "name": "Free Tier",
-            "description": "Explore the platform and list your establishment with core visibility.",
-            "monthly_price": 0.0,
-            "monthly_price_formatted": "0",
-            "yearly_price": 0.0,
-            "yearly_price_formatted": "0",
-            "yearly_monthly_formatted": "0",
-            "yearly_savings_pct": 0,
-            "features": (
-                "Basic establishment profile & listing",
-                "Public park info and visitor map link",
-                "Community reviews and feedback view",
-                "Standard email platform support",
-            ),
-            "limits": free_meta["limits"],
-            "is_popular": False,
-            "cta_label": "Get Started Free",
-        })
 
     monthly_plans: dict[int, Any] = {}
     yearly_plans: dict[int, Any] = {}

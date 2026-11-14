@@ -61,9 +61,9 @@ class SubscriptionCatalogTestCase(unittest.TestCase):
         ]
         tiers = get_landing_pricing_tiers(sample_plans)
 
-        self.assertGreaterEqual(len(tiers), 3)
+        self.assertEqual(len(tiers), 2)
         tier_names = [t["tier_name"] for t in tiers]
-        self.assertIn("Free", tier_names)
+        self.assertNotIn("Free", tier_names)
         self.assertIn("Standard", tier_names)
         self.assertIn("Pro", tier_names)
 
