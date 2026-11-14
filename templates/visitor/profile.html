@@ -196,38 +196,155 @@
             </div>
             {% elif show_tab == 'bookings' %}
             <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
                     <div>
-                        <h3 style="margin:0; font-size: 1.2rem; color: #1a4f32;">My Bookings</h3>
+                        <h3 style="margin:0 0 0.25rem; font-size: 1.2rem; color: #1a4f32; font-weight:800;">My Bookings</h3>
                         <div style="color:#64748b; font-size:0.9rem;">All reservations for this account</div>
+                    </div>
+                    <a href="{{ url_for('visitor.my_reservations') }}" style="font-size:0.85rem; font-weight:700; color:#1a4f32; text-decoration:none; display:inline-flex; align-items:center; gap:0.4rem; border:1px solid #1a4f32; padding:0.5rem 1rem; border-radius:8px;">
+                        <i class="fa-solid fa-calendar-check"></i> Full Bookings Page
+                    </a>
+                </div>
+
+                <!-- Summary chips -->
+                <div style="display:flex; gap:0.75rem; margin-bottom:1.25rem; flex-wrap:wrap;">
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:0.65rem 1rem; border-radius:10px; font-weight:800; font-size:0.88rem; color:#1e293b;">
+                        <i class="fa-solid fa-layer-group" style="color:#64748b; margin-right:4px;"></i> {{ total_bookings or 0 }} Total
+                    </div>
+                    <div style="background:#eff6ff; border:1px solid #bfdbfe; padding:0.65rem 1rem; border-radius:10px; font-weight:700; font-size:0.88rem; color:#1d4ed8;">
+                        <i class="fa-solid fa-circle-check" style="margin-right:4px;"></i> {{ active_bookings or 0 }} Active
+                    </div>
+                    <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:0.65rem 1rem; border-radius:10px; font-weight:700; font-size:0.88rem; color:#15803d;">
+                        <i class="fa-solid fa-sack-dollar" style="margin-right:4px;"></i> ₱{{ "{:,.2f}".format(total_spent or 0) }} Paid
+                    </div>
+                    <div style="background:#fffbeb; border:1px solid #fde68a; padding:0.65rem 1rem; border-radius:10px; font-weight:700; font-size:0.88rem; color:#b45309;">
+                        <i class="fa-solid fa-crown" style="margin-right:4px;"></i> {{ "{:,}".format(points or 0) }} Points
                     </div>
                 </div>
 
-                <div style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap;">
-                    <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px; font-weight:700;">Total: {{ total_bookings or 0 }}</div>
-                    <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px;">Active: {{ active_bookings or 0 }}</div>
-                    <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px;">Spent: ₱{{ "{:,.2f}".format(total_spent or 0) }}</div>
-                    <div style="background:#f8fafc; padding:0.8rem 1rem; border-radius:8px;">Points: {{ "{:,}".format(points or 0) }}</div>
+                <!-- Filter tabs -->
+                <div style="display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap;" id="pb-filter-tabs">
+                    <button onclick="pbFilter('all', this)" class="pb-tab pb-tab-active" type="button">All <span class="pb-cnt">{{ total_bookings or 0 }}</span></button>
+                    <button onclick="pbFilter('confirmed', this)" class="pb-tab" type="button">Confirmed <span class="pb-cnt">{{ status_counts.get('Confirmed', 0) }}</span></button>
+                    <button onclick="pbFilter('pending', this)" class="pb-tab" type="button">Pending <span class="pb-cnt">{{ status_counts.get('Pending', 0) }}</span></button>
+                    <button onclick="pbFilter('cancelled', this)" class="pb-tab" type="button">Cancelled <span class="pb-cnt">{{ status_counts.get('Cancelled', 0) }}</span></button>
+                    <button onclick="pbFilter('finished', this)" class="pb-tab" type="button">Finished <span class="pb-cnt">{{ status_counts.get('Finished', 0) }}</span></button>
                 </div>
 
-                <div style="display:flex; flex-direction:column; gap:1rem; margin-top:0.75rem;">
+                <style>
+                .pb-tab { background:#f8fafc; border:1px solid #e2e8f0; padding:0.45rem 0.9rem; border-radius:8px; font-size:0.82rem; font-weight:700; color:#475569; cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; transition:all 0.15s; }
+                .pb-tab:hover { background:#f1f5f9; }
+                .pb-tab-active { background:#1a4f32 !important; color:white !important; border-color:#1a4f32 !important; }
+                .pb-tab-active .pb-cnt { background:rgba(255,255,255,0.25); }
+                .pb-cnt { background:#e2e8f0; color:#475569; font-size:0.72rem; padding:0.1rem 0.5rem; border-radius:999px; font-weight:800; }
+                .pb-row { display:flex; flex-direction:column; gap:0; }
+                .pb-booking-card { background:white; border:1px solid #e2e8f0; border-radius:12px; padding:1.1rem 1.25rem; display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; align-items:flex-start; transition:box-shadow 0.15s; }
+                .pb-booking-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.07); }
+                .pb-status-confirmed { border-left:3.5px solid #16a34a; }
+                .pb-status-pending { border-left:3.5px solid #d97706; }
+                .pb-status-cancelled { border-left:3.5px solid #dc2626; opacity:0.8; }
+                .pb-status-finished { border-left:3.5px solid #7c3aed; }
+                .pb-badge { display:inline-flex; align-items:center; gap:4px; padding:0.2rem 0.65rem; border-radius:999px; font-size:0.72rem; font-weight:800; }
+                .pb-badge-confirmed { background:#dcfce7; color:#15803d; }
+                .pb-badge-pending { background:#fef9c3; color:#a16207; }
+                .pb-badge-cancelled { background:#fee2e2; color:#b91c1c; }
+                .pb-badge-finished { background:#ede9fe; color:#6d28d9; }
+                .pb-badge-paid { background:#dbeafe; color:#1d4ed8; }
+                .pb-action-btn { display:inline-flex; align-items:center; gap:5px; padding:0.35rem 0.8rem; border-radius:7px; font-size:0.78rem; font-weight:700; text-decoration:none; cursor:pointer; border:none; }
+                .pb-btn-pay { background:#16a34a; color:white; }
+                .pb-btn-ticket { background:#1a4f32; color:white; }
+                .pb-btn-cancel { background:white; color:#dc2626; border:1px solid #fecaca !important; }
+                </style>
+
+                <div class="pb-row" style="display:flex; flex-direction:column; gap:0.75rem;" id="pb-bookings-list">
                     {% for b in bookings %}
-                    <div class="profile-booking-row" style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:1rem; display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
-                        <div>
-                            <div style="font-weight:800;">{{ b.service_name or 'Service' }} · #{{ b.id }}</div>
-                            <div style="color:#64748b;">{{ b.date }} · {{ b.time }}</div>
-                            <div style="margin-top:0.5rem; color:#475569;">{{ b.guests or 1 }} guests{% if b.zoo and b.zoo.name %} · {{ b.zoo.name }}{% endif %}</div>
+                    {% set st = (b.status or 'Pending')|lower %}
+                    {% set pay_st = (b.payment_status or 'unpaid')|lower %}
+                    <div class="pb-booking-card pb-status-{{ st }}" data-status="{{ st }}">
+                        <!-- Left: booking info -->
+                        <div style="flex:1; min-width:0;">
+                            <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.4rem;">
+                                <span style="font-weight:800; font-size:0.98rem; color:#1e293b;">{{ b.service_name or 'Service' }}</span>
+                                <span style="font-size:0.75rem; color:#94a3b8; font-family:monospace; font-weight:600;">#{{ b.id }}</span>
+                                {% if st == 'confirmed' %}<span class="pb-badge pb-badge-confirmed"><i class="fa-solid fa-circle-check" style="font-size:0.65rem;"></i> Confirmed</span>
+                                {% elif st == 'pending' %}<span class="pb-badge pb-badge-pending"><i class="fa-solid fa-clock" style="font-size:0.65rem;"></i> Pending</span>
+                                {% elif st == 'cancelled' %}<span class="pb-badge pb-badge-cancelled"><i class="fa-solid fa-xmark" style="font-size:0.65rem;"></i> Cancelled</span>
+                                {% elif st == 'finished' %}<span class="pb-badge pb-badge-finished"><i class="fa-solid fa-flag-checkered" style="font-size:0.65rem;"></i> Finished</span>
+                                {% else %}<span class="pb-badge" style="background:#f1f5f9; color:#64748b;">{{ b.status }}</span>{% endif %}
+                                {% if pay_st == 'paid' %}<span class="pb-badge pb-badge-paid"><i class="fa-solid fa-credit-card" style="font-size:0.65rem;"></i> Paid</span>{% endif %}
+                            </div>
+
+                            <div style="display:flex; gap:1.25rem; font-size:0.85rem; color:#64748b; flex-wrap:wrap; margin-bottom:0.5rem;">
+                                <span><i class="fa-regular fa-calendar" style="margin-right:3px;"></i>{{ b.date }}</span>
+                                <span><i class="fa-regular fa-clock" style="margin-right:3px;"></i>{{ b.time }}</span>
+                                <span><i class="fa-solid fa-user-group" style="margin-right:3px;"></i>{{ b.guests or 1 }} {% if (b.guests or 1) == 1 %}guest{% else %}guests{% endif %}</span>
+                                {% if b.zoo and b.zoo.name %}<span><i class="fa-solid fa-location-dot" style="margin-right:3px;"></i>{{ b.zoo.name }}</span>{% endif %}
+                            </div>
+
+                            {% if b.payment_reference %}
+                            <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:0.5rem;">
+                                <i class="fa-solid fa-receipt" style="margin-right:3px;"></i>Ref: <span style="font-family:monospace; font-weight:600; color:#64748b;">{{ b.payment_reference }}</span>
+                            </div>
+                            {% endif %}
+
+                            <!-- Action buttons -->
+                            <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.5rem;">
+                                {% if pay_st != 'paid' and st != 'cancelled' and st != 'finished' %}
+                                <a href="{{ url_for('visitor.checkout', booking_id=b.id) }}" class="pb-action-btn pb-btn-pay">
+                                    <i class="fa-solid fa-credit-card"></i> Pay Now
+                                </a>
+                                {% endif %}
+
+                                {% if pay_st == 'paid' and st in ('confirmed', 'finished') %}
+                                <a href="{{ url_for('visitor.view_ticket', booking_id=b.id) }}" class="pb-action-btn pb-btn-ticket">
+                                    <i class="fa-solid fa-qrcode"></i> View Ticket
+                                </a>
+                                {% endif %}
+
+                                {% if st != 'cancelled' and st != 'finished' %}
+                                <form method="post" action="{{ url_for('visitor.cancel_booking', booking_id=b.id) }}" style="margin:0;" onsubmit="return confirm('Cancel this booking?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="pb-action-btn pb-btn-cancel" style="border:1px solid #fecaca;">
+                                        <i class="fa-solid fa-xmark"></i> Cancel
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
                         </div>
-                        <div style="text-align:right;">
-                            <div style="font-weight:900; color:#1a4f32;">₱{{ "{:,.2f}".format(b.amount or 0) }}</div>
-                            <div style="margin-top:0.5rem;"><span style="padding:0.25rem 0.6rem; border-radius:999px; font-weight:800; background: #f1f5f9;">{{ b.status or 'Pending' }}</span></div>
+
+                        <!-- Right: price -->
+                        <div style="text-align:right; flex-shrink:0;">
+                            <div style="font-size:1.2rem; font-weight:900; color:#1a4f32;">₱{{ "{:,.2f}".format(b.amount or 0) }}</div>
+                            {% if b.created_at %}
+                            <div style="font-size:0.72rem; color:#94a3b8; margin-top:4px;">Booked {{ b.created_at.strftime('%b %d, %Y') }}</div>
+                            {% endif %}
                         </div>
                     </div>
                     {% else %}
-                    <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:1rem; text-align:center; color:#64748b; font-weight:700;">No bookings found for this account.</div>
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:2rem; text-align:center; color:#64748b;">
+                        <i class="fa-solid fa-calendar-xmark" style="font-size:2rem; margin-bottom:0.75rem; display:block; color:#cbd5e1;"></i>
+                        <div style="font-weight:700; margin-bottom:0.4rem;">No bookings yet</div>
+                        <div style="font-size:0.88rem;">Book a wildlife experience to get started.</div>
+                    </div>
                     {% endfor %}
                 </div>
             </div>
+
+            <script>
+            function pbFilter(status, btn) {
+                document.querySelectorAll('.pb-tab').forEach(function(b) {
+                    b.classList.remove('pb-tab-active');
+                });
+                btn.classList.add('pb-tab-active');
+                document.querySelectorAll('#pb-bookings-list .pb-booking-card').forEach(function(card) {
+                    if (status === 'all' || card.dataset.status === status) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+            </script>
             {% elif show_tab == 'security' %}
             <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">
                 <h3 style="margin:0 0 0.5rem 0; font-size: 1.2rem; color: #1a4f32;">Security</h3>
