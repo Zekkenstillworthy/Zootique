@@ -1784,30 +1784,6 @@
         .lp-footer-links a:hover {
             color: #34d399;
         }
-        .lp-footer-social {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        .lp-footer-social a {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #cbd5e1;
-            font-size: 0.95rem;
-            transition: all 0.2s ease;
-        }
-        .lp-footer-social a:hover {
-            background: #1a4f32;
-            border-color: #34d399;
-            color: #34d399;
-            transform: translateY(-2px);
-        }
         .lp-footer-copy {
             margin-top: 1.75rem;
             text-align: center;
@@ -2724,12 +2700,6 @@
                 <a href="#contact" onclick="switchLandingTab('contact', event)">Contact Us</a>
                 <a href="{{ url_for('visitor.trivia') }}">Wildlife Facts</a>
                 <a href="{{ url_for('auth.login_selection') }}">Portal Login</a>
-            </div>
-            <div class="lp-footer-social">
-                <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
-                <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-                <a href="#" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
-                <a href="#" aria-label="X / Twitter"><i class="fa-brands fa-x-twitter"></i></a>
             </div>
         </div>
         <div class="lp-footer-copy">
