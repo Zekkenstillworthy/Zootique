@@ -213,7 +213,7 @@
 
                 <!-- Filter tabs -->
                 <div style="display:flex; gap:0.5rem; margin-bottom:1.25rem; flex-wrap:wrap;" id="booking-filter-tabs">
-                    <button onclick="filterBookings('all')" id="tab-all" class="bk-tab bk-tab-active" style="padding:0.4rem 0.9rem; border-radius:999px; border:none; cursor:pointer; font-weight:700; font-size:0.82rem; background:#1a4f32; color:white;">All Active</button>
+                    <button onclick="filterBookings('all')" id="tab-all" class="bk-tab bk-tab-active" style="padding:0.4rem 0.9rem; border-radius:999px; border:none; cursor:pointer; font-weight:700; font-size:0.82rem; background:#1a4f32; color:white;">All</button>
                     <button onclick="filterBookings('confirmed')" id="tab-confirmed" class="bk-tab" style="padding:0.4rem 0.9rem; border-radius:999px; border:1px solid #16a34a; cursor:pointer; font-weight:700; font-size:0.82rem; background:white; color:#16a34a;">Confirmed</button>
                     <button onclick="filterBookings('pending')" id="tab-pending" class="bk-tab" style="padding:0.4rem 0.9rem; border-radius:999px; border:1px solid #d97706; cursor:pointer; font-weight:700; font-size:0.82rem; background:white; color:#d97706;">Pending</button>
                     <button onclick="filterBookings('finished')" id="tab-finished" class="bk-tab" style="padding:0.4rem 0.9rem; border-radius:999px; border:1px solid #2563eb; cursor:pointer; font-weight:700; font-size:0.82rem; background:white; color:#2563eb;">Finished</button>
@@ -221,7 +221,7 @@
                 </div>
 
                 <!-- Empty state messages -->
-                <div id="empty-active" style="display:none; padding:1.5rem; text-align:center; color:#64748b; font-weight:600; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0;">No active bookings found.</div>
+                <div id="empty-all" style="display:none; padding:1.5rem; text-align:center; color:#64748b; font-weight:600; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0;">No bookings found.</div>
                 <div id="empty-confirmed" style="display:none; padding:1.5rem; text-align:center; color:#64748b; font-weight:600; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0;">No confirmed bookings.</div>
                 <div id="empty-pending" style="display:none; padding:1.5rem; text-align:center; color:#64748b; font-weight:600; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0;">No pending bookings.</div>
                 <div id="empty-finished" style="display:none; padding:1.5rem; text-align:center; color:#64748b; font-weight:600; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0;">No finished bookings.</div>
@@ -284,34 +284,36 @@
                     currentTab = tab;
                     // Update tab button styles
                     var tabs = document.querySelectorAll('.bk-tab');
-                    tabs.forEach(function(t){ t.style.background='white'; t.style.color=t.dataset.activeColor||'#475569'; t.classList.remove('bk-tab-active'); });
+                    tabs.forEach(function(t){
+                        t.style.background = 'white';
+                        t.style.color = t.dataset.defaultColor || '#475569';
+                        t.classList.remove('bk-tab-active');
+                    });
                     var active = document.getElementById('tab-'+tab);
                     if(active){ active.style.background='#1a4f32'; active.style.color='white'; active.classList.add('bk-tab-active'); }
 
                     // Hide all empties
-                    ['active','confirmed','pending','finished','cancelled'].forEach(function(e){ var el=document.getElementById('empty-'+e); if(el) el.style.display='none'; });
+                    ['all','confirmed','pending','finished','cancelled'].forEach(function(e){ var el=document.getElementById('empty-'+e); if(el) el.style.display='none'; });
 
-                    // Show/hide cards
+                    // Show/hide cards — "all" shows everything (matches my-bookings behaviour)
                     var cards = document.querySelectorAll('.bk-card');
                     var visible = 0;
                     cards.forEach(function(c){
                         var st = c.dataset.status;
-                        var show = false;
-                        if(tab === 'all') { show = (st !== 'cancelled'); }
-                        else { show = (st === tab); }
+                        var show = (tab === 'all') || (st === tab);
                         c.style.display = show ? '' : 'none';
                         if(show) visible++;
                     });
 
                     // Show empty message if none visible
                     if(visible === 0) {
-                        var emptyId = tab === 'all' ? 'empty-active' : 'empty-'+tab;
+                        var emptyId = 'empty-' + (tab === 'all' ? 'all' : tab);
                         var emptyEl = document.getElementById(emptyId);
                         if(emptyEl) emptyEl.style.display = '';
                     }
                 }
                 window.filterBookings = filterBookings;
-                // Run on load — hide cancelled by default
+                // Run on load — show all bookings by default
                 filterBookings('all');
             })();
             </script>
