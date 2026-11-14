@@ -1563,7 +1563,7 @@
                                 {% else %}
                                 {% if request.endpoint == 'visitor.zoo_detail' %}
                                 <a href="{{ url_for('visitor.list_zoos') }}" class="visitor-nav-link"><i class="fa-solid fa-arrow-left" style="margin-right: 6px;"></i> Back to Zoos</a>
-                                {% else %}
+                                {% elif request.endpoint != 'visitor.choose_zoo' %}
                                 <a href="/" class="visitor-nav-link">Back to Landing</a>
                                 {% endif %}
                                 {% endif %}

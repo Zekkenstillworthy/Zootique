@@ -237,4 +237,24 @@
     if (e.key === 'Escape') closeZooInfoModal();
   });
 </script>
+
+<div style="text-align: center; margin-top: 3rem; padding-bottom: 2.5rem;">
+  <a href="/" style="
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: #1a4f32;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    padding: 0.6rem 1.4rem;
+    border: 2px solid #1a4f32;
+    border-radius: 999px;
+    transition: background 0.18s, color 0.18s;
+  "
+  onmouseover="this.style.background='#1a4f32';this.style.color='#fff';"
+  onmouseout="this.style.background='transparent';this.style.color='#1a4f32';">
+    <i class="fa-solid fa-arrow-left"></i> Back to Landing
+  </a>
+</div>
 {% endblock %}
