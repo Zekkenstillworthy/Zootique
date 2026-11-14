@@ -1603,14 +1603,17 @@
                                       <div class="vn-notif-header-title">
                                         <i class="fa-solid fa-bell" style="color: #C85A32; margin-right: 6px;"></i>Notifications
                                       </div>
+                                      {% if _vn_unread_count %}
+                                      <button type="button" class="vn-notif-mark-all" onclick="markAllVisitorNotificationsRead(event)">Mark all read</button>
+                                      {% endif %}
                                     </div>
                                     <div class="vn-notif-list" id="vnNotifList">
                                                                             {% for notification in _vn_notifications %}
                                                                             <div class="vn-notif-item{% if not notification.read_at %} is-unread{% endif %}"
                                                                                      onclick="markNotificationRead(this, event, {{ notification.id }})"
                                                                                      role="menuitem" tabindex="0">
-                                                                                <div class="vn-notif-icon-col {% if notification.notification_type == 'booking_confirmation' %}notif-icon-success{% elif notification.notification_type == 'availability' %}notif-icon-warning{% else %}notif-icon-info{% endif %}">
-                                                                                    <i class="fa-solid {% if notification.notification_type == 'booking_confirmation' %}fa-circle-check{% elif notification.notification_type == 'availability' %}fa-triangle-exclamation{% else %}fa-calendar-day{% endif %}"></i>
+                                                                                <div class="vn-notif-icon-col {% if notification.notification_type == 'booking_confirmation' %}notif-icon-success{% elif notification.notification_type == 'availability' %}notif-icon-warning{% elif 'cancel' in (notification.notification_type or '') %}notif-icon-warning{% else %}notif-icon-info{% endif %}">
+                                                                                    <i class="fa-solid {% if notification.notification_type == 'booking_confirmation' %}fa-circle-check{% elif 'cancel' in (notification.notification_type or '') %}fa-ban{% elif notification.notification_type == 'availability' %}fa-triangle-exclamation{% else %}fa-calendar-day{% endif %}"></i>
                                                                                 </div>
                                                                                 <div class="vn-notif-body-col">
                                                                                     <div class="vn-notif-msg">{{ notification.message }}</div>
@@ -1621,6 +1624,11 @@
                                                                             {% else %}
                                                                             <div class="vn-notif-empty">No notifications yet.</div>
                                                                             {% endfor %}
+                                    </div>
+                                    <div class="vn-notif-footer" style="padding: 0.75rem 1.1rem; border-top: 1px solid #F2ECE2; background: #FCFAF7; text-align: center;">
+                                      <a href="{{ url_for('visitor.profile', tab='notifications') }}" style="color: #143823; font-size: 0.82rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.45rem;">
+                                        View all in Profile <i class="fa-solid fa-arrow-right" style="font-size:0.75rem; color:#C85A32;"></i>
+                                      </a>
                                     </div>
                                   </div>
                                 </div>
@@ -2031,6 +2039,38 @@
                         updateUnreadBadge();
                     });
                 }
+            }
+
+            function markAllVisitorNotificationsRead(e) {
+                if (e) e.stopPropagation();
+                fetch('/visitor/notifications/read-all', {
+                    method: 'POST',
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                }).then(function(response) {
+                    if (!response.ok) throw new Error('Notification read-all request failed');
+                    return response.json();
+                }).then(function(data) {
+                    document.querySelectorAll('#vnNotifList .vn-notif-item').forEach(function(item) {
+                        item.classList.remove('is-unread');
+                    });
+                    document.querySelectorAll('.profile-notif-row').forEach(function(row) {
+                        row.classList.remove('is-unread');
+                        row.style.background = 'white';
+                        const dot = row.querySelector('.profile-notif-dot');
+                        if (dot) dot.style.display = 'none';
+                        const btn = row.querySelector('.profile-notif-mark-btn');
+                        if (btn) btn.style.display = 'none';
+                    });
+                    setUnreadBadge(0);
+                    const markBtns = document.querySelectorAll('.vn-notif-mark-all, #profileMarkAllReadBtn');
+                    markBtns.forEach(function(btn) { btn.style.display = 'none'; });
+                    const pBadge = document.getElementById('profileUnreadBadge');
+                    if (pBadge) pBadge.style.display = 'none';
+                    const sideBadge = document.getElementById('sidebarNotifBadge');
+                    if (sideBadge) sideBadge.style.display = 'none';
+                }).catch(function(err) {
+                    console.error('Failed to mark all notifications read:', err);
+                });
             }
 
             function updateUnreadBadge() {

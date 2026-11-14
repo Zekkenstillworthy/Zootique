@@ -43,7 +43,7 @@ visitor_bp = Blueprint("visitor", __name__)
 
 @visitor_bp.before_request
 def require_visitor_csrf():
-    if request.method not in {"POST", "PUT", "PATCH", "DELETE"} or request.path.startswith("/visitor/api/"):
+    if request.method not in {"POST", "PUT", "PATCH", "DELETE"} or request.path.startswith(("/visitor/api/", "/visitor/notifications/")):
         return None
 
     expected = session.get("_csrf_token")
@@ -231,6 +231,8 @@ def visitor_login_required(view_func):
                     "visitor.profile",
                     "visitor.visitor_availability",
                     "visitor.api_trivia_submit",
+                    "visitor.mark_notification_read",
+                    "visitor.mark_all_notifications_read",
                 }
                 and not session.get("selected_zoo_id")
             ):
@@ -1248,6 +1250,17 @@ def mark_notification_read(notification_id: int):
     return jsonify({"success": True, "unread_count": unread_count})
 
 
+@visitor_bp.post("/notifications/read-all")
+@visitor_login_required
+def mark_all_notifications_read():
+    user = _current_user()
+    if not user:
+        return jsonify({"success": False}), 401
+    Notification.query.filter_by(user_id=user.id, read_at=None).update({"read_at": datetime.utcnow()})
+    db.session.commit()
+    return jsonify({"success": True, "unread_count": 0})
+
+
 def _normalize_booking_date(date_val: str | None) -> str | None:
     if not date_val:
         return None
@@ -2163,6 +2176,13 @@ def profile():
     )
     points = _get_visitor_total_points(user)
     unlocked_badges = VisitorBadge.query.filter_by(user_id=user.id).order_by(VisitorBadge.unlocked_at.desc()).all()
+    notifications_list = (
+        Notification.query
+        .filter_by(user_id=user.id)
+        .order_by(Notification.created_at.desc())
+        .all()
+    )
+    unread_notifications_count = sum(1 for n in notifications_list if not n.read_at)
 
     return render_template(
         "visitor/profile.html",
@@ -2182,6 +2202,8 @@ def profile():
         missing_profile_fields=missing_profile_fields,
         recent_reviews=reviews[:5],
         payment_history=payment_history,
+        notifications=notifications_list,
+        unread_notifications_count=unread_notifications_count,
         notification_prefs=notification_prefs,
         profile_image_url=profile_image_url,
         linked_accounts=linked_accounts,

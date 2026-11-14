@@ -22,7 +22,12 @@
                 <i class="fa-solid fa-calendar-check"></i> My Bookings
             </a>
             <a href="{{ url_for('visitor.profile', tab='security') }}" style="background: {{ '#1a4f32' if show_tab == 'security' else 'transparent' }}; color: {{ 'white' if show_tab == 'security' else '#475569' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;"><i class="fa-solid fa-lock"></i> Security</a>
-            <a href="{{ url_for('visitor.profile', tab='notifications') }}" style="background: {{ '#1a4f32' if show_tab == 'notifications' else 'transparent' }}; color: {{ 'white' if show_tab == 'notifications' else '#475569' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;"><i class="fa-solid fa-bell"></i> Notifications</a>
+            <a href="{{ url_for('visitor.profile', tab='notifications') }}" style="background: {{ '#1a4f32' if show_tab == 'notifications' else 'transparent' }}; color: {{ 'white' if show_tab == 'notifications' else '#475569' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; cursor: pointer; text-decoration:none;">
+                <span style="display:flex; align-items:center; gap:1rem;"><i class="fa-solid fa-bell"></i> Notifications</span>
+                {% if unread_notifications_count %}
+                <span id="sidebarNotifBadge" style="background:#ef4444; color:white; padding:0.15rem 0.55rem; border-radius:999px; font-size:0.75rem; font-weight:800;">{{ unread_notifications_count }}</span>
+                {% endif %}
+            </a>
             <a href="{{ url_for('visitor.profile', tab='visits') }}" style="background: {{ '#1a4f32' if show_tab == 'visits' else 'transparent' }}; color: {{ 'white' if show_tab == 'visits' else '#475569' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;"><i class="fa-solid fa-trophy"></i> My Visits & Points</a>
             <a href="{{ url_for('visitor.profile', tab='payments') }}" style="background: {{ '#1a4f32' if show_tab == 'payments' else 'transparent' }}; color: {{ 'white' if show_tab == 'payments' else '#475569' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;"><i class="fa-solid fa-credit-card"></i> Payment Methods</a>
             <a href="{{ url_for('visitor.profile', tab='linked-accounts') }}" style="background: {{ '#1a4f32' if show_tab == 'linked-accounts' else 'transparent' }}; color: {{ 'white' if show_tab == 'linked-accounts' else '#475569' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;"><i class="fa-solid fa-link"></i> Linked Accounts</a>
@@ -342,31 +347,202 @@
                 </div>
             </div>
             {% elif show_tab == 'notifications' %}
+            <!-- RECENT ACTIVITY & NOTIFICATIONS FEED -->
             <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">
-                <h3 style="margin:0 0 0.5rem 0; font-size: 1.2rem; color: #1a4f32;">Notifications</h3>
-                <div style="color:#64748b; margin-bottom:1rem;">Choose how you want to receive booking and promo updates.</div>
-                <form method="post" action="{{ url_for('visitor.profile', tab='notifications') }}" style="display:grid; gap:1rem; max-width: 560px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.25rem;">
+                    <div>
+                        <h3 style="margin:0 0 0.25rem 0; font-size: 1.25rem; color: #1a4f32; font-family:'Outfit',sans-serif; font-weight:800; display:flex; align-items:center; gap:0.5rem;">
+                            <i class="fa-solid fa-bell" style="color: #c85a32;"></i> Activity &amp; Notifications
+                        </h3>
+                        <div style="color:#64748b; font-size:0.9rem;">Live updates on booking confirmations, schedule changes, and park alerts.</div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+                        {% if unread_notifications_count %}
+                        <span id="profileUnreadBadge" style="background:#fee2e2; color:#dc2626; padding:0.35rem 0.85rem; border-radius:999px; font-size:0.8rem; font-weight:800; display:inline-flex; align-items:center; gap:0.35rem;">
+                            <span style="width:7px; height:7px; border-radius:50%; background:#dc2626; display:inline-block;"></span>
+                            {{ unread_notifications_count }} Unread
+                        </span>
+                        <button type="button" id="profileMarkAllBtn" onclick="markAllVisitorNotificationsRead(event)"
+                                style="background:white; border:1.5px solid #cbd5e1; color:#1a4f32; padding:0.4rem 0.9rem; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer; transition:all 0.15s ease;">
+                            <i class="fa-solid fa-check-double" style="margin-right:0.35rem;"></i>Mark All as Read
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Notifications List -->
+                <div style="display:flex; flex-direction:column; gap:0.75rem;" id="profileNotifList">
+                    {% for n in notifications %}
+                    {% set n_type = (n.notification_type or '')|lower %}
+                    {% set is_unread = (n.read_at is none) %}
+                    {% if n_type == 'booking_confirmation' %}
+                        {% set icon_class = 'fa-circle-check' %}
+                        {% set icon_color = '#16a34a' %}
+                        {% set icon_bg = '#dcfce7' %}
+                        {% set type_label = 'Booking Confirmed' %}
+                        {% set type_badge_bg = '#dcfce7' %}
+                        {% set type_badge_color = '#15803d' %}
+                    {% elif 'cancel' in n_type %}
+                        {% set icon_class = 'fa-ban' %}
+                        {% set icon_color = '#dc2626' %}
+                        {% set icon_bg = '#fee2e2' %}
+                        {% set type_label = 'Booking Cancelled' %}
+                        {% set type_badge_bg = '#fee2e2' %}
+                        {% set type_badge_color = '#b91c1c' %}
+                    {% elif 'reminder' in n_type %}
+                        {% set icon_class = 'fa-clock' %}
+                        {% set icon_color = '#d97706' %}
+                        {% set icon_bg = '#fef3c7' %}
+                        {% set type_label = 'Visit Reminder' %}
+                        {% set type_badge_bg = '#fef3c7' %}
+                        {% set type_badge_color = '#b45309' %}
+                    {% elif 'availability' in n_type %}
+                        {% set icon_class = 'fa-triangle-exclamation' %}
+                        {% set icon_color = '#2563eb' %}
+                        {% set icon_bg = '#dbeafe' %}
+                        {% set type_label = 'Availability Alert' %}
+                        {% set type_badge_bg = '#dbeafe' %}
+                        {% set type_badge_color = '#1d4ed8' %}
+                    {% else %}
+                        {% set icon_class = 'fa-bell' %}
+                        {% set icon_color = '#475569' %}
+                        {% set icon_bg = '#f1f5f9' %}
+                        {% set type_label = 'Notice' %}
+                        {% set type_badge_bg = '#f1f5f9' %}
+                        {% set type_badge_color = '#334155' %}
+                    {% endif %}
+                    <div class="profile-notif-row {% if is_unread %}is-unread{% endif %}" id="profile-notif-{{ n.id }}"
+                         style="background:{% if is_unread %}#FCFAF7{% else %}white{% endif %}; border:1px solid {% if is_unread %}#F2ECE2{% else %}#e2e8f0{% endif %}; border-left:4px solid {% if is_unread %}#c85a32{% else %}#cbd5e1{% endif %}; border-radius:12px; padding:1.1rem 1.25rem; display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap; transition:all 0.15s ease;">
+                        <div style="display:flex; gap:1rem; align-items:flex-start; flex:1; min-width:0;">
+                            <div style="width:38px; height:38px; border-radius:50%; background:{{ icon_bg }}; color:{{ icon_color }}; display:flex; align-items:center; justify-content:center; font-size:1.05rem; flex-shrink:0; margin-top:2px;">
+                                <i class="fa-solid {{ icon_class }}"></i>
+                            </div>
+                            <div style="flex:1; min-width:0;">
+                                <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.25rem;">
+                                    <span style="font-size:0.75rem; font-weight:800; padding:0.2rem 0.55rem; border-radius:6px; background:{{ type_badge_bg }}; color:{{ type_badge_color }};">
+                                        {{ type_label }}
+                                    </span>
+                                    {% if is_unread %}
+                                    <span class="profile-notif-dot" style="display:inline-flex; align-items:center; gap:0.25rem; font-size:0.75rem; font-weight:800; color:#c85a32;">
+                                        <span style="width:6px; height:6px; border-radius:50%; background:#c85a32; display:inline-block;"></span> New
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div style="font-size:0.95rem; color:#0f172a; font-weight:{% if is_unread %}700{% else %}500{% endif %}; line-height:1.4; margin-bottom:0.4rem;">
+                                    {{ n.message }}
+                                </div>
+                                <div style="display:flex; align-items:center; gap:1rem; font-size:0.8rem; color:#64748b; flex-wrap:wrap;">
+                                    <span><i class="fa-regular fa-clock" style="margin-right:0.3rem;"></i>{{ n.created_at.strftime('%b %d, %Y · %I:%M %p') if n.created_at else '' }}</span>
+                                    {% if n.booking_id %}
+                                    <a href="{{ url_for('visitor.profile', tab='bookings') }}"
+                                       style="color:#1a4f32; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:0.3rem; background:#f1f5f9; padding:0.15rem 0.5rem; border-radius:6px;">
+                                        <i class="fa-solid fa-calendar-check" style="font-size:0.75rem;"></i> Booking #{{ n.booking_id }}
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.5rem; flex-shrink:0;">
+                            {% if is_unread %}
+                            <button type="button" class="profile-notif-mark-btn" onclick="markSingleProfileNotifRead(this, {{ n.id }})"
+                                    style="background:none; border:1px solid #cbd5e1; border-radius:6px; padding:0.35rem 0.75rem; font-size:0.75rem; font-weight:700; color:#475569; cursor:pointer;"
+                                    title="Mark as read">
+                                <i class="fa-regular fa-envelope-open" style="margin-right:0.25rem;"></i> Mark Read
+                            </button>
+                            {% else %}
+                            <span style="font-size:0.75rem; color:#94a3b8; font-weight:600;"><i class="fa-solid fa-check" style="margin-right:0.2rem;"></i> Read</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div style="padding:2.5rem 1.5rem; text-align:center; color:#64748b; background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0;">
+                        <i class="fa-regular fa-bell-slash" style="font-size:2.2rem; color:#cbd5e1; display:block; margin-bottom:0.75rem;"></i>
+                        <div style="font-weight:700; font-size:1rem; color:#334155; margin-bottom:0.25rem;">No notifications yet</div>
+                        <div style="font-size:0.88rem;">All updates regarding your visits, passes, and schedule alerts will appear here.</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- DELIVERY PREFERENCES CARD -->
+            <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">
+                <h3 style="margin:0 0 0.25rem 0; font-size: 1.15rem; color: #1a4f32; font-family:'Outfit',sans-serif; font-weight:800; display:flex; align-items:center; gap:0.5rem;">
+                    <i class="fa-solid fa-sliders" style="color:#1a4f32;"></i> Notification Preferences
+                </h3>
+                <div style="color:#64748b; font-size:0.9rem; margin-bottom:1.25rem;">Choose how and where you want to receive booking confirmations and promotional alerts.</div>
+                <form method="post" action="{{ url_for('visitor.profile', tab='notifications') }}" style="display:grid; gap:0.85rem; max-width: 600px;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="notifications">
-                    <label style="display:flex; gap:0.75rem; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;">
-                        <input type="checkbox" name="email_bookings" {% if notification_prefs.email_bookings %}checked{% endif %}>
-                        <span>Email me booking confirmations and updates</span>
+                    <label style="display:flex; gap:0.85rem; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:0.9rem 1.1rem; cursor:pointer;">
+                        <input type="checkbox" name="email_bookings" {% if notification_prefs.email_bookings %}checked{% endif %} style="width:18px; height:18px; accent-color:#1a4f32;">
+                        <div>
+                            <div style="font-weight:700; font-size:0.92rem; color:#1e293b;">Email Booking Confirmations &amp; Receipts</div>
+                            <div style="font-size:0.8rem; color:#64748b;">Receive immediate confirmation and digital tickets when you reserve an experience.</div>
+                        </div>
                     </label>
-                    <label style="display:flex; gap:0.75rem; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;">
-                        <input type="checkbox" name="email_promos" {% if notification_prefs.email_promos %}checked{% endif %}>
-                        <span>Email me promotions and event offers</span>
+                    <label style="display:flex; gap:0.85rem; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:0.9rem 1.1rem; cursor:pointer;">
+                        <input type="checkbox" name="email_promos" {% if notification_prefs.email_promos %}checked{% endif %} style="width:18px; height:18px; accent-color:#1a4f32;">
+                        <div>
+                            <div style="font-weight:700; font-size:0.92rem; color:#1e293b;">Promotions &amp; Event Offers</div>
+                            <div style="font-size:0.8rem; color:#64748b;">Get exclusive member discounts and seasonal wildlife safari alerts.</div>
+                        </div>
                     </label>
-                    <label style="display:flex; gap:0.75rem; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;">
-                        <input type="checkbox" name="sms_alerts" {% if notification_prefs.sms_alerts %}checked{% endif %}>
-                        <span>Send SMS alerts for urgent booking changes</span>
+                    <label style="display:flex; gap:0.85rem; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:0.9rem 1.1rem; cursor:pointer;">
+                        <input type="checkbox" name="sms_alerts" {% if notification_prefs.sms_alerts %}checked{% endif %} style="width:18px; height:18px; accent-color:#1a4f32;">
+                        <div>
+                            <div style="font-weight:700; font-size:0.92rem; color:#1e293b;">Urgent SMS Alerts</div>
+                            <div style="font-size:0.8rem; color:#64748b;">Receive text alerts for park weather closures or time changes.</div>
+                        </div>
                     </label>
-                    <label style="display:flex; gap:0.75rem; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;">
-                        <input type="checkbox" name="visit_reminders" {% if notification_prefs.visit_reminders %}checked{% endif %}>
-                        <span>Remind me about upcoming visits</span>
+                    <label style="display:flex; gap:0.85rem; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:0.9rem 1.1rem; cursor:pointer;">
+                        <input type="checkbox" name="visit_reminders" {% if notification_prefs.visit_reminders %}checked{% endif %} style="width:18px; height:18px; accent-color:#1a4f32;">
+                        <div>
+                            <div style="font-weight:700; font-size:0.92rem; color:#1e293b;">Visit Reminders</div>
+                            <div style="font-size:0.8rem; color:#64748b;">Get a reminder 24 hours before your scheduled wildlife park encounter.</div>
+                        </div>
                     </label>
-                    <button type="submit" class="btn" style="background:#1a4f32; color:white; border:none; padding:0.8rem 1.2rem; border-radius:10px; font-weight:800; width:fit-content;">Save Preferences</button>
+                    <div style="margin-top:0.5rem;">
+                        <button type="submit" class="btn" style="background:#1a4f32; color:white; border:none; padding:0.75rem 1.4rem; border-radius:10px; font-weight:800; font-size:0.9rem; cursor:pointer;">
+                            Save Preferences
+                        </button>
+                    </div>
                 </form>
             </div>
+
+            <script>
+            function markSingleProfileNotifRead(btn, notifId) {
+                fetch('/visitor/notifications/' + notifId + '/read', {
+                    method: 'POST',
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                }).then(function(r){ return r.json(); })
+                .then(function(data){
+                    var row = document.getElementById('profile-notif-' + notifId);
+                    if (row) {
+                        row.classList.remove('is-unread');
+                        row.style.background = 'white';
+                        row.style.borderColor = '#e2e8f0';
+                        row.style.borderLeft = '4px solid #cbd5e1';
+                        var dot = row.querySelector('.profile-notif-dot');
+                        if (dot) dot.style.display = 'none';
+                        if (btn) btn.outerHTML = '<span style="font-size:0.75rem; color:#94a3b8; font-weight:600;"><i class="fa-solid fa-check" style="margin-right:0.2rem;"></i> Read</span>';
+                    }
+                    if (typeof setUnreadBadge === 'function' && typeof data.unread_count === 'number') {
+                        setUnreadBadge(data.unread_count);
+                    }
+                    var pBadge = document.getElementById('profileUnreadBadge');
+                    var sBadge = document.getElementById('sidebarNotifBadge');
+                    if (data.unread_count > 0) {
+                        if (pBadge) pBadge.innerHTML = '<span style="width:7px; height:7px; border-radius:50%; background:#dc2626; display:inline-block;"></span> ' + data.unread_count + ' Unread';
+                        if (sBadge) sBadge.textContent = data.unread_count;
+                    } else {
+                        if (pBadge) pBadge.style.display = 'none';
+                        if (sBadge) sBadge.style.display = 'none';
+                        var markAllBtn = document.getElementById('profileMarkAllBtn');
+                        if (markAllBtn) markAllBtn.style.display = 'none';
+                    }
+                }).catch(function(e){ console.error('Error marking notif read:', e); });
+            }
+            </script>
             {% elif show_tab == 'visits' %}
             <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1rem;">
