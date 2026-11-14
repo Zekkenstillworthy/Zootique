@@ -200,6 +200,8 @@ def get_landing_pricing_tiers(plans: list[Any] | None = None) -> list[dict[str, 
 
         landing_tiers.append({
             "id": primary_plan.id,
+            "monthly_plan_id": m_plan.id if m_plan else None,
+            "yearly_plan_id": y_plan.id if y_plan else None,
             "tier_level": tier_lvl,
             "tier_name": ctx["tier_name"],
             "tier_label": ctx["tier_label"],

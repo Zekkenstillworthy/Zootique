@@ -95,7 +95,7 @@ erDiagram
         int plan_id PK
         string plan_name "basic | standard | premium"
         decimal price
-        enum billing_cycle "monthly | annually"
+        enum billing_cycle "monthly | yearly"
         text features
         bool is_active
     }

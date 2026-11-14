@@ -2603,15 +2603,17 @@
                             <span class="lp-price-curr">₱</span>
                             <span class="lp-price-val plan-price-display"
                                   data-monthly="{{ tier.monthly_price_formatted }}"
-                                  data-yearly="{{ tier.yearly_monthly_formatted }}">
+                                  data-yearly="{{ tier.yearly_price_formatted }}">
                                 {{ tier.monthly_price_formatted }}
                             </span>
-                            <span class="lp-price-period">/ month</span>
+                            <span class="lp-price-period plan-period-display"
+                                  data-monthly="/ month"
+                                  data-yearly="/ year">/ month</span>
                         </div>
                         <div style="font-size:0.78rem; color:#64748b; margin-top:-1.1rem; margin-bottom:1.15rem; min-height:1.2rem;">
                             <span class="plan-note-display"
                                   data-monthly="{{ '' if tier.tier_level == 0 else 'Billed monthly' }}"
-                                  data-yearly="{{ '' if tier.tier_level == 0 else ('₱' ~ tier.yearly_price_formatted ~ ' billed yearly · Save ' ~ tier.yearly_savings_pct ~ '%') }}">
+                                  data-yearly="{{ '' if tier.tier_level == 0 else ('₱' ~ tier.yearly_monthly_formatted ~ '/mo · Save ' ~ tier.yearly_savings_pct ~ '%') }}">
                                 {{ '' if tier.tier_level == 0 else 'Billed monthly' }}
                             </span>
                         </div>
@@ -2674,8 +2676,10 @@
                         </ul>
                     </div>
 
-                    <a href="{{ url_for('auth.register_admin_step1', plan_id=tier.id) if tier.id else url_for('auth.register_admin_step1') }}"
-                       class="lp-plan-btn {% if tier.is_popular %}lp-plan-btn-solid{% else %}lp-plan-btn-outline{% endif %}">
+                    <a href="{{ url_for('auth.register_admin_step1', plan_id=tier.monthly_plan_id or tier.id) if (tier.monthly_plan_id or tier.id) else url_for('auth.register_admin_step1') }}"
+                       class="lp-plan-btn plan-btn-display {% if tier.is_popular %}lp-plan-btn-solid{% else %}lp-plan-btn-outline{% endif %}"
+                       data-monthly-href="{{ url_for('auth.register_admin_step1', plan_id=tier.monthly_plan_id or tier.id) if (tier.monthly_plan_id or tier.id) else url_for('auth.register_admin_step1') }}"
+                       data-yearly-href="{{ url_for('auth.register_admin_step1', plan_id=tier.yearly_plan_id or tier.id) if (tier.yearly_plan_id or tier.id) else url_for('auth.register_admin_step1') }}">
                         {{ tier.cta_label }} &rarr;
                     </a>
                 </div>
@@ -2983,8 +2987,17 @@
             el.textContent = isYearly ? (el.getAttribute('data-yearly') || el.textContent) : (el.getAttribute('data-monthly') || el.textContent);
         });
 
+        document.querySelectorAll('.plan-period-display').forEach(function(el) {
+            el.textContent = isYearly ? (el.getAttribute('data-yearly') || '/ year') : (el.getAttribute('data-monthly') || '/ month');
+        });
+
         document.querySelectorAll('.plan-note-display').forEach(function(el) {
             el.textContent = isYearly ? (el.getAttribute('data-yearly') || '') : (el.getAttribute('data-monthly') || '');
+        });
+
+        document.querySelectorAll('.plan-btn-display').forEach(function(el) {
+            var href = isYearly ? el.getAttribute('data-yearly-href') : el.getAttribute('data-monthly-href');
+            if (href) el.setAttribute('href', href);
         });
     }
 
