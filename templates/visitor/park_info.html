@@ -337,63 +337,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Interactive Message / Inquiry Form -->
-                <div style="background: white; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 2rem; box-shadow: 0 4px 18px rgba(0,0,0,0.03);">
-                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; flex-wrap:wrap; gap:0.5rem;">
-                        <div>
-                            <h3 style="margin:0; font-size:1.2rem; color:#1a4f32; font-weight:800;">Send an Inquiry to {{ zoo.name if zoo else 'the Park' }}</h3>
-                            <p style="margin:4px 0 0; color:#64748b; font-size:0.86rem;">Fill out this form and our guest services team will contact you back via email.</p>
-                        </div>
-                        <span style="font-size:0.78rem; font-weight:700; color:#1a4f32; background:#e8f5ec; padding:4px 12px; border-radius:20px;">
-                            <i class="fa-solid fa-shield-halved" style="margin-right:4px;"></i> Official Park Inquiry
-                        </span>
-                    </div>
-
-                    <div id="contactSuccessAlert" style="display:none; background:#dcfce7; border:1.5px solid #86efac; color:#166534; padding:1rem 1.25rem; border-radius:10px; margin-bottom:1.5rem; font-size:0.92rem; align-items:center; gap:0.75rem;">
-                        <i class="fa-solid fa-circle-check" style="font-size:1.3rem;"></i>
-                        <span id="contactSuccessMsg">Thank you! Your message has been sent to our guest relations team. We will get back to you shortly.</span>
-                    </div>
-
-                    <form id="parkContactForm" method="post" action="{{ url_for('visitor.park_info_contact') }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="zoo_id" value="{{ zoo.id if zoo else '' }}">
-
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-bottom:1.25rem;">
-                            <div>
-                                <label style="display:block; font-size:0.82rem; font-weight:700; color:#1e293b; margin-bottom:0.35rem;">Your Name <span style="color:#dc2626;">*</span></label>
-                                <input type="text" name="name" required value="{{ session.get('full_name') or '' }}" placeholder="e.g. Maria Santos" style="width:100%; border:1.5px solid #cbd5e1; border-radius:10px; padding:0.65rem 0.9rem; font-family:inherit; font-size:0.9rem; box-sizing:border-box;">
-                            </div>
-                            <div>
-                                <label style="display:block; font-size:0.82rem; font-weight:700; color:#1e293b; margin-bottom:0.35rem;">Email Address <span style="color:#dc2626;">*</span></label>
-                                <input type="email" name="email" required value="{{ session.get('email') or '' }}" placeholder="e.g. maria@example.com" style="width:100%; border:1.5px solid #cbd5e1; border-radius:10px; padding:0.65rem 0.9rem; font-family:inherit; font-size:0.9rem; box-sizing:border-box;">
-                            </div>
-                        </div>
-
-                        <div style="margin-bottom:1.25rem;">
-                            <label style="display:block; font-size:0.82rem; font-weight:700; color:#1e293b; margin-bottom:0.35rem;">Subject / Reason for Inquiry</label>
-                            <select name="subject" style="width:100%; border:1.5px solid #cbd5e1; border-radius:10px; padding:0.65rem 0.9rem; font-family:inherit; font-size:0.9rem; box-sizing:border-box; background:white;">
-                                <option value="General Inquiry">General Visitor Inquiry</option>
-                                <option value="Ticketing &amp; Reservations">Ticketing &amp; Reservation Assistance</option>
-                                <option value="School &amp; Group Tours">Educational Field Trips &amp; Group Tours</option>
-                                <option value="Accessibility Assistance">Accessibility Accommodations</option>
-                                <option value="Animal Welfare &amp; Conservation">Animal Welfare &amp; Habitats Question</option>
-                                <option value="Lost &amp; Found / Feedback">Visitor Feedback or Lost &amp; Found</option>
-                            </select>
-                        </div>
-
-                        <div style="margin-bottom:1.5rem;">
-                            <label style="display:block; font-size:0.82rem; font-weight:700; color:#1e293b; margin-bottom:0.35rem;">Your Message <span style="color:#dc2626;">*</span></label>
-                            <textarea name="message" rows="4" required placeholder="How can our park staff assist you today?" style="width:100%; border:1.5px solid #cbd5e1; border-radius:10px; padding:0.75rem 0.9rem; font-family:inherit; font-size:0.9rem; box-sizing:border-box; resize:vertical;"></textarea>
-                        </div>
-
-                        <div style="display:flex; justify-content:flex-end;">
-                            <button type="submit" id="btnSubmitContact" style="background:#1a4f32; color:white; border:none; padding:0.75rem 1.75rem; border-radius:10px; font-weight:800; font-size:0.92rem; cursor:pointer; display:inline-flex; align-items:center; gap:0.5rem; transition:background 0.2s;" onmouseover="this.style.background='#143e27'" onmouseout="this.style.background='#1a4f32'">
-                                <i class="fa-solid fa-paper-plane"></i> Send Inquiry
-                            </button>
-                        </div>
-                    </form>
-                </div>
             </section>
         </div>
 
@@ -454,9 +397,6 @@
                         <i class="fa-solid fa-envelope" style="color: #1a4f32;"></i> {{ contact_email }}
                     </a>
                     {% endif %}
-                    <a href="#contact" style="text-align: center; margin-top: 0.4rem; background: #1a4f32; color: white; padding: 0.6rem 1rem; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: background 0.15s;" onmouseover="this.style.background='#143e27'" onmouseout="this.style.background='#1a4f32'">
-                        <i class="fa-solid fa-paper-plane" style="font-size: 0.8rem;"></i> Send Inquiry
-                    </a>
                 </div>
             </div>
         </div>
@@ -590,51 +530,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const initHash = window.location.hash;
     if (initHash && TAB_MAP[initHash]) {
         switchTab(initHash);
-    }
-
-    // Contact Form AJAX submission
-    const contactForm = document.getElementById('parkContactForm');
-    if (contactForm) {
-        contactForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            const btn = document.getElementById('btnSubmitContact');
-            const originalBtnHtml = btn ? btn.innerHTML : '';
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
-            }
-
-            const formData = new FormData(contactForm);
-            fetch(contactForm.action, {
-                method: 'POST',
-                body: formData,
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    const alertBox = document.getElementById('contactSuccessAlert');
-                    const msgSpan = document.getElementById('contactSuccessMsg');
-                    if (msgSpan && data.message) msgSpan.textContent = data.message;
-                    if (alertBox) {
-                        alertBox.style.display = 'flex';
-                        alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }
-                    contactForm.reset();
-                } else {
-                    alert(data.error || 'Failed to send message. Please try again.');
-                }
-            })
-            .catch(() => {
-                alert('A network error occurred. Please try again or reach out via our phone hotline.');
-            })
-            .finally(() => {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = originalBtnHtml;
-                }
-            });
-        });
     }
 });
 </script>

@@ -2240,19 +2240,24 @@ def park_info():
             .first()
         )
 
+    admin_user = User.query.filter_by(zoo_id=zoo.id, role="zoo_admin").first()
+
     contact_name = (
-        (registration.establishment_contact_name if registration else None)
-        or (registration.admin_full_name if registration else None)
+        (admin_user.full_name if admin_user and admin_user.full_name else None)
+        or (registration.establishment_contact_name if registration and registration.establishment_contact_name else None)
+        or (registration.admin_full_name if registration and registration.admin_full_name else None)
         or f"{zoo.name} Visitor Relations"
     )
     contact_phone = (
-        (registration.establishment_contact_phone if registration else None)
-        or (registration.admin_phone if registration else None)
-        or "+63 (02) 8876-5432"
+        (admin_user.phone if admin_user and admin_user.phone else None)
+        or (registration.establishment_contact_phone if registration and registration.establishment_contact_phone and registration.establishment_contact_phone != "None" else None)
+        or (registration.admin_phone if registration and registration.admin_phone and registration.admin_phone != "None" else None)
+        or "09451437137"
     )
     contact_email = (
-        (registration.establishment_contact_email if registration else None)
-        or (registration.admin_email if registration else None)
+        (admin_user.email if admin_user and admin_user.email else None)
+        or (registration.establishment_contact_email if registration and registration.establishment_contact_email and registration.establishment_contact_email != "None" else None)
+        or (registration.admin_email if registration and registration.admin_email and registration.admin_email != "None" else None)
         or f"info@{zoo.name.lower().replace(' ', '')}.com"
     )
 
