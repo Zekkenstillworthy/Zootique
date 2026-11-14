@@ -2278,7 +2278,6 @@ def park_info():
         facilities=[
             {"icon": "fa-ticket", "label": "Visitor ticketing"},
             {"icon": "fa-map", "label": "Park visitor map"},
-            {"icon": "fa-wheelchair", "label": "Accessible visitor routes"},
         ],
     )
 

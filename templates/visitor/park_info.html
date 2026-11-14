@@ -130,7 +130,6 @@
         <a href="#getting-here" class="is-active"><i class="fa-solid fa-location-dot" style="font-size: 0.88rem;"></i> Getting Here</a>
         <a href="#park-zones"><i class="fa-solid fa-map-marked-alt" style="font-size: 0.88rem;"></i> Zones &amp; Habitats</a>
         <a href="#park-rules"><i class="fa-solid fa-clipboard-list" style="font-size: 0.88rem;"></i> Park Rules</a>
-        <a href="#accessibility"><i class="fa-solid fa-wheelchair" style="font-size: 0.88rem;"></i> Accessibility</a>
         <a href="#contact"><i class="fa-solid fa-headset" style="font-size: 0.88rem;"></i> Contact Us</a>
     </div>
 </div>
@@ -241,58 +240,6 @@
                     {% else %}
                     <div style="grid-column: 1 / -1; color: #64748b;">This park has not published any additional rules yet. Please follow staff guidance during your visit.</div>
                     {% endfor %}
-                </div>
-            </section>
-
-            <!-- ACCESSIBILITY -->
-            <section id="accessibility" class="park-info-tab-pane" style="margin-bottom: 2rem;">
-                <h2 style="font-size: 1.8rem; color: #1a4f32; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fa-solid fa-wheelchair" style="color: #fca000;"></i> Accessibility &amp; Guest Accommodations
-                </h2>
-                <p style="color: #475569; font-size: 0.95rem; margin-bottom: 1.75rem;">
-                    We are dedicated to providing a comfortable, enjoyable wildlife experience for all guests and families.
-                </p>
-
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
-                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; display: flex; gap: 1rem;">
-                        <div style="width: 42px; height: 42px; border-radius: 10px; background: #e8f5ec; color: #1a4f32; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
-                            <i class="fa-solid fa-person-walking"></i>
-                        </div>
-                        <div>
-                            <div style="font-weight: 800; font-size: 0.95rem; color: #1a4f32; margin-bottom: 0.25rem;">Paved Visitor Paths</div>
-                            <div style="color: #64748b; font-size: 0.85rem; line-height: 1.45;">Main paths connecting all habitat zones and viewpoints are paved and step-free for wheelchairs and strollers.</div>
-                        </div>
-                    </div>
-
-                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; display: flex; gap: 1rem;">
-                        <div style="width: 42px; height: 42px; border-radius: 10px; background: #e8f5ec; color: #1a4f32; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
-                            <i class="fa-solid fa-restroom"></i>
-                        </div>
-                        <div>
-                            <div style="font-weight: 800; font-size: 0.95rem; color: #1a4f32; margin-bottom: 0.25rem;">Accessible Restrooms</div>
-                            <div style="color: #64748b; font-size: 0.85rem; line-height: 1.45;">Spacious accessible restrooms and baby care changing stations are situated at the park entrance and central hub.</div>
-                        </div>
-                    </div>
-
-                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; display: flex; gap: 1rem;">
-                        <div style="width: 42px; height: 42px; border-radius: 10px; background: #e8f5ec; color: #1a4f32; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
-                            <i class="fa-solid fa-dog"></i>
-                        </div>
-                        <div>
-                            <div style="font-weight: 800; font-size: 0.95rem; color: #1a4f32; margin-bottom: 0.25rem;">Service Animals</div>
-                            <div style="color: #64748b; font-size: 0.85rem; line-height: 1.45;">Trained service animals on leash or harness are welcome in guest visitor areas with designated relief zones available.</div>
-                        </div>
-                    </div>
-
-                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; display: flex; gap: 1rem;">
-                        <div style="width: 42px; height: 42px; border-radius: 10px; background: #e8f5ec; color: #1a4f32; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
-                            <i class="fa-solid fa-chair"></i>
-                        </div>
-                        <div>
-                            <div style="font-weight: 800; font-size: 0.95rem; color: #1a4f32; margin-bottom: 0.25rem;">Rest Areas &amp; Seating</div>
-                            <div style="color: #64748b; font-size: 0.85rem; line-height: 1.45;">Shaded seating benches and hydration fountains are placed throughout every habitat trail for guest relaxation.</div>
-                        </div>
-                    </div>
                 </div>
             </section>
 
@@ -475,7 +422,6 @@ document.addEventListener('DOMContentLoaded', function () {
         '#getting-here': 'getting-here',
         '#park-zones':   'park-zones',
         '#park-rules':   'park-rules',
-        '#accessibility':'accessibility',
         '#contact':      'contact',
     };
 
