@@ -717,9 +717,9 @@
         <div class="fb-stat-sub">Community submissions</div>
       </div>
       <div class="fb-stat-card">
-        <div class="fb-stat-label"><i class="fa-solid fa-trophy"></i> Most Loved</div>
-        <div class="fb-stat-value" style="font-size:1.5rem;padding-top:0.3rem;">Animal Encounters</div>
-        <div class="fb-stat-sub">74% positive mentions</div>
+        <div class="fb-stat-label"><i class="fa-solid fa-thumbs-up"></i> Recommended</div>
+        <div class="fb-stat-value" style="font-size:1.6rem;padding-top:0.2rem;">{{ recommendation_rate|default(100) }}%</div>
+        <div class="fb-stat-sub">Rated 4 or 5 stars</div>
       </div>
     </div>
 
@@ -839,37 +839,43 @@
 
       <div class="fb-sentiment-col">
         <div class="fb-sentiment-col-title">What Visitors Are Saying</div>
+        {% if review_count > 0 %}
         <div class="fb-topic-row">
-          <div class="fb-topic-label positive"><i class="fa-solid fa-thumbs-up"></i> Most Praised</div>
-          <div class="fb-topic-item">Friendly Staff — 78% positive</div>
-          <div class="fb-topic-item">Animal Encounters — 74% positive</div>
-          <div class="fb-topic-item">Park Cleanliness — 71% positive</div>
+          <div class="fb-topic-label positive"><i class="fa-solid fa-thumbs-up"></i> Positive Feedback</div>
+          <div class="fb-topic-item">{{ positive_pct }}% of reviews ({{ positive_count }} review{{ '' if positive_count == 1 else 's' }}) rated 4 or 5 stars</div>
         </div>
+        {% if neutral_count > 0 %}
         <div class="fb-topic-row">
-          <div class="fb-topic-label neutral"><i class="fa-solid fa-hand"></i> Commonly Mentioned</div>
-          <div class="fb-topic-item">Queue Times — 45% neutral</div>
-          <div class="fb-topic-item">Food Options — 38% neutral</div>
+          <div class="fb-topic-label neutral"><i class="fa-solid fa-hand"></i> Neutral Experience</div>
+          <div class="fb-topic-item">{{ neutral_pct }}% of reviews ({{ neutral_count }} review{{ '' if neutral_count == 1 else 's' }}) rated 3 stars</div>
         </div>
+        {% endif %}
+        {% if negative_count > 0 %}
         <div class="fb-topic-row">
           <div class="fb-topic-label negative"><i class="fa-solid fa-thumbs-down"></i> Areas for Improvement</div>
-          <div class="fb-topic-item">Weekday Crowds — 18% negative</div>
+          <div class="fb-topic-item">{{ negative_pct }}% of reviews ({{ negative_count }} review{{ '' if negative_count == 1 else 's' }}) rated 1 or 2 stars</div>
         </div>
+        {% endif %}
+        {% else %}
+        <div style="color:var(--fb-text-muted); font-size:0.86rem; margin-top:0.75rem;">
+          No visitor ratings submitted yet for this selection.
+        </div>
+        {% endif %}
       </div>
 
       <div class="fb-sentiment-col">
         <div class="fb-sentiment-col-title">Frequently Mentioned</div>
+        {% if frequent_keywords %}
         <div class="fb-word-cloud">
-          <span class="fb-word-chip positive">Clean</span>
-          <span class="fb-word-chip positive">Friendly</span>
-          <span class="fb-word-chip positive">Worth it</span>
-          <span class="fb-word-chip positive">Magical</span>
-          <span class="fb-word-chip positive">Educational</span>
-          <span class="fb-word-chip positive">Great Staff</span>
-          <span class="fb-word-chip neutral">Crowds</span>
-          <span class="fb-word-chip neutral">Parking</span>
-          <span class="fb-word-chip neutral">Queue</span>
-          <span class="fb-word-chip negative">Pricey</span>
+          {% for kw in frequent_keywords %}
+          <span class="fb-word-chip positive">{{ kw }}</span>
+          {% endfor %}
         </div>
+        {% else %}
+        <div style="color:var(--fb-text-muted); font-size:0.86rem; margin-top:0.75rem;">
+          Common keywords will appear as visitors submit reviews.
+        </div>
+        {% endif %}
       </div>
     </div>
 
@@ -967,13 +973,13 @@
     {% if pages and pages > 1 %}
     <div class="fb-pagination">
       {% if page > 1 %}
-      <a class="fb-page-btn" href="{{ url_for('visitor.feedback', page=page-1, sort=sort, zoo_id=selected_zoo_id) }}">← Previous</a>
+      <a class="fb-page-btn" href="{{ url_for('visitor.feedback', page=page-1, sort=sort, zoo_id=(selected_zoo_id if selected_zoo_id else '')) }}">← Previous</a>
       {% else %}
       <span class="fb-page-btn disabled">← Previous</span>
       {% endif %}
       <span class="fb-page-info">Page {{ page }} of {{ pages }}</span>
       {% if page < pages %}
-      <a class="fb-page-btn primary" href="{{ url_for('visitor.feedback', page=page+1, sort=sort, zoo_id=selected_zoo_id) }}">Next →</a>
+      <a class="fb-page-btn primary" href="{{ url_for('visitor.feedback', page=page+1, sort=sort, zoo_id=(selected_zoo_id if selected_zoo_id else '')) }}">Next →</a>
       {% else %}
       <span class="fb-page-btn disabled">Next →</span>
       {% endif %}

@@ -1780,7 +1780,17 @@ def feedback():
 
     zoos = Zoo.query.order_by(Zoo.name.asc()).all()
 
-    selected_zoo_id = request.args.get("zoo_id", type=int) or _selected_zoo_id()
+    # Explicit zoo filter from query parameters: allows selecting "All Zoos" by passing zoo_id="" or not provided
+    if "zoo_id" in request.args:
+        raw_zoo_id = (request.args.get("zoo_id") or "").strip()
+        if raw_zoo_id.isdigit() and int(raw_zoo_id) > 0:
+            selected_zoo_id = int(raw_zoo_id)
+        else:
+            selected_zoo_id = None  # User explicitly selected "All Zoos"
+    else:
+        # Default to selected zoo in session on first visit without query params
+        selected_zoo_id = _selected_zoo_id()
+
     sort = (request.args.get("sort") or "recent").strip().lower()
     page = request.args.get("page", type=int) or 1
     if page < 1:
@@ -1797,6 +1807,10 @@ def feedback():
     if selected_zoo_id:
         base_query = base_query.filter(Feedback.zoo_id == selected_zoo_id)
         stats_query = stats_query.filter(Feedback.zoo_id == selected_zoo_id)
+    else:
+        # For All Zoos, only include feedbacks that belong to a zoo
+        base_query = base_query.filter(Feedback.zoo_id.isnot(None))
+        stats_query = stats_query.filter(Feedback.zoo_id.isnot(None))
 
     if sort in {"highest", "highest_rated", "rating"}:
         base_query = base_query.order_by(Feedback.rating.desc(), Feedback.id.desc())
@@ -1816,12 +1830,41 @@ def feedback():
     ).group_by(Feedback.rating)
     if selected_zoo_id:
         dist_query = dist_query.filter(Feedback.zoo_id == selected_zoo_id)
+    else:
+        dist_query = dist_query.filter(Feedback.zoo_id.isnot(None))
+
     dist_raw = {int(r): int(c) for r, c in dist_query.all() if r is not None}
     total_for_dist = sum(dist_raw.values()) or 1
     star_distribution = [
         (star, dist_raw.get(star, 0), round(dist_raw.get(star, 0) / total_for_dist * 100))
         for star in [5, 4, 3, 2, 1]
     ]  # list of (star_label, count, pct)
+
+    # Compute real sentiment & satisfaction metrics directly from actual reviews
+    positive_count = sum(dist_raw.get(r, 0) for r in [4, 5])
+    neutral_count = dist_raw.get(3, 0)
+    negative_count = sum(dist_raw.get(r, 0) for r in [1, 2])
+    total_valid = review_count or 1
+    positive_pct = round((positive_count / total_valid) * 100) if review_count else 0
+    neutral_pct = round((neutral_count / total_valid) * 100) if review_count else 0
+    negative_pct = round((negative_count / total_valid) * 100) if review_count else 0
+    recommendation_rate = positive_pct
+
+    # Real keyword extraction from actual review comments (no mock data)
+    import re
+    from collections import Counter
+    stopwords = {
+        "the", "and", "a", "an", "in", "on", "at", "to", "for", "of", "with", "is",
+        "was", "are", "were", "it", "this", "that", "all", "our", "my", "we", "i",
+        "you", "they", "very", "so", "had", "have", "be", "been", "from", "by", "as",
+        "or", "but", "not", "great", "good", "nice", "also", "just", "would"
+    }
+    all_comments = [f.comment for f in base_query.all() if f.comment]
+    words_collected = []
+    for c in all_comments:
+        tokens = re.findall(r"[a-zA-Z]{3,}", c.lower())
+        words_collected.extend([t.capitalize() for t in tokens if t not in stopwords])
+    frequent_keywords = [w for w, _ in Counter(words_collected).most_common(8)]
 
     pages = max(1, int(math.ceil(review_count / per_page)) if review_count else 1)
     if page > pages:
@@ -1841,6 +1884,14 @@ def feedback():
         review_count=review_count,
         avg_rating=avg_rating,
         star_distribution=star_distribution,
+        positive_count=positive_count,
+        neutral_count=neutral_count,
+        negative_count=negative_count,
+        positive_pct=positive_pct,
+        neutral_pct=neutral_pct,
+        negative_pct=negative_pct,
+        recommendation_rate=recommendation_rate,
+        frequent_keywords=frequent_keywords,
         page=page,
         pages=pages,
         sort=sort,
