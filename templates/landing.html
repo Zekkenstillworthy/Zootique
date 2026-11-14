@@ -2542,27 +2542,7 @@
                 </div>
             </div>
 
-            <!-- Optional Real Platform Stats -->
-            {% if stats and stats.zoos > 0 %}
-            <div class="lp-stats-strip">
-                <div class="lp-stat-item">
-                    <span class="lp-stat-number">{{ stats.zoos }}</span>
-                    <span class="lp-stat-label">Partner Establishments</span>
-                </div>
-                {% if stats.species > 0 %}
-                <div class="lp-stat-item">
-                    <span class="lp-stat-number">{{ stats.species }}</span>
-                    <span class="lp-stat-label">Species & Residents</span>
-                </div>
-                {% endif %}
-                {% if stats.bookings > 0 %}
-                <div class="lp-stat-item">
-                    <span class="lp-stat-number">{{ stats.bookings }}</span>
-                    <span class="lp-stat-label">Bookings Coordinated</span>
-                </div>
-                {% endif %}
-            </div>
-            {% endif %}
+
         </div>
     </section>
     </div> <!-- /#tab-about -->
