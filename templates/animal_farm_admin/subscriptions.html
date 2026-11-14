@@ -234,18 +234,14 @@
                   <i class="fa-solid fa-hourglass-half"></i> Awaiting Approval
                 </button>
               {% else %}
-                <form method="post"
-                  action="{{ url_for('animal_farm_admin.self_subscribe') }}"
-                  onsubmit="return confirm('Subscribe to the {{ plan.name }} plan at ₱{{ "{:,.2f}".format(plan.price) }} per {{ plan.duration }}?');">
-                  <input type="hidden" name="plan_id" value="{{ plan.id }}">
-                  <button class="btn btn-primary btn-sm" type="submit" style="width:100%;">
-                    {% if subscription and subscription.status == 'active' %}
-                      <i class="fa-solid fa-arrow-up-right-dots"></i> Upgrade to {{ plan.name }}
-                    {% else %}
-                      <i class="fa-solid fa-rocket"></i> Subscribe Now
-                    {% endif %}
-                  </button>
-                </form>
+                <button class="btn btn-primary btn-sm" type="button" style="width:100%;"
+                  onclick="openUpgradeModal({{ plan.id }}, '{{ plan.name|e }}', {{ plan.price }}, '{{ plan.duration|e }}')">
+                  {% if subscription and subscription.status == 'active' %}
+                    <i class="fa-solid fa-arrow-up-right-dots"></i> Upgrade to {{ plan.name }}
+                  {% else %}
+                    <i class="fa-solid fa-rocket"></i> Subscribe Now
+                  {% endif %}
+                </button>
               {% endif %}
             </div>
 
@@ -293,6 +289,7 @@
             <tr>
               <th style="padding-left:16px;">Date Paid</th>
               <th>Amount</th>
+              <th>Method</th>
               <th>Reference</th>
               <th>Period</th>
               <th style="text-align:right; padding-right:16px;">Status</th>
@@ -303,6 +300,7 @@
             <tr>
               <td style="padding-left:16px; font-size:13px;">{{ p.paid_at.strftime('%b %d, %Y') }}</td>
               <td style="font-weight:800; color:var(--primary);">&#8369;{{ '%.2f'|format(p.amount) }}</td>
+              <td style="font-size:12px; font-weight:600; color:var(--text);"><span class="badge" style="background:#e8f5ec; color:#15803d; border:1px solid #c6ebd0;">{{ p.payment_method or 'Direct' }}</span></td>
               <td style="font-size:12px; color:var(--text-muted); font-family:monospace;">{{ p.reference or '&mdash;' }}</td>
               <td style="font-size:12px; color:var(--text-muted);">
                 {% if p.period_start and p.period_end %}
@@ -324,4 +322,93 @@
 
 </div>
 {% endif %}
+
+<!-- Subscription Upgrade / Payment Method Modal -->
+<div id="subUpgradeModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center; padding:1rem; backdrop-filter:blur(4px);">
+  <div style="background:var(--card-bg, #fff); border-radius:18px; max-width:480px; width:100%; box-shadow:0 20px 45px rgba(0,0,0,0.25); overflow:hidden; border:1px solid var(--border-light, #e2e8f0); animation:modalFadeIn 0.2s ease-out;">
+    <div style="padding:1.25rem 1.5rem; border-bottom:1px solid var(--border-light, #e2e8f0); display:flex; align-items:center; justify-content:space-between; background:var(--body-bg, #f8fafc);">
+      <div style="display:flex; align-items:center; gap:0.6rem;">
+        <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, #15803d, #166534); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1rem;">
+          <i class="fa-solid fa-credit-card"></i>
+        </div>
+        <div>
+          <h3 style="margin:0; font-size:1.1rem; color:var(--text, #1e293b); font-weight:800;">Confirm Plan Upgrade</h3>
+          <p style="margin:0.15rem 0 0 0; font-size:0.8rem; color:var(--text-muted, #64748b);">Select your preferred payment method</p>
+        </div>
+      </div>
+      <button onclick="closeUpgradeModal()" type="button" style="background:transparent; border:none; font-size:1.4rem; color:var(--text-muted, #64748b); cursor:pointer; line-height:1; padding:4px 8px; border-radius:6px;">&times;</button>
+    </div>
+
+    <form method="post" action="{{ url_for('animal_farm_admin.self_subscribe') }}" style="padding:1.5rem; display:flex; flex-direction:column; gap:1.25rem;">
+      <input type="hidden" name="plan_id" id="modalPlanId" value="">
+
+      <!-- Selected Plan Details -->
+      <div style="background:var(--body-bg, #f8fafc); border:1px solid var(--border-light, #e2e8f0); border-radius:12px; padding:1rem; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; font-weight:700; color:var(--text-muted, #64748b);">Selected Plan</div>
+          <div id="modalPlanName" style="font-size:1.15rem; font-weight:800; color:var(--primary, #15803d); margin-top:0.2rem;">Plan Name</div>
+          <div id="modalPlanDuration" style="font-size:0.8rem; color:var(--text-muted, #64748b);">Billed monthly</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; font-weight:700; color:var(--text-muted, #64748b);">Total Due</div>
+          <div id="modalPlanPrice" style="font-size:1.35rem; font-weight:900; color:var(--text, #1e293b); margin-top:0.2rem;">₱0.00</div>
+        </div>
+      </div>
+
+      <!-- Payment Method Selection -->
+      <div>
+        <label for="modalPaymentMethod" style="display:block; font-size:0.85rem; font-weight:700; color:var(--text, #1e293b); margin-bottom:0.4rem;">
+          Payment Method <span style="color:#dc2626;">*</span>
+        </label>
+        <select name="payment_method" id="modalPaymentMethod" required
+          style="width:100%; padding:0.65rem 0.85rem; border:1px solid var(--border-light, #cbd5e1); border-radius:10px; font-size:0.9rem; background:var(--card-bg, #fff); color:var(--text, #1e293b); cursor:pointer;">
+          <option value="GCash" selected>📱 GCash (E-Wallet)</option>
+          <option value="Credit/Debit Card">💳 Credit / Debit Card (Visa / Mastercard)</option>
+          <option value="Bank Transfer">🏦 Online Bank Transfer (InstaPay / PESONet)</option>
+          <option value="Cash on Arrival">💵 Cash on Arrival / Facility Over-the-Counter</option>
+        </select>
+        <p style="margin:0.4rem 0 0 0; font-size:0.75rem; color:var(--text-muted, #64748b);">
+          <i class="fa-solid fa-lock" style="margin-right:3px;"></i> Payment will be processed immediately and your facility plan limits will update instantly.
+        </p>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display:flex; gap:0.75rem; justify-content:flex-end; margin-top:0.5rem;">
+        <button type="button" onclick="closeUpgradeModal()" class="btn btn-ghost" style="padding:0.6rem 1.2rem; font-weight:600;">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" style="padding:0.6rem 1.4rem; font-weight:700; display:flex; align-items:center; gap:0.5rem;">
+          <i class="fa-solid fa-shield-check"></i> Complete &amp; Switch Plan
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openUpgradeModal(planId, planName, planPrice, planDuration) {
+  document.getElementById('modalPlanId').value = planId;
+  document.getElementById('modalPlanName').textContent = planName;
+  document.getElementById('modalPlanPrice').textContent = '₱' + Number(planPrice).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  document.getElementById('modalPlanDuration').textContent = 'Platform access (' + planDuration + ')';
+  const modal = document.getElementById('subUpgradeModal');
+  modal.style.display = 'flex';
+}
+
+function closeUpgradeModal() {
+  document.getElementById('subUpgradeModal').style.display = 'none';
+}
+
+window.addEventListener('click', function(e) {
+  const modal = document.getElementById('subUpgradeModal');
+  if (e.target === modal) closeUpgradeModal();
+});
+</script>
+
+<style>
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+</style>
 {% endblock %}

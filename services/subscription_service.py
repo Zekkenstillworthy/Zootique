@@ -109,6 +109,7 @@ def subscribe_zoo_to_plan(
     zoo_id: int,
     plan: SubscriptionPlan,
     auto_approve: bool = True,
+    payment_method: str | None = None,
 ) -> ZooSubscription:
     """Create a new subscription for a Zoo Admin.
 
@@ -163,6 +164,7 @@ def subscribe_zoo_to_plan(
             period_start=now,
             period_end=end_date,
             reference=_new_subscription_reference("SELF", subscription.id),
+            payment_method=payment_method,
             status="paid",
         )
         db.session.add(payment)

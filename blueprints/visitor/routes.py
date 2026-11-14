@@ -2408,7 +2408,7 @@ def zone_animals(zone_id: int):
         "animals": [
             {
                 "id": a.id,
-                "name": a.name,
+                "name": a.name or a.species or "Unknown Animal",
                 "species": a.species or "",
                 "image_url": a.image_url or "",
                 "status": a.status or "Healthy",

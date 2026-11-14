@@ -594,6 +594,7 @@ class SubscriptionPayment(db.Model):
     period_start = db.Column(db.DateTime, nullable=True)
     period_end = db.Column(db.DateTime, nullable=True)
     reference = db.Column(db.String(100), nullable=True)
+    payment_method = db.Column(db.String(50), nullable=True)
     status = db.Column(db.String(20), nullable=False, default='paid')  # paid|refunded|failed
 
     subscription = db.relationship('ZooSubscription', back_populates='payments', lazy=True)

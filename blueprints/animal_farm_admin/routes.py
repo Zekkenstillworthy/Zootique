@@ -340,6 +340,12 @@ def self_subscribe():
         flash('Selected plan is not available.', 'error')
         return redirect(url_for('animal_farm_admin.subscriptions'))
 
+    payment_method = (request.form.get('payment_method') or '').strip()
+    allowed_payment_methods = {'GCash', 'Cash on Arrival', 'Credit/Debit Card', 'Bank Transfer'}
+    if payment_method not in allowed_payment_methods:
+        flash('Please select a valid payment method.', 'error')
+        return redirect(url_for('animal_farm_admin.subscriptions'))
+
     # Check if there's already an active subscription — treat as upgrade
     existing = (
         ZooSubscription.query.filter_by(zoo_id=zoo.id)
@@ -357,18 +363,16 @@ def self_subscribe():
             if requested_tier < current_tier:
                 flash('Downgrades are not supported while your current subscription is active.', 'error')
                 return redirect(url_for('animal_farm_admin.subscriptions'))
-            if requested_tier == current_tier:
-                flash('Choose a plan with a different tier to change your subscription.', 'error')
-                return redirect(url_for('animal_farm_admin.subscriptions'))
 
     try:
         subscribe_zoo_to_plan(
             zoo_id=zoo.id,
             plan=plan,
             auto_approve=True,
+            payment_method=payment_method,
         )
         flash(
-            f'You have successfully subscribed to the <strong>{plan.name}</strong> plan.',
+            f'You have successfully subscribed to the <strong>{plan.name}</strong> plan via {payment_method}.',
             'success',
         )
     except SubscriptionValidationError as exc:
