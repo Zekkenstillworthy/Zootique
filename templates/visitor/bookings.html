@@ -1317,26 +1317,29 @@
             <div id="guest-range-helper" style="font-size:0.74rem;color:var(--vb-text-muted);margin-top:0.25rem;" aria-live="polite">
               Allowed: 1 to 50 guests
             </div>
-            <!-- Guest chips (synced to hidden input) -->
+            <!-- Guest chips (quick select) -->
             <div id="guest-chips" style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.4rem;">
               {% for n in [1,2,3,4,5] %}
               <button type="button" class="vb-guest-chip{% if n == 1 %} is-selected{% endif %}" data-guests="{{ n }}">{{ n }}</button>
               {% endfor %}
               <button type="button" class="vb-guest-chip" data-guests="custom" id="guest-chip-custom">6+</button>
             </div>
-            <!-- Custom stepper (shown for 6+) -->
-            <div id="custom-guests-stepper" style="display:none;align-items:center;gap:0.5rem;margin-top:0.5rem;">
-              <button type="button" id="guest-stepper-minus" class="vb-guest-chip" aria-label="Decrease guests">−</button>
-              <output id="custom-guests-value" aria-live="polite" style="min-width:2.5rem;text-align:center;font-weight:800;color:var(--vb-forest);">6</output>
-              <button type="button" id="guest-stepper-plus" class="vb-guest-chip" aria-label="Increase guests">+</button>
+            <!-- Guest typing input with stepper -->
+            <div id="guest-input-row" style="display:flex;align-items:center;gap:0.45rem;margin-top:0.65rem;">
+              <button type="button" id="guest-stepper-minus" class="vb-guest-chip" style="width:36px;height:36px;font-size:1.15rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0;border-radius:10px;" aria-label="Decrease guests">−</button>
+              <div style="position:relative;">
+                <input type="number" id="new_guests" name="guests" min="1" max="50" value="1" required class="vb-input-control"
+                       style="width:85px;height:36px;text-align:center;font-weight:800;font-size:1rem;color:var(--vb-forest);padding:0 0.5rem;border-radius:10px;border:2px solid var(--vb-border);background:#ffffff;"
+                       placeholder="1" aria-label="Type number of guests">
+              </div>
+              <button type="button" id="guest-stepper-plus" class="vb-guest-chip" style="width:36px;height:36px;font-size:1.15rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0;border-radius:10px;" aria-label="Increase guests">+</button>
+              <span style="font-size:0.82rem;font-weight:700;color:var(--vb-text-muted);margin-left:0.25rem;">guest(s)</span>
             </div>
             <!-- Capacity warning -->
             <div id="guests-warning" style="display:none;color:#dc2626;font-size:0.78rem;font-weight:700;margin-top:0.35rem;align-items:center;gap:0.35rem;">
               <i class="fa-solid fa-triangle-exclamation"></i> Only <span id="warning-max-slots"></span> slots available.
             </div>
             <div id="capacity-notice" style="display:none;color:var(--vb-forest);font-size:0.76rem;font-weight:700;margin-top:0.35rem;" role="status" aria-live="polite"></div>
-            <!-- Hidden input (synced by existing JS) -->
-            <input type="number" id="new_guests" name="guests" min="1" max="50" value="1" required class="vb-input-control" style="display:none;">
           </div>
 
         </div><!-- end .vb-panel-row -->
@@ -2591,24 +2594,42 @@
     guestsInput.addEventListener('change', validateGuests);
   }
 
-  // Guest chip logic
+  // Guest chip and typing input logic
   (function initGuestChips() {
     var chips = document.querySelectorAll('#guest-chips .vb-guest-chip');
-    var customStepper = document.getElementById('custom-guests-stepper');
-    var customValue = document.getElementById('custom-guests-value');
-    var customGuests = 6;
+    var customChip = document.getElementById('guest-chip-custom');
+    var minus = document.getElementById('guest-stepper-minus');
+    var plus = document.getElementById('guest-stepper-plus');
+
     function guestBounds() {
-      return getGuestBounds();
+      return (typeof getGuestBounds === 'function') ? getGuestBounds() : { min: 1, max: 50 };
     }
+
+    function syncChipsToValue(val) {
+      chips.forEach(function(c) { c.classList.remove('is-selected'); });
+      if (val >= 1 && val <= 5) {
+        var matching = document.querySelector('#guest-chips .vb-guest-chip[data-guests="' + val + '"]');
+        if (matching) matching.classList.add('is-selected');
+      } else if (val >= 6) {
+        if (customChip) customChip.classList.add('is-selected');
+      }
+    }
+
     function updateChipAvailability() {
       var bounds = guestBounds();
       var limit = bounds.max;
       if (guestsInput) {
-        var current = parseInt(guestsInput.value || '1', 10);
         guestsInput.min = bounds.min;
         guestsInput.max = limit;
-        if (current < bounds.min) guestsInput.value = bounds.min;
-        if (current > limit) guestsInput.value = limit;
+        var current = parseInt(guestsInput.value || '1', 10);
+        if (isNaN(current) || current < bounds.min) {
+          guestsInput.value = bounds.min;
+          current = bounds.min;
+        } else if (current > limit) {
+          guestsInput.value = limit;
+          current = limit;
+        }
+        syncChipsToValue(current);
       }
       chips.forEach(function(chip) {
         var isCustom = chip.dataset.guests === 'custom';
@@ -2628,61 +2649,95 @@
             ? (bounds.min > value ? 'Minimum ' + bounds.min + ' guests' : 'Maximum ' + limit + ' guests')
             : '';
         }
-        chip.hidden = false;
         chip.disabled = unavailable;
-        if (unavailable && chip.classList.contains('is-selected')) {
-          chip.classList.remove('is-selected');
-          if (customStepper) customStepper.style.display = 'none';
-        }
       });
       if (guestRangeHelper) {
         guestRangeHelper.textContent = 'Allowed: ' + bounds.min + ' to ' + bounds.max + ' guests';
       }
-      if (plus) plus.disabled = customGuests >= limit;
-      if (minus) minus.disabled = customGuests <= Math.max(6, bounds.min);
+      var curVal = parseInt((guestsInput && guestsInput.value) || '1', 10);
+      if (plus) plus.disabled = curVal >= limit;
+      if (minus) minus.disabled = curVal <= bounds.min;
       if (typeof vbFilterBundlesForService === 'function') {
         vbFilterBundlesForService(serviceSelect && serviceSelect.value);
       }
     }
-    function setCustomGuests(value) {
+
+    function setGuestValue(val) {
       var bounds = guestBounds();
-      customGuests = Math.max(Math.max(6, bounds.min), Math.min(bounds.max, value));
-      if (guestsInput) guestsInput.value = customGuests;
-      if (customValue) customValue.textContent = customGuests;
-      validateGuests();
-    }
-    function setChip(chipEl, guests) {
-      chips.forEach(function(c) { c.classList.remove('is-selected'); });
-      chipEl.classList.add('is-selected');
-      var bounds = guestBounds();
-      guests = Math.max(bounds.min, Math.min(bounds.max, guests));
-      if (guestsInput) { guestsInput.value = guests; }
-      if (customStepper) { customStepper.style.display = 'none'; }
+      var target = Math.max(bounds.min, Math.min(bounds.max, val));
+      if (guestsInput) {
+        guestsInput.value = target;
+      }
+      syncChipsToValue(target);
+      if (plus) plus.disabled = target >= bounds.max;
+      if (minus) minus.disabled = target <= bounds.min;
       validateGuests();
       if (typeof vbFilterBundlesForService === 'function') {
         vbFilterBundlesForService(serviceSelect && serviceSelect.value);
       }
     }
+
+    // Chip click handler
     chips.forEach(function(chip) {
       chip.addEventListener('click', function() {
         var val = this.dataset.guests;
         if (val === 'custom') {
-          chips.forEach(function(c) { c.classList.remove('is-selected'); });
-          chip.classList.add('is-selected');
-          if (customStepper) {
-            customStepper.style.display = 'flex';
-            setCustomGuests(customGuests);
+          var cur = parseInt((guestsInput && guestsInput.value) || '1', 10);
+          setGuestValue(Math.max(6, cur));
+          if (guestsInput) {
+            guestsInput.focus();
+            guestsInput.select();
           }
-          validateGuests();
         } else {
-          setChip(this, parseInt(val, 10));
+          setGuestValue(parseInt(val, 10));
         }
       });
     });
-    var minus = document.getElementById('guest-stepper-minus');
-    var plus = document.getElementById('guest-stepper-plus');
-    if (minus) minus.addEventListener('click', function() { setCustomGuests(customGuests - 1); });
-    if (plus) plus.addEventListener('click', function() { setCustomGuests(customGuests + 1); });
+
+    // Typing in the input field
+    if (guestsInput) {
+      guestsInput.addEventListener('input', function() {
+        var raw = this.value.trim();
+        if (raw === '') return;
+        var val = parseInt(raw, 10);
+        if (!isNaN(val)) {
+          syncChipsToValue(val);
+          var bounds = guestBounds();
+          if (plus) plus.disabled = val >= bounds.max;
+          if (minus) minus.disabled = val <= bounds.min;
+          validateGuests();
+          if (typeof vbFilterBundlesForService === 'function') {
+            vbFilterBundlesForService(serviceSelect && serviceSelect.value);
+          }
+        }
+      });
+      guestsInput.addEventListener('blur', function() {
+        var val = parseInt(this.value, 10);
+        var bounds = guestBounds();
+        if (isNaN(val) || val < bounds.min) {
+          setGuestValue(bounds.min);
+        } else if (val > bounds.max) {
+          setGuestValue(bounds.max);
+        } else {
+          setGuestValue(val);
+        }
+      });
+    }
+
+    // Stepper buttons
+    if (minus) {
+      minus.addEventListener('click', function() {
+        var cur = parseInt((guestsInput && guestsInput.value) || '1', 10);
+        setGuestValue(cur - 1);
+      });
+    }
+    if (plus) {
+      plus.addEventListener('click', function() {
+        var cur = parseInt((guestsInput && guestsInput.value) || '1', 10);
+        setGuestValue(cur + 1);
+      });
+    }
+
     updateChipAvailability();
     window.updateGuestChipAvailability = updateChipAvailability;
   })();
