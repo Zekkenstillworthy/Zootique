@@ -201,19 +201,19 @@
           <div class="zf-grid-2">
 
             <div class="zf-field">
-              <label class="zf-label" for="animal_name">Name <span class="zf-req" aria-hidden="true">*</span></label>
+              <label class="zf-label" for="animal_name">Name</label>
               <input type="text" id="animal_name" name="name" class="zf-control"
-                     placeholder="e.g., Raja" autocomplete="off" required aria-required="true"
-                     aria-describedby="animal_name_error">
-              <span class="zf-error" id="animal_name_error" role="alert">
-                <i class="fa-solid fa-triangle-exclamation"></i> Name is required.
-              </span>
+                     placeholder="e.g., Raja" autocomplete="off">
             </div>
 
             <div class="zf-field">
-              <label class="zf-label" for="animal_species">Species</label>
+              <label class="zf-label" for="animal_species">Species <span class="zf-req" aria-hidden="true">*</span></label>
               <input type="text" id="animal_species" name="species" class="zf-control"
-                     placeholder="e.g., Bengal Tiger" autocomplete="off">
+                     placeholder="e.g., Bengal Tiger" autocomplete="off" required aria-required="true"
+                     aria-describedby="animal_species_error">
+              <span class="zf-error" id="animal_species_error" role="alert">
+                <i class="fa-solid fa-triangle-exclamation"></i> Species is required.
+              </span>
               <span class="zf-hint">Scientific or common name</span>
             </div>
 
@@ -495,18 +495,18 @@
     document.querySelectorAll('#animalForm .zf-control').forEach(function(el) { el.classList.remove('is-error','is-valid'); });
     document.querySelectorAll('#animalForm .zf-error').forEach(function(el) { el.classList.remove('visible'); });
   }
-  function validateName()   { var el = document.getElementById('animal_name');   return el && el.value.trim() ? clearError('animal_name','animal_name_error')     : showError('animal_name','animal_name_error'); }
+  function validateSpecies() { var el = document.getElementById('animal_species'); return el && el.value.trim() ? clearError('animal_species','animal_species_error') : showError('animal_species','animal_species_error'); }
   function validateStatus() { var el = document.getElementById('animal_status'); return el && el.value        ? clearError('animal_status','animal_status_error') : showError('animal_status','animal_status_error'); }
 
-  var nameEl = document.getElementById('animal_name');
-  if (nameEl) { nameEl.addEventListener('blur', validateName); nameEl.addEventListener('input', function(){ if(nameEl.classList.contains('is-error')) validateName(); }); }
+  var speciesEl = document.getElementById('animal_species');
+  if (speciesEl) { speciesEl.addEventListener('blur', validateSpecies); speciesEl.addEventListener('input', function(){ if(speciesEl.classList.contains('is-error')) validateSpecies(); }); }
   var statusEl = document.getElementById('animal_status');
   if (statusEl) { statusEl.addEventListener('blur', validateStatus); statusEl.addEventListener('change', function(){ if(statusEl.classList.contains('is-error')) validateStatus(); }); }
 
   var form = document.getElementById('animalForm');
   if (form) {
     form.addEventListener('submit', function(e) {
-      var valid = validateName() & validateStatus();
+      var valid = validateSpecies() & validateStatus();
       var fi = document.getElementById('animal_image_file');
       if (fi && fi.files[0] && fi.files[0].size > 5*1024*1024) {
         document.getElementById('animal_image_error').classList.add('visible');

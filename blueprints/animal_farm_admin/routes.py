@@ -1026,8 +1026,8 @@ def save_animal():
     if not can_edit_feature(zoo, 'animals'):
         return paywall_edit_error('Animals', required_tier=1)
 
-    name = (request.form.get('name') or '').strip()
-    species = (request.form.get('species') or '').strip() or None
+    name = (request.form.get('name') or '').strip() or None
+    species = (request.form.get('species') or '').strip()
     habitat = (request.form.get('habitat') or '').strip() or None
     status = (request.form.get('status') or '').strip() or None
     description = (request.form.get('description') or '').strip() or None
@@ -1036,8 +1036,8 @@ def save_animal():
     zone_id = request.form.get('zone_id', type=int) or None
     image_file = request.files.get('image_file')
 
-    if not name:
-        flash('Animal name is required.', 'error')
+    if not species:
+        flash('Animal species is required.', 'error')
         return redirect(url_for('animal_farm_admin.animals_management', tab='add'))
 
     animal = None
@@ -1059,7 +1059,7 @@ def save_animal():
             habitat = matched_zone.name
 
     animal.name = name
-    animal.species = species
+    animal.species = species or None
     animal.habitat = habitat
     animal.status = status
     animal.description = description
