@@ -2736,7 +2736,7 @@
                         <div class="lp-contact-detail-icon">&#9993;</div>
                         <div class="lp-contact-detail-text">
                             <h4>General Support</h4>
-                            <a href="mailto:support@zootique.app">support@zootique.app</a>
+                            <a href="mailto:zootique22@gmail.com">zootique22@gmail.com</a>
                         </div>
                     </div>
 
@@ -2755,89 +2755,34 @@
                             <p>Philippines</p>
                         </div>
                     </div>
-
-                    <div class="lp-contact-detail-item">
-                        <div class="lp-contact-detail-icon">&#128274;</div>
-                        <div class="lp-contact-detail-text">
-                            <h4>Account &amp; Login Issues</h4>
-                            <p>If you are locked out or cannot access your dashboard, use the
-                               <a href="/login">login page</a> to reset your password or
-                               request access from your Superadmin.</p>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- ── Right: form ── -->
+                <!-- ── Right: contact info card ── -->
                 <div class="lp-contact-form-card">
-                    <p class="lp-contact-form-title">Send Us a Message</p>
+                    <p class="lp-contact-form-title">Get In Touch</p>
+                    <div style="display:flex; flex-direction:column; gap:1.25rem; margin-top:1rem;">
 
-                    <form id="lpContactForm" novalidate>
-                        <div class="lp-cf-row">
-                            <div class="lp-cf-group" id="cfg-name">
-                                <label for="cf-name">Your Name <span style="color:#e53e3e">*</span></label>
-                                <input type="text" id="cf-name" name="name"
-                                       placeholder="Juan dela Cruz" autocomplete="name">
-                                <span class="lp-cf-error">Please enter your name.</span>
+                        <div style="display:flex; align-items:center; gap:1rem;">
+                            <div style="width:44px; height:44px; border-radius:50%; background:#f0fdf4; border:1.5px solid #bbf7d0; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                <i class="fa-solid fa-envelope" style="color:#1a4f32; font-size:1.1rem;"></i>
                             </div>
-                            <div class="lp-cf-group" id="cfg-email">
-                                <label for="cf-email">Email Address <span style="color:#e53e3e">*</span></label>
-                                <input type="email" id="cf-email" name="email"
-                                       placeholder="you@example.com" autocomplete="email">
-                                <span class="lp-cf-error">Please enter a valid email.</span>
+                            <div>
+                                <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em;">Email</div>
+                                <a href="mailto:zootique22@gmail.com" style="font-size:1rem; font-weight:700; color:#1a4f32; text-decoration:none;">zootique22@gmail.com</a>
                             </div>
                         </div>
 
-                        <div class="lp-cf-row">
-                            <div class="lp-cf-group" id="cfg-role">
-                                <label for="cf-role">I am a… <span style="color:#e53e3e">*</span></label>
-                                <select id="cf-role" name="role">
-                                    <option value="" disabled selected>Select your role</option>
-                                    <option value="visitor">Visitor / Guest</option>
-                                    <option value="zoo_admin">Zoo / Farm Admin</option>
-                                    <option value="staff">Zoo Staff</option>
-                                    <option value="other">Other</option>
-                                </select>
-                                <span class="lp-cf-error">Please select your role.</span>
+                        <div style="display:flex; align-items:center; gap:1rem;">
+                            <div style="width:44px; height:44px; border-radius:50%; background:#f0fdf4; border:1.5px solid #bbf7d0; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                <i class="fa-solid fa-phone" style="color:#1a4f32; font-size:1.1rem;"></i>
                             </div>
-                            <div class="lp-cf-group" id="cfg-subject">
-                                <label for="cf-subject">Subject <span style="color:#e53e3e">*</span></label>
-                                <select id="cf-subject" name="subject">
-                                    <option value="" disabled selected>Select a topic</option>
-                                    <option value="general">General Inquiry</option>
-                                    <option value="booking">Booking / Tickets</option>
-                                    <option value="account">Account &amp; Access</option>
-                                    <option value="billing">Billing</option>
-                                    <option value="partnership">Partnership / Registration</option>
-                                    <option value="bug">Report a Bug</option>
-                                    <option value="other">Other</option>
-                                </select>
-                                <span class="lp-cf-error">Please select a subject.</span>
+                            <div>
+                                <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em;">Phone</div>
+                                <a href="tel:09451437137" style="font-size:1rem; font-weight:700; color:#1a4f32; text-decoration:none;">09451437137</a>
                             </div>
                         </div>
 
-                        <div class="lp-cf-group" id="cfg-message">
-                            <label for="cf-message">Message <span style="color:#e53e3e">*</span></label>
-                            <textarea id="cf-message" name="message"
-                                      placeholder="Describe your question or concern…"></textarea>
-                            <span class="lp-cf-error">Please write a message (at least 10 characters).</span>
-                        </div>
-
-                        <button type="submit" class="lp-cf-submit" id="cf-submit">
-                            <span>&#9993;</span> Send Message
-                        </button>
-
-                        <div class="lp-cf-success" id="cf-success" role="alert">
-                            <span style="font-size:1.2rem">&#10003;</span>
-                            Thanks! Your email client will open with your message pre-filled.
-                            We'll get back to you within 1–2 business days.
-                        </div>
-
-                        <!-- Fallback note: swap for a real POST endpoint when available -->
-                        <p class="lp-cf-mailto-note">
-                            Clicking "Send" opens your email client via mailto: as a fallback.<br>
-                            A backend submission endpoint should replace this before launch.
-                        </p>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
