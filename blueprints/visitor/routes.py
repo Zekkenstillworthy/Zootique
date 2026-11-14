@@ -470,7 +470,8 @@ def home():
         animal.habitat for animal in Animal.query.filter_by(zoo_id=selected_zoo_id).all() if animal.habitat
     } if selected_zoo_id else set()
 
-    # Build zone → animals mapping for map popup (match by habitat name substring)
+    # Build zone → animals mapping for map popup
+    # Priority: zone_id direct match → habitat name substring fallback
     zone_animals_map: dict[int, list[dict]] = {}
     if selected_zoo_id:
         _all_animals = Animal.query.filter_by(zoo_id=selected_zoo_id).all()
@@ -479,9 +480,14 @@ def home():
             _zone_name_lower = (_zone.name or "").lower()
             matched = []
             for _a in _all_animals:
-                _hab = (_a.habitat or "").lower()
-                if _zone_name_lower and (_zone_name_lower in _hab or _hab in _zone_name_lower or _hab == _zone_name_lower):
-                    matched.append({"id": _a.id, "name": _a.name, "species": _a.species or "", "image_url": _a.image_url or ""})
+                # Prefer explicit zone_id assignment
+                if getattr(_a, "zone_id", None) == _zone.id:
+                    matched.append({"id": _a.id, "name": _a.name or _a.species or "Animal", "species": _a.species or "", "image_url": _a.image_url or ""})
+                elif not getattr(_a, "zone_id", None):
+                    # Fallback: match by habitat text if no zone_id set
+                    _hab = (_a.habitat or "").lower()
+                    if _zone_name_lower and (_zone_name_lower in _hab or _hab in _zone_name_lower or _hab == _zone_name_lower):
+                        matched.append({"id": _a.id, "name": _a.name or _a.species or "Animal", "species": _a.species or "", "image_url": _a.image_url or ""})
             zone_animals_map[_zone.id] = matched
 
     user = _current_user()
