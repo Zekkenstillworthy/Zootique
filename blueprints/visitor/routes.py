@@ -334,6 +334,7 @@ def choose_zoo(category_name=None):
     active_types = EstablishmentType.query.filter_by(is_active=True).order_by(EstablishmentType.name.asc()).all()
 
     category_counts: dict[str, int] = {}
+    category_images: dict[str, str] = {}
     icon_map: dict[str, str] = {
         "Zoo Park": "fa-paw",
         "Farm Animal Attraction": "fa-cow",
@@ -351,6 +352,10 @@ def choose_zoo(category_name=None):
         t = _zoo_type(zoo)
         if t:
             category_counts[t] = category_counts.get(t, 0) + 1
+            if t not in category_images:
+                img = _zoo_field(zoo, "image_url")
+                if img:
+                    category_images[t] = img
 
     categories = list(category_counts.keys())
 
@@ -384,6 +389,7 @@ def choose_zoo(category_name=None):
         selected_type=selected_type,
         category_counts=category_counts,
         category_icon_map=icon_map,
+        category_images=category_images,
         selected_zoo=selected_zoo,
         next_url=next_url,
     )
