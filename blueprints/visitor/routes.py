@@ -1910,7 +1910,7 @@ def profile():
         return _require_visitor_login()
 
     show_tab = (request.args.get("tab") or "profile").strip().lower()
-    allowed_tabs = {"profile", "bookings", "security", "notifications", "visits", "payments", "linked-accounts", "danger"}
+    allowed_tabs = {"profile", "bookings", "security", "notifications", "visits", "payments", "linked-accounts"}
     if show_tab not in allowed_tabs:
         show_tab = "profile"
 

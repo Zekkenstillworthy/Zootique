@@ -29,10 +29,8 @@
                 {% endif %}
             </a>
             <a href="{{ url_for('visitor.profile', tab='visits') }}" style="background: {{ '#1a4f32' if show_tab == 'visits' else 'transparent' }}; color: {{ 'white' if show_tab == 'visits' else '#475569' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;"><i class="fa-solid fa-trophy"></i> My Visits & Points</a>
-            <a href="{{ url_for('visitor.profile', tab='payments') }}" style="background: {{ '#1a4f32' if show_tab == 'payments' else 'transparent' }}; color: {{ 'white' if show_tab == 'payments' else '#475569' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;"><i class="fa-solid fa-credit-card"></i> Payment Methods</a>
+            <a href="{{ url_for('visitor.profile', tab='payments') }}" style="background: {{ '#1a4f32' if show_tab == 'payments' else 'transparent' }}; color: {{ 'white' if show_tab == 'payments' else '#475569' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;"><i class="fa-solid fa-credit-card"></i> Payment History</a>
             <a href="{{ url_for('visitor.profile', tab='linked-accounts') }}" style="background: {{ '#1a4f32' if show_tab == 'linked-accounts' else 'transparent' }}; color: {{ 'white' if show_tab == 'linked-accounts' else '#475569' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;"><i class="fa-solid fa-link"></i> Linked Accounts</a>
-            <div style="border-top: 1px solid #e2e8f0; margin: 0.5rem 0;"></div>
-            <a href="{{ url_for('visitor.profile', tab='danger') }}" style="background: {{ '#b91c1c' if show_tab == 'danger' else 'rgba(239,68,68,0.1)' }}; color: {{ 'white' if show_tab == 'danger' else '#ef4444' }}; border: none; padding: 1rem 1.5rem; border-radius: 8px; text-align: left; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; text-decoration:none;"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</a>
         </div>
 
         <!-- MAIN CONTENT BLOCK -->
@@ -614,7 +612,7 @@
 
             {% elif show_tab == 'payments' %}
             <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">
-                <h3 style="margin:0 0 0.5rem 0; font-size: 1.2rem; color: #1a4f32;">Payment Methods</h3>
+                <h3 style="margin:0 0 0.5rem 0; font-size: 1.2rem; color: #1a4f32;">Payment History</h3>
                 <div style="color:#64748b; margin-bottom:1rem;">Recent booking payment history for this account.</div>
                 <div style="display:grid; gap:1rem;">
                     {% for payment in payment_history %}
@@ -833,12 +831,6 @@
                         <div><strong style="color:#1e293b;">Member Since:</strong> {{ linked_accounts.member_since }}</div>
                     </div>
                 </div>
-            </div>
-            {% elif show_tab == 'danger' %}
-            <div style="background: white; border-radius: 12px; border: 1px solid #fecaca; padding: 2rem;">
-                <h3 style="margin:0 0 0.5rem 0; font-size: 1.2rem; color: #b91c1c;">Danger Zone</h3>
-                <div style="color:#64748b; margin-bottom:1rem;">Account actions that should be handled carefully.</div>
-                <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:1rem;">Delete account and other destructive actions can be added here later.</div>
             </div>
             {% endif %}
         </div>
