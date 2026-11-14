@@ -282,12 +282,13 @@
           </div>
           <div class="zf-field um-field" id="modal_zoo_field">
             <label for="modal_zoo">Establishment Name <span class="zf-req">*</span></label>
-            <select id="modal_zoo" name="zoo_id" class="zf-control" required>
-              <option value="">Select Establishment...</option>
+            <input type="text" id="modal_zoo" name="establishment_name" class="zf-control"
+              list="establishment_suggestions" placeholder="e.g. Graco Farms" autocomplete="off" required>
+            <datalist id="establishment_suggestions">
               {% for z in zoos %}
-                <option value="{{ z.id }}">{{ z.name }}</option>
+                <option value="{{ z.name }}"></option>
               {% endfor %}
-            </select>
+            </datalist>
           </div>
           <div class="zf-field um-field">
             <label for="modal_status">Account Status</label>
@@ -335,14 +336,17 @@ function openAdminModal(user) {
   document.getElementById('adminModalForm').reset();
 
   var zooField = document.getElementById('modal_zoo_field');
-  var zooSelect = document.getElementById('modal_zoo');
+  var zooInput = document.getElementById('modal_zoo');
 
   if (isEdit) {
     document.getElementById('modal_user_id').value = user.id;
     document.getElementById('modal_fullname').value = user.full_name || '';
     document.getElementById('modal_email').value    = user.email || '';
     if (zooField) zooField.style.display = 'none';
-    if (zooSelect) zooSelect.required = false;
+    if (zooInput) {
+      zooInput.required = false;
+      zooInput.value = '';
+    }
     document.getElementById('modal_status').value   = (user.status || 'Active').toLowerCase();
     // Password optional on edit
     document.getElementById('modal_pwd').required = false;
@@ -351,7 +355,10 @@ function openAdminModal(user) {
   } else {
     document.getElementById('modal_user_id').value  = '';
     if (zooField) zooField.style.display = '';
-    if (zooSelect) zooSelect.required = true;
+    if (zooInput) {
+      zooInput.required = true;
+      zooInput.value = '';
+    }
     document.getElementById('modal_pwd').required   = true;
     document.getElementById('modal_pwd').placeholder = 'Set initial secure password';
     document.getElementById('modal_pwd_req').style.display = '';

@@ -2860,6 +2860,7 @@ def save_user():
     email = (request.form.get('email') or '').strip().lower()
 
     zoo_id = request.form.get('zoo_id')
+    establishment_name = (request.form.get('establishment_name') or '').strip()
 
     status = (request.form.get('status') or 'active').strip().lower()
 
@@ -2946,7 +2947,19 @@ def save_user():
     user.status = status
     user.role = 'zoo_admin'
     if is_new_user:
-        user.zoo_id = int(zoo_id) if (zoo_id and zoo_id.isdigit()) else None
+        matched_zoo = None
+        if establishment_name:
+            matched_zoo = Zoo.query.filter(db.func.lower(Zoo.name) == establishment_name.lower()).first()
+            if not matched_zoo:
+                matched_zoo = Zoo(name=establishment_name)
+                db.session.add(matched_zoo)
+                db.session.flush()
+        if matched_zoo:
+            user.zoo_id = matched_zoo.id
+        elif zoo_id and zoo_id.isdigit():
+            user.zoo_id = int(zoo_id)
+        else:
+            user.zoo_id = None
     elif zoo_id and zoo_id.isdigit():
         user.zoo_id = int(zoo_id)
 
