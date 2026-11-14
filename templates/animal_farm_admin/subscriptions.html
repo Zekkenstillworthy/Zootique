@@ -249,9 +249,10 @@
                 </button>
               {% else %}
                 {% set is_upgrade = (plan.tier_level > curr_tier or (plan.tier_level == curr_tier and plan.price > curr_price)) %}
+                {% set is_switching = (subscription and subscription.status == 'active') %}
                 <button class="btn btn-primary btn-sm" type="button" style="width:100%;"
-                  onclick="openUpgradeModal({{ plan.id }}, '{{ plan.name|e }}', {{ plan.price }}, '{{ plan.duration|e }}')">
-                  {% if subscription and subscription.status == 'active' %}
+                  onclick="openUpgradeModal({{ plan.id }}, '{{ plan.name|e }}', {{ plan.price }}, '{{ plan.duration|e }}', {{ 'true' if is_switching else 'false' }})">
+                  {% if is_switching %}
                     {% if is_upgrade %}
                       <i class="fa-solid fa-arrow-up-right-dots"></i> Upgrade to {{ plan.name }}
                     {% else %}
@@ -351,8 +352,8 @@
           <i class="fa-solid fa-credit-card"></i>
         </div>
         <div>
-          <h3 style="margin:0; font-size:1.1rem; color:var(--text, #1e293b); font-weight:800;">Confirm Plan Upgrade</h3>
-          <p style="margin:0.15rem 0 0 0; font-size:0.8rem; color:var(--text-muted, #64748b);">Select your preferred payment method</p>
+          <h3 id="modalHeaderTitle" style="margin:0; font-size:1.1rem; color:var(--text, #1e293b); font-weight:800;">Confirm Plan</h3>
+          <p id="modalHeaderSubtitle" style="margin:0.15rem 0 0 0; font-size:0.8rem; color:var(--text-muted, #64748b);">Select your preferred payment method</p>
         </div>
       </div>
       <button onclick="closeUpgradeModal()" type="button" style="background:transparent; border:none; font-size:1.4rem; color:var(--text-muted, #64748b); cursor:pointer; line-height:1; padding:4px 8px; border-radius:6px;">&times;</button>
@@ -396,8 +397,8 @@
         <button type="button" onclick="closeUpgradeModal()" class="btn btn-ghost" style="padding:0.6rem 1.2rem; font-weight:600;">
           Cancel
         </button>
-        <button type="submit" class="btn btn-primary" style="padding:0.6rem 1.4rem; font-weight:700; display:flex; align-items:center; gap:0.5rem;">
-          <i class="fa-solid fa-shield-check"></i> Complete &amp; Switch Plan
+        <button type="submit" id="modalSubmitBtn" class="btn btn-primary" style="padding:0.6rem 1.4rem; font-weight:700; display:flex; align-items:center; gap:0.5rem;">
+          <i class="fa-solid fa-shield-check"></i> <span id="modalSubmitText">Complete &amp; Confirm Plan</span>
         </button>
       </div>
     </form>
@@ -412,7 +413,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-function openUpgradeModal(planId, planName, planPrice, planDuration) {
+function openUpgradeModal(planId, planName, planPrice, planDuration, isSwitching) {
   const modal = document.getElementById('subUpgradeModal');
   if (modal && modal.parentElement !== document.body) {
     document.body.appendChild(modal);
@@ -421,6 +422,16 @@ function openUpgradeModal(planId, planName, planPrice, planDuration) {
   document.getElementById('modalPlanName').textContent = planName;
   document.getElementById('modalPlanPrice').textContent = '₱' + Number(planPrice).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
   document.getElementById('modalPlanDuration').textContent = 'Platform access (' + planDuration + ')';
+
+  const titleEl = document.getElementById('modalHeaderTitle');
+  const submitTextEl = document.getElementById('modalSubmitText');
+  if (titleEl) {
+    titleEl.textContent = isSwitching ? 'Confirm Plan Upgrade' : 'Confirm Plan';
+  }
+  if (submitTextEl) {
+    submitTextEl.textContent = isSwitching ? 'Complete & Switch Plan' : 'Complete & Confirm Plan';
+  }
+
   modal.style.display = 'flex';
   document.body.style.overflow = 'hidden';
 }
