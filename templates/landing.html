@@ -607,226 +607,121 @@
            CONTACT SECTION
         ============================================= */
         .lp-contact-section {
-            padding: 5rem 2rem;
+            padding: 5rem 2rem 6rem;
             background: #f8faf9;
             border-top: 1px solid #e2e8f0;
+            min-height: calc(100vh - 72px - 260px);
+            display: flex;
+            align-items: center;
         }
 
         .lp-contact-inner {
-            max-width: 1100px;
+            max-width: 960px;
             margin: 0 auto;
+            width: 100%;
         }
 
         .lp-contact-header {
-            margin-bottom: 2.75rem;
+            margin-bottom: 3rem;
+            text-align: center;
         }
 
         .lp-contact-title {
-            margin: 0 0 0.5rem 0;
-            color: #1B5E38;
-            font-size: 2.2rem;
+            margin: 0 0 0.75rem 0;
+            color: #1a4f32;
+            font-size: 2.4rem;
             font-weight: 900;
             letter-spacing: -0.5px;
         }
 
         .lp-contact-intro {
-            margin: 0;
+            margin: 0 auto;
             font-size: 1.05rem;
             color: #64748b;
             line-height: 1.65;
-            max-width: 72ch;
+            max-width: 60ch;
         }
 
-        .lp-contact-grid {
+        .lp-contact-cards {
             display: grid;
-            grid-template-columns: 1fr 1.6fr;
-            gap: 3rem;
-            align-items: start;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            align-items: stretch;
         }
 
-        /* ---- Left column: details ---- */
-        .lp-contact-details {
+        .lp-contact-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 2rem 1.75rem;
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
+            gap: 1.25rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         }
 
-        .lp-contact-detail-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
+        .lp-contact-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(26, 79, 50, 0.08);
+            border-color: #bbf7d0;
         }
 
-        .lp-contact-detail-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: rgba(27, 94, 56, 0.08);
-            color: #1B5E38;
+        .lp-contact-card-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: #f0fdf4;
+            border: 1.5px solid #dcfce7;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1rem;
+            color: #1a4f32;
+            font-size: 1.35rem;
             flex-shrink: 0;
-            margin-top: 2px;
         }
 
-        .lp-contact-detail-text h4 {
-            margin: 0 0 0.2rem 0;
-            font-size: 0.82rem;
-            font-weight: 700;
+        .lp-contact-card-label {
+            font-size: 0.75rem;
+            font-weight: 800;
             color: #94a3b8;
             text-transform: uppercase;
-            letter-spacing: 0.07em;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.35rem;
         }
 
-        .lp-contact-detail-text p,
-        .lp-contact-detail-text a {
+        .lp-contact-card-val {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #132a1c;
+            line-height: 1.4;
             margin: 0;
-            font-size: 0.96rem;
-            color: #374151;
-            line-height: 1.55;
-            text-decoration: none;
         }
 
-        .lp-contact-detail-text a:hover {
-            color: #1B5E38;
+        .lp-contact-card-val a {
+            color: #1a4f32;
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+
+        .lp-contact-card-val a:hover {
+            color: #15803d;
             text-decoration: underline;
         }
 
-        /* ---- Right column: form ---- */
-        .lp-contact-form-card {
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 16px;
-            padding: 2.25rem 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        }
-
-        .lp-contact-form-title {
-            margin: 0 0 1.5rem 0;
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: #1a4f32;
-        }
-
-        .lp-cf-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .lp-cf-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-            margin-bottom: 1rem;
-        }
-
-        .lp-cf-group label {
-            font-size: 0.82rem;
-            font-weight: 700;
-            color: #374151;
-        }
-
-        .lp-cf-group input,
-        .lp-cf-group select,
-        .lp-cf-group textarea {
-            width: 100%;
-            padding: 0.65rem 0.9rem;
-            font-size: 0.92rem;
-            font-family: inherit;
-            color: #1a1a2e;
-            background: #fafafa;
-            border: 1.5px solid #d1d5db;
-            border-radius: 8px;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            box-sizing: border-box;
-        }
-
-        .lp-cf-group input:focus,
-        .lp-cf-group select:focus,
-        .lp-cf-group textarea:focus {
-            border-color: #1B5E38;
-            box-shadow: 0 0 0 3px rgba(27, 94, 56, 0.1);
-            background: #ffffff;
-        }
-
-        .lp-cf-group input.is-invalid,
-        .lp-cf-group select.is-invalid,
-        .lp-cf-group textarea.is-invalid {
-            border-color: #e53e3e;
-            box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
-        }
-
-        .lp-cf-error {
-            font-size: 0.78rem;
-            color: #e53e3e;
-            display: none;
-        }
-
-        .lp-cf-group.has-error .lp-cf-error { display: block; }
-
-        .lp-cf-group textarea { resize: vertical; min-height: 110px; }
-
-        .lp-cf-submit {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            width: 100%;
-            padding: 0.8rem 1.5rem;
-            background: linear-gradient(135deg, #1B5E38 0%, #2e7d32 100%);
-            color: #ffffff;
-            font-size: 0.95rem;
-            font-weight: 700;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: opacity 0.2s, transform 0.15s;
-            margin-top: 0.5rem;
-        }
-
-        .lp-cf-submit:hover { opacity: 0.9; transform: translateY(-1px); }
-        .lp-cf-submit:active { transform: translateY(0); }
-
-        .lp-cf-success {
-            display: none;
-            align-items: center;
-            gap: 0.75rem;
-            background: #f0fdf4;
-            border: 1px solid #86efac;
-            border-radius: 10px;
-            padding: 1rem 1.25rem;
-            margin-top: 1rem;
-            font-size: 0.92rem;
-            color: #166534;
-            font-weight: 600;
-        }
-
-        .lp-cf-success.show { display: flex; }
-
-        .lp-cf-mailto-note {
-            margin-top: 0.85rem;
-            font-size: 0.78rem;
-            color: #94a3b8;
-            text-align: center;
-            line-height: 1.5;
+        .lp-contact-card-sub {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin: 0.35rem 0 0;
+            line-height: 1.45;
         }
 
         /* Responsive */
-        @media (max-width: 900px) {
-            .lp-contact-section { padding: 3.5rem 1.25rem; }
-            .lp-contact-grid {
-                grid-template-columns: 1fr;
-                gap: 2rem;
-            }
-        }
-        @media (max-width: 640px) {
-            .lp-contact-title { font-size: 1.75rem; }
-            .lp-cf-row { grid-template-columns: 1fr; }
-            .lp-contact-form-card { padding: 1.5rem 1.25rem; }
+        @media (max-width: 768px) {
+            .lp-contact-section { padding: 3.5rem 1.25rem 4rem; }
+            .lp-contact-title { font-size: 1.85rem; }
+            .lp-contact-header { margin-bottom: 2rem; }
+            .lp-contact-cards { grid-template-columns: 1fr; }
         }
 
         /* =============================================
@@ -2770,59 +2665,44 @@
                 </p>
             </div>
 
-            <div class="lp-contact-grid">
-                <!-- ── Left: details ── -->
-                <div class="lp-contact-details">
-                    <div class="lp-contact-detail-item">
-                        <div class="lp-contact-detail-icon">&#9993;</div>
-                        <div class="lp-contact-detail-text">
-                            <h4>General Support</h4>
+            <div class="lp-contact-cards">
+                <!-- Card 1: Email -->
+                <div class="lp-contact-card">
+                    <div class="lp-contact-card-icon">
+                        <i class="fa-solid fa-envelope"></i>
+                    </div>
+                    <div>
+                        <div class="lp-contact-card-label">Email Support</div>
+                        <div class="lp-contact-card-val">
                             <a href="mailto:zootique22@gmail.com">zootique22@gmail.com</a>
                         </div>
-                    </div>
-
-                    <div class="lp-contact-detail-item">
-                        <div class="lp-contact-detail-icon">&#128336;</div>
-                        <div class="lp-contact-detail-text">
-                            <h4>Business Hours</h4>
-                            <p>Monday – Friday, 9 AM – 6 PM (PHT)</p>
-                        </div>
-                    </div>
-
-                    <div class="lp-contact-detail-item">
-                        <div class="lp-contact-detail-icon">&#128205;</div>
-                        <div class="lp-contact-detail-text">
-                            <h4>Based In</h4>
-                            <p>Philippines</p>
-                        </div>
+                        <p class="lp-contact-card-sub">Reach us anytime. We typically respond within 1–2 business days.</p>
                     </div>
                 </div>
 
-                <!-- ── Right: contact info card ── -->
-                <div class="lp-contact-form-card">
-                    <p class="lp-contact-form-title">Get In Touch</p>
-                    <div style="display:flex; flex-direction:column; gap:1.25rem; margin-top:1rem;">
-
-                        <div style="display:flex; align-items:center; gap:1rem;">
-                            <div style="width:44px; height:44px; border-radius:50%; background:#f0fdf4; border:1.5px solid #bbf7d0; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                                <i class="fa-solid fa-envelope" style="color:#1a4f32; font-size:1.1rem;"></i>
-                            </div>
-                            <div>
-                                <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em;">Email</div>
-                                <a href="mailto:zootique22@gmail.com" style="font-size:1rem; font-weight:700; color:#1a4f32; text-decoration:none;">zootique22@gmail.com</a>
-                            </div>
+                <!-- Card 2: Phone -->
+                <div class="lp-contact-card">
+                    <div class="lp-contact-card-icon">
+                        <i class="fa-solid fa-phone"></i>
+                    </div>
+                    <div>
+                        <div class="lp-contact-card-label">Phone &amp; Mobile</div>
+                        <div class="lp-contact-card-val">
+                            <a href="tel:09451437137">09451437137</a>
                         </div>
+                        <p class="lp-contact-card-sub">Direct support hotline for urgent platform inquiries and partners.</p>
+                    </div>
+                </div>
 
-                        <div style="display:flex; align-items:center; gap:1rem;">
-                            <div style="width:44px; height:44px; border-radius:50%; background:#f0fdf4; border:1.5px solid #bbf7d0; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                                <i class="fa-solid fa-phone" style="color:#1a4f32; font-size:1.1rem;"></i>
-                            </div>
-                            <div>
-                                <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em;">Phone</div>
-                                <a href="tel:09451437137" style="font-size:1rem; font-weight:700; color:#1a4f32; text-decoration:none;">09451437137</a>
-                            </div>
-                        </div>
-
+                <!-- Card 3: Business Hours & Location -->
+                <div class="lp-contact-card">
+                    <div class="lp-contact-card-icon">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                    <div>
+                        <div class="lp-contact-card-label">Operating Hours &amp; HQ</div>
+                        <div class="lp-contact-card-val">Mon – Fri, 9 AM – 6 PM</div>
+                        <p class="lp-contact-card-sub">Philippine Standard Time (PHT) &bull; Based in the Philippines</p>
                     </div>
                 </div>
             </div>
@@ -3112,95 +2992,6 @@
         startAuto();
     })();
 
-    /* ──────────────────────────────────────────
-       Contact Form — mailto: fallback
-       TODO: replace window.location.href = mailto with a fetch() POST
-             to a real /api/contact endpoint before launch.
-    ────────────────────────────────────────── */
-    (function () {
-        var form    = document.getElementById('lpContactForm');
-        var success = document.getElementById('cf-success');
-        if (!form) return;
-
-        /* Helper: mark a group valid/invalid */
-        function setValidity(groupId, isValid) {
-            var grp = document.getElementById(groupId);
-            if (!grp) return;
-            var field = grp.querySelector('input, select, textarea');
-            if (isValid) {
-                grp.classList.remove('has-error');
-                if (field) field.classList.remove('is-invalid');
-            } else {
-                grp.classList.add('has-error');
-                if (field) field.classList.add('is-invalid');
-            }
-        }
-
-        /* Clear error styling when user edits a field */
-        ['cf-name','cf-email','cf-role','cf-subject','cf-message'].forEach(function(id) {
-            var el = document.getElementById(id);
-            if (!el) return;
-            el.addEventListener('input', function() {
-                var grpId = 'cfg-' + id.replace('cf-', '');
-                setValidity(grpId, true);
-            });
-            el.addEventListener('change', function() {
-                var grpId = 'cfg-' + id.replace('cf-', '');
-                setValidity(grpId, true);
-            });
-        });
-
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            var name    = document.getElementById('cf-name').value.trim();
-            var email   = document.getElementById('cf-email').value.trim();
-            var role    = document.getElementById('cf-role').value;
-            var subject = document.getElementById('cf-subject').value;
-            var message = document.getElementById('cf-message').value.trim();
-
-            /* Simple email pattern */
-            var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-            var valid = true;
-            setValidity('cfg-name',    !!name);     if (!name)           valid = false;
-            setValidity('cfg-email',   emailOk);    if (!emailOk)        valid = false;
-            setValidity('cfg-role',    !!role);      if (!role)           valid = false;
-            setValidity('cfg-subject', !!subject);   if (!subject)        valid = false;
-            setValidity('cfg-message', message.length >= 10);
-            if (message.length < 10) valid = false;
-
-            if (!valid) {
-                /* Scroll first invalid field into view */
-                var firstErr = form.querySelector('.is-invalid');
-                if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return;
-            }
-
-            /* Build mailto: URI */
-            /* TODO: swap "support@zootique.app" with config constant when available */
-            var to      = 'support@zootique.app';
-            var subLine = '[' + subject.charAt(0).toUpperCase() + subject.slice(1) + '] ' +
-                          '[' + role + '] Contact from Zootique';
-            var body    = 'Name: ' + name + '\nEmail: ' + email +
-                          '\nRole: ' + role + '\n\n' + message;
-
-            var mailto  = 'mailto:' + to +
-                          '?subject=' + encodeURIComponent(subLine) +
-                          '&body='    + encodeURIComponent(body);
-
-            window.location.href = mailto;
-
-            /* Show success banner */
-            if (success) success.classList.add('show');
-
-            /* Optionally reset form after short delay */
-            setTimeout(function() {
-                form.reset();
-                if (success) success.classList.remove('show');
-            }, 8000);
-        });
-    })();
 </script>
 
 </body>
