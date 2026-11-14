@@ -4,119 +4,585 @@
 
 {% block extra_head %}
 <style>
-    .visitor-animals-hero-row {
+    /* ── Hero ── */
+    .va-hero {
+        background: linear-gradient(135deg, #3d5c35 0%, #2a4228 60%, #1a3020 100%);
+        color: white;
+        padding: 3.5rem 4rem 4rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .va-hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        pointer-events: none;
+    }
+    .va-hero-row {
         display: flex;
         justify-content: space-between;
-        gap: 1.5rem;
-    }
-
-    .visitor-animals-decor {
+        align-items: center;
+        gap: 2rem;
         position: relative;
-        width: 450px;
-        display: none;
+        z-index: 1;
+    }
+    .va-hero-left { flex: 1; min-width: 0; }
+    .va-breadcrumb { color: rgba(255,255,255,0.6); font-size: 0.82rem; margin-bottom: 1rem; }
+    .va-title {
+        font-size: 3rem;
+        font-weight: 900;
+        font-family: 'Playfair Display', serif;
+        line-height: 1.1;
+        margin: 0 0 0.75rem;
+    }
+    .va-subtitle { font-size: 1rem; opacity: 0.8; margin: 0 0 2rem; }
+    .va-stats { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 2rem; }
+    .va-stat-pill {
+        background: rgba(255,255,255,0.15);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255,255,255,0.2);
+        padding: 0.45rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .va-browse-btn {
+        background: white;
+        color: #1a4f32;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-weight: 800;
+        font-size: 0.95rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        transition: transform 0.15s, box-shadow 0.15s;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+    }
+    .va-browse-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+
+    /* ── Zone Cards in Hero ── */
+    .va-zones-scroll {
+        display: flex;
+        gap: 0.9rem;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+        max-width: 480px;
+        scrollbar-width: none;
+        flex-shrink: 0;
+    }
+    .va-zones-scroll::-webkit-scrollbar { display: none; }
+    .va-zone-card {
+        background: rgba(255,255,255,0.12);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.22);
+        border-radius: 14px;
+        padding: 1.1rem 1.1rem 1rem;
+        min-width: 145px;
+        max-width: 145px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        flex-shrink: 0;
+        align-self: center;
+        transition: transform 0.2s, background 0.2s;
+        cursor: pointer;
+    }
+    .va-zone-card:hover {
+        background: rgba(255,255,255,0.2);
+        transform: translateY(-3px);
+    }
+    .va-zone-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        margin-bottom: 0.25rem;
+    }
+    .va-zone-name {
+        font-weight: 800;
+        font-size: 0.82rem;
+        line-height: 1.3;
+        color: white;
+    }
+    .va-zone-count {
+        font-size: 0.75rem;
+        color: rgba(255,255,255,0.7);
+    }
+    .va-zone-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(134,239,172,0.2);
+        color: #bbf7d0;
+        border: 1px solid rgba(134,239,172,0.3);
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        margin-top: auto;
+    }
+    .va-zone-dot {
+        width: 6px;
+        height: 6px;
+        background: #4ade80;
+        border-radius: 50%;
+        display: inline-block;
     }
 
-    .visitor-animals-grid {
+    @media (max-width: 1000px) {
+        .va-zones-scroll { display: none; }
+    }
+
+    /* ── Animal Grid ── */
+    .va-grid {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 1.5rem;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.25rem;
+    }
+    @media (max-width: 1100px) { .va-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 800px)  { .va-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px)  { .va-grid { grid-template-columns: 1fr; } }
+
+    /* ── Animal Card ── */
+    .va-card {
+        background: white;
+        border-radius: 14px;
+        border: 1px solid #e8eeeb;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        box-shadow: 0 2px 8px rgba(26,79,50,0.06);
+    }
+    .va-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 28px rgba(26,79,50,0.14);
+        border-color: #c4ddd0;
+    }
+    .va-card-img {
+        height: 185px;
+        background: linear-gradient(135deg, #e8f5ec, #d0e8da);
+        position: relative;
+        overflow: hidden;
+    }
+    .va-card-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s;
+    }
+    .va-card:hover .va-card-img img { transform: scale(1.05); }
+    .va-card-img-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        color: #a3c4b0;
+    }
+    .va-card-zone-tag {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(26,79,50,0.85);
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: 20px;
+        backdrop-filter: blur(4px);
+        max-width: 130px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .va-card-status-tag {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 20px;
+    }
+    .va-card-body { padding: 1rem 1.1rem 1.1rem; display: flex; flex-direction: column; gap: 0.3rem; flex: 1; }
+    .va-card-name { font-size: 1rem; font-weight: 800; color: #1a4f32; margin: 0; line-height: 1.25; }
+    .va-card-species { font-size: 0.8rem; color: #64748b; font-style: italic; }
+    .va-card-desc {
+        font-size: 0.78rem;
+        color: #64748b;
+        line-height: 1.45;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+        margin-top: 0.25rem;
+    }
+    .va-card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+        padding-top: 0.6rem;
+        border-top: 1px solid #f0f4f2;
+    }
+    .va-card-meta { font-size: 0.75rem; color: #94a3b8; display: flex; align-items: center; gap: 4px; }
+    .va-view-link {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #1a4f32;
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
 
-    @media (min-width: 1000px) {
-        .visitor-animals-decor {
-            display: flex;
-            gap: 1rem;
-        }
+    /* ── Section Header & Filter Controls ── */
+    .va-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 2rem 0 1rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
     }
+    .va-section-title { font-size: 1.5rem; font-weight: 800; color: #1a4f32; margin: 0; }
+    .va-section-count { font-size: 0.85rem; color: #64748b; font-weight: 600; }
 
-    @media (max-width: 1100px) {
-        .visitor-animals-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
+    .va-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 1.75rem;
     }
-
-    @media (max-width: 900px) {
-        .visitor-animals-hero-row {
-            flex-direction: column;
-        }
+    .va-search-bar {
+        position: relative;
+        max-width: 440px;
     }
-
-    @media (max-width: 640px) {
-        .visitor-animals-grid {
-            grid-template-columns: 1fr;
-        }
+    .va-search-bar input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.6rem;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        background: white;
+        color: #1e293b;
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        box-sizing: border-box;
+    }
+    .va-search-bar input:focus {
+        border-color: #1a4f32;
+        box-shadow: 0 0 0 3px rgba(26, 79, 50, 0.12);
+    }
+    .va-search-bar i {
+        position: absolute;
+        left: 0.95rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 0.92rem;
+    }
+    .va-filter-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .va-chip {
+        border: 1.5px solid #e2e8f0;
+        background: white;
+        color: #475569;
+        padding: 0.42rem 0.95rem;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        text-decoration: none;
+    }
+    .va-chip:hover {
+        border-color: #1a4f32;
+        color: #1a4f32;
+        background: #f0f7f3;
+    }
+    .va-chip.is-active {
+        background: #1a4f32;
+        border-color: #1a4f32;
+        color: white;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- FULL WIDTH HERO -->
-<div style="background: linear-gradient(135deg, #6c805a 0%, #4a5c3e 100%); color: white; padding: 4rem 4rem 6rem 4rem; position: relative; overflow: hidden;">
-    <div style="margin-bottom: 2rem; color: rgba(255,255,255,0.7); font-size: 0.85rem;">
-        <span style="font-weight: 600; color: white;">Animals & Exhibits</span>
-    </div>
 
-    <div class="visitor-animals-hero-row">
-        <div style="max-width: 600px;">
-            <h1 style="font-size: 3.5rem; margin-bottom: 1rem; line-height: 1.1; font-weight: 800; font-family: 'Playfair Display', serif;">Animals & Exhibits</h1>
-            <p style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 2.5rem; max-width: 500px;">Browse animals available for your selected zoo.</p>
-            
-            <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 2.5rem; font-size: 0.9rem;">
-                <span style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 20px; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-paw"></i> {{ animal_count|default(animals|length) }} Animal{{ '' if (animal_count|default(animals|length)) == 1 else 's' }}</span>
+<!-- HERO -->
+<div class="va-hero">
+    <div class="va-hero-row">
+        <div class="va-hero-left">
+            <div class="va-breadcrumb">Animals &amp; Exhibits</div>
+            <h1 class="va-title">Animals &amp; Exhibits</h1>
+            <p class="va-subtitle">Explore every species and habitat available at your selected zoo.</p>
+
+            <div class="va-stats">
+                <span class="va-stat-pill">
+                    <i class="fa-solid fa-paw"></i>
+                    {{ animal_count|default(animals|length) }} Animal{{ '' if (animal_count|default(animals|length)) == 1 else 's' }}
+                </span>
                 {% if habitat_count is defined %}
-                  <span style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 20px; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-leaf"></i> {{ habitat_count }} Habitat{{ '' if habitat_count == 1 else 's' }}</span>
+                <span class="va-stat-pill">
+                    <i class="fa-solid fa-layer-group"></i>
+                    {{ habitat_count }} Habitat{{ '' if habitat_count == 1 else 's' }}
+                </span>
                 {% endif %}
             </div>
-            
-            <div style="display: flex; gap: 1rem;">
-                <a href="#browse" style="background: white; color: #0f291e; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none;"><i class="fa-solid fa-paw"></i> Browse All Animals</a>
-            </div>
+
+            <a href="#browse" class="va-browse-btn">
+                <i class="fa-solid fa-paw"></i> Browse All Animals
+            </a>
         </div>
-        
-        <!-- Floating Cards Decoration -->
-        <div class="visitor-animals-decor">
+
+        <!-- Zone Cards -->
+        {% if zoo_zones %}
+        <div class="va-zones-scroll">
+            {% set zone_icons = {
+                'reptile': 'fa-dragon',
+                'amphibian': 'fa-frog',
+                'big cat': 'fa-cat',
+                'mammal': 'fa-paw',
+                'primate': 'fa-paw',
+                'bird': 'fa-dove',
+                'raptor': 'fa-crow',
+                'parrot': 'fa-dove',
+                'aviary': 'fa-dove',
+                'wetland': 'fa-water',
+                'water': 'fa-water',
+                'farmyard': 'fa-horse',
+                'farm': 'fa-horse',
+                'range': 'fa-horse',
+                'forest': 'fa-tree',
+                'nocturnal': 'fa-moon',
+                'plains': 'fa-mountain-sun',
+                'endemic': 'fa-leaf',
+                'woodland': 'fa-tree'
+            } %}
             {% for zone in zoo_zones %}
-            <div style="background: white; border-radius: 12px; padding: 1.5rem; width: 170px; height: 210px; color: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: flex-end; align-self: {% if loop.index is odd %}flex-end{% else %}center{% endif %};">
-                <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem;">{{ zone.name }}</div>
-                <div style="color: #64748b; font-size: 0.8rem; margin-bottom: 1rem;">{{ zone_counts.get(zone.name, 0) }} Animal{{ '' if zone_counts.get(zone.name, 0) == 1 else 's' }}</div>
-                <div><span style="background: #ecfdf5; color: #16a34a; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: bold;"><span style="display: inline-block; width: 6px; height: 6px; background: #16a34a; border-radius: 50%; margin-right: 4px;"></span> Open</span></div>
+            {% set zname_lower = (zone.name or '').lower() %}
+            {% set icon = 'fa-paw' %}
+            {% for keyword, ico in zone_icons.items() %}
+              {% if keyword in zname_lower %}{% set icon = ico %}{% endif %}
+            {% endfor %}
+            <div class="va-zone-card"
+                 data-zone-filter="{{ zone.name|lower }}"
+                 style="align-self: {% if loop.index % 3 == 0 %}flex-end{% elif loop.index % 3 == 1 %}flex-start{% else %}center{% endif %};"
+                 onclick="applyHabitatFilter('{{ zone.name|escape }}'); document.getElementById('browse').scrollIntoView({behavior:'smooth'});"
+                 role="button"
+                 title="Filter by {{ zone.name }}">
+                <div class="va-zone-icon">
+                    <i class="fa-solid {{ icon }}"></i>
+                </div>
+                <div class="va-zone-name">{{ zone.name }}</div>
+                <div class="va-zone-count">{{ zone_counts.get(zone.name, 0) }} Animal{{ '' if zone_counts.get(zone.name, 0) == 1 else 's' }}</div>
+                <span class="va-zone-badge">
+                    <span class="va-zone-dot"></span> Open
+                </span>
             </div>
             {% endfor %}
         </div>
+        {% endif %}
     </div>
 </div>
 
-<div class="container" style="padding: 2rem 0;">
-    <!-- ANIMALS DIRECTORY -->
-    <h2 id="browse" style="font-size: 1.5rem; color: #1a4f32; margin: 1rem 0 1.5rem;">Browse Animals</h2>
-    <div class="visitor-animals-grid">
+<!-- BROWSE SECTION -->
+<div class="container" style="padding: 2rem 0 3.5rem;">
+    <div class="va-section-header">
+        <h2 id="browse" class="va-section-title">
+            <i class="fa-solid fa-paw" style="color:#1a4f32;margin-right:0.5rem;font-size:1.2rem;"></i>Browse Animals
+        </h2>
+        <span class="va-section-count" id="vaCountLabel">{{ animals|length }} animal{{ '' if animals|length == 1 else 's' }}</span>
+    </div>
+
+    <!-- Search & Habitat Filter Chips -->
+    <div class="va-controls">
+        <div class="va-search-bar">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="vaSearchInput" placeholder="Search by animal name or species..." autocomplete="off">
+        </div>
+
+        {% if zoo_zones %}
+        <div class="va-filter-chips" id="vaFilterChips">
+            <button type="button" class="va-chip is-active" data-habitat="all">
+                <i class="fa-solid fa-border-all" style="font-size:0.75rem;"></i> All
+            </button>
+            {% for zone in zoo_zones %}
+            <button type="button" class="va-chip" data-habitat="{{ zone.name|lower }}">
+                {{ zone.name }}
+            </button>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="va-grid" id="vaAnimalsGrid">
         {% for animal in animals %}
-        <a href="{{ url_for('visitor.animal_detail', animal_id=animal.id) }}" style="text-decoration: none; color: inherit;">
-            <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column; height: 100%;">
-                <div style="height: 180px; background: #e2e8f0; width: 100%;">
-                    <img src="{{ animal.image_url|default('', true) }}" alt="{{ animal.name or animal.species or 'Animal' }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.style.display='none';">
-                </div>
-                <div style="padding: 1.1rem; display: flex; flex-direction: column; gap: 0.4rem; flex: 1;">
-                    <div style="display:flex; justify-content: space-between; gap: 0.75rem; align-items: flex-start;">
-                        <h3 style="margin: 0; font-size: 1.05rem; color: #1a4f32;">{{ animal.name or animal.species }}</h3>
-                        <span style="font-size: 0.75rem; color: #64748b; font-weight: 600;">{{ animal.status|default('') }}</span>
+        <a href="{{ url_for('visitor.animal_detail', animal_id=animal.id) }}"
+           class="va-card"
+           data-habitat="{{ (animal.habitat or '')|lower }}"
+           data-name="{{ (animal.name or '')|lower }}"
+           data-species="{{ (animal.species or '')|lower }}">
+            <div class="va-card-img">
+                {% if animal.image_url %}
+                <img src="{{ animal.image_url }}" alt="{{ animal.name or animal.species or 'Animal' }}"
+                     onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'va-card-img-placeholder\'><i class=\'fa-solid fa-paw\'></i></div>';">
+                {% else %}
+                <div class="va-card-img-placeholder"><i class="fa-solid fa-paw"></i></div>
+                {% endif %}
+
+                {% if animal.habitat %}
+                <span class="va-card-zone-tag">
+                    <i class="fa-solid fa-map-pin" style="font-size:0.6rem;margin-right:3px;"></i>{{ animal.habitat }}
+                </span>
+                {% endif %}
+
+                {% if animal.status %}
+                <span class="va-card-status-tag"
+                      style="background:{% if animal.status|lower == 'endangered' %}#fee2e2; color:#991b1b;{% elif animal.status|lower == 'vulnerable' %}#fef3c7; color:#92400e;{% else %}#ecfdf5; color:#166534;{% endif %}">
+                    {{ animal.status }}
+                </span>
+                {% endif %}
+            </div>
+
+            <div class="va-card-body">
+                <h3 class="va-card-name">{{ animal.name or animal.species or 'Unknown Animal' }}</h3>
+                {% if animal.name and animal.species and animal.name != animal.species %}
+                <div class="va-card-species">{{ animal.species }}</div>
+                {% endif %}
+                {% if animal.description %}
+                <div class="va-card-desc">{{ animal.description }}</div>
+                {% endif %}
+
+                <div class="va-card-footer">
+                    <div class="va-card-meta">
+                        {% if animal.age %}
+                        <i class="fa-solid fa-calendar-days" style="font-size:0.65rem;"></i> {{ animal.age }}
+                        {% else %}
+                        <i class="fa-solid fa-circle-check" style="color:#22c55e;font-size:0.7rem;"></i> On Display
+                        {% endif %}
                     </div>
-                    <div style="color: #475569; font-size: 0.85rem; font-weight: 700;">{{ animal.species if animal.name else '' }}</div>
-                    {% if animal.habitat %}
-                    <div style="color: #64748b; font-size: 0.8rem;">Habitat: {{ animal.habitat }}</div>
-                    {% endif %}
-                    {% if animal.age %}
-                    <div style="color: #64748b; font-size: 0.8rem;">Age: {{ animal.age }}</div>
-                    {% endif %}
-                    {% if animal.description %}
-                    <div style="color: #475569; font-size: 0.82rem; line-height:1.45; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden;" title="{{ animal.description }}">{{ animal.description }}</div>
-                    {% endif %}
+                    <span class="va-view-link">
+                        View <i class="fa-solid fa-arrow-right" style="font-size:0.65rem;"></i>
+                    </span>
                 </div>
             </div>
         </a>
         {% else %}
-        <div style="grid-column: span 4; padding: 3rem; text-align: center; color: #94a3b8; font-weight: 700;">No animals exist yet.</div>
+        <div style="grid-column: 1 / -1; padding: 4rem; text-align: center; color: #94a3b8;">
+            <i class="fa-solid fa-paw" style="font-size:2.5rem;margin-bottom:1rem;display:block;"></i>
+            <div style="font-weight:700;font-size:1.1rem;">No animals found.</div>
+            <div style="font-size:0.9rem;margin-top:0.5rem;">Check back later or select a different zoo.</div>
+        </div>
         {% endfor %}
     </div>
+
+    <!-- Empty state for search/filter -->
+    <div id="vaNoResults" style="display:none; padding:4rem; text-align:center; color:#94a3b8;">
+        <i class="fa-solid fa-magnifying-glass" style="font-size:2.2rem;margin-bottom:0.75rem;color:#cbd5e1;display:block;"></i>
+        <div style="font-weight:700;font-size:1.1rem;color:#475569;">No animals match your search</div>
+        <div style="font-size:0.88rem;margin-top:0.35rem;color:#94a3b8;">Try clearing your filters or search query.</div>
+    </div>
 </div>
+
+<script>
+let currentHabitatFilter = 'all';
+
+function applyHabitatFilter(habitatName) {
+    currentHabitatFilter = (habitatName || 'all').toLowerCase();
+    
+    // Update active chip state
+    const chips = document.querySelectorAll('#vaFilterChips .va-chip');
+    chips.forEach(chip => {
+        const chipHab = chip.getAttribute('data-habitat');
+        if (chipHab === currentHabitatFilter || (currentHabitatFilter === 'all' && chipHab === 'all')) {
+            chip.classList.add('is-active');
+        } else {
+            chip.classList.remove('is-active');
+        }
+    });
+
+    filterAnimals();
+}
+
+function filterAnimals() {
+    const searchVal = (document.getElementById('vaSearchInput')?.value || '').trim().toLowerCase();
+    const cards = document.querySelectorAll('#vaAnimalsGrid .va-card');
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+        const hab = card.getAttribute('data-habitat') || '';
+        const name = card.getAttribute('data-name') || '';
+        const species = card.getAttribute('data-species') || '';
+
+        const matchesHabitat = (currentHabitatFilter === 'all') || 
+            hab.includes(currentHabitatFilter) || 
+            currentHabitatFilter.includes(hab);
+
+        const matchesSearch = !searchVal || 
+            name.includes(searchVal) || 
+            species.includes(searchVal) || 
+            hab.includes(searchVal);
+
+        if (matchesHabitat && matchesSearch) {
+            card.style.display = 'flex';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    // Update count label
+    const countLabel = document.getElementById('vaCountLabel');
+    if (countLabel) {
+        countLabel.textContent = `${visibleCount} animal${visibleCount === 1 ? '' : 's'}`;
+    }
+
+    // Toggle empty state
+    const noResults = document.getElementById('vaNoResults');
+    if (noResults) {
+        noResults.style.display = (visibleCount === 0 && cards.length > 0) ? 'block' : 'none';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Search input handler
+    const searchInput = document.getElementById('vaSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', filterAnimals);
+    }
+
+    // Filter chip click handlers
+    const chips = document.querySelectorAll('#vaFilterChips .va-chip');
+    chips.forEach(chip => {
+        chip.addEventListener('click', function() {
+            const hab = this.getAttribute('data-habitat');
+            applyHabitatFilter(hab);
+        });
+    });
+});
+</script>
 {% endblock %}
