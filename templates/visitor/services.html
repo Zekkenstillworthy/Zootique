@@ -107,7 +107,7 @@
                         <i class="fa-solid fa-circle-info" style="margin-right:5px;"></i>{{ bundle.eligibility }}
                     </div>
                     {% endif %}
-                    <a href="{{ url_for('visitor.my_bookings') }}#new-booking"
+                    <a href="{{ url_for('visitor.my_bookings') }}?bundle_id={{ bundle.id }}#new-booking"
                        class="btn"
                        style="background:var(--primary); color:white; border:none; padding:0.55rem 1.1rem;
                               border-radius:10px; font-weight:800; text-decoration:none;

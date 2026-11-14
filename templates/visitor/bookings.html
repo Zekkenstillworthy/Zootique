@@ -3086,8 +3086,26 @@
 
     updateFormState();
 
-    // 3. Smooth scroll down to booking form if navigated via parameters or anchor
-    if (urlServiceId || urlEventName || urlEventId || urlParams.get('promo') || window.location.hash === '#new-booking') {
+    // 4. Process Bundle parameter (?bundle_id=X)
+    var urlBundleId = urlParams.get('bundle_id') || urlParams.get('bundle');
+    if (urlBundleId) {
+      var bundleCard = document.querySelector('.vb-bundle-item[data-bundle-id="' + urlBundleId + '"]');
+      if (bundleCard) {
+        // Switch to bundle tab first
+        if (typeof vbSwitchTab === 'function') vbSwitchTab('bundle');
+        // Trigger bundle selection
+        var bName = bundleCard.getAttribute('data-name') || '';
+        var bSvcId = bundleCard.getAttribute('data-service-id') || '';
+        var bMin = parseInt(bundleCard.getAttribute('data-min-guests') || '1', 10);
+        var bMax = parseInt(bundleCard.getAttribute('data-max-guests') || '50', 10);
+        if (typeof vbSelectBundle === 'function') {
+          vbSelectBundle(urlBundleId, bSvcId, bMin, bMax, bName);
+        }
+      }
+    }
+
+    // Smooth scroll down to booking form if navigated via parameters or anchor
+    if (urlServiceId || urlEventName || urlEventId || urlBundleId || urlParams.get('promo') || window.location.hash === '#new-booking') {
       var bookingCard = document.getElementById('new-booking');
       if (bookingCard) {
         setTimeout(function() {
