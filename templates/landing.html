@@ -2437,56 +2437,38 @@
     <section class="lp-testi-section">
         <div class="container" style="max-width: 1140px;">
             <div style="text-align:center; max-width:640px; margin:0 auto;">
-                <span style="font-size:0.78rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#1a4f32;">Visitor &amp; Partner Reviews</span>
+                <span style="font-size:0.78rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#1a4f32;">Partner Reviews</span>
                 <h3 style="font-size:2rem; font-weight:900; color:#0f172a; margin:0.4rem 0 0.5rem;">Real Experiences, Real Stories</h3>
-                <p style="font-size:0.95rem; color:#64748b; margin:0;">Hear what visitors and park administrators say about using Zootique.</p>
+                <p style="font-size:0.95rem; color:#64748b; margin:0;">Hear what zoo and wildlife park administrators say about using Zootique.</p>
             </div>
             <div class="lp-testi-grid">
-                <div class="lp-testi-card">
-                    <div class="lp-testi-stars">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                    </div>
-                    <p class="lp-testi-text">
-                        "Zootique made our family trip so easy! We found the perfect zoo, booked our tickets in advance, and even learned fun facts about the animals before we went. Highly recommended!"
-                    </p>
-                    <div class="lp-testi-author">
-                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="Sarah L." class="lp-testi-avatar" />
-                        <div>
-                            <div style="font-weight:800; color:#0f172a; font-size:0.92rem;">Sarah L.</div>
-                            <div style="font-size:0.78rem; color:#64748b;">Visitor &amp; Wildlife Enthusiast</div>
+                {% if partner_reviews %}
+                    {% for review in partner_reviews %}
+                    {% set zoo_name = review.zoo.name if review.zoo else 'Zoo Admin' %}
+                    {% set zoo_type = review.zoo.establishment_type if review.zoo and review.zoo.establishment_type else '' %}
+                    <div class="lp-testi-card">
+                        <div class="lp-testi-stars">
+                            {% for i in range(review.rating) %}<i class="fa-solid fa-star"></i>{% endfor %}
+                            {% for i in range(5 - review.rating) %}<i class="fa-regular fa-star" style="color:#d1d5db;"></i>{% endfor %}
+                        </div>
+                        <p class="lp-testi-text">"{{ review.comment }}"</p>
+                        <div class="lp-testi-author">
+                            <div style="width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,#1a4f32,#4ade80); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                <i class="fa-solid fa-building-columns" style="color:#fff; font-size:1rem;"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight:800; color:#0f172a; font-size:0.92rem;">{{ zoo_name }}</div>
+                                <div style="font-size:0.78rem; color:#64748b;">{{ zoo_type if zoo_type else 'Zoo Administrator' }}</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="lp-testi-card">
-                    <div class="lp-testi-stars">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                    {% endfor %}
+                {% else %}
+                    <div style="grid-column:1/-1; text-align:center; color:#64748b; padding:2.5rem 0; font-size:0.95rem;">
+                        <i class="fa-regular fa-comment-dots" style="font-size:2rem; display:block; margin-bottom:0.75rem; color:#cbd5e1;"></i>
+                        No partner reviews yet. Be the first to share your experience!
                     </div>
-                    <p class="lp-testi-text">
-                        "As a zoo admin, Zootique helps us manage bookings, services, and events seamlessly. It's increased our visitor foot traffic by 40% and simplified daily admissions."
-                    </p>
-                    <div class="lp-testi-author">
-                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80" alt="Mark D." class="lp-testi-avatar" />
-                        <div>
-                            <div style="font-weight:800; color:#0f172a; font-size:0.92rem;">Mark D.</div>
-                            <div style="font-size:0.78rem; color:#64748b;">Sanctuary Operations Director</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="lp-testi-card">
-                    <div class="lp-testi-stars">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                    </div>
-                    <p class="lp-testi-text">
-                        "The e-ticket QR code system saved us 30 minutes in line. Plus my kids loved collecting the animal badges and answering the daily trivia quizzes on their phones!"
-                    </p>
-                    <div class="lp-testi-author">
-                        <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=100&q=80" alt="Jessica T." class="lp-testi-avatar" />
-                        <div>
-                            <div style="font-weight:800; color:#0f172a; font-size:0.92rem;">Jessica T.</div>
-                            <div style="font-size:0.78rem; color:#64748b;">Family Traveler</div>
-                        </div>
-                    </div>
-                </div>
+                {% endif %}
             </div>
         </div>
     </section>

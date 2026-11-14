@@ -298,6 +298,15 @@ def create_app() -> Flask:
             active_promotions = Promotion.query.order_by(Promotion.id.desc()).limit(6).all()
             wildlife_facts = Animal.query.filter(Animal.fun_facts.isnot(None), Animal.fun_facts != '').order_by(Animal.id.desc()).limit(8).all()
 
+            from models import ZooAdminFeedback
+            partner_reviews = (
+                ZooAdminFeedback.query
+                .filter(ZooAdminFeedback.rating >= 4, ZooAdminFeedback.comment.isnot(None), ZooAdminFeedback.comment != '')
+                .order_by(ZooAdminFeedback.created_at.desc())
+                .limit(6)
+                .all()
+            )
+
             from services.subscription_catalog import TIER_METADATA
         except Exception:
             hero_zoos = []
@@ -308,6 +317,7 @@ def create_app() -> Flask:
             active_promotions = []
             wildlife_facts = []
             TIER_METADATA = {}
+            partner_reviews = []
         return render_template(
             "landing.html",
             hero_zoos=hero_zoos,
@@ -318,6 +328,7 @@ def create_app() -> Flask:
             upcoming_events=upcoming_events,
             active_promotions=active_promotions,
             wildlife_facts=wildlife_facts,
+            partner_reviews=partner_reviews,
         )
 
     @app.get("/favicon.ico")
