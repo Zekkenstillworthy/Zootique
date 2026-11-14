@@ -2834,7 +2834,7 @@ def user_management():
             'role': u.role,
 
             'assigned_zoo': u.zoo.name if u.zoo else '—',
-
+            'zoo_id': u.zoo_id or '',
             'status': (u.status or 'active').title(),
 
         })
@@ -2942,14 +2942,13 @@ def save_user():
         return _back_to_form(user.id if getattr(user, 'id', None) else None)
 
     user.full_name = full_name
-
     user.email = email
-
     user.status = status
-
     user.role = 'zoo_admin'
-
-    user.zoo_id = int(zoo_id) if (zoo_id and zoo_id.isdigit()) else None
+    if is_new_user:
+        user.zoo_id = int(zoo_id) if (zoo_id and zoo_id.isdigit()) else None
+    elif zoo_id and zoo_id.isdigit():
+        user.zoo_id = int(zoo_id)
 
     if password:
 

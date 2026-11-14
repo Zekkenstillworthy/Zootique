@@ -169,7 +169,7 @@
             <th style="padding-left:16px;">Administrator</th>
             <th>Email Address</th>
             <th>Role</th>
-            <th>Assigned Facility</th>
+            <th>Establishment Name</th>
             <th>Account Status</th>
             <th style="width:160px; text-align:right; padding-right:16px;">Actions</th>
           </tr>
@@ -280,10 +280,10 @@
             <input type="email" id="modal_email" name="email" class="zf-control"
               placeholder="admin@park.ph" required>
           </div>
-          <div class="zf-field um-field">
-            <label for="modal_zoo">Assigned Zoo Facility <span class="zf-req">*</span></label>
+          <div class="zf-field um-field" id="modal_zoo_field">
+            <label for="modal_zoo">Establishment Name <span class="zf-req">*</span></label>
             <select id="modal_zoo" name="zoo_id" class="zf-control" required>
-              <option value="">Select Zoo Facility...</option>
+              <option value="">Select Establishment...</option>
               {% for z in zoos %}
                 <option value="{{ z.id }}">{{ z.name }}</option>
               {% endfor %}
@@ -334,11 +334,15 @@ function openAdminModal(user) {
   // Reset form
   document.getElementById('adminModalForm').reset();
 
+  var zooField = document.getElementById('modal_zoo_field');
+  var zooSelect = document.getElementById('modal_zoo');
+
   if (isEdit) {
     document.getElementById('modal_user_id').value = user.id;
     document.getElementById('modal_fullname').value = user.full_name || '';
     document.getElementById('modal_email').value    = user.email || '';
-    if (user.zoo_id) document.getElementById('modal_zoo').value = user.zoo_id;
+    if (zooField) zooField.style.display = 'none';
+    if (zooSelect) zooSelect.required = false;
     document.getElementById('modal_status').value   = (user.status || 'Active').toLowerCase();
     // Password optional on edit
     document.getElementById('modal_pwd').required = false;
@@ -346,6 +350,8 @@ function openAdminModal(user) {
     document.getElementById('modal_pwd_req').style.display = 'none';
   } else {
     document.getElementById('modal_user_id').value  = '';
+    if (zooField) zooField.style.display = '';
+    if (zooSelect) zooSelect.required = true;
     document.getElementById('modal_pwd').required   = true;
     document.getElementById('modal_pwd').placeholder = 'Set initial secure password';
     document.getElementById('modal_pwd_req').style.display = '';
