@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}{{ animal.name }} — {{ animal.species }} | Zootique{% endblock %}
-{% block page_title %}{{ animal.name }}'s Wildlife Profile{% endblock %}
+{% block title %}{{ animal.name or animal.species }} — {{ animal.species }} | Zootique{% endblock %}
+{% block page_title %}{{ animal.name or animal.species }}'s Wildlife Profile{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -199,16 +199,16 @@
   <div class="animal-hero-card">
     <!-- Image -->
     {% if animal.image_url %}
-    <img src="{{ animal.image_url }}" alt="{{ animal.name }}" class="animal-img-banner"
+    <img src="{{ animal.image_url }}" alt="{{ animal.name or animal.species }}" class="animal-img-banner"
          onerror="this.onerror=null; this.style.display='none'; document.getElementById('placeholderFallback').style.display='flex';">
     <div id="placeholderFallback" class="animal-placeholder-banner" style="display:none;">
       <i class="fa-solid fa-paw" style="font-size: 3.5rem; opacity: 0.85;"></i>
-      <span style="font-size: 1.1rem; font-weight: 700;">{{ animal.name }}</span>
+      <span style="font-size: 1.1rem; font-weight: 700;">{{ animal.name or animal.species }}</span>
     </div>
     {% else %}
     <div class="animal-placeholder-banner">
       <i class="fa-solid fa-paw" style="font-size: 3.5rem; opacity: 0.85;"></i>
-      <span style="font-size: 1.1rem; font-weight: 700;">{{ animal.name }}</span>
+      <span style="font-size: 1.1rem; font-weight: 700;">{{ animal.name or animal.species }}</span>
     </div>
     {% endif %}
 
@@ -216,8 +216,8 @@
     <div class="animal-content-body">
       <div class="animal-header-row">
         <div class="animal-title-wrap">
-          <h1>{{ animal.name }}</h1>
-          <div class="animal-species-sub">{{ animal.species or 'Wildlife Resident' }}</div>
+          <h1>{{ animal.name or animal.species }}</h1>
+          <div class="animal-species-sub">{{ animal.species if animal.name else 'Wildlife Resident' }}</div>
         </div>
 
         <div class="animal-meta-chips">

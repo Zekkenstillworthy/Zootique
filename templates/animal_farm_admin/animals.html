@@ -340,8 +340,8 @@
                     <span style="color: var(--text-muted);">-</span>
                   {% endif %}
                 </td>
-                <td>{{ a.name }}</td>
-                <td>{{ a.species or '-' }}</td>
+                <td>{{ a.name or '-' }}</td>
+                <td><strong>{{ a.species }}</strong></td>
                 <td>{{ a.age or '-' }}</td>
                 <td title="{{ a.description or '' }}" style="max-width:260px; white-space:normal; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;">
                   {{ a.description or '-' }}
