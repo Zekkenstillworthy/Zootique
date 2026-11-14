@@ -5,7 +5,7 @@ import hmac
 import json
 import os
 import re
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 
 from flask import Blueprint, abort, current_app, flash, jsonify, make_response, redirect, render_template, request, session, url_for
 
@@ -20,6 +20,7 @@ from models import (
     BookingTicketScan,
     Event,
     Feedback,
+    LoyaltyAccount,
     LoyaltyTransaction,
     Notification,
     ParkRule,
@@ -729,7 +730,8 @@ def delete_booking(booking_id: str):
         return redirect(url_for('animal_farm_admin.booking_management'))
 
     try:
-        reverse_booking_points(booking=booking)
+        booking_user_id = booking.user_id
+
         # Delete any associated ticket scans first
         ticket_ids = [t.id for t in BookingTicket.query.filter_by(booking_id=booking.id).all()]
         if ticket_ids:
@@ -741,11 +743,25 @@ def delete_booking(booking_id: str):
         BookingPayment.query.filter_by(booking_id=booking.id).delete(synchronize_session=False)
         Notification.query.filter_by(booking_id=booking.id).delete(synchronize_session=False)
 
-        # Unlink loyalty transactions safely
-        LoyaltyTransaction.query.filter_by(booking_id=booking.id).update({'booking_id': None}, synchronize_session=False)
+        # Delete all loyalty transactions referencing this booking
+        LoyaltyTransaction.query.filter(
+            or_(
+                LoyaltyTransaction.booking_id == booking.id,
+                LoyaltyTransaction.description.ilike(f'%{booking.id}%')
+            )
+        ).delete(synchronize_session=False)
 
         db.session.delete(booking)
         db.session.commit()
+
+        # Resync loyalty balance for the visitor if applicable
+        if booking_user_id:
+            account = LoyaltyAccount.query.filter_by(user_id=booking_user_id).first()
+            if account:
+                new_bal = db.session.query(func.coalesce(func.sum(LoyaltyTransaction.points), 0)).filter_by(account_id=account.id).scalar()
+                account.balance = int(new_bal or 0)
+                db.session.commit()
+
         flash('Booking removed.', 'success')
     except Exception as exc:
         db.session.rollback()
