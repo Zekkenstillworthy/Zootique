@@ -1040,15 +1040,6 @@ def save_animal():
         flash('Animal species is required.', 'error')
         return redirect(url_for('animal_farm_admin.animals_management', tab='add'))
 
-    animal = None
-    if animal_id:
-        animal = Animal.query.filter_by(id=int(animal_id), zoo_id=zoo.id).first()
-        if not animal:
-            abort(404)
-    if not animal:
-        animal = Animal(zoo_id=zoo.id)
-        db.session.add(animal)
-
     if not zone_id and habitat:
         matched_zone = ZooZone.query.filter_by(zoo_id=zoo.id, name=habitat).first()
         if matched_zone:
@@ -1058,15 +1049,35 @@ def save_animal():
         if matched_zone:
             habitat = matched_zone.name
 
-    animal.name = name
-    animal.species = species or None
-    animal.habitat = habitat
-    animal.status = status
-    animal.description = description
-    animal.age = age
-    if 'fun_facts' in request.form:
-        animal.fun_facts = fun_facts
-    animal.zone_id = zone_id
+    animal = None
+    if animal_id:
+        animal = Animal.query.filter_by(id=int(animal_id), zoo_id=zoo.id).first()
+        if not animal:
+            abort(404)
+    if not animal:
+        animal = Animal(
+            zoo_id=zoo.id,
+            species=species,
+            name=name,
+            habitat=habitat,
+            status=status,
+            description=description,
+            age=age,
+            zone_id=zone_id
+        )
+        if 'fun_facts' in request.form:
+            animal.fun_facts = fun_facts
+        db.session.add(animal)
+    else:
+        animal.name = name
+        animal.species = species
+        animal.habitat = habitat
+        animal.status = status
+        animal.description = description
+        animal.age = age
+        if 'fun_facts' in request.form:
+            animal.fun_facts = fun_facts
+        animal.zone_id = zone_id
 
     if image_file and image_file.filename:
         uploaded_url = _save_uploaded_image(image_file, 'animal_images')
