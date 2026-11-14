@@ -206,7 +206,18 @@
 </div>
 
 <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('zooInfoModal');
+    if (modal && modal.parentElement !== document.body) {
+      document.body.appendChild(modal);
+    }
+  });
+
   function showZooInfoModal(button) {
+    const modal = document.getElementById('zooInfoModal');
+    if (modal && modal.parentElement !== document.body) {
+      document.body.appendChild(modal);
+    }
     const name = button.getAttribute('data-name');
     const location = button.getAttribute('data-location');
     const type = button.getAttribute('data-type');

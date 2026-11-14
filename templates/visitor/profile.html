@@ -1002,6 +1002,15 @@
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    ['modal-link-gcash', 'modal-link-google', 'modal-link-facebook', 'modal-unlink-account'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && el.parentElement !== document.body) {
+            document.body.appendChild(el);
+        }
+    });
+});
+
 function closeAllModals() {
     ['modal-link-gcash', 'modal-link-google', 'modal-link-facebook', 'modal-unlink-account'].forEach(function(id) {
         var el = document.getElementById(id);

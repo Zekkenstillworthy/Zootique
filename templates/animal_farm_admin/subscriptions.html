@@ -386,22 +386,39 @@
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('subUpgradeModal');
+  if (modal && modal.parentElement !== document.body) {
+    document.body.appendChild(modal);
+  }
+});
+
 function openUpgradeModal(planId, planName, planPrice, planDuration) {
+  const modal = document.getElementById('subUpgradeModal');
+  if (modal && modal.parentElement !== document.body) {
+    document.body.appendChild(modal);
+  }
   document.getElementById('modalPlanId').value = planId;
   document.getElementById('modalPlanName').textContent = planName;
   document.getElementById('modalPlanPrice').textContent = '₱' + Number(planPrice).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
   document.getElementById('modalPlanDuration').textContent = 'Platform access (' + planDuration + ')';
-  const modal = document.getElementById('subUpgradeModal');
   modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
 }
 
 function closeUpgradeModal() {
-  document.getElementById('subUpgradeModal').style.display = 'none';
+  const modal = document.getElementById('subUpgradeModal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
 }
 
 window.addEventListener('click', function(e) {
   const modal = document.getElementById('subUpgradeModal');
   if (e.target === modal) closeUpgradeModal();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeUpgradeModal();
 });
 </script>
 

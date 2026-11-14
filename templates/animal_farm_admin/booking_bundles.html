@@ -308,6 +308,9 @@ body.bundle-modal-open { overflow:hidden; }
 
 <script>
 var modal = document.getElementById('bundle-modal');
+if (modal && modal.parentElement !== document.body) {
+  document.body.appendChild(modal);
+}
 var form = document.getElementById('bundle-form');
 var opener = null;
 var submitting = false;

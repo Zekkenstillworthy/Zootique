@@ -87,7 +87,7 @@
 </div>
 
 <!-- ===== STAFF MODAL POPUP ===== -->
-<div id="staffModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); backdrop-filter:blur(4px); z-index:2000; align-items:flex-start; justify-content:center; padding:1.5rem; overflow-y:auto;">
+<div id="staffModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); backdrop-filter:blur(4px); z-index:2000; align-items:center; justify-content:center; padding:1.5rem; overflow-y:auto;">
   <div class="zf-form-card" style="width:100%; max-width:540px; margin:auto; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3); border-radius:12px; overflow:hidden;">
     <div class="zf-form-header" style="display:flex; justify-content:space-between; align-items:center;">
       <h2 class="zf-form-title" style="margin:0;">
@@ -185,8 +185,14 @@
 {% block extra_js %}
 <script>
 const staffModal = document.getElementById('staffModalOverlay');
+if (staffModal && staffModal.parentElement !== document.body) {
+  document.body.appendChild(staffModal);
+}
 
 function openStaffModal() {
+  if (staffModal && staffModal.parentElement !== document.body) {
+    document.body.appendChild(staffModal);
+  }
   document.getElementById('staff-user-form').reset();
   document.getElementById('staff_user_id').value = '';
   document.getElementById('staffFormTitleText').textContent = 'Add Staff Member';

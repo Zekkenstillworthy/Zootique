@@ -101,7 +101,7 @@
 </div>
 
 <!-- Plan Manager Modal / Popup -->
-<div id="planManagerModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 2000; align-items: flex-start; justify-content: center; padding: 1.5rem; overflow-y: auto; transition: all 0.2s ease;">
+<div id="planManagerModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; padding: 1.5rem; overflow-y: auto; transition: all 0.2s ease;">
   <div class="card-panel" style="width: 100%; max-width: 540px; margin: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1); border-radius: var(--border-radius, 12px); overflow: hidden; transform: translateY(0); transition: transform 0.2s ease; max-height: 90vh; overflow-y: auto;">
     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-light, #e2e8f0);">
       <h2 id="planModalTitle" style="margin: 0; font-size: 1.1rem; font-weight: 700;">PLAN MANAGER — Add</h2>
@@ -170,8 +170,18 @@
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('planManagerModal');
+  if (modal && modal.parentElement !== document.body) {
+    document.body.appendChild(modal);
+  }
+});
+
 window.openPlanModal = function(id = '', name = '', price = '', duration = 'monthly', features = '', tier = '1', limits = {}) {
   const modal = document.getElementById('planManagerModal');
+  if (modal && modal.parentElement !== document.body) {
+    document.body.appendChild(modal);
+  }
   const title = document.getElementById('planModalTitle');
   const planId = document.getElementById('modalPlanId');
   const planName = document.getElementById('modalPlanName');

@@ -372,13 +372,24 @@
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+  const modal = document.getElementById('zoneAnimalsModal');
+  if (modal && modal.parentElement !== document.body) {
+    document.body.appendChild(modal);
+  }
+});
+
 function openZoneAnimals(zoneId, zoneName, zoneDesc) {
   const modal = document.getElementById('zoneAnimalsModal');
+  if (modal && modal.parentElement !== document.body) {
+    document.body.appendChild(modal);
+  }
   document.getElementById('modalZoneTitle').textContent = zoneName;
   document.getElementById('modalZoneDesc').textContent = zoneDesc || 'Resident animals living in this habitat zone.';
   document.getElementById('modalLoading').style.display = 'block';
   document.getElementById('modalAnimalsGrid').innerHTML = '';
   modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
 
   fetch('/visitor/api/zones/' + zoneId + '/animals')
     .then(r => r.json())
@@ -406,11 +417,16 @@ function openZoneAnimals(zoneId, zoneName, zoneDesc) {
     });
 }
 function closeZoneModal() {
-  document.getElementById('zoneAnimalsModal').style.display = 'none';
+  const modal = document.getElementById('zoneAnimalsModal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
 }
 window.addEventListener('click', function(e) {
   const modal = document.getElementById('zoneAnimalsModal');
   if (e.target === modal) closeZoneModal();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeZoneModal();
 });
 
 // Park Info — Tab Switching
