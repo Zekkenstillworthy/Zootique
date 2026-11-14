@@ -65,7 +65,6 @@ def dashboard():
     animals_count = 0
     bookings_count = 0
     if user:
-        from models import StaffTask, Animal
         tasks_pending = StaffTask.query.filter_by(
             zoo_id=user.zoo_id, assigned_to_user_id=user.id
         ).filter(StaffTask.status != 'done').count()
@@ -86,7 +85,6 @@ def dashboard():
 
     popular_services = []
     if zoo:
-        from models import Booking
         all_bookings = Booking.query.filter_by(zoo_id=zoo.id).all()
         service_stats = {}
         for b in all_bookings:
