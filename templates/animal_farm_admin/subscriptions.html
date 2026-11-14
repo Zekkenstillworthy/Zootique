@@ -32,6 +32,7 @@
     background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 5%, white), var(--card-bg, #fff));
 }
 .sub-plan-card.is-popular { border-color: #7c3aed; }
+.sub-plan-card.is-yearly { border-color: #0284c7; }
 .sub-plan-badge {
     position: absolute;
     top: -11px;
@@ -45,6 +46,7 @@
 }
 .badge-current { background: var(--primary); color: #fff; }
 .badge-popular  { background: #7c3aed; color: #fff; }
+.badge-yearly   { background: #0284c7; color: #fff; }
 .badge-pending  { background: #f59e0b; color: #fff; }
 .sub-plan-tier  { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
 .sub-plan-name  { font-size: 22px; font-weight: 900; color: var(--text); }
@@ -180,12 +182,18 @@
         {% for plan in plans %}
           {% set is_current = (subscription and subscription.status == 'active' and subscription.plan_id == plan.id) %}
           {% set is_pending_this = (subscription and subscription.status == 'pending' and subscription.plan_id == plan.id) %}
-          <div class="sub-plan-card {% if is_current %}is-current{% elif plan.tier_level == 2 %}is-popular{% endif %}">
+          {% set curr_tier = (subscription.plan.tier_level or 1) if subscription and subscription.status == 'active' else 0 %}
+          {% set curr_price = (subscription.plan.price or 0) if subscription and subscription.status == 'active' else 0 %}
+          {% set is_downgrade = (subscription and subscription.status == 'active' and plan.tier_level < curr_tier) %}
+          
+          <div class="sub-plan-card {% if is_current %}is-current{% elif plan.tier_level == 2 %}is-popular{% elif plan.duration == 'yearly' %}is-yearly{% endif %}">
 
             {% if is_current %}
               <span class="sub-plan-badge badge-current">&#10003; Current</span>
             {% elif is_pending_this %}
               <span class="sub-plan-badge badge-pending">&#8987; Pending</span>
+            {% elif plan.duration == 'yearly' %}
+              <span class="sub-plan-badge badge-yearly">&#128142; Yearly Savings</span>
             {% elif plan.tier_level == 2 %}
               <span class="sub-plan-badge badge-popular">&#11088; Pro</span>
             {% endif %}
@@ -233,13 +241,24 @@
                   style="width:100%; opacity:0.6; cursor:not-allowed;">
                   <i class="fa-solid fa-hourglass-half"></i> Awaiting Approval
                 </button>
+              {% elif is_downgrade %}
+                <button class="btn btn-ghost btn-sm" disabled
+                  title="Downgrades are not available while on a higher tier"
+                  style="width:100%; opacity:0.5; cursor:not-allowed; border:1px dashed var(--border-light, #cbd5e1); font-size:12px;">
+                  <i class="fa-solid fa-ban" style="margin-right:4px;"></i> Downgrade Unavailable
+                </button>
               {% else %}
+                {% set is_upgrade = (plan.tier_level > curr_tier or (plan.tier_level == curr_tier and plan.price > curr_price)) %}
                 <button class="btn btn-primary btn-sm" type="button" style="width:100%;"
                   onclick="openUpgradeModal({{ plan.id }}, '{{ plan.name|e }}', {{ plan.price }}, '{{ plan.duration|e }}')">
                   {% if subscription and subscription.status == 'active' %}
-                    <i class="fa-solid fa-arrow-up-right-dots"></i> Upgrade to {{ plan.name }}
+                    {% if is_upgrade %}
+                      <i class="fa-solid fa-arrow-up-right-dots"></i> Upgrade to {{ plan.name }}
+                    {% else %}
+                      <i class="fa-solid fa-repeat"></i> Switch to {{ plan.name }}
+                    {% endif %}
                   {% else %}
-                    <i class="fa-solid fa-rocket"></i> Subscribe Now
+                    <i class="fa-solid fa-rocket"></i> Subscribe to {{ plan.name }}
                   {% endif %}
                 </button>
               {% endif %}
