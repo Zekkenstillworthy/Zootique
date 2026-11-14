@@ -8,7 +8,7 @@
     .va-hero {
         background: linear-gradient(135deg, #3d5c35 0%, #2a4228 60%, #1a3020 100%);
         color: white;
-        padding: 3.5rem 4rem 4rem;
+        padding: 3rem 4rem 3.5rem;
         position: relative;
         overflow: hidden;
     }
@@ -23,21 +23,21 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 2rem;
+        gap: 2.5rem;
         position: relative;
         z-index: 1;
     }
     .va-hero-left { flex: 1; min-width: 0; }
-    .va-breadcrumb { color: rgba(255,255,255,0.6); font-size: 0.82rem; margin-bottom: 1rem; }
+    .va-breadcrumb { color: rgba(255,255,255,0.6); font-size: 0.82rem; margin-bottom: 0.75rem; }
     .va-title {
-        font-size: 3rem;
+        font-size: 2.8rem;
         font-weight: 900;
         font-family: 'Playfair Display', serif;
         line-height: 1.1;
-        margin: 0 0 0.75rem;
+        margin: 0 0 0.6rem;
     }
-    .va-subtitle { font-size: 1rem; opacity: 0.8; margin: 0 0 2rem; }
-    .va-stats { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 2rem; }
+    .va-subtitle { font-size: 0.98rem; opacity: 0.85; margin: 0 0 1.75rem; }
+    .va-stats { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.75rem; }
     .va-stat-pill {
         background: rgba(255,255,255,0.15);
         backdrop-filter: blur(8px);
@@ -57,7 +57,7 @@
         padding: 0.75rem 1.5rem;
         border-radius: 10px;
         font-weight: 800;
-        font-size: 0.95rem;
+        font-size: 0.92rem;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
@@ -68,57 +68,113 @@
     }
     .va-browse-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
 
-    /* ── Zone Cards in Hero ── */
-    .va-zones-scroll {
-        display: flex;
-        gap: 0.9rem;
-        overflow-x: auto;
-        padding-bottom: 0.5rem;
-        max-width: 480px;
-        scrollbar-width: none;
+    /* ── Zone Carousel in Hero (exact 3 cards, zero cut-off) ── */
+    .va-zones-box {
+        width: 440px;
+        max-width: 440px;
         flex-shrink: 0;
     }
-    .va-zones-scroll::-webkit-scrollbar { display: none; }
+    .va-zones-box-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.65rem;
+    }
+    .va-zones-box-title {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.9);
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+    }
+    .va-zones-count-badge {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 1px 7px;
+        border-radius: 10px;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+    .va-carousel-arrows {
+        display: flex;
+        gap: 0.4rem;
+    }
+    .va-arrow-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.72rem;
+        transition: all 0.15s;
+    }
+    .va-arrow-btn:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.05);
+    }
+    .va-arrow-btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+    }
+    .va-zones-viewport {
+        overflow: hidden;
+        border-radius: 14px;
+        width: 440px;
+    }
+    .va-zones-track {
+        display: flex;
+        gap: 10px;
+        transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
     .va-zone-card {
-        background: rgba(255,255,255,0.12);
+        background: rgba(255,255,255,0.13);
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255,255,255,0.22);
-        border-radius: 14px;
-        padding: 1.1rem 1.1rem 1rem;
-        min-width: 145px;
-        max-width: 145px;
+        border-radius: 12px;
+        padding: 1rem 0.9rem;
+        width: 140px;
+        min-width: 140px;
+        max-width: 140px;
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.45rem;
         flex-shrink: 0;
-        align-self: center;
         transition: transform 0.2s, background 0.2s;
         cursor: pointer;
+        box-sizing: border-box;
     }
     .va-zone-card:hover {
-        background: rgba(255,255,255,0.2);
-        transform: translateY(-3px);
+        background: rgba(255,255,255,0.22);
+        transform: translateY(-2px);
     }
     .va-zone-icon {
-        width: 36px;
-        height: 36px;
+        width: 34px;
+        height: 34px;
         border-radius: 10px;
         background: rgba(255,255,255,0.2);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.1rem;
-        margin-bottom: 0.25rem;
+        font-size: 1rem;
+        margin-bottom: 0.2rem;
     }
     .va-zone-name {
         font-weight: 800;
-        font-size: 0.82rem;
+        font-size: 0.8rem;
         line-height: 1.3;
         color: white;
+        word-break: break-word;
     }
     .va-zone-count {
-        font-size: 0.75rem;
-        color: rgba(255,255,255,0.7);
+        font-size: 0.72rem;
+        color: rgba(255,255,255,0.72);
     }
     .va-zone-badge {
         display: inline-flex;
@@ -127,22 +183,23 @@
         background: rgba(134,239,172,0.2);
         color: #bbf7d0;
         border: 1px solid rgba(134,239,172,0.3);
-        padding: 2px 8px;
-        border-radius: 20px;
-        font-size: 0.7rem;
+        padding: 2px 7px;
+        border-radius: 12px;
+        font-size: 0.68rem;
         font-weight: 700;
         margin-top: auto;
+        width: fit-content;
     }
     .va-zone-dot {
-        width: 6px;
-        height: 6px;
+        width: 5px;
+        height: 5px;
         background: #4ade80;
         border-radius: 50%;
         display: inline-block;
     }
 
     @media (max-width: 1000px) {
-        .va-zones-scroll { display: none; }
+        .va-zones-box { display: none; }
     }
 
     /* ── Animal Grid ── */
@@ -195,34 +252,51 @@
         font-size: 2.5rem;
         color: #a3c4b0;
     }
-    .va-card-zone-tag {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        background: rgba(26,79,50,0.85);
-        color: white;
-        font-size: 0.65rem;
-        font-weight: 700;
-        padding: 3px 9px;
-        border-radius: 20px;
-        backdrop-filter: blur(4px);
-        max-width: 130px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
     .va-card-status-tag {
         position: absolute;
         top: 10px;
         right: 10px;
-        font-size: 0.65rem;
+        font-size: 0.68rem;
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: 20px;
+        backdrop-filter: blur(4px);
+    }
+    .va-card-body {
+        padding: 1rem 1.1rem 1.1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        flex: 1;
+    }
+    .va-card-name {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #1a4f32;
+        margin: 0;
+        line-height: 1.25;
+    }
+    .va-card-species {
+        font-size: 0.8rem;
+        color: #64748b;
+        font-style: italic;
+    }
+    .va-card-habitat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #f0f7f3;
+        color: #166534;
+        border: 1px solid #d1fae5;
+        font-size: 0.74rem;
         font-weight: 700;
         padding: 3px 8px;
-        border-radius: 20px;
+        border-radius: 6px;
+        margin: 0.2rem 0;
+        width: fit-content;
+        max-width: 100%;
+        line-height: 1.35;
     }
-    .va-card-body { padding: 1rem 1.1rem 1.1rem; display: flex; flex-direction: column; gap: 0.3rem; flex: 1; }
-    .va-card-name { font-size: 1rem; font-weight: 800; color: #1a4f32; margin: 0; line-height: 1.25; }
-    .va-card-species { font-size: 0.8rem; color: #64748b; font-style: italic; }
     .va-card-desc {
         font-size: 0.78rem;
         color: #64748b;
@@ -231,14 +305,14 @@
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 2;
         overflow: hidden;
-        margin-top: 0.25rem;
+        margin-top: 0.2rem;
     }
     .va-card-footer {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-top: 0.5rem;
-        padding-top: 0.6rem;
+        margin-top: auto;
+        padding-top: 0.65rem;
         border-top: 1px solid #f0f4f2;
     }
     .va-card-meta { font-size: 0.75rem; color: #94a3b8; display: flex; align-items: center; gap: 4px; }
@@ -358,52 +432,68 @@
             </a>
         </div>
 
-        <!-- Zone Cards -->
+        <!-- Zone Carousel (Exact 3 cards, zero cut-off) -->
         {% if zoo_zones %}
-        <div class="va-zones-scroll">
-            {% set zone_icons = {
-                'reptile': 'fa-dragon',
-                'amphibian': 'fa-frog',
-                'big cat': 'fa-cat',
-                'mammal': 'fa-paw',
-                'primate': 'fa-paw',
-                'bird': 'fa-dove',
-                'raptor': 'fa-crow',
-                'parrot': 'fa-dove',
-                'aviary': 'fa-dove',
-                'wetland': 'fa-water',
-                'water': 'fa-water',
-                'farmyard': 'fa-horse',
-                'farm': 'fa-horse',
-                'range': 'fa-horse',
-                'forest': 'fa-tree',
-                'nocturnal': 'fa-moon',
-                'plains': 'fa-mountain-sun',
-                'endemic': 'fa-leaf',
-                'woodland': 'fa-tree'
-            } %}
-            {% for zone in zoo_zones %}
-            {% set zname_lower = (zone.name or '').lower() %}
-            {% set icon = 'fa-paw' %}
-            {% for keyword, ico in zone_icons.items() %}
-              {% if keyword in zname_lower %}{% set icon = ico %}{% endif %}
-            {% endfor %}
-            <div class="va-zone-card"
-                 data-zone-filter="{{ zone.name|lower }}"
-                 style="align-self: {% if loop.index % 3 == 0 %}flex-end{% elif loop.index % 3 == 1 %}flex-start{% else %}center{% endif %};"
-                 onclick="applyHabitatFilter('{{ zone.name|escape }}'); document.getElementById('browse').scrollIntoView({behavior:'smooth'});"
-                 role="button"
-                 title="Filter by {{ zone.name }}">
-                <div class="va-zone-icon">
-                    <i class="fa-solid {{ icon }}"></i>
-                </div>
-                <div class="va-zone-name">{{ zone.name }}</div>
-                <div class="va-zone-count">{{ zone_counts.get(zone.name, 0) }} Animal{{ '' if zone_counts.get(zone.name, 0) == 1 else 's' }}</div>
-                <span class="va-zone-badge">
-                    <span class="va-zone-dot"></span> Open
+        <div class="va-zones-box">
+            <div class="va-zones-box-header">
+                <span class="va-zones-box-title">
+                    <i class="fa-solid fa-layer-group"></i> Park Habitats <span class="va-zones-count-badge">{{ zoo_zones|length }}</span>
                 </span>
+                <div class="va-carousel-arrows">
+                    <button type="button" class="va-arrow-btn" id="btnZonePrev" onclick="slideHeroZones(-1)" aria-label="Previous zones" disabled>
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <button type="button" class="va-arrow-btn" id="btnZoneNext" onclick="slideHeroZones(1)" aria-label="Next zones" {% if zoo_zones|length <= 3 %}disabled{% endif %}>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
             </div>
-            {% endfor %}
+            <div class="va-zones-viewport">
+                <div class="va-zones-track" id="vaZonesTrack">
+                    {% set zone_icons = {
+                        'reptile': 'fa-dragon',
+                        'amphibian': 'fa-frog',
+                        'big cat': 'fa-cat',
+                        'mammal': 'fa-paw',
+                        'primate': 'fa-paw',
+                        'bird': 'fa-dove',
+                        'raptor': 'fa-crow',
+                        'parrot': 'fa-dove',
+                        'aviary': 'fa-dove',
+                        'wetland': 'fa-water',
+                        'water': 'fa-water',
+                        'farmyard': 'fa-horse',
+                        'farm': 'fa-horse',
+                        'range': 'fa-horse',
+                        'forest': 'fa-tree',
+                        'nocturnal': 'fa-moon',
+                        'plains': 'fa-mountain-sun',
+                        'endemic': 'fa-leaf',
+                        'woodland': 'fa-tree'
+                    } %}
+                    {% for zone in zoo_zones %}
+                    {% set zname_lower = (zone.name or '').lower() %}
+                    {% set icon = 'fa-paw' %}
+                    {% for keyword, ico in zone_icons.items() %}
+                      {% if keyword in zname_lower %}{% set icon = ico %}{% endif %}
+                    {% endfor %}
+                    <div class="va-zone-card"
+                         data-zone-filter="{{ zone.name|lower }}"
+                         onclick="applyHabitatFilter('{{ zone.name|escape }}'); document.getElementById('browse').scrollIntoView({behavior:'smooth'});"
+                         role="button"
+                         title="Filter by {{ zone.name }}">
+                        <div class="va-zone-icon">
+                            <i class="fa-solid {{ icon }}"></i>
+                        </div>
+                        <div class="va-zone-name">{{ zone.name }}</div>
+                        <div class="va-zone-count">{{ zone_counts.get(zone.name, 0) }} Animal{{ '' if zone_counts.get(zone.name, 0) == 1 else 's' }}</div>
+                        <span class="va-zone-badge">
+                            <span class="va-zone-dot"></span> Open
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
         {% endif %}
     </div>
@@ -422,7 +512,7 @@
     <div class="va-controls">
         <div class="va-search-bar">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="vaSearchInput" placeholder="Search by animal name or species..." autocomplete="off">
+            <input type="text" id="vaSearchInput" placeholder="Search by animal name, species, or habitat..." autocomplete="off">
         </div>
 
         {% if zoo_zones %}
@@ -454,15 +544,9 @@
                 <div class="va-card-img-placeholder"><i class="fa-solid fa-paw"></i></div>
                 {% endif %}
 
-                {% if animal.habitat %}
-                <span class="va-card-zone-tag">
-                    <i class="fa-solid fa-map-pin" style="font-size:0.6rem;margin-right:3px;"></i>{{ animal.habitat }}
-                </span>
-                {% endif %}
-
                 {% if animal.status %}
                 <span class="va-card-status-tag"
-                      style="background:{% if animal.status|lower == 'endangered' %}#fee2e2; color:#991b1b;{% elif animal.status|lower == 'vulnerable' %}#fef3c7; color:#92400e;{% else %}#ecfdf5; color:#166534;{% endif %}">
+                      style="background:{% if animal.status|lower in ['endangered', 'critically endangered'] %}#fee2e2; color:#991b1b;{% elif animal.status|lower == 'vulnerable' %}#fef3c7; color:#92400e;{% else %}#ecfdf5; color:#166534;{% endif %}">
                     {{ animal.status }}
                 </span>
                 {% endif %}
@@ -473,6 +557,14 @@
                 {% if animal.name and animal.species and animal.name != animal.species %}
                 <div class="va-card-species">{{ animal.species }}</div>
                 {% endif %}
+
+                {% if animal.habitat %}
+                <div class="va-card-habitat-pill" title="{{ animal.habitat }}">
+                    <i class="fa-solid fa-map-pin" style="color:#166534; font-size:0.68rem; flex-shrink:0;"></i>
+                    <span>{{ animal.habitat }}</span>
+                </div>
+                {% endif %}
+
                 {% if animal.description %}
                 <div class="va-card-desc">{{ animal.description }}</div>
                 {% endif %}
@@ -566,6 +658,27 @@ function filterAnimals() {
     if (noResults) {
         noResults.style.display = (visibleCount === 0 && cards.length > 0) ? 'block' : 'none';
     }
+}
+
+// Hero Zone Carousel navigation
+let currentZoneSlide = 0;
+function slideHeroZones(dir) {
+    const track = document.getElementById('vaZonesTrack');
+    if (!track) return;
+    const cards = track.querySelectorAll('.va-zone-card');
+    const total = cards.length;
+    // Exactly 3 cards are visible at a time
+    const maxSlide = Math.max(0, total - 3);
+
+    currentZoneSlide = Math.min(Math.max(0, currentZoneSlide + dir), maxSlide);
+    // 140px card + 10px gap = 150px per card
+    const offset = currentZoneSlide * 150;
+    track.style.transform = `translateX(-${offset}px)`;
+
+    const prevBtn = document.getElementById('btnZonePrev');
+    const nextBtn = document.getElementById('btnZoneNext');
+    if (prevBtn) prevBtn.disabled = (currentZoneSlide <= 0);
+    if (nextBtn) nextBtn.disabled = (currentZoneSlide >= maxSlide);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
