@@ -283,7 +283,7 @@ if (fileInput) {
   fileInput.addEventListener('change', function() {
     if (!this.files[0]) { resetUpload(); return; }
     if (this.files[0].size > 5 * 1024 * 1024) {
-      alert('Photo must be less than 5MB');
+      window.showSystemAlert({ title: 'File Too Large', message: 'Photo must be less than 5MB.', isError: true });
       resetUpload();
       return;
     }

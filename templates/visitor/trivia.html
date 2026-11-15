@@ -707,7 +707,7 @@
     .then(res => res.json())
     .then(data => {
       if (!data.success) {
-        alert(data.error || 'Failed to submit answer.');
+        window.showSystemAlert({ title: 'Submission Notice', message: data.error || 'Failed to submit answer.', isError: true });
         return;
       }
 

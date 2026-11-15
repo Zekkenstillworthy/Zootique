@@ -405,8 +405,16 @@ function openModal(button, bundle) {
 }
 function closeModal(force) {
   if (submitting) return;
-  if (!force && initialState !== JSON.stringify(getFormState())
-      && !window.confirm('Discard unsaved changes?')) return;
+  if (!force && initialState !== JSON.stringify(getFormState())) {
+    window.showSystemConfirm({
+      title: 'Discard Changes',
+      message: 'Discard unsaved changes?',
+      isDanger: true,
+      confirmText: 'Discard',
+      onConfirm: function() { closeModal(true); }
+    });
+    return;
+  }
   modal.hidden = true;
   modal.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('bundle-modal-open');

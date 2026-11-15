@@ -2361,6 +2361,445 @@
                 });
             });
         </script>
+
+        <!-- ============================================================= -->
+        <!-- Universal System Dialog Modal (replaces browser alert/confirm) -->
+        <!-- ============================================================= -->
+        <style>
+          .system-dialog-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+          .system-dialog-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+          }
+          .system-dialog-card {
+            background: #ffffff;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 440px;
+            padding: 28px 24px 22px 24px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.06);
+            transform: scale(0.94) translateY(8px);
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-sizing: border-box;
+            font-family: inherit;
+          }
+          .system-dialog-overlay.open .system-dialog-card {
+            transform: scale(1) translateY(0);
+          }
+          .system-dialog-icon-wrap {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.2s ease;
+          }
+          .system-dialog-icon-wrap.is-danger {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 4px solid #fef2f2;
+          }
+          .system-dialog-icon-wrap.is-primary {
+            background: #dcfce7;
+            color: #1b4332;
+            border: 4px solid #f0fdf4;
+          }
+          .system-dialog-title {
+            font-size: 19px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0 0 8px 0;
+            line-height: 1.3;
+          }
+          .system-dialog-message {
+            font-size: 14.5px;
+            color: #4b5563;
+            margin: 0 0 24px 0;
+            line-height: 1.5;
+            word-break: break-word;
+          }
+          .system-dialog-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+          }
+          .system-dialog-btn {
+            flex: 1;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: inherit;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 42px;
+          }
+          .system-dialog-btn-cancel {
+            border: 1px solid #d1d5db;
+            background: #ffffff;
+            color: #374151;
+          }
+          .system-dialog-btn-cancel:hover {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+            color: #111827;
+          }
+          .system-dialog-btn-confirm.is-danger {
+            border: none;
+            background: #dc2626;
+            color: #ffffff;
+            box-shadow: 0 2px 4px rgba(220, 38, 38, 0.25);
+          }
+          .system-dialog-btn-confirm.is-danger:hover {
+            background: #b91c1c;
+            box-shadow: 0 4px 8px rgba(220, 38, 38, 0.35);
+          }
+          .system-dialog-btn-confirm.is-primary {
+            border: none;
+            background: #1b4332;
+            color: #ffffff;
+            box-shadow: 0 2px 4px rgba(27, 67, 50, 0.25);
+          }
+          .system-dialog-btn-confirm.is-primary:hover {
+            background: #143326;
+            box-shadow: 0 4px 8px rgba(27, 67, 50, 0.35);
+          }
+        </style>
+
+        <div id="systemDialogOverlay" class="system-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="systemDialogTitle">
+          <div class="system-dialog-card" id="systemDialogCard">
+            <div class="system-dialog-icon-wrap" id="systemDialogIconWrap">
+              <i id="systemDialogIcon" class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="system-dialog-title" id="systemDialogTitle">Confirm Action</h3>
+            <p class="system-dialog-message" id="systemDialogMessage">Are you sure you want to proceed?</p>
+            <div class="system-dialog-actions" id="systemDialogActions">
+              <button type="button" class="system-dialog-btn system-dialog-btn-cancel" id="systemDialogCancelBtn">Cancel</button>
+              <button type="button" class="system-dialog-btn system-dialog-btn-confirm" id="systemDialogConfirmBtn">Confirm</button>
+            </div>
+          </div>
+        </div>
+
+        <script>
+        (function () {
+          let activeResolve = null;
+
+          function closeDialog(result) {
+            const overlay = document.getElementById('systemDialogOverlay');
+            if (overlay) {
+              overlay.classList.remove('open');
+              setTimeout(function () {
+                if (!overlay.classList.contains('open')) {
+                  overlay.style.display = 'none';
+                }
+              }, 200);
+            }
+            if (typeof activeResolve === 'function') {
+              const res = activeResolve;
+              activeResolve = null;
+              res(result);
+            }
+          }
+
+          window.showSystemConfirm = function (options) {
+            if (typeof options === 'string') {
+              options = { message: options };
+            }
+            options = options || {};
+            const message = options.message || 'Are you sure you want to proceed?';
+            const isDanger = options.isDanger !== undefined ? options.isDanger : /delete|remove|clear|cancel|reject|discard/i.test(message);
+            const title = options.title || (isDanger ? (/delete/i.test(message) ? 'Confirm Deletion' : 'Confirm Action') : 'Please Confirm');
+            const confirmText = options.confirmText || (isDanger ? (/delete/i.test(message) ? 'Delete' : 'Confirm') : 'Confirm');
+            const cancelText = options.cancelText || 'Cancel';
+
+            const overlay = document.getElementById('systemDialogOverlay');
+            const titleEl = document.getElementById('systemDialogTitle');
+            const msgEl = document.getElementById('systemDialogMessage');
+            const iconWrap = document.getElementById('systemDialogIconWrap');
+            const iconEl = document.getElementById('systemDialogIcon');
+            const cancelBtn = document.getElementById('systemDialogCancelBtn');
+            const confirmBtn = document.getElementById('systemDialogConfirmBtn');
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+
+            cancelBtn.style.display = '';
+            cancelBtn.textContent = cancelText;
+
+            confirmBtn.textContent = confirmText;
+            if (isDanger) {
+              iconWrap.className = 'system-dialog-icon-wrap is-danger';
+              iconEl.className = 'fa-solid fa-triangle-exclamation';
+              confirmBtn.className = 'system-dialog-btn system-dialog-btn-confirm is-danger';
+            } else {
+              iconWrap.className = 'system-dialog-icon-wrap is-primary';
+              iconEl.className = 'fa-solid fa-circle-question';
+              confirmBtn.className = 'system-dialog-btn system-dialog-btn-confirm is-primary';
+            }
+
+            overlay.style.display = 'flex';
+            void overlay.offsetWidth;
+            overlay.classList.add('open');
+
+            if (isDanger) {
+              cancelBtn.focus();
+            } else {
+              confirmBtn.focus();
+            }
+
+            return new Promise(function (resolve) {
+              activeResolve = function (confirmed) {
+                if (confirmed && typeof options.onConfirm === 'function') {
+                  options.onConfirm();
+                } else if (!confirmed && typeof options.onCancel === 'function') {
+                  options.onCancel();
+                }
+                resolve(confirmed);
+              };
+            });
+          };
+
+          window.showSystemAlert = function (options) {
+            if (typeof options === 'string') {
+              options = { message: options };
+            }
+            options = options || {};
+            const message = options.message || '';
+            const isError = options.isError !== undefined ? options.isError : /error|failed|invalid|must be/i.test(message);
+            const title = options.title || (isError ? 'Notice' : 'Notification');
+            const confirmText = options.confirmText || 'OK';
+
+            const overlay = document.getElementById('systemDialogOverlay');
+            const titleEl = document.getElementById('systemDialogTitle');
+            const msgEl = document.getElementById('systemDialogMessage');
+            const iconWrap = document.getElementById('systemDialogIconWrap');
+            const iconEl = document.getElementById('systemDialogIcon');
+            const cancelBtn = document.getElementById('systemDialogCancelBtn');
+            const confirmBtn = document.getElementById('systemDialogConfirmBtn');
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+
+            cancelBtn.style.display = 'none';
+
+            confirmBtn.textContent = confirmText;
+            if (isError) {
+              iconWrap.className = 'system-dialog-icon-wrap is-danger';
+              iconEl.className = 'fa-solid fa-circle-exclamation';
+              confirmBtn.className = 'system-dialog-btn system-dialog-btn-confirm is-danger';
+            } else {
+              iconWrap.className = 'system-dialog-icon-wrap is-primary';
+              iconEl.className = 'fa-solid fa-circle-check';
+              confirmBtn.className = 'system-dialog-btn system-dialog-btn-confirm is-primary';
+            }
+
+            overlay.style.display = 'flex';
+            void overlay.offsetWidth;
+            overlay.classList.add('open');
+            confirmBtn.focus();
+
+            return new Promise(function (resolve) {
+              activeResolve = function () {
+                if (typeof options.onConfirm === 'function') {
+                  options.onConfirm();
+                }
+                resolve(true);
+              };
+            });
+          };
+
+          // Override native alert across the system
+          window.alert = function (message) {
+            window.showSystemAlert(message);
+          };
+
+          // Disarm inline onsubmit="return confirm(...)" and onclick="return confirm(...)"
+          function disarmConfirmElements(root) {
+            const scope = root || document;
+            scope.querySelectorAll('form[onsubmit*="confirm("]').forEach(function (form) {
+              const raw = form.getAttribute('onsubmit') || '';
+              const match = raw.match(/confirm\s*\(\s*(['"])(.*?)\1\s*\)/s);
+              if (match) {
+                form.dataset.systemConfirm = match[2];
+                form.removeAttribute('onsubmit');
+                form.onsubmit = null;
+              }
+            });
+
+            scope.querySelectorAll('button[onclick*="confirm("], a[onclick*="confirm("]').forEach(function (btn) {
+              const raw = btn.getAttribute('onclick') || '';
+              const match = raw.match(/confirm\s*\(\s*(['"])(.*?)\1\s*\)/s);
+              if (match) {
+                btn.dataset.systemConfirm = match[2];
+                btn.removeAttribute('onclick');
+                btn.onclick = null;
+              }
+            });
+          }
+
+          document.addEventListener('DOMContentLoaded', function () {
+            disarmConfirmElements(document);
+          });
+
+          // Intercept form submit in capture phase
+          document.addEventListener('submit', function (e) {
+            const form = e.target;
+            if (!form || form.tagName !== 'FORM') return;
+
+            if (form.dataset && form.dataset.systemConfirmed === 'true') {
+              delete form.dataset.systemConfirmed;
+              return;
+            }
+
+            let msg = (form.dataset && form.dataset.systemConfirm) || null;
+            const rawOnsubmit = form.getAttribute('onsubmit') || '';
+            if (!msg && rawOnsubmit.includes('confirm(')) {
+              const match = rawOnsubmit.match(/confirm\s*\(\s*(['"])(.*?)\1\s*\)/s);
+              if (match) {
+                msg = match[2];
+                form.removeAttribute('onsubmit');
+                form.onsubmit = null;
+              }
+            }
+
+            if (!msg) return;
+
+            e.preventDefault();
+            e.stopImmediatePropagation();
+
+            const isDestructive = /delete|remove|clear|cancel|reject|discard/i.test(msg);
+            const title = isDestructive
+              ? (/delete/i.test(msg) ? 'Confirm Deletion' : 'Confirm Action')
+              : 'Please Confirm';
+
+            window.showSystemConfirm({
+              title: title,
+              message: msg,
+              isDanger: isDestructive,
+              confirmText: isDestructive ? (/delete/i.test(msg) ? 'Delete' : 'Confirm') : 'Confirm',
+              cancelText: 'Cancel',
+              onConfirm: function () {
+                form.dataset.systemConfirmed = 'true';
+                if (typeof form.requestSubmit === 'function') {
+                  form.requestSubmit();
+                } else {
+                  form.submit();
+                }
+              }
+            });
+            return false;
+          }, true);
+
+          // Intercept buttons or links that had onclick confirm
+          document.addEventListener('click', function (e) {
+            if (e.target && e.target.id === 'systemDialogCancelBtn') {
+              closeDialog(false);
+              return;
+            }
+            if (e.target && e.target.id === 'systemDialogConfirmBtn') {
+              closeDialog(true);
+              return;
+            }
+            if (e.target && e.target.id === 'systemDialogOverlay') {
+              closeDialog(false);
+              return;
+            }
+
+            const btn = e.target.closest ? e.target.closest('button[data-system-confirm], a[data-system-confirm]') : null;
+            if (!btn) return;
+            if (btn.dataset.systemConfirmed === 'true') {
+              delete btn.dataset.systemConfirmed;
+              return;
+            }
+
+            let msg = btn.dataset.systemConfirm;
+            const rawOnclick = btn.getAttribute('onclick') || '';
+            if (!msg && rawOnclick.includes('confirm(')) {
+              const match = rawOnclick.match(/confirm\s*\(\s*(['"])(.*?)\1\s*\)/s);
+              if (match) {
+                msg = match[2];
+                btn.removeAttribute('onclick');
+                btn.onclick = null;
+              }
+            }
+            if (!msg) return;
+
+            e.preventDefault();
+            e.stopImmediatePropagation();
+
+            const isDestructive = /delete|remove|clear|cancel|reject|discard/i.test(msg);
+            const title = isDestructive
+              ? (/delete/i.test(msg) ? 'Confirm Deletion' : 'Confirm Action')
+              : 'Please Confirm';
+
+            window.showSystemConfirm({
+              title: title,
+              message: msg,
+              isDanger: isDestructive,
+              confirmText: isDestructive ? (/delete/i.test(msg) ? 'Delete' : 'Confirm') : 'Confirm',
+              cancelText: 'Cancel',
+              onConfirm: function () {
+                btn.dataset.systemConfirmed = 'true';
+                if (btn.type === 'submit' && btn.form) {
+                  btn.form.dataset.systemConfirmed = 'true';
+                  if (typeof btn.form.requestSubmit === 'function') {
+                    btn.form.requestSubmit(btn);
+                  } else {
+                    btn.form.submit();
+                  }
+                } else if (btn.tagName === 'A' && btn.href) {
+                  window.location.href = btn.href;
+                } else {
+                  btn.click();
+                }
+              }
+            });
+          }, true);
+
+          // Keyboard controls: Escape to close, Enter to confirm
+          document.addEventListener('keydown', function (e) {
+            const overlay = document.getElementById('systemDialogOverlay');
+            if (!overlay || !overlay.classList.contains('open')) return;
+            if (e.key === 'Escape') {
+              e.preventDefault();
+              closeDialog(false);
+            } else if (e.key === 'Enter') {
+              if (document.activeElement && document.activeElement.id === 'systemDialogCancelBtn') {
+                e.preventDefault();
+                closeDialog(false);
+              } else {
+                e.preventDefault();
+                closeDialog(true);
+              }
+            }
+          });
+        })();
+        </script>
+
         {% block extra_js %}{% endblock %}
 </body>
 

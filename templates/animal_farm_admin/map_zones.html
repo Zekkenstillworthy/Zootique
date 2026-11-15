@@ -26,7 +26,7 @@
             const files = Array.from(zoneImagesInput.files || []);
             if (files.length > 12) {
                 zoneImagesInput.value = '';
-                alert('You can select up to 12 zone pictures.');
+                window.showSystemAlert({ title: 'Image Limit', message: 'You can select up to 12 zone pictures.', isError: true });
                 return;
             }
             const previews = files.map(function(file) {

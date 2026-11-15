@@ -501,7 +501,7 @@
 <script>
 function copyRefCode(text) {
   navigator.clipboard.writeText(text).then(() => {
-    alert('Booking Reference code copied to clipboard: ' + text);
+    window.showSystemAlert({ title: 'Copied to Clipboard', message: 'Booking Reference code copied to clipboard: ' + text });
   }).catch(() => {
     prompt('Copy your reference code:', text);
   });
