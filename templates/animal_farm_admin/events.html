@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Events | Animal Farm Admin{% endblock %}
+{% block title %}Events | {{ 'Zoo Staff' if request.blueprint == 'animal_farm_staff' else 'Animal Farm Admin' }}{% endblock %}
 {% block page_title %}Events{% endblock %}
 
 {% block breadcrumb %}
@@ -13,6 +13,7 @@
 {% endblock %}
 
 {% block content %}
+{% set bp = request.blueprint if request.blueprint in ['animal_farm_staff', 'animal_farm_admin'] else 'animal_farm_admin' %}
 {% set selected_tab = selected_tab|default(request.args.get('tab', 'all')) %}
 
 <!-- Success toast -->
@@ -29,9 +30,11 @@
       <strong>Read-Only Mode:</strong> An active subscription with Super Admin is required to create, edit, or delete events.
     </span>
   </div>
+  {% if bp == 'animal_farm_admin' %}
   <a href="{{ url_for('animal_farm_admin.subscriptions') }}" class="btn btn-primary btn-sm" style="white-space:nowrap;">
     <i class="fa-solid fa-rocket"></i> Subscribe Now
   </a>
+  {% endif %}
 </div>
 {% endif %}
 
@@ -46,7 +49,7 @@
             </h2>
         </div>
 
-        <form id="eventForm" method="post" enctype="multipart/form-data" action="{{ url_for('animal_farm_admin.save_event') }}" novalidate>
+        <form id="eventForm" method="post" enctype="multipart/form-data" action="{{ url_for(bp ~ '.save_event') }}" novalidate>
             <input type="hidden" name="event_id" id="event_id" value="">
             <input type="hidden" name="time" id="event_time" value="">
 
@@ -198,7 +201,7 @@
                                 <td style="text-align:right; padding-right:16px;">
                                     <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
                                         {% if can_edit_feature('events') %}
-                                        <a class="zf-icon-btn" href="{{ url_for('animal_farm_admin.events_management', tab='add', edit=e.id) }}" title="Edit Event">
+                                        <a class="zf-icon-btn" href="{{ url_for(bp ~ '.events_management', tab='add', edit=e.id) }}" title="Edit Event">
                                             <i class="fa-solid fa-pen"></i>
                                         </a>
                                         {% else %}
@@ -206,7 +209,7 @@
                                             <i class="fa-solid fa-pen"></i>
                                         </button>
                                         {% endif %}
-                                        <form method="post" action="{{ url_for('animal_farm_admin.delete_event', event_id=e.id) }}" style="display:inline;" onsubmit="return confirm('Delete this event?');">
+                                        <form method="post" action="{{ url_for(bp ~ '.delete_event', event_id=e.id) }}" style="display:inline;" onsubmit="return confirm('Delete this event?');">
                                             <button class="zf-icon-btn danger" type="submit" title="Delete Event" {% if not can_edit_feature('events') %}disabled title="Active subscription required to delete" style="opacity:0.5; cursor:not-allowed;"{% endif %}>
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>

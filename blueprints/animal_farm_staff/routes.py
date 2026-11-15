@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import json
 import os
+import re
 import secrets
 from datetime import datetime, timedelta, date
 
-from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, session, url_for
 from sqlalchemy import or_, func
 from werkzeug.utils import secure_filename
 
@@ -21,6 +23,7 @@ from models import (
     LoyaltyAccount,
     LoyaltyTransaction,
     Notification,
+    Promotion,
     StaffTask,
     User,
     Zoo,
@@ -31,6 +34,15 @@ from models import (
 from services.auth_guard import require_role_guard
 from services.tickets import verify_ticket
 from services.loyalty import sync_booking_points_for_status, reverse_booking_points
+from services import can_edit_feature, paywall_edit_error, get_zoo_subscription_tier
+from services.subscription_guard import FEATURE_TIERS, feature_limit, limit_allows, feature_required_tier
+from services.service_catalog import (
+    SERVICE_CATEGORIES,
+    SERVICE_CATEGORY_VALUES,
+    SERVICE_STATUSES,
+    PROMOTION_CATEGORIES,
+    PROMOTION_CATEGORY_VALUES,
+)
 
 zoo_staff_bp = Blueprint('animal_farm_staff', __name__)
 
@@ -40,6 +52,34 @@ def require_zoo_staff():
     result = require_role_guard(expected_role='zoo_staff', login_module='zoo_staff')
     if result is not None:
         return result
+
+
+@zoo_staff_bp.context_processor
+def inject_subscription_tier():
+    zoo = _current_zoo()
+    tier = get_zoo_subscription_tier(zoo)
+    return {
+        'g_sub_tier': tier,
+        'can_edit_feature': lambda f: can_edit_feature(zoo, f),
+        'feature_required_tier': feature_required_tier,
+    }
+
+
+def _uploaded_file_size(file_storage) -> int | None:
+    """Read a seekable upload size without consuming the file."""
+    if file_storage.content_length:
+        return int(file_storage.content_length)
+    stream = getattr(file_storage, 'stream', None)
+    if not stream or not hasattr(stream, 'tell') or not hasattr(stream, 'seek'):
+        return None
+    try:
+        current_position = stream.tell()
+        stream.seek(0, os.SEEK_END)
+        size = stream.tell()
+        stream.seek(current_position)
+        return int(size)
+    except (OSError, ValueError):
+        return None
 
 
 def _current_user() -> User | None:
@@ -567,62 +607,507 @@ def reverse_ticket_checkin(ticket_id: int):
         flash('Ticket check-in reversed.', 'success')
         return redirect(url_for('animal_farm_staff.ticket_scanner'))
 
-@zoo_staff_bp.route('/events', methods=['GET', 'POST'])
+# ---------------------------------------------------------------------------
+# Services Management
+# ---------------------------------------------------------------------------
+
+@zoo_staff_bp.route('/services')
+def services_management():
+    tab = request.args.get('tab') or 'list'
+    if tab not in {'add', 'list'}:
+        tab = 'list'
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_staff.dashboard'))
+    services = Service.query.filter_by(zoo_id=zoo.id).order_by(Service.id.desc()).all()
+    edit_id = request.args.get('edit_id', type=int)
+    edit_service = None
+    if edit_id:
+        edit_service = Service.query.filter_by(id=edit_id, zoo_id=zoo.id).first()
+    return render_template(
+        'animal_farm_admin/services.html',
+        zoo=zoo,
+        services=services,
+        edit_service=edit_service,
+        service_categories=SERVICE_CATEGORIES,
+        service_statuses=SERVICE_STATUSES,
+    )
+
+
+@zoo_staff_bp.post('/services/save')
+def save_service():
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_staff.services_management', tab='list'))
+    if not can_edit_feature(zoo, 'services'):
+        return paywall_edit_error('Services', required_tier=1)
+
+    service_id = request.form.get('service_id')
+    name = (request.form.get('name') or '').strip()
+    price_raw = (request.form.get('price') or '').strip()
+    category = (request.form.get('category') or '').strip() or None
+    service_status = (request.form.get('service_status') or '').strip()
+    max_guest_capacity = request.form.get('max_guest_capacity', type=int)
+    description = (request.form.get('description') or '').strip() or None
+    image_file = request.files.get('image_file')
+
+    if not name:
+        flash('Service name is required.', 'error')
+        return redirect(url_for('animal_farm_staff.services_management', tab='list'))
+    try:
+        price = float(price_raw)
+    except Exception:
+        flash('Price must be a number.', 'error')
+        return redirect(url_for('animal_farm_staff.services_management', tab='list'))
+    if not service_status or service_status not in SERVICE_STATUSES:
+        flash('Please select a valid service status.', 'error')
+        return redirect(url_for('animal_farm_staff.services_management', tab='list'))
+    if max_guest_capacity is None or max_guest_capacity < 1:
+        flash('Maximum guest capacity must be at least 1.', 'error')
+        return redirect(url_for('animal_farm_staff.services_management', tab='list'))
+    if category and category not in SERVICE_CATEGORY_VALUES:
+        flash('Please select a valid service category.', 'error')
+        return redirect(url_for('animal_farm_staff.services_management', tab='list'))
+
+    service = None
+    if service_id:
+        service = Service.query.filter_by(id=int(service_id), zoo_id=zoo.id).first()
+    if not service:
+        service = Service(zoo_id=zoo.id)
+        db.session.add(service)
+
+    service.name = name
+    service.price = price
+    service.category = category
+    service.service_status = service_status
+    service.max_guest_capacity = max_guest_capacity
+    service.description = description
+
+    if image_file and image_file.filename:
+        uploaded_url = _save_uploaded_image(image_file, 'service_images')
+        if not uploaded_url:
+            return redirect(url_for('animal_farm_staff.services_management', tab='list'))
+        service.image_url = uploaded_url
+
+    db.session.commit()
+    flash('Service saved.', 'success')
+    return redirect(url_for('animal_farm_staff.services_management', tab='list'))
+
+
+@zoo_staff_bp.post('/services/<int:service_id>/delete')
+def delete_service(service_id: int):
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_staff.services_management', tab='list'))
+    if not can_edit_feature(zoo, 'services'):
+        return paywall_edit_error('Services', required_tier=1)
+    service = Service.query.filter_by(id=service_id, zoo_id=zoo.id).first()
+    if not service:
+        flash('Service not found.', 'error')
+        return redirect(url_for('animal_farm_staff.services_management', tab='list'))
+    db.session.delete(service)
+    db.session.commit()
+    flash('Service deleted.', 'success')
+    return redirect(url_for('animal_farm_staff.services_management', tab='list'))
+
+
+# ---------------------------------------------------------------------------
+# Animals Management
+# ---------------------------------------------------------------------------
+
+@zoo_staff_bp.route('/animals')
+def animals_management():
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_staff.dashboard'))
+    animals = Animal.query.filter_by(zoo_id=zoo.id).order_by(Animal.id.desc()).all()
+    zones = ZooZone.query.filter_by(zoo_id=zoo.id).order_by(ZooZone.name.asc()).all()
+    fun_facts_animals = [a for a in animals if a.fun_facts and a.fun_facts.strip()]
+    edit_id = request.args.get('edit_id', type=int)
+    edit_animal = None
+    if edit_id:
+        edit_animal = Animal.query.filter_by(id=edit_id, zoo_id=zoo.id).first()
+        if not edit_animal:
+            abort(404)
+    return render_template(
+        'animal_farm_admin/animals.html',
+        zoo=zoo,
+        animals=animals,
+        zones=zones,
+        fun_facts_animals=fun_facts_animals,
+        edit_animal=edit_animal,
+    )
+
+
+@zoo_staff_bp.post('/animals/save')
+def save_animal():
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_staff.animals_management', tab='list'))
+
+    animal_id = request.form.get('animal_id')
+    if not animal_id and not limit_allows(
+        zoo, 'animals', Animal.query.filter_by(zoo_id=zoo.id).count()
+    ):
+        return paywall_edit_error(
+            f"Animals (limit {feature_limit(zoo, 'animals')})",
+            required_tier=FEATURE_TIERS.get('animals', 1),
+        )
+    if not can_edit_feature(zoo, 'animals'):
+        return paywall_edit_error('Animals', required_tier=1)
+
+    name = (request.form.get('name') or '').strip() or None
+    species = (request.form.get('species') or '').strip()
+    habitat = (request.form.get('habitat') or '').strip() or None
+    status = (request.form.get('status') or '').strip() or None
+    description = (request.form.get('description') or '').strip() or None
+    age = (request.form.get('age') or '').strip() or None
+    fun_facts = (request.form.get('fun_facts') or '').strip() or None
+    zone_id = request.form.get('zone_id', type=int) or None
+    image_file = request.files.get('image_file')
+
+    if not species:
+        flash('Animal species is required.', 'error')
+        return redirect(url_for('animal_farm_staff.animals_management', tab='add'))
+
+    if not zone_id and habitat:
+        matched_zone = ZooZone.query.filter_by(zoo_id=zoo.id, name=habitat).first()
+        if matched_zone:
+            zone_id = matched_zone.id
+    elif zone_id and not habitat:
+        matched_zone = db.session.get(ZooZone, zone_id)
+        if matched_zone:
+            habitat = matched_zone.name
+
+    animal = None
+    if animal_id:
+        animal = Animal.query.filter_by(id=int(animal_id), zoo_id=zoo.id).first()
+        if not animal:
+            abort(404)
+    if not animal:
+        animal = Animal(
+            zoo_id=zoo.id,
+            species=species,
+            name=name,
+            habitat=habitat,
+            status=status,
+            description=description,
+            age=age,
+            zone_id=zone_id
+        )
+        if 'fun_facts' in request.form:
+            animal.fun_facts = fun_facts
+        db.session.add(animal)
+    else:
+        animal.name = name
+        animal.species = species
+        animal.habitat = habitat
+        animal.status = status
+        animal.description = description
+        animal.age = age
+        if 'fun_facts' in request.form:
+            animal.fun_facts = fun_facts
+        animal.zone_id = zone_id
+
+    if image_file and image_file.filename:
+        uploaded_url = _save_uploaded_image(image_file, 'animal_images')
+        if not uploaded_url:
+            return redirect(url_for('animal_farm_staff.animals_management', tab='add'))
+        animal.image_url = uploaded_url
+
+    db.session.commit()
+    flash('Animal saved.', 'success')
+    return redirect(url_for('animal_farm_staff.animals_management', tab='list'))
+
+
+@zoo_staff_bp.post('/animals/fun-facts/save')
+def save_fun_fact():
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_staff.animals_management', tab='funfacts'))
+    if not can_edit_feature(zoo, 'animals'):
+        return paywall_edit_error('Animals', required_tier=1)
+
+    animal_id = request.form.get('animal_id', type=int)
+    animal_name = (request.form.get('animal_name') or '').strip()
+    fun_facts = (request.form.get('fun_facts') or '').strip()
+
+    if not fun_facts:
+        flash('Fun fact / Did You Know description is required.', 'error')
+        return redirect(url_for('animal_farm_staff.animals_management', tab='funfacts'))
+
+    animal = None
+    if animal_id:
+        animal = Animal.query.filter_by(id=animal_id, zoo_id=zoo.id).first()
+    elif animal_name:
+        animal = Animal.query.filter_by(name=animal_name, zoo_id=zoo.id).first()
+
+    if not animal and animal_name:
+        animal = Animal(zoo_id=zoo.id, name=animal_name, status='Healthy')
+        db.session.add(animal)
+
+    if not animal:
+        flash('Please select or specify an animal for this fun fact.', 'error')
+        return redirect(url_for('animal_farm_staff.animals_management', tab='funfacts'))
+
+    animal.fun_facts = fun_facts
+    image_file = request.files.get('image_file')
+    if image_file and image_file.filename:
+        uploaded_url = _save_uploaded_image(image_file, 'animal_images')
+        if uploaded_url:
+            animal.image_url = uploaded_url
+
+    db.session.commit()
+    flash('Wildlife fun fact saved successfully.', 'success')
+    return redirect(url_for('animal_farm_staff.animals_management', tab='funfacts'))
+
+
+@zoo_staff_bp.post('/animals/fun-facts/<int:animal_id>/clear')
+def clear_fun_fact(animal_id: int):
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_staff.animals_management', tab='funfacts'))
+    if not can_edit_feature(zoo, 'animals'):
+        return paywall_edit_error('Animals', required_tier=1)
+    animal = Animal.query.filter_by(id=animal_id, zoo_id=zoo.id).first()
+    if animal:
+        animal.fun_facts = None
+        db.session.commit()
+        flash('Fun fact removed.', 'success')
+    return redirect(url_for('animal_farm_staff.animals_management', tab='funfacts'))
+
+
+@zoo_staff_bp.post('/animals/<int:animal_id>/delete')
+def delete_animal(animal_id: int):
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_staff.animals_management'))
+    if not can_edit_feature(zoo, 'animals'):
+        return paywall_edit_error('Animals', required_tier=1)
+    animal = Animal.query.filter_by(id=animal_id, zoo_id=zoo.id).first()
+    if not animal:
+        flash('Animal not found.', 'error')
+        return redirect(url_for('animal_farm_staff.animals_management'))
+    db.session.delete(animal)
+    db.session.commit()
+    flash('Animal deleted.', 'success')
+    return redirect(url_for('animal_farm_staff.animals_management'))
+
+
+# ---------------------------------------------------------------------------
+# Events Management
+# ---------------------------------------------------------------------------
+
+@zoo_staff_bp.route('/events')
 def events_management():
     zoo = _current_zoo()
     if not zoo:
-        flash('Your account is not linked to an establishment.', 'error')
+        flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_staff.dashboard'))
+    events = Event.query.filter_by(zoo_id=zoo.id).order_by(Event.id.desc()).all()
+    edit_event = None
+    edit_event_id = request.args.get('edit', type=int)
+    if edit_event_id is not None:
+        edit_event = Event.query.filter_by(id=edit_event_id, zoo_id=zoo.id).first()
+        if not edit_event:
+            flash('Event not found.', 'error')
+            return redirect(url_for('animal_farm_staff.events_management', tab='list'))
+    return render_template(
+        'animal_farm_admin/events.html',
+        zoo=zoo,
+        events=events,
+        edit_event=edit_event,
+        selected_tab='add' if edit_event else request.args.get('tab', 'all'),
+    )
 
-    if request.method == 'POST':
-        event_id = (request.form.get('event_id') or '').strip()
-        name = (request.form.get('name') or '').strip()
-        event_type = (request.form.get('type') or '').strip() or None
-        time_value = (request.form.get('time') or '').strip() or None
-        location = (request.form.get('location') or '').strip() or None
 
-        if not name:
-            flash('Event name is required.', 'error')
-            return redirect(url_for('animal_farm_staff.events_management'))
+@zoo_staff_bp.post('/events/save')
+def save_event():
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_staff.events_management'))
+    if not can_edit_feature(zoo, 'events'):
+        return paywall_edit_error('Events', required_tier=1)
 
-        event = None
-        if event_id.isdigit():
-            event = Event.query.filter_by(id=int(event_id), zoo_id=zoo.id).first()
-            if not event:
-                flash('Event not found.', 'error')
-                return redirect(url_for('animal_farm_staff.events_management'))
-        if not event:
-            event = Event(zoo_id=zoo.id)
-            db.session.add(event)
+    event_id = request.form.get('event_id')
+    name = (request.form.get('name') or '').strip()
+    event_type = (request.form.get('type') or '').strip() or None
+    time = (request.form.get('time') or '').strip() or None
+    location = (request.form.get('location') or '').strip() or None
+    image_file = request.files.get('image_file')
 
-        event.name = name
-        event.type = event_type
-        event.time = time_value
-        event.location = location
-        db.session.commit()
-        flash('Event saved.', 'success')
+    if not name:
+        flash('Event name is required.', 'error')
         return redirect(url_for('animal_farm_staff.events_management'))
 
-    events = Event.query.filter_by(zoo_id=zoo.id).order_by(Event.id.desc()).all()
-    return render_template('animal_farm_staff/events.html', zoo=zoo, events=events)
+    event = None
+    if event_id:
+        event = Event.query.filter_by(id=int(event_id), zoo_id=zoo.id).first()
+    if not event:
+        event = Event(zoo_id=zoo.id)
+        db.session.add(event)
+
+    event.name = name
+    event.type = event_type
+    event.time = time
+    event.location = location
+
+    if image_file and image_file.filename:
+        uploaded_url = _save_uploaded_image(image_file, 'event_images')
+        if not uploaded_url:
+            return redirect(url_for('animal_farm_staff.events_management'))
+        event.image_url = uploaded_url
+
+    db.session.commit()
+    flash('Event saved.', 'success')
+    return redirect(url_for('animal_farm_staff.events_management'))
 
 
 @zoo_staff_bp.post('/events/<int:event_id>/delete')
 def delete_event(event_id: int):
     zoo = _current_zoo()
     if not zoo:
-        flash('Your account is not linked to an establishment.', 'error')
-        return redirect(url_for('animal_farm_staff.dashboard'))
-
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_staff.events_management'))
+    if not can_edit_feature(zoo, 'events'):
+        return paywall_edit_error('Events', required_tier=1)
     event = Event.query.filter_by(id=event_id, zoo_id=zoo.id).first()
     if not event:
         flash('Event not found.', 'error')
         return redirect(url_for('animal_farm_staff.events_management'))
-
     db.session.delete(event)
     db.session.commit()
     flash('Event deleted.', 'success')
     return redirect(url_for('animal_farm_staff.events_management'))
+
+
+# ---------------------------------------------------------------------------
+# Promotions Management
+# ---------------------------------------------------------------------------
+
+@zoo_staff_bp.route('/promotions')
+def promotions_management():
+    tab = request.args.get('tab') or 'list'
+    if tab not in {'add', 'list'}:
+        tab = 'list'
+
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_staff.dashboard'))
+
+    query = Promotion.query.filter_by(zoo_id=zoo.id, country='Philippines')
+    promotions = query.order_by(Promotion.id.desc()).all()
+    edit_id = request.args.get('edit_id', type=int)
+    edit_promotion = None
+    if edit_id:
+        edit_promotion = Promotion.query.filter_by(
+            id=edit_id,
+            zoo_id=zoo.id,
+            country='Philippines',
+        ).first()
+    return render_template(
+        'animal_farm_admin/promotions.html',
+        zoo=zoo,
+        promotions=promotions,
+        promo_categories=PROMOTION_CATEGORIES,
+        edit_promotion=edit_promotion,
+    )
+
+
+@zoo_staff_bp.post('/promotions/save')
+def save_promotion():
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_staff.promotions_management', tab='add'))
+    if not can_edit_feature(zoo, 'promotions'):
+        return paywall_edit_error('Promotions', required_tier=1)
+
+    promo_id = request.form.get('promo_id')
+    name = (request.form.get('name') or '').strip()
+    code = (request.form.get('code') or '').strip().upper()
+    discount = (request.form.get('discount') or '').strip() or None
+    valid_until = (request.form.get('valid_until') or '').strip() or None
+    promo_type = (request.form.get('promo_type') or '').strip() or None
+    image_file = request.files.get('image_file')
+
+    if not name or not code:
+        flash('Promotion name and code are required.', 'error')
+        return redirect(url_for('animal_farm_staff.promotions_management', tab='add'))
+    if promo_type and promo_type not in PROMOTION_CATEGORY_VALUES:
+        flash('Please select a valid promotion category.', 'error')
+        return redirect(url_for('animal_farm_staff.promotions_management', tab='add'))
+
+    promotion = None
+    if promo_id:
+        promotion = Promotion.query.filter_by(id=int(promo_id), zoo_id=zoo.id).first()
+    if not promotion:
+        promotion = Promotion(zoo_id=zoo.id, country='Philippines')
+        db.session.add(promotion)
+
+    promotion.name = name
+    promotion.code = code
+    promotion.discount = discount
+    promotion.valid_until = valid_until
+    promotion.promo_type = promo_type
+
+    dtype = (request.form.get('discount_type') or 'percent').lower()
+    dval = request.form.get('discount_value', type=float)
+    if discount:
+        if 'php' in discount.lower() or '₱' in discount:
+            dtype = 'fixed'
+        elif '%' in discount:
+            dtype = 'percent'
+        if dval is None or dval <= 0:
+            m = re.search(r"(\d+(?:\.\d+)?)", discount)
+            if m:
+                dval = float(m.group(1))
+    promotion.discount_type = dtype
+    promotion.discount_value = dval or 0.0
+
+    if image_file and image_file.filename:
+        uploaded_url = _save_uploaded_image(image_file, 'promotion_images')
+        if not uploaded_url:
+            return redirect(url_for('animal_farm_staff.promotions_management', tab='add'))
+        promotion.image_url = uploaded_url
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        flash('Promotion code must be unique.', 'error')
+        return redirect(url_for('animal_farm_staff.promotions_management', tab='list'))
+
+    flash('Promotion saved.', 'success')
+    return redirect(url_for('animal_farm_staff.promotions_management', tab='list'))
+
+
+@zoo_staff_bp.post('/promotions/<int:promo_id>/delete')
+def delete_promotion(promo_id: int):
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_staff.promotions_management', tab='list'))
+    if not can_edit_feature(zoo, 'promotions'):
+        return paywall_edit_error('Promotions', required_tier=1)
+    promo = Promotion.query.filter_by(id=promo_id, zoo_id=zoo.id).first()
+    if not promo:
+        flash('Promotion not found.', 'error')
+        return redirect(url_for('animal_farm_staff.promotions_management', tab='list'))
+    db.session.delete(promo)
+    db.session.commit()
+    flash('Promotion deleted.', 'success')
+    return redirect(url_for('animal_farm_staff.promotions_management', tab='list'))
 
 
 @zoo_staff_bp.route('/feedback')
@@ -652,14 +1137,190 @@ def visitor_feedback():
     )
 
 
+# ---------------------------------------------------------------------------
+# Map & Zones Management
+# ---------------------------------------------------------------------------
+
 @zoo_staff_bp.route('/map-zones')
-def map_zones():
+def visitor_map_zone_management():
     zoo = _current_zoo()
     if not zoo:
-        flash('Your account is not linked to an establishment.', 'error')
+        flash('No zoo assigned.', 'error')
         return redirect(url_for('animal_farm_staff.dashboard'))
+
     zones = ZooZone.query.filter_by(zoo_id=zoo.id).order_by(ZooZone.created_at.desc()).all()
-    return render_template('animal_farm_staff/map_zones.html', zoo=zoo, zones=zones)
+    landing_map = {
+        'title': (zoo.landing_map_title or f'{zoo.name} Visitor Map').strip(),
+        'description': (zoo.landing_map_description or '').strip(),
+        'image_url': (zoo.landing_map_image_url or '').strip(),
+        'updated_at': zoo.landing_map_updated_at,
+    }
+    return render_template('animal_farm_admin/map_zones.html', zoo=zoo, zones=zones, landing_map=landing_map)
+
+
+# Alias for backward compatibility
+map_zones = visitor_map_zone_management
+
+
+@zoo_staff_bp.post('/map-zones/landing-map/save')
+def save_landing_map():
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_staff.visitor_map_zone_management'))
+    if not can_edit_feature(zoo, 'map_zones'):
+        return paywall_edit_error('Landing Map', required_tier=2)
+
+    title = (request.form.get('landing_map_title') or '').strip()
+    description = (request.form.get('landing_map_description') or '').strip() or None
+    image_file = request.files.get('landing_map_image_file')
+
+    zoo.landing_map_title = title or None
+    zoo.landing_map_description = description
+
+    if image_file and image_file.filename:
+        uploaded_url = _save_uploaded_image(image_file, 'map_images')
+        if not uploaded_url:
+            return redirect(url_for('animal_farm_staff.visitor_map_zone_management'))
+        zoo.landing_map_image_url = uploaded_url
+    zoo.landing_map_updated_at = datetime.utcnow()
+
+    db.session.commit()
+    flash('Landing page map settings updated.', 'success')
+    return redirect(url_for('animal_farm_staff.visitor_map_zone_management'))
+
+
+@zoo_staff_bp.post('/map-zones/pin-positions/save')
+def save_zone_pin_positions():
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_staff.visitor_map_zone_management'))
+    if not can_edit_feature(zoo, 'map_zones'):
+        return paywall_edit_error('Map Pin Positions', required_tier=2)
+
+    try:
+        positions = json.loads(request.form.get('pin_positions') or '{}')
+        if not isinstance(positions, dict):
+            raise ValueError
+        zones = {str(zone.id): zone for zone in ZooZone.query.filter_by(zoo_id=zoo.id).all()}
+        unknown_zone_ids = set(positions) - set(zones)
+        if unknown_zone_ids:
+            raise ValueError
+        for zone_id, zone in zones.items():
+            raw_position = positions.get(zone_id)
+            if raw_position is None:
+                zone.position_x = None
+                zone.position_y = None
+                continue
+            if not isinstance(raw_position, dict):
+                raise ValueError
+            x = float(raw_position.get('x'))
+            y = float(raw_position.get('y'))
+            if not (0 <= x <= 100 and 0 <= y <= 100):
+                raise ValueError
+            zone.position_x = x
+            zone.position_y = y
+    except (TypeError, ValueError, json.JSONDecodeError):
+        flash('Pin positions must be percentages between 0 and 100.', 'error')
+        return redirect(url_for('animal_farm_staff.visitor_map_zone_management', tab='pin-editor'))
+
+    db.session.commit()
+    flash('Map pin positions saved.', 'success')
+    return redirect(url_for('animal_farm_staff.visitor_map_zone_management', tab='pin-editor'))
+
+
+@zoo_staff_bp.post('/map-zones/save')
+def save_zone():
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_staff.visitor_map_zone_management'))
+    if not can_edit_feature(zoo, 'map_zones'):
+        return paywall_edit_error('Map Zones', required_tier=2)
+
+    zone_id = request.form.get('zone_id')
+    name = (request.form.get('name') or '').strip()
+    description = (request.form.get('description') or '').strip() or None
+    panorama_360_url = (request.form.get('panorama_360_url') or '').strip() or None
+    map_image_file = request.files.get('map_image_file')
+    gallery_files = [
+        file for file in request.files.getlist('zone_images')
+        if file and file.filename
+    ]
+    try:
+        removed_images = json.loads(request.form.get('removed_zone_images') or '[]')
+    except (TypeError, ValueError, json.JSONDecodeError):
+        flash('The selected zone pictures could not be processed.', 'error')
+        return redirect(url_for('animal_farm_staff.visitor_map_zone_management', tab='add'))
+    if not isinstance(removed_images, list) or not all(isinstance(url, str) for url in removed_images):
+        flash('The selected zone pictures could not be processed.', 'error')
+        return redirect(url_for('animal_farm_staff.visitor_map_zone_management', tab='add'))
+
+    if not name:
+        flash('Zone name is required.', 'error')
+        return redirect(url_for('animal_farm_staff.visitor_map_zone_management'))
+
+    zone = None
+    if zone_id:
+        try:
+            zone = ZooZone.query.filter_by(id=int(zone_id), zoo_id=zoo.id).first()
+        except (TypeError, ValueError):
+            flash('The selected zone is invalid.', 'error')
+            return redirect(url_for('animal_farm_staff.visitor_map_zone_management', tab='add'))
+    if not zone:
+        zone = ZooZone(zoo_id=zoo.id)
+        db.session.add(zone)
+
+    zone.name = name
+    zone.description = description
+    zone.panorama_360_url = panorama_360_url
+    current_images = [
+        image_url for image_url in zone.image_urls
+        if image_url not in set(removed_images)
+    ]
+    if len(current_images) + len(gallery_files) > 12:
+        flash('A zone can have up to 12 pictures.', 'error')
+        return redirect(url_for('animal_farm_staff.visitor_map_zone_management', tab='add'))
+
+    for image_file in gallery_files:
+        if (_uploaded_file_size(image_file) or 0) > 5 * 1024 * 1024:
+            flash('Each zone picture must be no larger than 5 MB.', 'error')
+            return redirect(url_for('animal_farm_staff.visitor_map_zone_management', tab='add'))
+        uploaded_url = _save_uploaded_image(image_file, 'zone_images')
+        if not uploaded_url:
+            flash('Unable to upload one of the zone pictures.', 'error')
+            return redirect(url_for('animal_farm_staff.visitor_map_zone_management', tab='add'))
+        current_images.append(uploaded_url)
+    zone.image_urls = current_images
+
+    if map_image_file and map_image_file.filename:
+        uploaded_url = _save_uploaded_image(map_image_file, 'zone_maps')
+        if not uploaded_url:
+            return redirect(url_for('animal_farm_staff.visitor_map_zone_management'))
+        zone.map_image_url = uploaded_url
+
+    db.session.commit()
+    flash('Zone saved.', 'success')
+    return redirect(url_for('animal_farm_staff.visitor_map_zone_management'))
+
+
+@zoo_staff_bp.post('/map-zones/<int:zone_id>/delete')
+def delete_zone(zone_id: int):
+    zoo = _current_zoo()
+    if not zoo:
+        flash('No zoo assigned.', 'error')
+        return redirect(url_for('animal_farm_staff.visitor_map_zone_management'))
+    if not can_edit_feature(zoo, 'map_zones'):
+        return paywall_edit_error('Map Zones', required_tier=2)
+    zone = ZooZone.query.filter_by(id=zone_id, zoo_id=zoo.id).first()
+    if not zone:
+        flash('Zone not found.', 'error')
+        return redirect(url_for('animal_farm_staff.visitor_map_zone_management'))
+    db.session.delete(zone)
+    db.session.commit()
+    flash('Zone deleted.', 'success')
+    return redirect(url_for('animal_farm_staff.visitor_map_zone_management'))
 
 
 @zoo_staff_bp.route('/notifications')

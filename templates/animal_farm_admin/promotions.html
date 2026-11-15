@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Promotions Management | Animal Farm Admin{% endblock %}
+{% block title %}Promotions Management | {{ 'Zoo Staff' if request.blueprint == 'animal_farm_staff' else 'Animal Farm Admin' }}{% endblock %}
 {% block page_title %}Promotions Management{% endblock %}
 
 {% block content %}
+{% set bp = request.blueprint if request.blueprint in ['animal_farm_staff', 'animal_farm_admin'] else 'animal_farm_admin' %}
 {% set selected_tab = request.args.get('tab', 'add') %}
 
 <!-- Success toast -->
@@ -20,9 +21,11 @@
       <strong>Read-Only Mode:</strong> An active subscription with Super Admin is required to create, edit, or delete promotions.
     </span>
   </div>
+  {% if bp == 'animal_farm_admin' %}
   <a href="{{ url_for('animal_farm_admin.subscriptions') }}" class="btn btn-primary btn-sm" style="white-space:nowrap;">
     <i class="fa-solid fa-rocket"></i> Subscribe Now
   </a>
+  {% endif %}
 </div>
 {% endif %}
 
@@ -38,7 +41,7 @@
             <span class="zf-form-badge {% if edit_promotion %}editing{% endif %}" id="promoFormBadge">{{ 'Edit' if edit_promotion else 'New' }}</span>
         </div>
 
-        <form id="promoForm" method="post" enctype="multipart/form-data" action="{{ url_for('animal_farm_admin.save_promotion') }}" novalidate>
+        <form id="promoForm" method="post" enctype="multipart/form-data" action="{{ url_for(bp ~ '.save_promotion') }}" novalidate>
             <input type="hidden" name="promo_id" id="promo_id" value="{{ edit_promotion.id if edit_promotion else '' }}">
 
             <div class="zf-form-body">
@@ -181,7 +184,7 @@
                                 <td style="text-align:right; padding-right:16px;">
                                     <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
                                         {% if can_edit_feature('promotions') %}
-                                        <a class="zf-icon-btn" href="{{ url_for('animal_farm_admin.promotions_management', tab='add', edit_id=p.id) }}" title="Edit Promotion">
+                                        <a class="zf-icon-btn" href="{{ url_for(bp ~ '.promotions_management', tab='add', edit_id=p.id) }}" title="Edit Promotion">
                                             <i class="fa-solid fa-pen"></i>
                                         </a>
                                         {% else %}
@@ -189,7 +192,7 @@
                                             <i class="fa-solid fa-pen"></i>
                                         </button>
                                         {% endif %}
-                                        <form method="post" action="{{ url_for('animal_farm_admin.delete_promotion', promo_id=p.id) }}" style="display:inline;" onsubmit="return confirm('Delete this promotion?');">
+                                        <form method="post" action="{{ url_for(bp ~ '.delete_promotion', promo_id=p.id) }}" style="display:inline;" onsubmit="return confirm('Delete this promotion?');">
                                             <button class="zf-icon-btn danger" type="submit" title="Delete Promotion" {% if not can_edit_feature('promotions') %}disabled title="Active subscription required to delete" style="opacity:0.5; cursor:not-allowed;"{% endif %}>
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>

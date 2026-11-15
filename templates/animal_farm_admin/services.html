@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Services Management | Animal Farm Admin{% endblock %}
+{% block title %}Services Management | {{ 'Zoo Staff' if request.blueprint == 'animal_farm_staff' else 'Animal Farm Admin' }}{% endblock %}
 {% block page_title %}Services Management{% endblock %}
 
 {% block content %}
+{% set bp = request.blueprint if request.blueprint in ['animal_farm_staff', 'animal_farm_admin'] else 'animal_farm_admin' %}
 {% set selected_tab = request.args.get('tab', 'all') %}
 
 <!-- Success toast -->
@@ -20,9 +21,11 @@
       <strong>Read-Only Mode:</strong> An active subscription with Super Admin is required to add, edit, or delete services.
     </span>
   </div>
+  {% if bp == 'animal_farm_admin' %}
   <a href="{{ url_for('animal_farm_admin.subscriptions') }}" class="btn btn-primary btn-sm" style="white-space:nowrap;">
     <i class="fa-solid fa-rocket"></i> Subscribe Now
   </a>
+  {% endif %}
 </div>
 {% endif %}
 
@@ -39,7 +42,7 @@
       <span class="zf-form-badge" id="serviceFormBadge">New</span>
     </div>
 
-    <form id="serviceForm" method="post" action="{{ url_for('animal_farm_admin.save_service') }}" enctype="multipart/form-data" novalidate>
+    <form id="serviceForm" method="post" action="{{ url_for(bp ~ '.save_service') }}" enctype="multipart/form-data" novalidate>
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="service_id" id="service_id" value="">
 
@@ -217,7 +220,7 @@
                       {% if not can_edit_feature('services') %}disabled title="Active subscription required to edit" style="opacity:0.5; cursor:not-allowed;"                      {% else %}onclick='fillServiceForm({{ s.id|tojson }}, {{ s.name|tojson }}, {{ (s.price or 0)|tojson }}, {{ (s.description or "")|tojson }}, {{ (s.category or "")|tojson }}, {{ (s.service_status or "")|tojson }}, {{ (s.max_guest_capacity or 50)|tojson }})'{% endif %}>
                     <i class="fa-solid fa-pen"></i> Edit
                   </button>
-                  <form method="post" action="{{ url_for('animal_farm_admin.delete_service', service_id=s.id) }}" style="display:inline;" onsubmit="return confirm('Delete this service?');">
+                  <form method="post" action="{{ url_for(bp ~ '.delete_service', service_id=s.id) }}" style="display:inline;" onsubmit="return confirm('Delete this service?');">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button class="btn btn-ghost btn-sm" type="submit" {% if not can_edit_feature('services') %}disabled title="Active subscription required to delete" style="opacity:0.5; cursor:not-allowed;"{% endif %}><i class="fa-solid fa-trash"></i> Delete</button>
                   </form>
@@ -249,7 +252,7 @@
   window.fillServiceForm = function(id, name, price, description, category, svcStatus, maxGuestCapacity) {
     var form = document.getElementById('serviceForm');
     if (!form) {
-      window.location.href = "{{ url_for('animal_farm_admin.services_management', tab='add') }}&edit_id=" + id;
+      window.location.href = "{{ url_for(bp ~ '.services_management', tab='add') }}&edit_id=" + id;
       return;
     }
     document.getElementById('service_id').value = id;

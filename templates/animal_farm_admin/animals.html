@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Animals &amp; Wildlife Fun Facts | Zoo Admin{% endblock %}
+{% block title %}Animals &amp; Wildlife Fun Facts | {{ 'Zoo Staff' if request.blueprint == 'animal_farm_staff' else 'Zoo Admin' }}{% endblock %}
 {% block page_title %}Animals &amp; Wildlife Facts{% endblock %}
 
 {% block content %}
+{% set bp = request.blueprint if request.blueprint in ['animal_farm_staff', 'animal_farm_admin'] else 'animal_farm_admin' %}
 {% set selected_tab = request.args.get('tab', 'all') %}
 
 <!-- Success toast -->
@@ -14,12 +15,12 @@
 
 <!-- Sub-navigation Tabs: Animals vs Wildlife Funfacts -->
 <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
-  <a href="{{ url_for('animal_farm_admin.animals_management') }}?tab=all"
+  <a href="{{ url_for(bp ~ '.animals_management') }}?tab=all"
      class="btn {% if selected_tab != 'funfacts' %}btn-primary{% else %}btn-outline{% endif %}"
      style="border-radius:20px; padding:8px 18px; font-size:13px; text-decoration:none;">
     <i class="fa-solid fa-paw"></i> Resident Animals
   </a>
-  <a href="{{ url_for('animal_farm_admin.animals_management') }}?tab=funfacts"
+  <a href="{{ url_for(bp ~ '.animals_management') }}?tab=funfacts"
      class="btn {% if selected_tab == 'funfacts' %}btn-primary{% else %}btn-outline{% endif %}"
      style="border-radius:20px; padding:8px 18px; font-size:13px; text-decoration:none;">
     <i class="fa-solid fa-lightbulb"></i> Wildlife Fun Facts (Did You Know?)
@@ -34,9 +35,11 @@
       <strong>Read-Only Mode:</strong> An active subscription with Super Admin is required to add, edit, or delete animals and wildlife facts.
     </span>
   </div>
+  {% if bp == 'animal_farm_admin' %}
   <a href="{{ url_for('animal_farm_admin.subscriptions') }}" class="btn btn-primary btn-sm" style="white-space:nowrap;">
     <i class="fa-solid fa-rocket"></i> Subscribe Now
   </a>
+  {% endif %}
 </div>
 {% endif %}
 
@@ -54,7 +57,7 @@
       <span class="zf-form-badge" id="funFactFormBadge">Did You Know?</span>
     </div>
 
-    <form id="funFactForm" method="post" action="{{ url_for('animal_farm_admin.save_fun_fact') }}" enctype="multipart/form-data">
+    <form id="funFactForm" method="post" action="{{ url_for(bp ~ '.save_fun_fact') }}" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="animal_id" id="ff_animal_id" value="">
 
@@ -152,7 +155,7 @@
                 <button class="btn btn-outline btn-sm" type="button" onclick='fillFunFactForm({{ a.id|tojson }}, {{ a.name|tojson }}, {{ (a.fun_facts or "")|tojson }})'>
                   <i class="fa-solid fa-pen"></i> Edit
                 </button>
-                <form method="post" action="{{ url_for('animal_farm_admin.clear_fun_fact', animal_id=a.id) }}" style="display:inline;" onsubmit="return confirm('Remove fun fact for {{ a.name }}?');">
+                <form method="post" action="{{ url_for(bp ~ '.clear_fun_fact', animal_id=a.id) }}" style="display:inline;" onsubmit="return confirm('Remove fun fact for {{ a.name }}?');">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--danger, #dc2626);"><i class="fa-solid fa-trash"></i></button>
                 </form>
@@ -188,7 +191,7 @@
       <span class="zf-form-badge" id="animalFormBadge">New</span>
     </div>
 
-    <form id="animalForm" method="post" action="{{ url_for('animal_farm_admin.save_animal') }}" enctype="multipart/form-data" novalidate>
+    <form id="animalForm" method="post" action="{{ url_for(bp ~ '.save_animal') }}" enctype="multipart/form-data" novalidate>
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="animal_id" id="animal_id" value="">
 
@@ -360,7 +363,7 @@
                 </td>
                 <td>
                   {% if can_edit_feature('animals') %}
-                  <a class="btn btn-outline btn-sm" href="{{ url_for('animal_farm_admin.animals_management', tab='add', edit_id=a.id) }}">
+                  <a class="btn btn-outline btn-sm" href="{{ url_for(bp ~ '.animals_management', tab='add', edit_id=a.id) }}">
                     <i class="fa-solid fa-pen"></i> Edit
                   </a>
                   {% else %}
@@ -368,7 +371,7 @@
                     <i class="fa-solid fa-pen"></i> Edit
                   </button>
                   {% endif %}
-                  <form method="post" action="{{ url_for('animal_farm_admin.delete_animal', animal_id=a.id) }}" style="display:inline;" onsubmit="return confirm('Delete this animal?');">
+                  <form method="post" action="{{ url_for(bp ~ '.delete_animal', animal_id=a.id) }}" style="display:inline;" onsubmit="return confirm('Delete this animal?');">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button class="btn btn-ghost btn-sm" type="submit" {% if not can_edit_feature('animals') %}disabled title="Active subscription required to delete" style="opacity:0.5; cursor:not-allowed;"{% endif %}><i class="fa-solid fa-trash"></i> Delete</button>
                   </form>
@@ -401,7 +404,7 @@
   window.fillAnimalForm = function(id, name, species, habitat, status, description, age, fun_facts, imageUrl) {
     var form = document.getElementById('animalForm');
     if (!form) {
-      window.location.href = "{{ url_for('animal_farm_admin.animals_management', tab='add') }}&edit_id=" + id;
+      window.location.href = "{{ url_for(bp ~ '.animals_management', tab='add') }}&edit_id=" + id;
       return;
     }
     document.getElementById('animal_id').value = id;

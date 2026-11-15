@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Visitor Map & Zone Management | Animal Farm Admin{% endblock %}
+{% block title %}Visitor Map & Zone Management | {{ 'Zoo Staff' if request.blueprint == 'animal_farm_staff' else 'Animal Farm Admin' }}{% endblock %}
 {% block page_title %}Map &amp; Zones{% endblock %}
 
 {% block content %}
+{% set bp = request.blueprint if request.blueprint in ['animal_farm_staff', 'animal_farm_admin'] else 'animal_farm_admin' %}
 {% set initial_tab = request.args.get('tab', 'add') %}
 
 <style>
@@ -54,9 +55,11 @@
       <strong>Read-Only Mode:</strong> Interactive Map &amp; Zones management requires an active <strong>Pro Plan</strong> subscription with Super Admin to save landing maps, place pins, and edit zones.
     </span>
   </div>
+  {% if bp == 'animal_farm_admin' %}
   <a href="{{ url_for('animal_farm_admin.subscriptions') }}" class="btn btn-primary btn-sm" style="white-space:nowrap;">
     <i class="fa-solid fa-rocket"></i> Upgrade / Subscribe
   </a>
+  {% endif %}
 </div>
 {% endif %}
 
@@ -71,7 +74,7 @@
             <span class="zf-form-badge" id="zoneFormBadge">Zone</span>
         </div>
 
-        <form id="zoneForm" method="post" action="{{ url_for('animal_farm_admin.save_zone') }}" enctype="multipart/form-data" novalidate>
+        <form id="zoneForm" method="post" action="{{ url_for(bp ~ '.save_zone') }}" enctype="multipart/form-data" novalidate>
             <input type="hidden" name="zone_id" id="zone_id_input" value="">
 
             <div class="zf-form-body">
@@ -164,7 +167,7 @@
             <span class="zf-form-badge">Interactive Map</span>
         </div>
 
-        <form method="post" action="{{ url_for('animal_farm_admin.save_landing_map') }}" enctype="multipart/form-data">
+        <form method="post" action="{{ url_for(bp ~ '.save_landing_map') }}" enctype="multipart/form-data">
             <div class="zf-form-body">
                 <div class="two-col" style="--two-col-template: 1fr 1fr; margin-bottom: 0;">
                     <div>
@@ -260,7 +263,7 @@
                     <span><i class="fa-solid fa-hand-pointer"></i> Click the map to place the selected zone.</span>
                     <span><i class="fa-solid fa-arrows-up-down-left-right"></i> Drag a pin to reposition it. Click its x to unset it.</span>
                 </div>
-                <form method="post" action="{{ url_for('animal_farm_admin.save_zone_pin_positions') }}" id="pinPositionsForm" style="margin-top:18px; text-align:right;">
+                <form method="post" action="{{ url_for(bp ~ '.save_zone_pin_positions') }}" id="pinPositionsForm" style="margin-top:18px; text-align:right;">
                     <input type="hidden" name="pin_positions" id="pinPositionsInput" value="{}">
                     <button type="submit" class="zf-btn-primary" id="savePinsBtn" {% if not can_edit_feature('map_zones') %}disabled title="Pro subscription required to save pins" style="opacity:0.6; cursor:not-allowed;"{% endif %}><i class="fa-solid fa-floppy-disk"></i> {% if not can_edit_feature('map_zones') %}🔒 Pro Plan Required{% else %}Save Pin Positions{% endif %}</button>
                 </form>
@@ -328,7 +331,7 @@
                                             {% if not can_edit_feature('map_zones') %}disabled title="Pro subscription required to edit" style="opacity:0.5; cursor:not-allowed;"{% else %}onclick='fillZoneForm({{ z.id|tojson }}, {{ z.name|tojson }}, {{ (z.description or "")|tojson }}, {{ (z.panorama_360_url or "")|tojson }}, {{ (z.map_image_url or "")|tojson }}, {{ z.image_urls|tojson }})'{% endif %}>
                                             <i class="fa-solid fa-pen"></i>
                                         </button>
-                                        <form method="post" action="{{ url_for('animal_farm_admin.delete_zone', zone_id=z.id) }}" style="display:inline;" onsubmit="return confirm('Delete this zone?');">
+                                        <form method="post" action="{{ url_for(bp ~ '.delete_zone', zone_id=z.id) }}" style="display:inline;" onsubmit="return confirm('Delete this zone?');">
                                             <button class="zf-icon-btn danger" type="submit" title="Delete Zone" {% if not can_edit_feature('map_zones') %}disabled title="Pro subscription required to delete" style="opacity:0.5; cursor:not-allowed;"{% endif %}>
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>

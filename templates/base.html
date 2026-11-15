@@ -1138,8 +1138,8 @@
                 </div>
 
                 <!-- Services -->
-                <a href="{{ url_for('animal_farm_admin.services_management') }}"
-                    class="nav-item {% if request.endpoint == 'animal_farm_admin.services_management' %}active{% endif %}">
+                <a href="{{ url_for('animal_farm_staff.services_management') }}"
+                    class="nav-item {% if request.endpoint in ('animal_farm_staff.services_management', 'animal_farm_admin.services_management') %}active{% endif %}">
                     <i class="fa-solid fa-list-check"></i> Services
                 </a>
 
@@ -1150,20 +1150,20 @@
                 </a>
 
                 <!-- Promotions -->
-                <a href="{{ url_for('animal_farm_admin.promotions_management') }}"
-                    class="nav-item {% if request.endpoint == 'animal_farm_admin.promotions_management' %}active{% endif %}">
+                <a href="{{ url_for('animal_farm_staff.promotions_management') }}"
+                    class="nav-item {% if request.endpoint in ('animal_farm_staff.promotions_management', 'animal_farm_admin.promotions_management') %}active{% endif %}">
                     <i class="fa-solid fa-tags"></i> Promotions
                 </a>
 
                 <!-- Animals -->
-                <a href="{{ url_for('animal_farm_admin.animals_management') }}"
-                    class="nav-item {% if request.endpoint == 'animal_farm_admin.animals_management' %}active{% endif %}">
+                <a href="{{ url_for('animal_farm_staff.animals_management') }}"
+                    class="nav-item {% if request.endpoint in ('animal_farm_staff.animals_management', 'animal_farm_admin.animals_management') %}active{% endif %}">
                     <i class="fa-solid fa-paw"></i> Animals
                 </a>
 
                 <!-- Map & Zones -->
-                <a href="{{ url_for('animal_farm_admin.visitor_map_zone_management') }}"
-                    class="nav-item {% if request.endpoint in ('animal_farm_admin.visitor_map_zone_management', 'animal_farm_staff.map_zones') %}active{% endif %}">
+                <a href="{{ url_for('animal_farm_staff.visitor_map_zone_management') }}"
+                    class="nav-item {% if request.endpoint in ('animal_farm_staff.visitor_map_zone_management', 'animal_farm_staff.map_zones', 'animal_farm_admin.visitor_map_zone_management') %}active{% endif %}">
                     <i class="fa-solid fa-map-location-dot"></i> Map &amp; Zones
                 </a>
 
