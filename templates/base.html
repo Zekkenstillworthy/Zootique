@@ -1137,35 +1137,127 @@
                     </div>
                 </div>
 
-                <!-- Services -->
-                <a href="{{ url_for('animal_farm_staff.services_management') }}"
-                    class="nav-item {% if request.endpoint in ('animal_farm_staff.services_management', 'animal_farm_admin.services_management') %}active{% endif %}">
-                    <i class="fa-solid fa-list-check"></i> Services
-                </a>
+                <!-- Services Dropdown -->
+                {% set _afs_services_active = request.endpoint in ('animal_farm_staff.services_management', 'animal_farm_admin.services_management') %}
+                <div class="nav-dropdown">
+                    <button
+                        class="nav-dropdown-trigger {% if _afs_services_active %}active{% endif %}"
+                        onclick="toggleDropdown(event, 'afs-services-dropdown')">
+                        <span class="trigger-label"><i class="fa-solid fa-list-check"></i> Services</span>
+                        <i class="fa-solid fa-chevron-down chevron"></i>
+                    </button>
+                    <div class="nav-dropdown-menu {% if _afs_services_active %}open{% endif %}" id="afs-services-dropdown">
+                        <a href="{{ url_for('animal_farm_staff.services_management', tab='add') }}"
+                            class="nav-dropdown-item {% if _afs_services_active and request.args.get('tab') == 'add' %}active{% endif %}">
+                            <i class="fa-solid fa-plus-circle"></i> Add/Edit Service
+                        </a>
+                        <a href="{{ url_for('animal_farm_staff.services_management', tab='list') }}"
+                            class="nav-dropdown-item {% if _afs_services_active and request.args.get('tab') == 'list' %}active{% endif %}">
+                            <i class="fa-solid fa-list"></i> Service List
+                        </a>
+                    </div>
+                </div>
 
-                <!-- Events -->
-                <a href="{{ url_for('animal_farm_staff.events_management') }}"
-                    class="nav-item {% if request.endpoint in ('animal_farm_staff.events_management', 'animal_farm_admin.events_management') %}active{% endif %}">
-                    <i class="fa-solid fa-calendar-days"></i> Events
-                </a>
+                <!-- Events Dropdown -->
+                {% set _afs_events_active = request.endpoint in ('animal_farm_staff.events_management', 'animal_farm_admin.events_management') %}
+                <div class="nav-dropdown">
+                    <button
+                        class="nav-dropdown-trigger {% if _afs_events_active %}active{% endif %}"
+                        onclick="toggleDropdown(event, 'afs-events-dropdown')">
+                        <span class="trigger-label"><i class="fa-solid fa-calendar-days"></i> Events</span>
+                        <i class="fa-solid fa-chevron-down chevron"></i>
+                    </button>
+                    <div class="nav-dropdown-menu {% if _afs_events_active %}open{% endif %}" id="afs-events-dropdown">
+                        <a href="{{ url_for('animal_farm_staff.events_management') }}?tab=add"
+                            class="nav-dropdown-item {% if _afs_events_active and request.args.get('tab', 'add') == 'add' %}active{% endif %}">
+                            <i class="fa-solid fa-plus-circle"></i> Add Event
+                        </a>
+                        <a href="{{ url_for('animal_farm_staff.events_management') }}?tab=list"
+                            class="nav-dropdown-item {% if _afs_events_active and request.args.get('tab') == 'list' %}active{% endif %}">
+                            <i class="fa-solid fa-list"></i> Event List
+                        </a>
+                    </div>
+                </div>
 
-                <!-- Promotions -->
-                <a href="{{ url_for('animal_farm_staff.promotions_management') }}"
-                    class="nav-item {% if request.endpoint in ('animal_farm_staff.promotions_management', 'animal_farm_admin.promotions_management') %}active{% endif %}">
-                    <i class="fa-solid fa-tags"></i> Promotions
-                </a>
+                <!-- Promotions Dropdown -->
+                {% set _afs_promotions_active = request.endpoint in ('animal_farm_staff.promotions_management', 'animal_farm_admin.promotions_management') %}
+                <div class="nav-dropdown">
+                    <button
+                        class="nav-dropdown-trigger {% if _afs_promotions_active %}active{% endif %}"
+                        onclick="toggleDropdown(event, 'afs-promotions-dropdown')">
+                        <span class="trigger-label"><i class="fa-solid fa-tags"></i> Promotions</span>
+                        <i class="fa-solid fa-chevron-down chevron"></i>
+                    </button>
+                    <div class="nav-dropdown-menu {% if _afs_promotions_active %}open{% endif %}" id="afs-promotions-dropdown">
+                        <a href="{{ url_for('animal_farm_staff.promotions_management') }}?tab=add"
+                            class="nav-dropdown-item {% if _afs_promotions_active and request.args.get('tab') == 'add' %}active{% endif %}">
+                            <i class="fa-solid fa-plus-circle"></i> Add/Edit Promotion
+                        </a>
+                        <a href="{{ url_for('animal_farm_staff.promotions_management') }}?tab=list"
+                            class="nav-dropdown-item {% if _afs_promotions_active and request.args.get('tab') == 'list' %}active{% endif %}">
+                            <i class="fa-solid fa-list"></i> Promotion List
+                        </a>
+                    </div>
+                </div>
 
-                <!-- Animals -->
-                <a href="{{ url_for('animal_farm_staff.animals_management') }}"
-                    class="nav-item {% if request.endpoint in ('animal_farm_staff.animals_management', 'animal_farm_admin.animals_management') %}active{% endif %}">
-                    <i class="fa-solid fa-paw"></i> Animals
-                </a>
+                <!-- Animals Dropdown -->
+                {% set _afs_animals_active = request.endpoint in ('animal_farm_staff.animals_management', 'animal_farm_admin.animals_management') %}
+                <div class="nav-dropdown">
+                    <button
+                        class="nav-dropdown-trigger {% if _afs_animals_active %}active{% endif %}"
+                        onclick="toggleDropdown(event, 'afs-animals-dropdown')">
+                        <span class="trigger-label"><i class="fa-solid fa-paw"></i> Animals</span>
+                        <i class="fa-solid fa-chevron-down chevron"></i>
+                    </button>
+                    <div class="nav-dropdown-menu {% if _afs_animals_active %}open{% endif %}" id="afs-animals-dropdown">
+                        <a href="{{ url_for('animal_farm_staff.animals_management') }}?tab=add"
+                            class="nav-dropdown-item {% if _afs_animals_active and request.args.get('tab', 'add') == 'add' %}active{% endif %}">
+                            <i class="fa-solid fa-plus-circle"></i> Add/Edit Animal
+                        </a>
+                        <a href="{{ url_for('animal_farm_staff.animals_management') }}?tab=list"
+                            class="nav-dropdown-item {% if _afs_animals_active and request.args.get('tab') == 'list' %}active{% endif %}">
+                            <i class="fa-solid fa-list"></i> Animal List
+                        </a>
+                        <a href="{{ url_for('animal_farm_staff.animals_management') }}?tab=funfacts"
+                            class="nav-dropdown-item {% if _afs_animals_active and request.args.get('tab') == 'funfacts' %}active{% endif %}">
+                            <i class="fa-solid fa-lightbulb"></i> Wildlife Fun Facts
+                        </a>
+                    </div>
+                </div>
 
-                <!-- Map & Zones -->
-                <a href="{{ url_for('animal_farm_staff.visitor_map_zone_management') }}"
-                    class="nav-item {% if request.endpoint in ('animal_farm_staff.visitor_map_zone_management', 'animal_farm_staff.map_zones', 'animal_farm_admin.visitor_map_zone_management') %}active{% endif %}">
-                    <i class="fa-solid fa-map-location-dot"></i> Map &amp; Zones
-                </a>
+                <!-- Map & Zones Dropdown -->
+                {% set _afs_map_active = request.endpoint in ('animal_farm_staff.visitor_map_zone_management', 'animal_farm_staff.map_zones', 'animal_farm_admin.visitor_map_zone_management') %}
+                <div class="nav-dropdown">
+                    <button
+                        class="nav-dropdown-trigger {% if _afs_map_active %}active{% endif %}"
+                        onclick="toggleDropdown(event, 'afs-map-dropdown')">
+                        <span class="trigger-label"><i class="fa-solid fa-map-location-dot"></i> Map &amp; Zones</span>
+                        <i class="fa-solid fa-chevron-down chevron"></i>
+                    </button>
+                    <div class="nav-dropdown-menu {% if _afs_map_active %}open{% endif %}"
+                        id="afs-map-dropdown">
+                        <a href="{{ url_for('animal_farm_staff.visitor_map_zone_management') }}?tab=add"
+                            data-mz-tab="add"
+                            class="nav-dropdown-item {% if _afs_map_active and request.args.get('tab', 'add') == 'add' %}active{% endif %}">
+                            <i class="fa-solid fa-plus-circle"></i> Add / Edit Zone
+                        </a>
+                        <a href="{{ url_for('animal_farm_staff.visitor_map_zone_management') }}?tab=landing-map"
+                            data-mz-tab="landing-map"
+                            class="nav-dropdown-item {% if _afs_map_active and request.args.get('tab') == 'landing-map' %}active{% endif %}">
+                            <i class="fa-solid fa-map"></i> Landing Page Map
+                        </a>
+                        <a href="{{ url_for('animal_farm_staff.visitor_map_zone_management') }}?tab=pin-editor"
+                            data-mz-tab="pin-editor"
+                            class="nav-dropdown-item {% if _afs_map_active and request.args.get('tab') == 'pin-editor' %}active{% endif %}">
+                            <i class="fa-solid fa-location-dot"></i> Pin Editor
+                        </a>
+                        <a href="{{ url_for('animal_farm_staff.visitor_map_zone_management') }}?tab=zones"
+                            data-mz-tab="zones"
+                            class="nav-dropdown-item {% if _afs_map_active and request.args.get('tab') == 'zones' %}active{% endif %}">
+                            <i class="fa-solid fa-layer-group"></i> Zones Layout
+                        </a>
+                    </div>
+                </div>
 
                 <!-- Park management Dropdown -->
                 {% set _afs_park_mgmt_active = request.endpoint in ('animal_farm_admin.park_rules_management', 'animal_farm_admin.availability_settings', 'animal_farm_admin.payment_methods') %}
@@ -1729,12 +1821,12 @@
                 const tab = urlParams.get('tab');
                 const currentUrl = window.location.pathname;
 
-                if (tab && (tab === 'add' || tab === 'list')) {
+                if (tab && (tab === 'add' || tab === 'list' || tab === 'funfacts')) {
                     let dropdownToOpen = null;
-                    if (currentUrl.includes('/services')) dropdownToOpen = document.getElementById('services-dropdown');
-                    else if (currentUrl.includes('/events')) dropdownToOpen = document.getElementById('events-dropdown');
-                    else if (currentUrl.includes('/promotions')) dropdownToOpen = document.getElementById('promotions-dropdown');
-                    else if (currentUrl.includes('/animals')) dropdownToOpen = document.getElementById('animals-dropdown');
+                    if (currentUrl.includes('/services')) dropdownToOpen = document.getElementById('afs-services-dropdown') || document.getElementById('services-dropdown');
+                    else if (currentUrl.includes('/events')) dropdownToOpen = document.getElementById('afs-events-dropdown') || document.getElementById('events-dropdown');
+                    else if (currentUrl.includes('/promotions')) dropdownToOpen = document.getElementById('afs-promotions-dropdown') || document.getElementById('promotions-dropdown');
+                    else if (currentUrl.includes('/animals')) dropdownToOpen = document.getElementById('afs-animals-dropdown') || document.getElementById('animals-dropdown');
 
                     if (dropdownToOpen && !dropdownToOpen.classList.contains('open')) {
                         dropdownToOpen.classList.add('open');
@@ -1745,6 +1837,12 @@
 
                 // Map & Zones: client-side tab switching (no page reload)
                 if (currentUrl.includes('/map-zones')) {
+                    const mapDropdown = document.getElementById('afs-map-dropdown') || document.getElementById('afa-map-dropdown');
+                    if (mapDropdown && !mapDropdown.classList.contains('open')) {
+                        mapDropdown.classList.add('open');
+                        const triggerBtn = mapDropdown.previousElementSibling;
+                        if (triggerBtn) triggerBtn.classList.add('active');
+                    }
                     const MZ_TABS = ['add', 'landing-map', 'pin-editor', 'zones'];
 
                     function switchMzTab(tab) {
