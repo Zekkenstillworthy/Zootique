@@ -4,6 +4,7 @@ from datetime import datetime, date, timedelta
 from zoneinfo import ZoneInfo
 import calendar
 from functools import wraps
+import json
 import math
 import os
 import re
@@ -2028,12 +2029,28 @@ def profile():
                 uploaded_url = _save_uploaded_image(profile_picture, 'profile_pictures')
                 if uploaded_url:
                     user.profile_image = uploaded_url
+                    session["profile_image"] = uploaded_url
 
             user.full_name = full_name
             user.phone = phone
             db.session.commit()
             session["full_name"] = user.full_name
             flash("Profile updated.", "success")
+            return redirect(url_for("visitor.profile", tab="profile"))
+
+        if action == "avatar_upload":
+            profile_picture = request.files.get("profile_picture")
+            if profile_picture and profile_picture.filename:
+                uploaded_url = _save_uploaded_image(profile_picture, 'profile_pictures')
+                if uploaded_url:
+                    user.profile_image = uploaded_url
+                    session["profile_image"] = uploaded_url
+                    db.session.commit()
+                    flash("Profile photo updated successfully.", "success")
+                else:
+                    flash("Failed to upload image. Please try again.", "error")
+            else:
+                flash("No photo selected.", "warning")
             return redirect(url_for("visitor.profile", tab="profile"))
 
         if action == "security":
@@ -2057,12 +2074,15 @@ def profile():
             return redirect(url_for("visitor.profile", tab="security"))
 
         if action == "notifications":
-            session["visitor_notification_prefs"] = {
+            prefs = {
                 "email_bookings": bool(request.form.get("email_bookings")),
                 "email_promos": bool(request.form.get("email_promos")),
                 "sms_alerts": bool(request.form.get("sms_alerts")),
                 "visit_reminders": bool(request.form.get("visit_reminders")),
             }
+            user.notification_prefs = json.dumps(prefs)
+            db.session.commit()
+            session["visitor_notification_prefs"] = prefs
             flash("Notification preferences saved.", "success")
             return redirect(url_for("visitor.profile", tab="notifications"))
 
@@ -2132,7 +2152,14 @@ def profile():
         flash("Unknown profile action.", "error")
         return redirect(url_for("visitor.profile", tab=show_tab))
 
-    notification_prefs = session.get("visitor_notification_prefs")
+    notification_prefs = None
+    if getattr(user, "notification_prefs", None):
+        try:
+            notification_prefs = json.loads(user.notification_prefs)
+        except Exception:
+            pass
+    if not isinstance(notification_prefs, dict):
+        notification_prefs = session.get("visitor_notification_prefs")
     if not isinstance(notification_prefs, dict):
         notification_prefs = {
             "email_bookings": True,
@@ -2188,7 +2215,13 @@ def profile():
 
     profile_completion_percent = int((completed_steps / total_steps) * 100)
 
-    profile_image_url = url_for("uploaded_file", filename=user.profile_image) if getattr(user, "profile_image", None) else None
+    if getattr(user, "profile_image", None):
+        if str(user.profile_image).startswith(("http://", "https://")):
+            profile_image_url = user.profile_image
+        else:
+            profile_image_url = url_for("uploaded_file", filename=user.profile_image)
+    else:
+        profile_image_url = None
     linked_accounts = {
         "email": user.email,
         "username": user.username or "Not set",

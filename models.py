@@ -19,6 +19,7 @@ class User(db.Model):
     profile_image = db.Column(db.String(500), nullable=True)
     phone = db.Column(db.String(50), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    notification_prefs = db.Column(db.Text, nullable=True)  # JSON-encoded notification preferences
 
     zoo = db.relationship('Zoo', back_populates='users', lazy=True)
     bookings = db.relationship('Booking', foreign_keys='Booking.user_id', back_populates='user', lazy=True)

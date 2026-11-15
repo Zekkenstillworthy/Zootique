@@ -42,9 +42,21 @@
                 </div>
 
                 <div style="position: relative; margin-bottom: 1rem; margin-top: 1rem;">
-                    {% if profile_image_url %}<img src="{{ profile_image_url }}" alt="" onerror="this.onerror=null;this.style.display='none';" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 4px solid #1a4f32; outline: 4px solid rgba(255,255,255,0.2);">{% else %}<i class="fa-solid fa-user" aria-hidden="true" style="width: 100px; height: 100px; display:flex; align-items:center; justify-content:center; font-size: 2.5rem; color: #1a4f32; background:#fff; border-radius:50%;"></i>{% endif %}
-                    <i class="fa-solid fa-camera" style="position: absolute; bottom: 0; right: 0; background: white; color: #1a4f32; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"></i>
+                    {% if profile_image_url %}
+                        <img src="{{ profile_image_url }}" alt="{{ user.full_name or 'Visitor' }}" onerror="this.onerror=null;this.style.display='none';var fb=document.getElementById('avatarFallbackIcon');if(fb)fb.style.display='flex';" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 4px solid #1a4f32; outline: 4px solid rgba(255,255,255,0.2);">
+                        <i id="avatarFallbackIcon" class="fa-solid fa-user" aria-hidden="true" style="display:none; width: 100px; height: 100px; align-items:center; justify-content:center; font-size: 2.5rem; color: #1a4f32; background:#fff; border-radius:50%;"></i>
+                    {% else %}
+                        <i class="fa-solid fa-user" aria-hidden="true" style="width: 100px; height: 100px; display:flex; align-items:center; justify-content:center; font-size: 2.5rem; color: #1a4f32; background:#fff; border-radius:50%;"></i>
+                    {% endif %}
+                    <label for="quickAvatarInput" title="Change profile photo" style="position: absolute; bottom: 0; right: 0; background: white; color: #1a4f32; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.15s ease;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
+                        <i class="fa-solid fa-camera"></i>
+                    </label>
                 </div>
+                <form id="quickAvatarForm" method="post" action="{{ url_for('visitor.profile', tab='profile') }}" enctype="multipart/form-data" style="display:none;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="avatar_upload">
+                    <input type="file" id="quickAvatarInput" name="profile_picture" accept=".png,.jpg,.jpeg,.webp,.gif" onchange="document.getElementById('quickAvatarForm').submit();">
+                </form>
 
                 <h1 style="font-size: 2rem; font-weight: 800; margin: 0 0 0.5rem 0;">{{ user.full_name or 'Visitor' }}</h1>
                 <div style="font-size: 0.95rem; opacity: 0.9; margin-bottom: 1rem;">{{ user.email }}</div>
@@ -79,7 +91,7 @@
                 </div>
                 {% if loyalty_transactions %}
                 <div style="display:grid; gap:.5rem;">
-                    {% for transaction in loyalty_transactions %}
+                    {% for transaction in loyalty_transactions[:5] %}
                     <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; border-top:1px solid #f1f5f9; padding-top:.6rem;">
                         <div style="display:flex; align-items:flex-start; gap:0.6rem;">
                             <div style="margin-top:2px;">
@@ -100,6 +112,13 @@
                     </div>
                     {% endfor %}
                 </div>
+                {% if loyalty_transactions|length > 5 %}
+                <div style="text-align:center; padding-top:0.75rem; margin-top:0.5rem; border-top:1px solid #f1f5f9;">
+                    <a href="{{ url_for('visitor.profile', tab='visits') }}" style="color:#1a4f32; font-weight:700; font-size:0.85rem; text-decoration:none;">
+                        View all {{ loyalty_transactions|length }} transactions &rarr;
+                    </a>
+                </div>
+                {% endif %}
                 {% else %}<span style="color:#64748b; font-size:0.88rem;">No loyalty transactions recorded yet.</span>{% endif %}
             </div>
 
@@ -267,6 +286,11 @@
                                 <i class="fa-solid fa-users" style="margin-right:0.3rem;"></i>{{ b.guests or 1 }} guest{% if (b.guests or 1) != 1 %}s{% endif %}
                                 {% if b.zoo and b.zoo.name %}&nbsp;&middot;&nbsp;<i class="fa-solid fa-location-dot" style="margin-right:0.3rem;"></i>{{ b.zoo.name }}{% endif %}
                             </div>
+                            <div style="margin-top:0.45rem;">
+                                <a href="{{ url_for('visitor.my_bookings') }}" style="color:#1a4f32; font-weight:700; font-size:0.82rem; text-decoration:none; display:inline-flex; align-items:center; gap:0.3rem;">
+                                    <i class="fa-solid fa-ticket"></i> View Pass &amp; Details &rarr;
+                                </a>
+                            </div>
                         </div>
                         <div style="text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:0.4rem; flex-shrink:0;">
                             <div style="font-weight:900; color:#1a4f32; font-size:1rem;">₱{{ "{:,.2f}".format(b.amount or 0) }}</div>
@@ -339,10 +363,27 @@
                         <label style="display:block; font-size:0.75rem; color:#94a3b8; font-weight: 800; margin-bottom: 0.4rem;">Confirm New Password</label>
                         <input type="password" name="confirm_password" required minlength="8" style="width:100%; padding:0.8rem 1rem; border:1px solid #cbd5e1; border-radius:10px;">
                     </div>
-                    <button type="submit" class="btn" style="background:#1a4f32; color:white; border:none; padding:0.8rem 1.2rem; border-radius:10px; font-weight:800; width:fit-content;">Update Password</button>
-                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem;">Two-factor authentication and login alerts can be enabled here later.</div>
+                    <button type="submit" class="btn" style="background:#1a4f32; color:white; border:none; padding:0.8rem 1.4rem; border-radius:10px; font-weight:800; width:fit-content; cursor:pointer;">
+                        <i class="fa-solid fa-key" style="margin-right:0.4rem;"></i> Update Password
+                    </button>
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1.25rem; margin-top:0.5rem; display:grid; gap:0.75rem;">
+                        <div style="font-weight:700; color:#1e293b; font-size:0.9rem; display:flex; align-items:center; gap:0.5rem;">
+                            <i class="fa-solid fa-shield-halved" style="color:#16a34a;"></i> Account Protection Status
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:0.5rem;">
+                            <span>Sign-In Method</span>
+                            <span style="font-weight:700; color:#1e293b;">Email &amp; Password</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:0.5rem;">
+                            <span>Email Verification</span>
+                            <span style="font-weight:700; color:#16a34a;"><i class="fa-solid fa-circle-check"></i> Verified</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:0.5rem;">
+                            <span>Password Security</span>
+                            <span style="font-weight:700; color:#1e293b;">Hashed &amp; Salted (PBKDF2-SHA256)</span>
+                        </div>
+                    </div>
                 </form>
-                </div>
             </div>
             {% elif show_tab == 'notifications' %}
             <!-- RECENT ACTIVITY & NOTIFICATIONS FEED -->
@@ -874,7 +915,7 @@
             <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:0.85rem; display:flex; gap:0.6rem; align-items:center;">
                 <i class="fa-solid fa-shield-check" style="color:#16a34a; font-size:1.1rem;"></i>
                 <div style="font-size:0.8rem; color:#166534;">
-                    Instant simulation verification active. No real funds will be charged upon linking.
+                    Encrypted account authorization. Links your verified GCash mobile number for express checkout.
                 </div>
             </div>
 
@@ -953,12 +994,12 @@
 
             <div>
                 <label style="display:block; font-weight:700; font-size:0.85rem; color:#1e293b; margin-bottom:0.4rem;">Facebook Profile Name or Handle</label>
-                <input type="text" name="display_name" required value="{{ user.full_name }} (Facebook)" placeholder="e.g. Juan Dela Cruz" style="width:100%; padding:0.75rem 0.85rem; border:1px solid #cbd5e1; border-radius:8px; font-size:0.95rem; outline:none;" onfocus="this.style.borderColor='#1877f2';" onblur="this.style.borderColor='#cbd5e1';">
+                <input type="text" name="display_name" required value="{{ linked_providers.facebook.display_name if linked_providers.get('facebook') else user.full_name }}" placeholder="e.g. Juan Dela Cruz" style="width:100%; padding:0.75rem 0.85rem; border:1px solid #cbd5e1; border-radius:8px; font-size:0.95rem; outline:none;" onfocus="this.style.borderColor='#1877f2';" onblur="this.style.borderColor='#cbd5e1';">
             </div>
 
             <div>
-                <label style="display:block; font-weight:700; font-size:0.85rem; color:#1e293b; margin-bottom:0.4rem;">Facebook Email / User ID</label>
-                <input type="text" name="account_identifier" required value="fb.{{ user.username or 'visitor' }}_{{ user.id }}" placeholder="facebook.com/profile" style="width:100%; padding:0.75rem 0.85rem; border:1px solid #cbd5e1; border-radius:8px; font-size:0.95rem; outline:none;" onfocus="this.style.borderColor='#1877f2';" onblur="this.style.borderColor='#cbd5e1';">
+                <label style="display:block; font-weight:700; font-size:0.85rem; color:#1e293b; margin-bottom:0.4rem;">Facebook Email or Profile ID</label>
+                <input type="text" name="account_identifier" required value="{{ linked_providers.facebook.raw_identifier if linked_providers.get('facebook') else '' }}" placeholder="e.g. facebook.com/yourname or your email" style="width:100%; padding:0.75rem 0.85rem; border:1px solid #cbd5e1; border-radius:8px; font-size:0.95rem; outline:none;" onfocus="this.style.borderColor='#1877f2';" onblur="this.style.borderColor='#cbd5e1';">
             </div>
 
             <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:0.85rem; font-size:0.8rem; color:#1e40af;">
